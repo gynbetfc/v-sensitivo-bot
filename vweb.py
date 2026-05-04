@@ -132,7 +132,7 @@ SKINS = [
     },
     {
         'id': 'skin_flamengo',
-        'nome': '🔴⚫ FLAMENGO',
+        'nome': '🔴⚫ FLAMENGO 🏴',
         'desc': 'Tema rubro-negro - Mengão!',
         'preco_moedas': 1,
         'cor_fundo': '#1a0000',
@@ -150,7 +150,7 @@ SKINS = [
     },
     {
         'id': 'skin_corinthians',
-        'nome': '⚪⚫ CORINTHIANS',
+        'nome': '⚪⚫ CORINTHIANS 🦅',
         'desc': 'Tema alvinegro - Timão!',
         'preco_moedas': 1,
         'cor_fundo': '#0a0a0a',
@@ -168,7 +168,7 @@ SKINS = [
     },
     {
         'id': 'skin_palmeiras',
-        'nome': '💚 PALMEIRAS',
+        'nome': '💚 PALMEIRAS 🐷',
         'desc': 'Tema verde - Verdão!',
         'preco_moedas': 1,
         'cor_fundo': '#001a00',
@@ -186,7 +186,7 @@ SKINS = [
     },
     {
         'id': 'skin_sao_paulo',
-        'nome': '🔴⚪⚫ SÃO PAULO',
+        'nome': '🔴⚪⚫ SÃO PAULO 🏴',
         'desc': 'Tema tricolor - SPFC!',
         'preco_moedas': 1,
         'cor_fundo': '#1a0a0a',
@@ -204,7 +204,7 @@ SKINS = [
     },
     {
         'id': 'skin_santos',
-        'nome': '⚪⚫ SANTOS',
+        'nome': '⚪⚫ SANTOS 🐟',
         'desc': 'Tema alvinegro praiano - Peixe!',
         'preco_moedas': 1,
         'cor_fundo': '#0a0a0a',
@@ -1272,9 +1272,10 @@ function renderLoja(){
 }
 
 function comprarSkin(skinId){
-    if(!emailLogado){alert('Conecte primeiro!');return}
+    var email=emailLogado||document.getElementById('emailCompra').value.trim();
+    if(!email){alert('Digite seu email na seção de moedas!');return}
     if(!confirm('Comprar esta skin?'))return;
-    fetch('/comprar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId})})
+    fetch('/comprar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId,email:emailLogado||document.getElementById('emailCompra').value.trim()})})
     .then(r=>r.json()).then(d=>{
         if(d.ok){alert(d.msg||'Skin comprada!');document.getElementById('moedasSaldo').textContent=d.moedas;renderLoja();setTimeout(function(){location.reload();},500);}
         else{alert('ERRO: '+d.erro);}
@@ -1282,7 +1283,9 @@ function comprarSkin(skinId){
 }
 
 function ativarSkin(skinId){
-    fetch('/ativar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId})})
+    var email=emailLogado||document.getElementById('emailCompra').value.trim();
+    if(!email){alert('Digite seu email na seção de moedas!');return}
+    fetch('/ativar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId,email:emailLogado||document.getElementById('emailCompra').value.trim()})})
     .then(r=>r.json()).then(d=>{
         if(d.ok){alert('Skin ativada!');location.reload();}
         else{alert('ERRO: '+d.erro);}
@@ -1481,11 +1484,6 @@ def index():
 @app.route('/status')
 def status():
     global skin_atual_global, estrategia_atual
-    if email_usuario_atual:
-        u = carregar_usuario(email_usuario_atual)
-        if u:
-            skin_atual_global = u.get('skin_atual', 'skin_padrao')
-    
     u = carregar_usuario(email_usuario_atual) if email_usuario_atual else {}
     
     skins_status = []
@@ -1575,13 +1573,13 @@ def comecar_operar():
         if not conectado_iq:
             return jsonify({'ok': False, 'erro': 'Conecte na IQ Option primeiro!'})
         
-        usuario = carregar_usuario(email_usuario_atual)
+        usuario = carregar_usuario(email)
         if not usuario or usuario.get('moedas', 0) < 1:
             return jsonify({'ok': False, 'erro': 'Sem moedas! Compre mais.'})
         
         usuario['moedas'] -= 1
         usuario['total_ciclos'] += 1
-        salvar_usuario(email_usuario_atual, usuario)
+        salvar_usuario(email, usuario)
         
         add_log(f'🪙 Moeda consumida! Restam: {usuario["moedas"]} | Ciclo: {usuario["total_ciclos"]}', 'info')
         
@@ -1620,28 +1618,33 @@ def selecionar_estrategia():
 
 @app.route('/comprar_skin', methods=['POST'])
 def comprar_skin():
-    global skin_atual_global
+    global skin_atual_global, email_usuario_atual
     d = request.get_json()
     skin_id = d.get('skin_id', '')
+    email = d.get('email', email_usuario_atual or '')
     
+    if not email:
+        return jsonify({'ok': False, 'erro': 'Informe seu email!'})
+    
+    # Se não tem email_usuario_atual, usa o email do request
     if not email_usuario_atual:
-        return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+        email_usuario_atual = email
     
     skin = next((s for s in SKINS if s['id'] == skin_id), None)
     if not skin:
         return jsonify({'ok': False, 'erro': 'Skin não encontrada'})
     
     if skin['preco_moedas'] == 0:
-        usuario = carregar_usuario(email_usuario_atual)
+        usuario = carregar_usuario(email)
         if usuario:
             if 'skins_compradas' not in usuario: usuario['skins_compradas'] = ['skin_padrao']
             if skin_id not in usuario['skins_compradas']: usuario['skins_compradas'].append(skin_id)
             usuario['skin_atual'] = skin_id
-            salvar_usuario(email_usuario_atual, usuario)
+            salvar_usuario(email, usuario)
             skin_atual_global = skin_id
         return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0), 'msg': 'Skin grátis ativada!'})
     
-    usuario = carregar_usuario(email_usuario_atual)
+    usuario = carregar_usuario(email)
     if not usuario:
         return jsonify({'ok': False, 'erro': 'Usuário não encontrado'})
     
@@ -1650,7 +1653,7 @@ def comprar_skin():
     
     if skin_id in usuario['skins_compradas']:
         usuario['skin_atual'] = skin_id
-        salvar_usuario(email_usuario_atual, usuario)
+        salvar_usuario(email, usuario)
         skin_atual_global = skin_id
         return jsonify({'ok': True, 'moedas': usuario['moedas'], 'msg': 'Skin já comprada! Ativada.'})
     
@@ -1660,7 +1663,7 @@ def comprar_skin():
     usuario['moedas'] -= skin['preco_moedas']
     usuario['skins_compradas'].append(skin_id)
     usuario['skin_atual'] = skin_id
-    salvar_usuario(email_usuario_atual, usuario)
+    salvar_usuario(email, usuario)
     skin_atual_global = skin_id
     
     add_log(f'🛍️ Skin comprada: {skin["nome"]}', 'win')
@@ -1678,7 +1681,7 @@ def ativar_skin():
     if not skin:
         return jsonify({'ok': False, 'erro': 'Skin não encontrada'})
     
-    usuario = carregar_usuario(email_usuario_atual)
+    usuario = carregar_usuario(email)
     if not usuario:
         return jsonify({'ok': False, 'erro': 'Usuário não encontrado'})
     
@@ -1692,7 +1695,7 @@ def ativar_skin():
         usuario['skins_compradas'].append(skin_id)
     
     usuario['skin_atual'] = skin_id
-    salvar_usuario(email_usuario_atual, usuario)
+    salvar_usuario(email, usuario)
     
     global skin_atual_global
 
