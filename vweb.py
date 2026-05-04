@@ -284,7 +284,25 @@ ESTRATEGIAS = {
         'timeframe': 300,
         'pares': ['EURUSD']
     },
-    'reversao': {
+    'M30-4VELAS': {
+        'nome': '📊 M30 - 4 VELAS',
+        'desc': '4 velas iguais + 5a confirma + 6a entra + RSI',
+        'timeframe': 60,
+        'pares': ['EURUSD-OTC']
+    },
+    'M4-VELOZ': {
+        'nome': '⚡ M4 VELOZ',
+        'desc': '1 chamada API + Barreira Mágica',
+        'timeframe': 60,
+        'pares': ['EURUSD-OTC']
+    },
+    'MAGO-OTC': {
+        'nome': '🔮 MAGO OTC',
+        'desc': '3 confirmações + Morte da Vela + RSI extremo',
+        'timeframe': 60,
+        'pares': ['EURUSD-OTC']
+    },
+        'reversao': {
         'nome': '🔄 REVERSÃO',
         'desc': 'Padrão alternado g-r-g-r-g ou r-g-r-g-r (seg % 55 == 0)',
         'timeframe': 60,
@@ -922,76 +940,6 @@ def sinal_mago_otc():
         return direcao
     except: return None
 
-
-
-def sinal_m30_4velas():
-    global ultimo_sinal
-    try:
-        velas=API.get_candles(par,60,10,time.time())
-        if len(velas)<6: return None
-        v4=velas[-5:-1]; v5=velas[-1]
-        cores_4=['g' if v['open']<v['close'] else 'r' if v['open']>v['close'] else 'd' for v in v4]
-        cor_v5='g' if v5['open']<v5['close'] else 'r' if v5['open']>v5['close'] else 'd'
-        rsi_val=rsi(velas) if len(velas)>=10 else None
-        add_log(f"M30: {' '.join(cores_4)} | 5v={cor_v5} | RSI={rsi_val}",'indicator')
-        if len(set(cores_4))!=1 or cores_4[0]=='d' or rsi_val is None: return None
-        if cor_v5=='r' and rsi_val<=35: direcao='call'; ultimo_sinal="M30: CALL"
-        elif cor_v5=='g' and rsi_val>=65: direcao='put'; ultimo_sinal="M30: PUT"
-        else: return None
-        t0=time.time()
-        while time.time()-t0<15:
-            v_agora=API.get_candles(par,60,1,time.time())
-            if len(v_agora)>0:
-                cor_atual='g' if v_agora[0]['open']<v_agora[0]['close'] else 'r'
-                if cor_atual==cor_v5: add_log("🔮 Barreira: OK!",'sensitive'); return direcao
-            time.sleep(0.3)
-        return None
-    except: return None
-
-def sinal_m4_veloz():
-    global ultimo_sinal
-    try:
-        velas=API.get_candles(par,60,15,time.time())
-        if len(velas)<10: return None
-        v4=velas[-5:-1]
-        cores_4=['g' if v['open']<v['close'] else 'r' if v['open']>v['close'] else 'd' for v in v4]
-        rsi_val=rsi(velas) if len(velas)>=10 else None
-        add_log(f"M4: {' '.join(cores_4)} | RSI={rsi_val}",'indicator')
-        if len(set(cores_4))!=1 or cores_4[0]=='d' or rsi_val is None: return None
-        if cores_4[0]=='g' and rsi_val>=65: direcao='put'; ultimo_sinal="M4: PUT"
-        elif cores_4[0]=='r' and rsi_val<=35: direcao='call'; ultimo_sinal="M4: CALL"
-        else: return None
-        cor_desejada='g' if direcao=='put' else 'r'; t0=time.time()
-        while time.time()-t0<15:
-            v_agora=API.get_candles(par,60,1,time.time())
-            if len(v_agora)>0:
-                cor_atual='g' if v_agora[0]['open']<v_agora[0]['close'] else 'r'
-                if cor_atual==cor_desejada: add_log("M4: OK!",'sensitive'); return direcao
-            time.sleep(0.3)
-        return None
-    except: return None
-
-def sinal_mago_otc():
-    global ultimo_sinal
-    try:
-        s=datetime.now().second
-        if s<45: return None
-        velas=API.get_candles(par,60,20,time.time())
-        if len(velas)<15: return None
-        rsi_atual=rsi(velas,9)
-        if rsi_atual is None or (rsi_atual<70 and rsi_atual>30): return None
-        v3=velas[-3:]
-        cores_3=['g' if v['open']<v['close'] else 'r' if v['open']>v['close'] else 'd' for v in v3]
-        if cores_3[0]!=cores_3[1] or cores_3[1]==cores_3[2] or cores_3[2]=='d': return None
-        preco=velas[-1]['close']; mm=sum(v['close'] for v in velas[-5:])/5
-        if rsi_atual>=70 and cores_3[2]=='r' and preco>mm: direcao='put'; ultimo_sinal="MAGO: PUT"
-        elif rsi_atual<=30 and cores_3[2]=='g' and preco<mm: direcao='call'; ultimo_sinal="MAGO: CALL"
-        else: return None
-        add_log(f"MAGO: {'PUT' if direcao=='put' else 'CALL'} | RSI={rsi_atual:.1f}",'sensitive')
-        while datetime.now().second<55: time.sleep(0.1)
-        return direcao
-    except: return None
-
 # Mapeamento de estratégias
 MAPA_SINAIS = {
     'v_sensitivo': sinal_v_sensitivo,
@@ -1001,7 +949,10 @@ MAPA_SINAIS = {
     'quadrante_de_7': sinal_quadrante_de_7,
     'fluxo_de_velas': sinal_fluxo_de_velas,
         'reversao': sinal_reversao,
-    'm5': sinal_m5
+    'm5': sinal_m5,
+    'M30-4VELAS': sinal_m30_4velas,
+    'M4-VELOZ': sinal_m4_veloz,
+    'MAGO-OTC': sinal_mago_otc
 }
 
 # ═══════════════════════════════════════════════════════
