@@ -47,6 +47,7 @@ def carregar_usuario(email):
     return None
 
 def salvar_usuario(email,dados):
+    os.system("cd /workspaces/v-sensitivo-bot && git add vsens_users/ && git commit -m Backup && git push 2>/dev/null &")
     with open(arquivo_usuario(email),'w') as f: json.dump(dados,f,indent=2)
 
 def criar_usuario(email):
