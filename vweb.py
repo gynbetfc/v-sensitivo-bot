@@ -1625,6 +1625,7 @@ def selecionar_estrategia():
 
 @app.route('/comprar_skin', methods=['POST'])
 def comprar_skin():
+    global skin_atual_global
     d = request.get_json()
     skin_id = d.get('skin_id', '')
     
@@ -1642,8 +1643,6 @@ def comprar_skin():
             if skin_id not in usuario['skins_compradas']: usuario['skins_compradas'].append(skin_id)
             usuario['skin_atual'] = skin_id
             salvar_usuario(email_usuario_atual, usuario)
-            global skin_atual_global
-
             skin_atual_global = skin_id
         return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0), 'msg': 'Skin grátis ativada!'})
     
@@ -1657,8 +1656,6 @@ def comprar_skin():
     if skin_id in usuario['skins_compradas']:
         usuario['skin_atual'] = skin_id
         salvar_usuario(email_usuario_atual, usuario)
-        global skin_atual_global
-
         skin_atual_global = skin_id
         return jsonify({'ok': True, 'moedas': usuario['moedas'], 'msg': 'Skin já comprada! Ativada.'})
     
@@ -1669,10 +1666,6 @@ def comprar_skin():
     usuario['skins_compradas'].append(skin_id)
     usuario['skin_atual'] = skin_id
     salvar_usuario(email_usuario_atual, usuario)
-    
-    global skin_atual_global
-
-    
     skin_atual_global = skin_id
     
     add_log(f'🛍️ Skin comprada: {skin["nome"]}', 'win')
