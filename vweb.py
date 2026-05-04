@@ -132,7 +132,7 @@ SKINS = [
     },
     {
         'id': 'skin_flamengo',
-        'nome': '🔴⚫ FLAMENGO 🏴',
+        'nome': '🔴⚫ FLAMENGO 🇧🇷',
         'desc': 'Tema rubro-negro - Mengão!',
         'preco_moedas': 1,
         'cor_fundo': '#1a0000',
@@ -150,7 +150,7 @@ SKINS = [
     },
     {
         'id': 'skin_corinthians',
-        'nome': '⚪⚫ CORINTHIANS 🦅',
+        'nome': '⚪⚫ CORINTHIANS 🇧🇷',
         'desc': 'Tema alvinegro - Timão!',
         'preco_moedas': 1,
         'cor_fundo': '#0a0a0a',
@@ -168,7 +168,7 @@ SKINS = [
     },
     {
         'id': 'skin_palmeiras',
-        'nome': '💚 PALMEIRAS 🐷',
+        'nome': '💚 PALMEIRAS 🇧🇷',
         'desc': 'Tema verde - Verdão!',
         'preco_moedas': 1,
         'cor_fundo': '#001a00',
@@ -186,7 +186,7 @@ SKINS = [
     },
     {
         'id': 'skin_sao_paulo',
-        'nome': '🔴⚪⚫ SÃO PAULO 🏴',
+        'nome': '🔴⚪⚫ SÃO PAULO 🇧🇷',
         'desc': 'Tema tricolor - SPFC!',
         'preco_moedas': 1,
         'cor_fundo': '#1a0a0a',
@@ -204,7 +204,7 @@ SKINS = [
     },
     {
         'id': 'skin_santos',
-        'nome': '⚪⚫ SANTOS 🐟',
+        'nome': '⚪⚫ SANTOS 🇧🇷',
         'desc': 'Tema alvinegro praiano - Peixe!',
         'preco_moedas': 1,
         'cor_fundo': '#0a0a0a',
@@ -233,7 +233,7 @@ SKINS = [
         'cor_tab_ativa': '#ffd700',
         'cor_header_bg': 'linear-gradient(135deg,#001a0a,#003315,#004d20,#003315,#001a0a)',
         'cor_header_borda': '#ffd700',
-        'header_extra': '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:60px;z-index:0;opacity:0.3;pointer-events:none">🇧🇷</div>',
+        'header_extra': '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:80px;z-index:0;opacity:0.4;pointer-events:none">🇧🇷</div>',
         'css_extra': '''
             .header h1{color:#ffd700!important;text-shadow:0 0 30px #00cc44!important}
         '''
@@ -1076,9 +1076,12 @@ HTML = r'''
             <input type="email" id="email" placeholder="📧 Email IQ Option" style="flex:2">
             <input type="password" id="senha" placeholder="🔒 Senha" style="flex:1">
             <select id="tipo"><option value="PRACTICE">🧪</option><option value="REAL">💰</option></select>
-            <button class="btn btn-info" id="btnConectar" onclick="conectarIQ()">🔌 CONECTAR</button>
-            <button class="btn btn-start" id="btnOperar" onclick="comecarOperar()" style="display:none">🚀 COMEÇAR OPERAR</button>
-            <button class="btn btn-stop" id="btnParar" onclick="pararBot()" style="display:none">⏹️ PARAR</button>
+        </div>
+        <div class="config-row">
+            <button class="btn btn-info" id="btnConectar" onclick="conectarIQ()" style="flex:1">🔌 CONECTAR</button>
+            <button class="btn btn-start" id="btnOperar" onclick="comecarOperar()" style="flex:1;display:none">🚀 COMEÇAR OPERAR</button>
+            <button class="btn btn-stop" id="btnDesconectar" onclick="pararBot()" style="flex:1;display:none;background:linear-gradient(135deg,#cc0000,#ff4444);color:#fff">🔌 DESCONECTAR</button>
+            <button class="btn btn-stop" id="btnPararOperar" onclick="pararOperar()" style="flex:1;display:none">⏹️ PARAR</button>
         </div></div>
         <div class="dashboard">
             <div class="card"><div class="label">💰 BANCA</div><div class="value" id="banca" style="color:#00ff88">--</div></div>
@@ -1163,6 +1166,8 @@ function conectarIQ(){
             conectadoIQ=true;
             document.getElementById('btnConectar').style.display='none';
             document.getElementById('btnOperar').style.display='inline-block';
+            document.getElementById('btnDesconectar').style.display='inline-block';
+            document.getElementById('btnPararOperar').style.display='none';
             document.getElementById('statusTexto').textContent='🟢 Conectado';
             document.getElementById('statusDot').className='status-dot active';
             document.getElementById('moedasSaldo').textContent=d.moedas||0;
@@ -1186,7 +1191,8 @@ function comecarOperar(){
         if(d.ok){
             botAtivo=true;
             document.getElementById('btnOperar').style.display='none';
-            document.getElementById('btnParar').style.display='inline-block';
+            document.getElementById('btnPararOperar').style.display='inline-block';
+            document.getElementById('btnDesconectar').style.display='none';
             document.getElementById('statusTexto').textContent='🤖 Operando';
             document.getElementById('moedasSaldo').textContent=d.moedas;
         }else{
@@ -1194,6 +1200,19 @@ function comecarOperar(){
             document.getElementById('btnOperar').disabled=false;
             document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
         }
+    });
+}
+
+function pararOperar(){
+    if(!confirm('Parar operação?'))return;
+    fetch('/parar_operar',{method:'POST'}).then(r=>r.json()).then(d=>{
+        botAtivo=false;
+        document.getElementById('btnOperar').style.display='inline-block';
+        document.getElementById('btnPararOperar').style.display='none';
+        document.getElementById('btnDesconectar').style.display='inline-block';
+        document.getElementById('btnOperar').disabled=false;
+        document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
+        document.getElementById('statusTexto').textContent='🟢 Conectado';
     });
 }
 
@@ -1372,7 +1391,8 @@ function atualizar(){
             conectadoIQ=false;botAtivo=false;
             document.getElementById('btnConectar').style.display='inline-block';
             document.getElementById('btnOperar').style.display='none';
-            document.getElementById('btnParar').style.display='none';
+            document.getElementById('btnDesconectar').style.display='none';
+            document.getElementById('btnPararOperar').style.display='none';
             document.getElementById('btnConectar').disabled=false;
             document.getElementById('btnConectar').textContent='🔌 CONECTAR';
             document.getElementById('btnOperar').disabled=false;
@@ -1384,7 +1404,8 @@ function atualizar(){
         if(!d.rodando&&botAtivo){
             botAtivo=false;
             document.getElementById('btnOperar').style.display='inline-block';
-            document.getElementById('btnParar').style.display='none';
+            document.getElementById('btnPararOperar').style.display='none';
+            document.getElementById('btnDesconectar').style.display='inline-block';
             document.getElementById('btnOperar').disabled=false;
             document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
             document.getElementById('statusTexto').textContent='🟢 Conectado';
@@ -1442,7 +1463,8 @@ window.onload=function(){
             conectadoIQ=true;emailLogado=d.email;
             document.getElementById('email').value=d.email;
             document.getElementById('btnConectar').style.display='none';
-            if(d.rodando){botAtivo=true;document.getElementById('btnOperar').style.display='none';document.getElementById('btnParar').style.display='inline-block';document.getElementById('statusTexto').textContent='🤖 Operando';}
+            document.getElementById('btnDesconectar').style.display='inline-block';
+            if(d.rodando){botAtivo=true;document.getElementById('btnOperar').style.display='none';document.getElementById('btnPararOperar').style.display='inline-block';document.getElementById('btnDesconectar').style.display='none';document.getElementById('statusTexto').textContent='🤖 Operando';}
             else{document.getElementById('btnOperar').style.display='inline-block';document.getElementById('statusTexto').textContent='🟢 Conectado';}
             document.getElementById('statusDot').className='status-dot active';
             if(intervalo)clearInterval(intervalo);
@@ -1594,6 +1616,14 @@ def comecar_operar():
         return jsonify({'ok': True, 'moedas': usuario['moedas']})
     except Exception as e:
         return jsonify({'ok': False, 'erro': str(e)[:100]})
+
+
+@app.route('/parar_operar', methods=['POST'])
+def parar_operar():
+    global bot_rodando
+    bot_rodando = False
+    add_log('⏹️ Operação parada (continua conectado)', 'info')
+    return jsonify({'ok': True})
 
 @app.route('/parar', methods=['POST'])
 def parar():
