@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# VS.PY ORIGINAL + HTML NOVO + DRIVE + MOEDAS + MERCADO PAGO
+# vSENSITIVO + TESLA-369 MULTI-ESTRATÉGIAS
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
 
 from flask import Flask, render_template_string, jsonify, request
@@ -38,6 +38,20 @@ PLANOS = [
     {'id':5,'moedas':60,'preco':19.99,'nome':'👑 ULTRA','desc':'R$0,33/moeda','desconto':'67% OFF'},
 ]
 
+# ⭐ ESTRATÉGIAS ⭐
+ESTRATEGIAS = {
+    "vSENSITIVO": "🔮 vSENSITIVO (Original)",
+    "TESLA-369": "⚡ TESLA-369",
+    "MHI-FILTRADO": "📊 MHI FILTRADO",
+    "3a-1a": "3️⃣ 3ª = 1ª",
+    "QUADRANTE-7": "🔲 QUADRANTE DE 7",
+    "FLUXO-VELAS": "🌊 FLUXO DE VELAS",
+    "9-30-EURUSD": "🕤 9:30 EURUSD",
+    "REVERSAO": "🔄 REVERSÃO",
+    "M5": "⏰ M5",
+}
+estrategia_selecionada = "vSENSITIVO"
+
 def arquivo_usuario(email):
     return f"{DRIVE_PATH}/{email.replace('@','_').replace('.','_')}.json"
 
@@ -47,8 +61,6 @@ def carregar_usuario(email):
     return None
 
 def salvar_usuario(email,dados):
-    os.system("cd /workspaces/v-sensitivo-bot && git add vsens_users/ && git commit -m backup && git push 2>/dev/null &")
-    os.system("cd /workspaces/v-sensitivo-bot && git add vsens_users/ && git commit -m Backup && git push 2>/dev/null &")
     with open(arquivo_usuario(email),'w') as f: json.dump(dados,f,indent=2)
 
 def criar_usuario(email):
@@ -126,6 +138,9 @@ def estocastico(v,p=14):
     if hh==ll: return 50
     return round(((c[-1]-ll)/(hh-ll))*100,2)
 
+# ═══════════════════════════════════════════════════════
+# vSENSITIVO ORIGINAL
+# ═══════════════════════════════════════════════════════
 def sentir_a_vela():
     global ultimo_sinal,ultima_analise
     try:
@@ -167,6 +182,151 @@ def sentir_a_vela():
         if sp>sc and dif>=15: ultimo_sinal=f"🔮 PUT ({sp}x{sc})"; add_log(f"PUT!",'sensitive'); return 'put'
         ultimo_sinal="⏳..."; return None
     except Exception as e: add_log(f"Erro: {e}",'error'); return None
+
+# ═══════════════════════════════════════════════════════
+# ESTRATÉGIAS DO TESLA-369
+# ═══════════════════════════════════════════════════════
+
+def est_tesla369():
+    try:
+        agora=datetime.now(); minutos=agora.minute
+        if not ((minutos>=1.55 and minutos<=2) or (minutos>=6.55 and minutos<=7)): return None
+        velas=API.get_candles(par,60,6,time.time())
+        if len(velas)<6: return None
+        v=['g' if x['open']<x['close'] else 'r' if x['open']>x['close'] else 'd' for x in velas]
+        cores=''.join(v)
+        add_log(f"⚡ T369: {cores}",'indicator')
+        if v[0]=='g' and v[3]=='g' and v[4]=='r' and v[5]=='r' and 'd' not in cores:
+            ultimo_sinal="Tesla369: CALL"; return 'call'
+        if v[0]=='r' and v[3]=='r' and v[4]=='g' and v[5]=='g' and 'd' not in cores:
+            ultimo_sinal="Tesla369: PUT"; return 'put'
+        return None
+    except: return None
+
+def est_mhi():
+    try:
+        agora=datetime.now(); minutos=agora.minute
+        if not ((minutos>=4.55 and minutos<=5) or (minutos>=9.55 and minutos<=10)): return None
+        velas=API.get_candles(par,60,5,time.time())
+        if len(velas)<5: return None
+        mm=sum(x['close'] for x in velas)/5; pa=velas[-1]['close']
+        v=['g' if x['open']<x['close'] else 'r' if x['open']>x['close'] else 'd' for x in velas]
+        cores=''.join(v)
+        add_log(f"📊 MHI: {cores}",'indicator')
+        if pa>mm and cores.count('r')>cores.count('g') and 'd' not in cores and v[4]=='r':
+            ultimo_sinal="MHI: CALL"; return 'call'
+        if pa<mm and cores.count('r')<cores.count('g') and 'd' not in cores and v[4]=='g':
+            ultimo_sinal="MHI: PUT"; return 'put'
+        return None
+    except: return None
+
+def est_3a1a():
+    try:
+        agora=datetime.now(); minutos=agora.minute
+        if minutos%5!=0: return None
+        time.sleep(55)
+        velas=API.get_candles(par,60,1,time.time())
+        if len(velas)<1: return None
+        v='g' if velas[0]['open']<velas[0]['close'] else 'r' if velas[0]['open']>velas[0]['close'] else 'd'
+        add_log(f"3️⃣ 3a=1a: {v}",'indicator')
+        velas_mm=API.get_candles(par,60,21,time.time())
+        mm=sum(x['close'] for x in velas_mm[:-1])/20 if len(velas_mm)>=21 else velas[0]['close']
+        pa=velas[0]['close']
+        if pa>mm and v=='g': ultimo_sinal="3a=1a: CALL"; return 'call'
+        if pa<mm and v=='r': ultimo_sinal="3a=1a: PUT"; return 'put'
+        return None
+    except: return None
+
+def est_quadrante7():
+    try:
+        agora=datetime.now(); minutos=agora.minute
+        if not ((minutos>=1.55 and minutos<=2) or (minutos>=6.55 and minutos<=7)): return None
+        velas=API.get_candles(par,60,7,time.time())
+        if len(velas)<7: return None
+        mm=sum(x['close'] for x in velas[:-1])/6; pa=velas[-1]['close']
+        v=['g' if x['open']<x['close'] else 'r' if x['open']>x['close'] else 'd' for x in velas]
+        cores=''.join(v)
+        add_log(f"🔲 Q7: {cores}",'indicator')
+        if pa>mm and cores.count('g')<cores.count('r') and 'd' not in cores:
+            ultimo_sinal="Q7: CALL"; return 'call'
+        if pa<mm and cores.count('g')>cores.count('r') and 'd' not in cores:
+            ultimo_sinal="Q7: PUT"; return 'put'
+        return None
+    except: return None
+
+def est_fluxo():
+    try:
+        if datetime.now().second%55!=0: return None
+        velas=API.get_candles(par,60,5,time.time())
+        if len(velas)<5: return None
+        mm=sum(x['close'] for x in velas[:-1])/4; pa=velas[-1]['close']
+        v=['g' if x['open']<x['close'] else 'r' if x['open']>x['close'] else 'd' for x in velas]
+        cores=''.join(v)
+        add_log(f"🌊 Fluxo: {cores}",'indicator')
+        if pa>mm and cores=='ggggg': ultimo_sinal="Fluxo: CALL"; return 'call'
+        if pa<mm and cores=='rrrrr': ultimo_sinal="Fluxo: PUT"; return 'put'
+        return None
+    except: return None
+
+def est_930():
+    try:
+        hora_atual=datetime.now().strftime('%H:%M:%S')
+        if not (hora_atual>='09:34:57' and hora_atual<='09:35:06'): return None
+        global par
+        par_original=par; par='EURUSD'
+        velas=API.get_candles(par,300,1,time.time())
+        if len(velas)<1: par=par_original; return None
+        v='g' if velas[0]['open']<velas[0]['close'] else 'r' if velas[0]['open']>velas[0]['close'] else 'd'
+        add_log(f"🕤 9:30: {v}",'indicator')
+        par=par_original
+        if v=='g': ultimo_sinal="9:30: PUT"; return 'put'
+        if v=='r': ultimo_sinal="9:30: CALL"; return 'call'
+        return None
+    except: return None
+
+def est_reversao():
+    try:
+        if datetime.now().second%55!=0: return None
+        velas=API.get_candles(par,60,5,time.time())
+        if len(velas)<5: return None
+        mm=sum(x['close'] for x in velas[:-1])/4; pa=velas[-1]['close']
+        v=['g' if x['open']<x['close'] else 'r' if x['open']>x['close'] else 'd' for x in velas]
+        cores=''.join(v)
+        add_log(f"🔄 Rev: {cores}",'indicator')
+        if pa>mm and cores=='grgrg' and 'd' not in cores:
+            ultimo_sinal="Reversao: CALL"; return 'call'
+        if pa<mm and cores=='rgrgr' and 'd' not in cores:
+            ultimo_sinal="Reversao: PUT"; return 'put'
+        return None
+    except: return None
+
+def est_m5():
+    try:
+        if datetime.now().minute%15!=0: return None
+        time.sleep(293)
+        velas=API.get_candles(par,300,7,time.time())
+        if len(velas)<7: return None
+        v=['g' if x['open']<x['close'] else 'r' if x['open']>x['close'] else 'd' for x in velas]
+        cores=''.join(v)
+        add_log(f"⏰ M5: {cores}",'indicator')
+        if v[0]==v[1]==v[2] and v[3]==v[4]==v[5] and 'd' not in cores:
+            if v[6]=='g': ultimo_sinal="M5: PUT"; return 'put'
+            if v[6]=='r': ultimo_sinal="M5: CALL"; return 'call'
+        return None
+    except: return None
+
+# MAPA DE ESTRATÉGIAS
+MAPA_ESTRATEGIAS = {
+    "vSENSITIVO": sentir_a_vela,
+    "TESLA-369": est_tesla369,
+    "MHI-FILTRADO": est_mhi,
+    "3a-1a": est_3a1a,
+    "QUADRANTE-7": est_quadrante7,
+    "FLUXO-VELAS": est_fluxo,
+    "9-30-EURUSD": est_930,
+    "REVERSAO": est_reversao,
+    "M5": est_m5,
+}
 
 def calcular_entradas(b,p,g):
     bs=b*0.99; e0=bs/sum((1/p)**i for i in range(g+1))
@@ -313,7 +473,7 @@ def executar_ciclo(direcao):
 
 def bot_loop():
     global bot_rodando,BANCA_INICIAL_DO_BOT,lucro,NumDeOperacoes,ULTIMO_CICLO_TIMESTAMP,STOP_GAIN_ATINGIDO
-    add_log('🧙‍♂️🔮 v_SENSITIVO - INICIANDO...','sensitive')
+    add_log(f'🧙‍♂️🔮 {ESTRATEGIAS[estrategia_selecionada]} - INICIANDO...','sensitive')
     BANCA_INICIAL_DO_BOT=API.get_balance(); ULTIMO_CICLO_TIMESTAMP=0; STOP_GAIN_ATINGIDO=False; lucro=0.0; NumDeOperacoes=0
     add_log(f"📌 {par} | 💰 ${BANCA_INICIAL_DO_BOT:.2f}")
     add_log('🧿 SIGILOS ATIVADOS 🧿','win')
@@ -323,7 +483,8 @@ def bot_loop():
             if ULTIMO_CICLO_TIMESTAMP:
                 if time.time()-ULTIMO_CICLO_TIMESTAMP<TIMEOUT_ENTRE_CICLOS: time.sleep(1); continue
                 ULTIMO_CICLO_TIMESTAMP=0
-            direcao=sentir_a_vela()
+            func_estrategia = MAPA_ESTRATEGIAS.get(estrategia_selecionada, sentir_a_vela)
+            direcao=func_estrategia()
             if direcao: executar_ciclo(direcao)
             time.sleep(0.3)
         except Exception as e: add_log(f"Erro: {e}",'error'); time.sleep(5); conectar_api()
@@ -388,7 +549,7 @@ def verificador_automatico_pix():
 threading.Thread(target=verificador_automatico_pix, daemon=True).start()
 
 # ═══════════════════════════════════════════════════════
-# HTML (ORIGINAL - SEM ALTERAÇÕES NAS ABAS)
+# HTML (COM ABA ESTRATÉGIAS)
 # ═══════════════════════════════════════════════════════
 HTML = r'''
 <!DOCTYPE html>
@@ -400,7 +561,7 @@ HTML = r'''
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:#0a0a1a;color:#fff;font-family:'Courier New',monospace;padding:10px}
         .container{max-width:800px;margin:0 auto}
-        .tabs{display:flex;gap:5px;margin-bottom:10px}
+        .tabs{display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap}
         .tab{padding:10px 15px;background:#1a1a3e;border:1px solid #333;border-radius:10px 10px 0 0;cursor:pointer;color:#888;font-size:12px}
         .tab.active{background:#9933ff;color:#fff}
         .panel{display:none;background:#1a1a3e;padding:15px;border-radius:0 10px 10px 10px;border:1px solid #333;margin-bottom:10px}
@@ -462,15 +623,21 @@ HTML = r'''
 </head>
 <body>
 <div class="container">
-    <div class="header"><div class="crystal-ball"></div><h1>🧙‍♂️🔮 v_SENSITIVO 🔮🧙‍♀️</h1><p>📊 RSI + MM + Bollinger + MACD + Estocástico</p><p>🔮 O BOT QUE SENTE NASCIMENTO, VIDA E MORTE DA VELA</p></div>
+    <div class="header"><div class="crystal-ball"></div><h1>🧙‍♂️🔮 v_SENSITIVO 🔮🧙‍♀️</h1><p>📊 Multi-Estratégias | RSI + MM + Bollinger + MACD + Estocástico + Tesla-369</p><p>🔮 O BOT QUE SENTE NASCIMENTO, VIDA E MORTE DA VELA</p></div>
     <div class="mantra">🌀 O DINHEIRO VEM ATÉ MIM DE TODOS OS LADOS 🌀</div>
-    <div class="tabs"><div class="tab active" onclick="openTab('bot')">🤖 BOT</div><div class="tab" onclick="openTab('moedas')">💸 COMPRAR MOEDAS</div><div class="tab" onclick="openTab('relatorio')">📊 RELATÓRIO</div></div>
+    <div class="tabs"><div class="tab active" onclick="openTab('bot')">🤖 BOT</div><div class="tab" onclick="openTab('estrategias')">🎯 ESTRATÉGIAS</div><div class="tab" onclick="openTab('moedas')">💸 COMPRAR MOEDAS</div><div class="tab" onclick="openTab('relatorio')">📊 RELATÓRIO</div></div>
     <div class="panel active" id="panel-bot">
         <div class="config-section"><h3>🔐 IQ OPTION</h3><div class="config-row"><input type="email" id="email" placeholder="📧 Email IQ Option" style="flex:2"><input type="password" id="senha" placeholder="🔒 Senha" style="flex:1"><select id="tipo"><option value="PRACTICE">🧪</option><option value="REAL">💰</option></select><button class="btn btn-start" id="btnConectar" onclick="iniciarBot()">🚀 ATIVAR</button><button class="btn btn-stop" id="btnParar" onclick="pararBot()" style="display:none">⏹️ PARAR</button></div></div>
-        <div class="dashboard"><div class="card"><div class="label">💰 BANCA</div><div class="value green" id="banca">--</div></div><div class="card"><div class="label">📈 LUCRO</div><div class="value" id="lucro">$0.00</div></div><div class="card"><div class="label">🎯 OPS</div><div class="value purple" id="ops">0</div></div><div class="card"><div class="label">🪙 MOEDAS</div><div class="value" id="moedasSaldo" style="color:#ffd700">0</div></div><div class="card"><div class="label">🔮 SINAL</div><div class="value" id="sinal" style="font-size:11px;color:#ff69b4">--</div></div></div>
+        <div class="dashboard"><div class="card"><div class="label">💰 BANCA</div><div class="value green" id="banca">--</div></div><div class="card"><div class="label">📈 LUCRO</div><div class="value" id="lucro">$0.00</div></div><div class="card"><div class="label">🎯 OPS</div><div class="value purple" id="ops">0</div></div><div class="card"><div class="label">🪙 MOEDAS</div><div class="value" id="moedasSaldo" style="color:#ffd700">0</div></div><div class="card"><div class="label">🎯 ESTRATÉGIA</div><div class="value" id="estrategiaAtual" style="font-size:10px;color:#ffd700">vSENSITIVO</div></div></div>
         <div class="indicators"><div class="ind-card"><div class="ind-label">📊 RSI</div><div class="ind-value" id="rsi">--</div></div><div class="ind-card"><div class="ind-label">📈 MM5</div><div class="ind-value" id="mm5">--</div></div><div class="ind-card"><div class="ind-label">📈 MM10</div><div class="ind-value" id="mm10">--</div></div><div class="ind-card"><div class="ind-label">📉 MM20</div><div class="ind-value" id="mm20">--</div></div><div class="ind-card"><div class="ind-label">📊 ESTOC</div><div class="ind-value" id="stoch">--</div></div><div class="ind-card"><div class="ind-label">🌅 FASE</div><div class="ind-value" id="fase">--</div></div><div class="ind-card"><div class="ind-label">💵 PREÇO</div><div class="ind-value" id="preco">--</div></div></div>
         <div class="terminal" id="terminal">📡 Aguardando...</div>
         <div class="barra-status"><span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Parado</span></span><span>⚡ M1 | v_SENSITIVO</span></div>
+    </div>
+    <div class="panel" id="panel-estrategias">
+        <div class="config-section"><h3>🎯 SELECIONAR ESTRATÉGIA</h3>
+            <p style="color:#888;font-size:10px;margin-bottom:10px">Escolha qual estratégia o bot vai usar. Gale fixo em 2.</p>
+            <div id="listaEstrategias" style="display:grid;gap:8px"></div>
+        </div>
     </div>
     <div class="panel" id="panel-moedas">
         <div class="config-section"><h3>💳 COMPRAR MOEDAS</h3><p style="color:#888;font-size:10px">📧 <input type="email" id="emailCompra" placeholder="Seu email IQ Option" style="width:220px;padding:6px;background:#111;border:1px solid #333;color:#fff;border-radius:5px"></p><p style="color:#ffd700;font-size:10px;margin-top:5px">🪙 1 moeda = 1 ciclo | Ganhe 1 moeda grátis por dia!</p><p style="color:#888;font-size:9px;margin-top:3px">⭐ Clique no plano para selecionar e pagar com PIX</p></div>
@@ -492,71 +659,90 @@ HTML = r'''
 
 <script>
 var intervalo=null,botAtivo=false,emailLogado='',planoSelecionado=0,pixAtual=null;
-function openTab(tab){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));event.target.classList.add('active');document.getElementById('panel-'+tab).classList.add('active');if(tab=='relatorio'&&emailLogado){document.getElementById('emailRelatorio').value=emailLogado;verRelatorio()}}
-window.onload=function(){fetch('/status').then(r=>r.json()).then(d=>{if(d.rodando&&d.email){botAtivo=true;emailLogado=d.email;document.getElementById('email').value=d.email;document.getElementById('btnConectar').style.display='none';document.getElementById('btnParar').style.display='inline-block';document.getElementById('statusTexto').textContent='🤖 Ativo';document.getElementById('statusDot').className='status-dot active';if(intervalo)clearInterval(intervalo);intervalo=setInterval(atualizar,2000);atualizar()}})}
-function iniciarBot(){var email=document.getElementById('email').value.trim();var senha=document.getElementById('senha').value.trim();var tipo=document.getElementById('tipo').value;var gales=2;var stopGain=1;if(!email||!senha){alert('Preencha email e senha!');return}emailLogado=email;document.getElementById('btnConectar').disabled=true;document.getElementById('btnConectar').textContent='...';fetch('/iniciar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,senha:senha,tipo:tipo,gales:gales,stop_gain:stopGain})}).then(r=>r.json()).then(d=>{if(d.ok){botAtivo=true;document.getElementById('btnConectar').style.display='none';document.getElementById('btnParar').style.display='inline-block';document.getElementById('statusTexto').textContent='🤖 Ativo';document.getElementById('statusDot').className='status-dot active';if(intervalo)clearInterval(intervalo);intervalo=setInterval(atualizar,2000)}else{alert('ERRO: '+d.erro);document.getElementById('btnConectar').disabled=false;document.getElementById('btnConectar').textContent='🚀 ATIVAR'}})}
+var estrategiaSel='vSENSITIVO';
+
+function openTab(tab){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('panel-'+tab).classList.add('active');
+    if(tab=='estrategias')loadEstrategias();
+    if(tab=='relatorio'&&emailLogado){document.getElementById('emailRelatorio').value=emailLogado;verRelatorio()}
+}
+
+window.onload=function(){
+    fetch('/status').then(r=>r.json()).then(d=>{
+        if(d.rodando&&d.email){
+            botAtivo=true;emailLogado=d.email;
+            document.getElementById('email').value=d.email;
+            document.getElementById('btnConectar').style.display='none';
+            document.getElementById('btnParar').style.display='inline-block';
+            document.getElementById('statusTexto').textContent='🤖 Ativo';
+            document.getElementById('statusDot').className='status-dot active';
+            if(d.estrategia)document.getElementById('estrategiaAtual').textContent=d.estrategia;
+            if(intervalo)clearInterval(intervalo);
+            intervalo=setInterval(atualizar,2000);
+            atualizar();
+        }
+    });
+}
+
+function loadEstrategias(){
+    fetch('/estrategias').then(r=>r.json()).then(d=>{
+        var h='';
+        for(var[id,nome]of Object.entries(d)){
+            h+='<div class="plano-card'+(estrategiaSel===id?' selecionado':'')+'" onclick="selecionarEstrategia(\\''+id+'\\')" style="cursor:pointer;padding:15px">';
+            h+='<div style="font-size:16px;color:#cc66ff">'+nome+'</div>';
+            h+='</div>';
+        }
+        document.getElementById('listaEstrategias').innerHTML=h;
+    });
+}
+
+function selecionarEstrategia(id){
+    estrategiaSel=id;
+    fetch('/set_estrategia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estrategia:id})});
+    document.getElementById('estrategiaAtual').textContent=id;
+    loadEstrategias();
+}
+
+function iniciarBot(){
+    var email=document.getElementById('email').value.trim();
+    var senha=document.getElementById('senha').value.trim();
+    var tipo=document.getElementById('tipo').value;
+    var gales=2;var stopGain=1;
+    if(!email||!senha){alert('Preencha email e senha!');return}
+    emailLogado=email;
+    document.getElementById('btnConectar').disabled=true;
+    document.getElementById('btnConectar').textContent='...';
+    fetch('/iniciar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,senha:senha,tipo:tipo,gales:gales,stop_gain:stopGain})})
+    .then(r=>r.json()).then(d=>{
+        if(d.ok){
+            botAtivo=true;
+            document.getElementById('btnConectar').style.display='none';
+            document.getElementById('btnParar').style.display='inline-block';
+            document.getElementById('statusTexto').textContent='🤖 Ativo';
+            document.getElementById('statusDot').className='status-dot active';
+            if(d.estrategia)document.getElementById('estrategiaAtual').textContent=d.estrategia;
+            if(intervalo)clearInterval(intervalo);
+            intervalo=setInterval(atualizar,2000);
+        }else{
+            alert('ERRO: '+d.erro);
+            document.getElementById('btnConectar').disabled=false;
+            document.getElementById('btnConectar').textContent='🚀 ATIVAR';
+        }
+    });
+}
+
 function pararBot(){if(!confirm('Parar?'))return;fetch('/parar',{method:'POST'}).then(r=>r.json()).then(d=>{botAtivo=false;document.getElementById('btnConectar').style.display='inline-block';document.getElementById('btnParar').style.display='none';document.getElementById('btnConectar').disabled=false;document.getElementById('btnConectar').textContent='🚀 ATIVAR';document.getElementById('statusTexto').textContent='⏸️ Parado';document.getElementById('statusDot').className='status-dot inactive';if(intervalo)clearInterval(intervalo)})}
-function selecionarPlano(id){
-    document.querySelectorAll('.plano-card').forEach(c=>c.classList.remove('selecionado'));
-    document.querySelectorAll('[id^="btnPlano"]').forEach(b=>b.style.display='none');
-    var card=document.getElementById('plano'+id);
-    card.classList.add('selecionado');
-    document.getElementById('btnPlano'+id).style.display='block';
-    planoSelecionado=id;
-}
-function pagarComPix(planoId){
-    var email=document.getElementById('emailCompra').value.trim()||emailLogado;
-    if(!email){alert('Digite seu email!');return}
-    document.getElementById('modalPix').classList.add('active');
-    document.getElementById('pixContent').innerHTML='<p style="color:#ffd700">Gerando QR Code PIX...</p>';
-    fetch('/criar_pix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,plano_id:planoId})})
-    .then(r=>r.json())
-    .then(d=>{
-        if(d.sucesso){
-            pixAtual=d;
-            var html='<p style="font-size:18px;color:#ffd700">R$ '+d.valor.toFixed(2)+'</p>';
-            html+='<p style="color:#00ff88">🪙 '+d.moedas+' moedas</p>';
-            if(d.qr_code_base64){
-                html+='<div class="pix-qrcode"><img src="data:image/png;base64,'+d.qr_code_base64+'" alt="QR Code PIX"></div>';
-            }
-            if(d.qr_code){
-                html+='<p style="color:#888;font-size:10px;margin-top:8px">📋 Copie o código PIX:</p>';
-                html+='<div class="pix-copiavel" onclick="copiarPix()">'+d.qr_code+'</div>';
-                html+='<p style="color:#888;font-size:9px;margin-top:5px">Clique no código para copiar</p>';
-            }
-            html+='<p style="color:#888;font-size:10px;margin-top:10px">Apos pagar, clique em verificar</p>';
-            html+='<button class="btn-confirmar" onclick="verificarPagamento(\''+d.pix_id+'\')">🔄 VERIFICAR PAGAMENTO</button>';
-            document.getElementById('pixContent').innerHTML=html;
-        }else{
-            document.getElementById('pixContent').innerHTML='<p style="color:#ff4444">Erro: '+(d.erro||'Falha ao gerar PIX')+'</p>';
-        }
-    });
-}
-function copiarPix(){
-    navigator.clipboard.writeText(pixAtual.qr_code).then(()=>alert('Codigo PIX copiado! Cole no seu banco para pagar.'));
-}
-function verificarPagamento(pixId){
-    fetch('/verificar_pix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pix_id:pixId})})
-    .then(r=>r.json())
-    .then(d=>{
-        if(d.pago){
-            alert('PAGO! '+d.moedas+' moedas adicionadas!');
-            document.getElementById('moedasSaldo').textContent=d.saldo;
-            fecharModal();
-            document.querySelectorAll('.plano-card').forEach(c=>c.classList.remove('selecionado'));
-            document.querySelectorAll('[id^="btnPlano"]').forEach(b=>b.style.display='none');
-        }else{
-            alert('Pagamento ainda nao confirmado. Tente novamente em alguns segundos.');
-        }
-    });
-}
-function fecharModal(){
-    document.getElementById('modalPix').classList.remove('active');
-    pixAtual=null;
-}
+function selecionarPlano(id){document.querySelectorAll('.plano-card').forEach(c=>c.classList.remove('selecionado'));document.querySelectorAll('[id^="btnPlano"]').forEach(b=>b.style.display='none');var card=document.getElementById('plano'+id);card.classList.add('selecionado');document.getElementById('btnPlano'+id).style.display='block';planoSelecionado=id}
+function pagarComPix(planoId){var email=document.getElementById('emailCompra').value.trim()||emailLogado;if(!email){alert('Digite seu email!');return}document.getElementById('modalPix').classList.add('active');document.getElementById('pixContent').innerHTML='<p style="color:#ffd700">Gerando QR Code PIX...</p>';fetch('/criar_pix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,plano_id:planoId})}).then(r=>r.json()).then(d=>{if(d.sucesso){pixAtual=d;var html='<p style="font-size:18px;color:#ffd700">R$ '+d.valor.toFixed(2)+'</p>';html+='<p style="color:#00ff88">🪙 '+d.moedas+' moedas</p>';if(d.qr_code_base64){html+='<div class="pix-qrcode"><img src="data:image/png;base64,'+d.qr_code_base64+'" alt="QR Code PIX"></div>'}if(d.qr_code){html+='<p style="color:#888;font-size:10px;margin-top:8px">📋 Copie o código PIX:</p>';html+='<div class="pix-copiavel" onclick="copiarPix()">'+d.qr_code+'</div>';html+='<p style="color:#888;font-size:9px;margin-top:5px">Clique no código para copiar</p>'}html+='<p style="color:#888;font-size:10px;margin-top:10px">Apos pagar, clique em verificar</p>';html+='<button class="btn-confirmar" onclick="verificarPagamento(\\''+d.pix_id+'\\')">🔄 VERIFICAR PAGAMENTO</button>';document.getElementById('pixContent').innerHTML=html}else{document.getElementById('pixContent').innerHTML='<p style="color:#ff4444">Erro: '+(d.erro||'Falha ao gerar PIX')+'</p>'}})}
+function copiarPix(){navigator.clipboard.writeText(pixAtual.qr_code).then(()=>alert('Codigo PIX copiado! Cole no seu banco para pagar.'))}
+function verificarPagamento(pixId){fetch('/verificar_pix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pix_id:pixId})}).then(r=>r.json()).then(d=>{if(d.pago){alert('PAGO! '+d.moedas+' moedas adicionadas!');document.getElementById('moedasSaldo').textContent=d.saldo;fecharModal();document.querySelectorAll('.plano-card').forEach(c=>c.classList.remove('selecionado'));document.querySelectorAll('[id^="btnPlano"]').forEach(b=>b.style.display='none')}else{alert('Pagamento ainda nao confirmado. Tente novamente em alguns segundos.')}})}
+function fecharModal(){document.getElementById('modalPix').classList.remove('active');pixAtual=null}
 function verRelatorio(){var email=document.getElementById('emailRelatorio').value.trim();if(!email){alert('Digite o email!');return}fetch('/relatorio?email='+email).then(r=>r.json()).then(d=>{if(d.erro){alert(d.erro);return}var h='<div class="relatorio-grid">';h+='<div class="relatorio-card"><div class="rlabel">🪙 MOEDAS</div><div class="rvalue">'+(d.moedas||0)+'</div></div>';h+='<div class="relatorio-card"><div class="rlabel">📈 LUCRO TOTAL</div><div class="rvalue" style="color:'+(d.lucro_total>=0?'#00ff88':'#ff4444')+'">$'+(d.lucro_total||0).toFixed(2)+'</div></div>';h+='<div class="relatorio-card"><div class="rlabel">✅ WINS</div><div class="rvalue" style="color:#00ff88">'+(d.total_wins||0)+'</div></div>';h+='<div class="relatorio-card"><div class="rlabel">❌ LOSSES</div><div class="rvalue" style="color:#ff4444">'+(d.total_losses||0)+'</div></div>';h+='<div class="relatorio-card"><div class="rlabel">🔄 CICLOS</div><div class="rvalue">'+(d.total_ciclos||0)+'</div></div>';h+='<div class="relatorio-card"><div class="rlabel">💵 GASTO</div><div class="rvalue">$'+(d.total_gasto||0).toFixed(2)+'</div></div>';h+='<div class="relatorio-card"><div class="rlabel">💰 GANHO</div><div class="rvalue">$'+(d.total_ganho||0).toFixed(2)+'</div></div>';h+='<div class="relatorio-card"><div class="rlabel">📅 DIAS</div><div class="rvalue">'+Object.keys(d.dias_ativos||{}).length+'</div></div>';h+='<div class="relatorio-card"><div class="rlabel">🎯 TAXA</div><div class="rvalue">'+(d.total_ciclos>0?((d.total_wins/d.total_ciclos)*100).toFixed(1):0)+'%</div></div>';h+='<div class="relatorio-card"><div class="rlabel">💰 BANCA</div><div class="rvalue">$'+(d.banca_atual||0).toFixed(2)+'</div></div>';h+='<div class="relatorio-card"><div class="rlabel">📅 CADASTRO</div><div class="rvalue" style="font-size:10px">'+(d.data_cadastro||'--')+'</div></div>';h+='</div>';if(d.historico_operacoes&&d.historico_operacoes.length>0){h+='<h4 style="margin-top:10px;color:#cc66ff">📋 ÚLTIMAS</h4><table class="historico-table"><tr><th>Data</th><th>Resultado</th><th>Valor</th><th>Lucro</th></tr>';d.historico_operacoes.slice(-15).reverse().forEach(op=>{h+='<tr><td>'+op.data+'</td><td style="color:'+(op.resultado=='WIN'?'#00ff88':'#ff4444')+'">'+op.resultado+'</td><td>$'+op.valor.toFixed(2)+'</td><td style="color:'+(op.lucro>=0?'#00ff88':'#ff4444')+'">$'+op.lucro.toFixed(2)+'</td></tr>'});h+='</table>'}document.getElementById('relatorioContent').innerHTML=h})}
 function resetarRelatorio(){var email=document.getElementById('emailRelatorio').value.trim();if(!email){alert('Digite o email!');return}if(!confirm('Resetar?'))return;fetch('/resetar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email})}).then(r=>r.json()).then(d=>{alert(d.msg);if(d.ok)verRelatorio()})}
-function atualizar(){fetch('/status').then(r=>r.json()).then(d=>{if(d.banca)document.getElementById('banca').textContent='$'+d.banca.toFixed(2);if(d.lucro!==undefined){var el=document.getElementById('lucro');el.textContent='$'+d.lucro.toFixed(2);el.style.color=d.lucro>=0?'#00ff88':'#ff4444'}if(d.ops!==undefined)document.getElementById('ops').textContent=d.ops;if(d.moedas!==undefined)document.getElementById('moedasSaldo').textContent=d.moedas;if(d.sinal)document.getElementById('sinal').textContent=d.sinal;if(d.analise){document.getElementById('rsi').textContent=d.analise.rsi?d.analise.rsi.toFixed(1):'--';document.getElementById('mm5').textContent=d.analise.mm5?d.analise.mm5.toFixed(5):'--';document.getElementById('mm10').textContent=d.analise.mm10?d.analise.mm10.toFixed(5):'--';document.getElementById('mm20').textContent=d.analise.mm20?d.analise.mm20.toFixed(5):'--';document.getElementById('stoch').textContent=d.analise.stoch?d.analise.stoch.toFixed(1):'--';document.getElementById('fase').textContent=d.analise.fase||'--';document.getElementById('preco').textContent=d.analise.preco?d.analise.preco.toFixed(5):'--'}if(d.logs)document.getElementById('terminal').innerHTML=d.logs;document.getElementById('terminal').scrollTop=document.getElementById('terminal').scrollHeight})}
+function atualizar(){fetch('/status').then(r=>r.json()).then(d=>{if(d.banca)document.getElementById('banca').textContent='$'+d.banca.toFixed(2);if(d.lucro!==undefined){var el=document.getElementById('lucro');el.textContent='$'+d.lucro.toFixed(2);el.style.color=d.lucro>=0?'#00ff88':'#ff4444'}if(d.ops!==undefined)document.getElementById('ops').textContent=d.ops;if(d.moedas!==undefined)document.getElementById('moedasSaldo').textContent=d.moedas;if(d.estrategia)document.getElementById('estrategiaAtual').textContent=d.estrategia;if(d.analise){document.getElementById('rsi').textContent=d.analise.rsi?d.analise.rsi.toFixed(1):'--';document.getElementById('mm5').textContent=d.analise.mm5?d.analise.mm5.toFixed(5):'--';document.getElementById('mm10').textContent=d.analise.mm10?d.analise.mm10.toFixed(5):'--';document.getElementById('mm20').textContent=d.analise.mm20?d.analise.mm20.toFixed(5):'--';document.getElementById('stoch').textContent=d.analise.stoch?d.analise.stoch.toFixed(1):'--';document.getElementById('fase').textContent=d.analise.fase||'--';document.getElementById('preco').textContent=d.analise.preco?d.analise.preco.toFixed(5):'--'}if(d.logs)document.getElementById('terminal').innerHTML=d.logs;document.getElementById('terminal').scrollTop=document.getElementById('terminal').scrollHeight})}
 </script>
 </body>
 </html>
@@ -569,7 +755,7 @@ def index(): return render_template_string(HTML)
 @app.route('/status')
 def status():
     u=carregar_usuario(email_usuario_atual) if email_usuario_atual else {}
-    return jsonify({'rodando':bot_rodando,'email':email_usuario_atual,'banca':API.get_balance() if API else 0,'lucro':lucro,'ops':NumDeOperacoes,'sinal':ultimo_sinal,'analise':ultima_analise,'logs':get_logs_html(40),'moedas':u.get('moedas',0)})
+    return jsonify({'rodando':bot_rodando,'email':email_usuario_atual,'banca':API.get_balance() if API else 0,'lucro':lucro,'ops':NumDeOperacoes,'sinal':ultimo_sinal,'analise':ultima_analise,'logs':get_logs_html(40),'moedas':u.get('moedas',0),'estrategia':estrategia_selecionada})
 
 @app.route('/iniciar',methods=['POST'])
 def iniciar():
@@ -593,10 +779,10 @@ def iniciar():
         if not status_conn: return jsonify({'ok':False,'erro':str(reason)[:100]})
         API.change_balance(tipo)
         lucro=0.0; NumDeOperacoes=0
-        add_log(f'✅ Conectado! ${API.get_balance():.2f} | 🪙 {usuario.get("moedas",0)} moedas','win')
+        add_log(f'✅ Conectado! ${API.get_balance():.2f} | 🪙 {usuario.get("moedas",0)} moedas | {ESTRATEGIAS[estrategia_selecionada]}','win')
         if not bot_rodando:
             bot_rodando=True; bot_thread=threading.Thread(target=bot_loop,daemon=True); bot_thread.start()
-        return jsonify({'ok':True})
+        return jsonify({'ok':True,'estrategia':estrategia_selecionada})
     except Exception as e: return jsonify({'ok':False,'erro':str(e)[:100]})
 
 @app.route('/parar',methods=['POST'])
@@ -604,6 +790,18 @@ def parar():
     global bot_rodando
     bot_rodando=False; add_log('⏹️ Bot parado','info')
     return jsonify({'ok':True})
+
+@app.route('/estrategias')
+def listar_estrategias():
+    return jsonify(ESTRATEGIAS)
+
+@app.route('/set_estrategia', methods=['POST'])
+def set_estrategia():
+    global estrategia_selecionada
+    d = request.get_json()
+    estrategia_selecionada = d.get('estrategia', 'vSENSITIVO')
+    add_log(f'🎯 Estratégia alterada para: {ESTRATEGIAS.get(estrategia_selecionada, "vSENSITIVO")}', 'info')
+    return jsonify({'ok': True})
 
 @app.route('/criar_pix', methods=['POST'])
 def criar_pix():
