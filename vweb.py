@@ -21,7 +21,7 @@ TIMEFRAME, MARTINGALE, PAYOUT_PADRAO = 60, 2, 0.85
 TIMEOUT_ENTRE_CICLOS, STOP_GAIN_PERCENTUAL = 5, 1
 
 # ============= GOOGLE DRIVE =============
-DRIVE_PATH = "/content/drive/MyDrive/vsens_users"
+DRIVE_PATH = "vsens_users"
 os.makedirs(DRIVE_PATH, exist_ok=True)
 
 # ⭐⭐⭐ CONFIGURAÇÃO DO MERCADO PAGO ⭐⭐⭐
