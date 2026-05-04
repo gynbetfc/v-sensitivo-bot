@@ -13,7 +13,7 @@
 from flask import Flask, render_template_string, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
 from datetime import datetime
-import threading, time, sys, os, json, warnings, requests, uuid
+import threading, time, sys, os, json, warnings, requests, uuid, base64
 
 warnings.filterwarnings("ignore")
 app = Flask(__name__)
