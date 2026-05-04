@@ -5,7 +5,8 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# TESLA 369 BOT - 9 ESTRATÉGIAS + MOEDAS + MERCADO PAGO + DRIVE
+# TESLA 369 BOT - v_SENSITIVO + MOEDAS + MERCADO PAGO + DRIVE
+# MOEDA CONSUMIDA APENAS APÓS ENTRAR NA OPERAÇÃO
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
 
 from flask import Flask, render_template_string, jsonify, request
@@ -19,65 +20,7 @@ app = Flask(__name__)
 # ============= CONFIGURAÇÕES FIXAS =============
 MARTINGALE = 2  # GALE 2 FIXO
 PAYOUT_PADRAO = 0.85
-STOP_GAIN_CICLOS = 1  # Para após 1 vitória
-
-# ============= ESTRATÉGIAS DISPONÍVEIS =============
-ESTRATEGIAS = {
-    'v_sensitivo': {
-        'nome': '🔮 v_SENSITIVO',
-        'desc': 'RSI + MM + Bollinger + MACD + Estocástico + Fase da Vela',
-        'timeframe': 60,
-        'pares': ['EURUSD-OTC', 'EURUSD']
-    },
-    'tesla_369': {
-        'nome': '⚡ TESLA-369',
-        'desc': '6 velas: padrão g-g-g-r-r → CALL / r-r-r-g-g → PUT',
-        'timeframe': 60,
-        'pares': ['EURUSD-OTC', 'EURUSD']
-    },
-    'mhi_filtrado': {
-        'nome': '📊 MHI-FILTRADO',
-        'desc': '5 velas + Média Móvel + filtro de cor dominante',
-        'timeframe': 60,
-        'pares': ['EURUSD-OTC', 'EURUSD']
-    },
-    'terceira_igual_primeira': {
-        'nome': '3️⃣ 3ª = 1ª',
-        'desc': 'Opera a cada 5min, compara vela atual com Média Móvel',
-        'timeframe': 60,
-        'pares': ['EURUSD-OTC', 'EURUSD']
-    },
-    'quadrante_de_7': {
-        'nome': '7️⃣ QUADRANTE DE 7',
-        'desc': '7 velas + MM, conta cores e decide direção',
-        'timeframe': 60,
-        'pares': ['EURUSD-OTC', 'EURUSD']
-    },
-    'fluxo_de_velas': {
-        'nome': '🌊 FLUXO-DE-VELAS',
-        'desc': '5 velas da mesma cor + acima/abaixo da MM',
-        'timeframe': 60,
-        'pares': ['EURUSD-OTC', 'EURUSD']
-    },
-    'nove_e_trinta': {
-        'nome': '🕤 9:30/EURUSD',
-        'desc': 'Opera às 09:34:57-09:35:06, vela de 5min (timeframe 300)',
-        'timeframe': 300,
-        'pares': ['EURUSD']
-    },
-    'reversao': {
-        'nome': '🔄 REVERSÃO',
-        'desc': 'Padrão alternado g-r-g-r-g ou r-g-r-g-r',
-        'timeframe': 60,
-        'pares': ['EURUSD-OTC', 'EURUSD']
-    },
-    'm5': {
-        'nome': '⏰ M5',
-        'desc': 'Quadrante de velas de 5min (3+3 iguais + vela contrária)',
-        'timeframe': 300,
-        'pares': ['EURUSD-OTC', 'EURUSD']
-    }
-}
+TIMEFRAME = 60  # 1 minuto
 
 # ============= GOOGLE DRIVE =============
 DRIVE_PATH = "vsens_users"
@@ -113,14 +56,14 @@ def criar_usuario(email):
     return {'email':email,'moedas':1,'moedas_ganhas_hoje':'','total_ciclos':0,'total_wins':0,'total_losses':0,'total_gasto':0.0,'total_ganho':0.0,'lucro_total':0.0,'banca_atual':0.0,'data_cadastro':str(datetime.now())[:19],'historico_operacoes':[],'dias_ativos':{}}
 
 # ============= VARIÁVEIS GLOBAIS =============
-API, par, timeframe_atual = None, "EURUSD-OTC", 60
-estrategia_atual = 'v_sensitivo'
-lucro, NumDeOperacoes = 0.0, 0
+API, par = None, "EURUSD-OTC"
+lucro, NumDeOperacoes, ULTIMO_CICLO_TIMESTAMP = 0.0, 0, 0
 BANCA_INICIAL_DO_BOT, STOP_GAIN_ATINGIDO = 0, False
 bot_rodando, bot_thread = False, None
 ultimo_sinal, ultima_analise = "Aguardando...", {}
 logs_web, MAX_LOGS_WEB = [], 200
 email_usuario_atual = ""
+moeda_ja_consumida = False  # NOVO: controle para consumir moeda apenas 1x por ciclo
 
 pagamentos_pendentes = {}
 
@@ -150,17 +93,21 @@ def conectar_api():
 def Payout(p):
     try:
         API.subscribe_strike_list(p, 1)
-        while True:
+        tentativas = 0
+        while tentativas < 20:
             d = API.get_digital_current_profit(p, 1)
             if d != False:
                 API.unsubscribe_strike_list(p, 1)
                 return round(int(d) / 100, 2)
             time.sleep(0.5)
+            tentativas += 1
+        API.unsubscribe_strike_list(p, 1)
+        return PAYOUT_PADRAO
     except:
         return PAYOUT_PADRAO
 
 # ═══════════════════════════════════════════════════════
-# INDICADORES (ORIGINAIS - v_SENSITIVO)
+# INDICADORES
 # ═══════════════════════════════════════════════════════
 def sma(v,p):
     if len(v)<p: return None
@@ -192,17 +139,12 @@ def estocastico(v,p=14):
     if hh==ll: return 50
     return round(((c[-1]-ll)/(hh-ll))*100,2)
 
-# ═══════════════════════════════════════════════════════
-# SINAIS DAS ESTRATÉGIAS
-# ═══════════════════════════════════════════════════════
-
-def sinal_v_sensitivo():
-    """Estratégia original: RSI + MM + Bollinger + MACD + Estocástico"""
-    global ultimo_sinal, ultima_analise
+def sentir_a_vela():
+    global ultimo_sinal,ultima_analise
     try:
         s=datetime.now().second
         fase="🌅NASCENDO" if s<20 else ("☀️VIVA" if s<45 else "🌇MORRENDO")
-        v=API.get_candles(par,timeframe_atual,30,time.time())
+        v=API.get_candles(par,TIMEFRAME,30,time.time())
         if len(v)<20: return None
         rs=rsi(v); m5=sma(v,5); m10=sma(v,10); m20=sma(v,20)
         bs,_,bi=bollinger(v); mc=macd(v); st=estocastico(v); pc=v[-1]['close']
@@ -239,353 +181,87 @@ def sinal_v_sensitivo():
         ultimo_sinal="⏳..."; return None
     except Exception as e: add_log(f"Erro: {e}",'error'); return None
 
-
-def sinal_tesla_369():
-    """Estratégia Tesla-369: 6 velas padrão específico"""
-    global ultimo_sinal, ultima_analise
-    try:
-        v=API.get_candles(par,timeframe_atual,6,time.time())
-        if len(v)<6: return None
-        
-        velas = []
-        for vela in v:
-            if vela['open'] < vela['close']: velas.append('g')
-            elif vela['open'] > vela['close']: velas.append('r')
-            else: velas.append('d')
-        
-        cores = ''.join(velas)
-        pc = v[-1]['close']
-        ultima_analise = {'preco':pc,'rsi':None,'mm5':None,'mm10':None,'mm20':None,'stoch':None,'fase':'TESLA-369'}
-        
-        add_log(f"⚡ TESLA-369 | Velas: {cores}",'indicator')
-        
-        if velas[0]=='g' and velas[3]=='g' and velas[4]=='r' and velas[5]=='r' and 'd' not in cores:
-            ultimo_sinal="⚡ CALL (369)"; add_log("TESLA-369: CALL!",'sensitive'); return 'call'
-        if velas[0]=='r' and velas[3]=='r' and velas[4]=='g' and velas[5]=='g' and 'd' not in cores:
-            ultimo_sinal="⚡ PUT (369)"; add_log("TESLA-369: PUT!",'sensitive'); return 'put'
-        
-        ultimo_sinal="⏳..."; return None
-    except Exception as e: add_log(f"Erro: {e}",'error'); return None
-
-
-def sinal_mhi_filtrado():
-    """Estratégia MHI com filtro de Média Móvel"""
-    global ultimo_sinal, ultima_analise
-    try:
-        v=API.get_candles(par,timeframe_atual,22,time.time())
-        if len(v)<22: return None
-        
-        velas = []
-        for vela in v[-5:]:
-            if vela['open'] < vela['close']: velas.append('g')
-            elif vela['open'] > vela['close']: velas.append('r')
-            else: velas.append('d')
-        
-        cores = ''.join(velas)
-        preco_atual = v[-1]['close']
-        media_movel = sum(c['close'] for c in v[:-1]) / 21
-        
-        ultima_analise = {'preco':preco_atual,'rsi':None,'mm5':None,'mm10':None,'mm20':round(media_movel,6),'stoch':None,'fase':'MHI-FILTRADO'}
-        
-        add_log(f"📊 MHI | Velas: {cores} | MM20: {media_movel:.5f}",'indicator')
-        
-        if preco_atual > media_movel and cores.count('r') > cores.count('g') and 'd' not in cores and velas[4]=='r':
-            ultimo_sinal="📊 CALL (MHI)"; add_log("MHI-FILTRADO: CALL!",'sensitive'); return 'call'
-        if preco_atual < media_movel and cores.count('r') < cores.count('g') and 'd' not in cores and velas[4]=='g':
-            ultimo_sinal="📊 PUT (MHI)"; add_log("MHI-FILTRADO: PUT!",'sensitive'); return 'put'
-        
-        ultimo_sinal="⏳..."; return None
-    except Exception as e: add_log(f"Erro: {e}",'error'); return None
-
-
-def sinal_terceira_igual_primeira():
-    """Estratégia 3ª = 1ª: opera a cada 5 minutos"""
-    global ultimo_sinal, ultima_analise
-    try:
-        agora = datetime.now()
-        if agora.minute % 5 != 0:
-            ultimo_sinal = f"⏳ Aguardando minuto múltiplo de 5... ({agora.minute})"
-            return None
-        
-        if agora.second < 55:
-            ultimo_sinal = f"⏳ Aguardando seg 55... ({agora.second}s)"
-            return None
-        
-        time.sleep(2)  # Pequena pausa para sincronizar
-        
-        v=API.get_candles(par,timeframe_atual,22,time.time())
-        if len(v)<22: return None
-        
-        vela_atual = 'g' if v[-1]['open'] < v[-1]['close'] else ('r' if v[-1]['open'] > v[-1]['close'] else 'd')
-        preco_atual = v[-1]['close']
-        media_movel = sum(c['close'] for c in v[:-1]) / 21
-        
-        ultima_analise = {'preco':preco_atual,'rsi':None,'mm5':None,'mm10':None,'mm20':round(media_movel,6),'stoch':None,'fase':'3ª=1ª'}
-        
-        add_log(f"3️⃣ 3ª=1ª | Vela: {vela_atual} | MM: {media_movel:.5f}",'indicator')
-        
-        if preco_atual > media_movel and vela_atual == 'g':
-            ultimo_sinal="3️⃣ CALL (3=1)"; add_log("3ª=1ª: CALL!",'sensitive'); return 'call'
-        if preco_atual < media_movel and vela_atual == 'r':
-            ultimo_sinal="3️⃣ PUT (3=1)"; add_log("3ª=1ª: PUT!",'sensitive'); return 'put'
-        
-        ultimo_sinal="⏳..."; return None
-    except Exception as e: add_log(f"Erro: {e}",'error'); return None
-
-
-def sinal_quadrante_de_7():
-    """Estratégia Quadrante de 7: 7 velas + MM"""
-    global ultimo_sinal, ultima_analise
-    try:
-        agora = datetime.now()
-        if not ((agora.minute >= 1.55 and agora.minute <= 2) or (agora.minute >= 6.55 and agora.minute <= 7)):
-            ultimo_sinal = f"⏳ Min: {agora.minute}:{agora.second:02d}"
-            return None
-        
-        v=API.get_candles(par,timeframe_atual,22,time.time())
-        if len(v)<22: return None
-        
-        velas = []
-        for vela in v[-7:]:
-            if vela['open'] < vela['close']: velas.append('g')
-            elif vela['open'] > vela['close']: velas.append('r')
-            else: velas.append('d')
-        
-        cores = ''.join(velas)
-        preco_atual = v[-1]['close']
-        media_movel = sum(c['close'] for c in v[:-1]) / 21
-        
-        ultima_analise = {'preco':preco_atual,'rsi':None,'mm5':None,'mm10':None,'mm20':round(media_movel,6),'stoch':None,'fase':'QUADRANTE-7'}
-        
-        add_log(f"7️⃣ QUAD7 | Velas: {cores}",'indicator')
-        
-        if preco_atual > media_movel and cores.count('g') < cores.count('r') and 'd' not in cores:
-            ultimo_sinal="7️⃣ CALL (Q7)"; add_log("QUADRANTE-7: CALL!",'sensitive'); return 'call'
-        if preco_atual < media_movel and cores.count('g') > cores.count('r') and 'd' not in cores:
-            ultimo_sinal="7️⃣ PUT (Q7)"; add_log("QUADRANTE-7: PUT!",'sensitive'); return 'put'
-        
-        ultimo_sinal="⏳..."; return None
-    except Exception as e: add_log(f"Erro: {e}",'error'); return None
-
-
-def sinal_fluxo_de_velas():
-    """Estratégia Fluxo de Velas: 5 velas mesma cor + MM"""
-    global ultimo_sinal, ultima_analise
-    try:
-        agora = datetime.now()
-        if agora.second % 55 != 0:
-            return None
-        
-        v=API.get_candles(par,timeframe_atual,22,time.time())
-        if len(v)<22: return None
-        
-        velas = []
-        for vela in v[-5:]:
-            if vela['open'] < vela['close']: velas.append('g')
-            elif vela['open'] > vela['close']: velas.append('r')
-            else: velas.append('d')
-        
-        cores = ''.join(velas)
-        preco_atual = v[-1]['close']
-        media_movel = sum(c['close'] for c in v[:-1]) / 21
-        
-        ultima_analise = {'preco':preco_atual,'rsi':None,'mm5':None,'mm10':None,'mm20':round(media_movel,6),'stoch':None,'fase':'FLUXO'}
-        
-        add_log(f"🌊 FLUXO | Velas: {cores}",'indicator')
-        
-        if preco_atual > media_movel and cores == 'ggggg':
-            ultimo_sinal="🌊 CALL (FLUXO)"; add_log("FLUXO: CALL!",'sensitive'); return 'call'
-        if preco_atual < media_movel and cores == 'rrrrr':
-            ultimo_sinal="🌊 PUT (FLUXO)"; add_log("FLUXO: PUT!",'sensitive'); return 'put'
-        
-        ultimo_sinal="⏳..."; return None
-    except Exception as e: add_log(f"Erro: {e}",'error'); return None
-
-
-def sinal_nove_e_trinta():
-    """Estratégia 9:30/EURUSD"""
-    global ultimo_sinal, ultima_analise
-    try:
-        hora_atual = datetime.now().strftime('%H:%M:%S')
-        
-        if not (hora_atual >= '09:34:57' and hora_atual <= '09:35:06'):
-            ultimo_sinal = f"⏳ Hora: {hora_atual}"
-            return None
-        
-        v=API.get_candles(par,timeframe_atual,1,time.time())
-        if len(v)<1: return None
-        
-        vela_atual = 'g' if v[0]['open'] < v[0]['close'] else ('r' if v[0]['open'] > v[0]['close'] else 'd')
-        pc = v[0]['close']
-        
-        ultima_analise = {'preco':pc,'rsi':None,'mm5':None,'mm10':None,'mm20':None,'stoch':None,'fase':'9:30'}
-        
-        add_log(f"🕤 9:30 | Vela: {vela_atual}",'indicator')
-        
-        if vela_atual == 'g':
-            ultimo_sinal="🕤 PUT (9:30)"; add_log("9:30: PUT!",'sensitive'); return 'put'
-        if vela_atual == 'r':
-            ultimo_sinal="🕤 CALL (9:30)"; add_log("9:30: CALL!",'sensitive'); return 'call'
-        
-        ultimo_sinal="⏳..."; return None
-    except Exception as e: add_log(f"Erro: {e}",'error'); return None
-
-
-def sinal_reversao():
-    """Estratégia Reversão: padrão alternado"""
-    global ultimo_sinal, ultima_analise
-    try:
-        agora = datetime.now()
-        if agora.second % 55 != 0:
-            return None
-        
-        v=API.get_candles(par,timeframe_atual,22,time.time())
-        if len(v)<22: return None
-        
-        velas = []
-        for vela in v[-5:]:
-            if vela['open'] < vela['close']: velas.append('g')
-            elif vela['open'] > vela['close']: velas.append('r')
-            else: velas.append('d')
-        
-        cores = ''.join(velas)
-        preco_atual = v[-1]['close']
-        media_movel = sum(c['close'] for c in v[:-1]) / 21
-        
-        ultima_analise = {'preco':preco_atual,'rsi':None,'mm5':None,'mm10':None,'mm20':round(media_movel,6),'stoch':None,'fase':'REVERSÃO'}
-        
-        add_log(f"🔄 REVERSÃO | Velas: {cores}",'indicator')
-        
-        if preco_atual > media_movel and cores == 'grgrg':
-            ultimo_sinal="🔄 CALL (REV)"; add_log("REVERSÃO: CALL!",'sensitive'); return 'call'
-        if preco_atual < media_movel and cores == 'rgrgr':
-            ultimo_sinal="🔄 PUT (REV)"; add_log("REVERSÃO: PUT!",'sensitive'); return 'put'
-        
-        ultimo_sinal="⏳..."; return None
-    except Exception as e: add_log(f"Erro: {e}",'error'); return None
-
-
-def sinal_m5():
-    """Estratégia M5: Quadrante de velas de 5min"""
-    global ultimo_sinal, ultima_analise
-    try:
-        agora = datetime.now()
-        if agora.minute % 15 != 0:
-            ultimo_sinal = f"⏳ M5: min {agora.minute}"
-            return None
-        
-        time.sleep(2)
-        
-        v=API.get_candles(par,timeframe_atual,7,time.time())
-        if len(v)<7: return None
-        
-        velas = []
-        for vela in v:
-            if vela['open'] < vela['close']: velas.append('g')
-            elif vela['open'] > vela['close']: velas.append('r')
-            else: velas.append('d')
-        
-        pc = v[-1]['close']
-        ultima_analise = {'preco':pc,'rsi':None,'mm5':None,'mm10':None,'mm20':None,'stoch':None,'fase':'M5'}
-        
-        add_log(f"⏰ M5 | Velas: {''.join(velas)}",'indicator')
-        
-        if velas[0]==velas[1] and velas[1]==velas[2] and velas[3]==velas[4] and velas[4]==velas[5]:
-            if velas[6]=='g' and 'd' not in velas:
-                ultimo_sinal="⏰ PUT (M5)"; add_log("M5: PUT!",'sensitive'); return 'put'
-            if velas[6]=='r' and 'd' not in velas:
-                ultimo_sinal="⏰ CALL (M5)"; add_log("M5: CALL!",'sensitive'); return 'call'
-        
-        ultimo_sinal="⏳ Sem sinal M5"; return None
-    except Exception as e: add_log(f"Erro: {e}",'error'); return None
-
-
-# Mapeamento de estratégias para funções de sinal
-MAPA_SINAIS = {
-    'v_sensitivo': sinal_v_sensitivo,
-    'tesla_369': sinal_tesla_369,
-    'mhi_filtrado': sinal_mhi_filtrado,
-    'terceira_igual_primeira': sinal_terceira_igual_primeira,
-    'quadrante_de_7': sinal_quadrante_de_7,
-    'fluxo_de_velas': sinal_fluxo_de_velas,
-    'nove_e_trinta': sinal_nove_e_trinta,
-    'reversao': sinal_reversao,
-    'm5': sinal_m5
-}
-
-
-# ═══════════════════════════════════════════════════════
-# CÁLCULO DE ENTRADAS (USA TODA A BANCA)
-# ═══════════════════════════════════════════════════════
-def calcular_entradas(b, p, g=2):
-    """Calcula entradas usando toda a banca para Gale 2"""
-    bs = b * 0.99  # 99% da banca para ter margem
-    e0 = bs / sum((1/p)**i for i in range(g+1))
-    entradas = [e0]
-    for i in range(1, g+1):
-        entradas.append((sum(entradas) + e0) / p)
-    ajuste = bs / sum(entradas)
-    entradas = [round(e * ajuste, 2) for e in entradas]
-    soma = sum(entradas)
-    if soma > b:
-        entradas[-1] = round(entradas[-1] - (soma - b) - 0.02, 2)
-    return [max(1, e) for e in entradas]
-
+def calcular_entradas(b,p,g):
+    bs=b*0.99; e0=bs/sum((1/p)**i for i in range(g+1))
+    entradas=[e0]
+    for i in range(1,g+1): entradas.append((sum(entradas)+e0)/p)
+    ajuste=bs/sum(entradas); entradas=[round(e*ajuste,2) for e in entradas]
+    soma=sum(entradas)
+    if soma>b: entradas[-1]=round(entradas[-1]-(soma-b)-0.02,2)
+    return [max(1,e) for e in entradas]
 
 def pegar_timestamp():
-    v = API.get_candles(par, timeframe_atual, 1, time.time())
+    v=API.get_candles(par,TIMEFRAME,1,time.time())
     return v[0]['from'] if v else 0
 
-
 def aguardar_inicio_vela():
-    add_log("   Aguardando início da vela...", 'info')
-    while datetime.now().second > 5:
+    add_log("   ⏳ Aguardando início da vela...",'info')
+    while datetime.now().second>5:
         if not bot_rodando: return False
         time.sleep(0.3)
     while True:
         if not bot_rodando: return False
-        ts1 = pegar_timestamp(); time.sleep(0.5); ts2 = pegar_timestamp()
-        if ts1 == ts2: add_log("   Vela confirmada!", 'info'); return True
-
+        ts1=pegar_timestamp(); time.sleep(0.5); ts2=pegar_timestamp()
+        if ts1==ts2: add_log("   ✅ Vela confirmada!",'info'); return True
 
 def aguardar_vela_fechar(ts_entrada):
-    add_log(f"   Aguardando vela fechar...", 'info')
+    add_log(f"   ⏳ Aguardando vela fechar...",'info')
     while True:
         if not bot_rodando: return False
         try:
-            if pegar_timestamp() != ts_entrada: add_log("   Vela fechou!", 'info'); return True
+            if pegar_timestamp()!=ts_entrada: add_log("   ✅ Vela fechou!",'info'); return True
         except: pass
         time.sleep(0.3)
 
-
-def verificar_resultado(saldo_antes, valor):
-    """Verifica resultado usando get_balance() - método original"""
-    saldo_base = saldo_antes - valor
+def verificar_resultado(saldo_antes,valor):
+    saldo_base=saldo_antes-valor
     try:
-        s = API.get_balance()
-        d = round(s - saldo_base, 2)
-        if d >= 1.0: return d
+        s=API.get_balance(); d=round(s-saldo_base,2)
+        if d>=1.0: return d
     except: pass
     return -valor
 
+# ═══════════════════════════════════════════════════════
+# CONSUMIR MOEDA (APENAS QUANDO ENTRA NA OPERAÇÃO)
+# ═══════════════════════════════════════════════════════
+def consumir_moeda():
+    """Consome 1 moeda do usuário - chamado apenas quando entra na operação"""
+    global moeda_ja_consumida, bot_rodando
+    
+    if moeda_ja_consumida:
+        return True  # Já consumiu neste ciclo
+    
+    if not email_usuario_atual:
+        return True  # Sem email, sem controle de moeda
+    
+    u = carregar_usuario(email_usuario_atual)
+    if not u:
+        add_log("🪙 Usuário não encontrado!", 'error')
+        bot_rodando = False
+        return False
+    
+    if u.get('moedas', 0) < 1:
+        add_log("🪙 SEM MOEDAS! Compre mais para operar. Bot PARADO.", 'error')
+        bot_rodando = False
+        return False
+    
+    # CONSOME A MOEDA AGORA
+    u['moedas'] -= 1
+    u['total_ciclos'] += 1
+    salvar_usuario(email_usuario_atual, u)
+    moeda_ja_consumida = True
+    add_log(f"🪙 Moeda consumida! Restam: {u['moedas']} | Ciclo: {u['total_ciclos']}", 'info')
+    return True
 
 # ═══════════════════════════════════════════════════════
 # EXECUTAR CICLO
 # ═══════════════════════════════════════════════════════
 def executar_ciclo(direcao):
-    global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando
+    global lucro, NumDeOperacoes, ULTIMO_CICLO_TIMESTAMP, STOP_GAIN_ATINGIDO, bot_rodando
     
-    # Verificar moedas
-    if email_usuario_atual:
-        u = carregar_usuario(email_usuario_atual)
-        if not u or u.get('moedas', 0) < 1:
-            add_log("🪙 Sem moedas! Compre mais para operar.", 'error')
-            bot_rodando = False
-            return
-        u['moedas'] -= 1
-        u['total_ciclos'] += 1
-        salvar_usuario(email_usuario_atual, u)
-        add_log(f"🪙 Moeda consumida! Restam: {u['moedas']}", 'info')
+    # ⚠️ SÓ CONSOME MOEDA QUANDO ENTRA NA OPERAÇÃO
+    if not consumir_moeda():
+        return
     
     bi = API.get_balance()
     payout = Payout(par)
@@ -601,7 +277,7 @@ def executar_ciclo(direcao):
         
         saldo_antes = API.get_balance()
         if saldo_antes < valor:
-            add_log("Saldo insuficiente!", 'error')
+            add_log("❌ Saldo insuficiente!", 'error')
             break
         
         print()
@@ -610,10 +286,18 @@ def executar_ciclo(direcao):
         st, id_ordem = API.buy(valor, par, direcao, 1)
         
         if not st or not id_ordem:
-            add_log("Falha na ordem!", 'error')
-            break
+            add_log("❌ Falha na ordem! Tentando método alternativo...", 'error')
+            # Tentar método alternativo
+            try:
+                st, id_ordem = API.buy_digital_spot(par, valor, direcao, 1)
+            except:
+                pass
+            
+            if not st or not id_ordem:
+                add_log("❌ Falha na ordem alternativa também!", 'error')
+                break
         
-        add_log(f"   Ordem #{id_ordem}", 'info')
+        add_log(f"   📝 Ordem #{id_ordem}", 'info')
         
         time.sleep(0.3)
         ts_real = pegar_timestamp()
@@ -639,8 +323,7 @@ def executar_ciclo(direcao):
                     'data': str(datetime.now())[:19],
                     'resultado': 'WIN',
                     'valor': valor,
-                    'lucro': lucro_liquido,
-                    'estrategia': estrategia_atual
+                    'lucro': lucro_liquido
                 })
                 u['dias_ativos'][str(datetime.now())[:10]] = u['dias_ativos'].get(str(datetime.now())[:10], 0) + 1
                 salvar_usuario(email_usuario_atual, u)
@@ -661,13 +344,12 @@ def executar_ciclo(direcao):
                     'data': str(datetime.now())[:19],
                     'resultado': 'LOSS',
                     'valor': valor,
-                    'lucro': -valor,
-                    'estrategia': estrategia_atual
+                    'lucro': -valor
                 })
                 u['dias_ativos'][str(datetime.now())[:10]] = u['dias_ativos'].get(str(datetime.now())[:10], 0) + 1
                 salvar_usuario(email_usuario_atual, u)
             if i < MARTINGALE:
-                add_log(f"   Indo para GALE {i + 1}...", 'loss')
+                add_log(f"   ➡️ Indo para GALE {i + 1}...", 'loss')
             else:
                 add_log("   💀 CICLO COMPLETO PERDIDO! Bot PARADO!", 'loss')
     
@@ -681,43 +363,38 @@ def executar_ciclo(direcao):
     bot_rodando = False
     add_log("⏹️ Ciclo concluído! Clique em ATIVAR para novo ciclo.", 'info')
 
-
 # ═══════════════════════════════════════════════════════
 # BOT LOOP
 # ═══════════════════════════════════════════════════════
 def bot_loop():
-    global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO
+    global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, moeda_ja_consumida
     
-    nome_estrategia = ESTRATEGIAS[estrategia_atual]['nome']
-    add_log(f'⚡ TESLA 369 - INICIANDO...', 'sensitive')
-    add_log(f'📊 Estratégia: {nome_estrategia}', 'info')
+    moeda_ja_consumida = False  # Resetar controle
+    add_log('⚡ TESLA 369 - v_SENSITIVO INICIANDO...','sensitive')
     
     BANCA_INICIAL_DO_BOT = API.get_balance()
     STOP_GAIN_ATINGIDO = False
     lucro = 0.0
     NumDeOperacoes = 0
     
-    add_log(f"📌 {par} | Timeframe: {timeframe_atual}s | 💰 ${BANCA_INICIAL_DO_BOT:.2f}")
-    add_log('🧿 SIGILOS ATIVADOS 🧿', 'win')
-    add_log(f'🔮 {nome_estrategia} - Buscando sinal...', 'info')
-    
-    funcao_sinal = MAPA_SINAIS.get(estrategia_atual, sinal_v_sensitivo)
+    add_log(f"📌 {par} | 💰 ${BANCA_INICIAL_DO_BOT:.2f}")
+    add_log('🧿 SIGILOS ATIVADOS 🧿','win')
+    add_log('🔮 Buscando sinal... (moeda será consumida ao entrar)','info')
     
     while bot_rodando and not STOP_GAIN_ATINGIDO:
         try:
-            direcao = funcao_sinal()
+            direcao = sentir_a_vela()
             if direcao:
                 executar_ciclo(direcao)
                 break  # Sai após 1 ciclo
             time.sleep(0.3)
         except Exception as e:
-            add_log(f"Erro: {e}", 'error')
+            add_log(f"Erro: {e}",'error')
             time.sleep(5)
             conectar_api()
     
-    if not STOP_GAIN_ATINGIDO and not bot_rodando:
-        add_log("⏹️ Bot parado manualmente.", 'info')
-
+    if not bot_rodando:
+        add_log("⏹️ Bot parado.", 'info')
 
 # ═══════════════════════════════════════════════════════
 # FUNÇÕES DO MERCADO PAGO
@@ -779,7 +456,7 @@ def verificador_automatico_pix():
 threading.Thread(target=verificador_automatico_pix, daemon=True).start()
 
 # ═══════════════════════════════════════════════════════
-# HTML COMPLETO - TESLA 369
+# HTML - TESLA 369 (SIMPLIFICADO)
 # ═══════════════════════════════════════════════════════
 HTML = r'''
 <!DOCTYPE html>
@@ -790,7 +467,7 @@ HTML = r'''
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:#0a0a1a;color:#fff;font-family:'Courier New',monospace;padding:10px}
-        .container{max-width:900px;margin:0 auto}
+        .container{max-width:800px;margin:0 auto}
         .tabs{display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap}
         .tab{padding:10px 15px;background:#1a1a3e;border:1px solid #333;border-radius:10px 10px 0 0;cursor:pointer;color:#888;font-size:11px}
         .tab.active{background:#ffd700;color:#000;font-weight:bold}
@@ -849,19 +526,14 @@ HTML = r'''
         .relatorio-card .rlabel{color:#666;font-size:9px}.relatorio-card .rvalue{color:#ffd700;font-size:14px;font-weight:bold}
         .historico-table{width:100%;font-size:9px;border-collapse:collapse;margin-top:10px}
         .historico-table th{background:#ffd700;color:#000;padding:4px}.historico-table td{padding:3px;border-bottom:1px solid #222;text-align:center}
-        .estrategia-card{background:#111;padding:12px;border-radius:10px;border:2px solid #222;cursor:pointer;transition:all 0.3s ease;text-align:center}
-        .estrategia-card:hover{border-color:#ffd700}
-        .estrategia-card.ativa{border-color:#00ff88;box-shadow:0 0 15px rgba(0,255,136,0.3);background:#0a1a0a}
-        .estrategia-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
     </style>
 </head>
 <body>
 <div class="container">
-    <div class="header"><div class="lightning"></div><h1>⚡ TESLA 369 BOT ⚡</h1><p>🔮 9 ESTRATÉGIAS | GALE 2 | STOP GAIN 1 | 100% BANCA</p><p>⚡ O PODER DOS NÚMEROS ⚡</p></div>
+    <div class="header"><div class="lightning"></div><h1>⚡ TESLA 369 BOT ⚡</h1><p>🔮 v_SENSITIVO | RSI + MM + Bollinger + MACD + Estocástico</p><p>⚡ O BOT QUE SENTE A VELA ⚡</p></div>
     <div class="mantra">🌀 O DINHEIRO VEM ATÉ MIM DE TODOS OS LADOS 🌀</div>
     <div class="tabs">
         <div class="tab active" onclick="openTab('bot')">🤖 BOT</div>
-        <div class="tab" onclick="openTab('estrategias')">📊 ESTRATÉGIAS</div>
         <div class="tab" onclick="openTab('moedas')">💸 COMPRAR MOEDAS</div>
         <div class="tab" onclick="openTab('relatorio')">📊 RELATÓRIO</div>
     </div>
@@ -874,7 +546,6 @@ HTML = r'''
             <div class="card"><div class="label">📈 LUCRO</div><div class="value" id="lucro">$0.00</div></div>
             <div class="card"><div class="label">🎯 OPS</div><div class="value" id="ops" style="color:#ffd700">0</div></div>
             <div class="card"><div class="label">🪙 MOEDAS</div><div class="value" id="moedasSaldo" style="color:#ffd700">0</div></div>
-            <div class="card"><div class="label">📊 ESTRATÉGIA</div><div class="value" id="estrategiaAtiva" style="font-size:10px;color:#ffa500">--</div></div>
             <div class="card"><div class="label">🔮 SINAL</div><div class="value" id="sinal" style="font-size:11px;color:#ff69b4">--</div></div>
         </div>
         <div class="indicators">
@@ -889,20 +560,14 @@ HTML = r'''
         <div class="terminal" id="terminal">📡 Aguardando...</div>
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Parado</span></span>
-            <span id="infoEstrategia">⚡ TESLA 369</span>
+            <span>⚡ TESLA 369 | v_SENSITIVO</span>
             <span>GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
     
-    <!-- PAINEL ESTRATÉGIAS -->
-    <div class="panel" id="panel-estrategias">
-        <div class="config-section"><h3>📊 SELECIONAR ESTRATÉGIA</h3><p style="color:#888;font-size:10px">Escolha a estratégia antes de ATIVAR o bot</p></div>
-        <div class="estrategia-grid" id="estrategiaGrid"></div>
-    </div>
-    
     <!-- PAINEL MOEDAS -->
     <div class="panel" id="panel-moedas">
-        <div class="config-section"><h3>💳 COMPRAR MOEDAS</h3><p style="color:#888;font-size:10px">📧 <input type="email" id="emailCompra" placeholder="Seu email IQ Option" style="width:220px;padding:6px;background:#111;border:1px solid #333;color:#fff;border-radius:5px"></p><p style="color:#ffd700;font-size:10px;margin-top:5px">🪙 1 moeda = 1 ciclo | Ganhe 1 moeda grátis por dia!</p><p style="color:#888;font-size:9px;margin-top:3px">⭐ Clique no plano para selecionar e pagar com PIX</p></div>
+        <div class="config-section"><h3>💳 COMPRAR MOEDAS</h3><p style="color:#888;font-size:10px">📧 <input type="email" id="emailCompra" placeholder="Seu email IQ Option" style="width:220px;padding:6px;background:#111;border:1px solid #333;color:#fff;border-radius:5px"></p><p style="color:#ffd700;font-size:10px;margin-top:5px">🪙 1 moeda = 1 ciclo | Ganhe 1 moeda grátis por dia!</p><p style="color:#ffa500;font-size:9px;margin-top:3px">⚠️ Moeda consumida apenas ao ENTRAR na operação</p><p style="color:#888;font-size:9px;margin-top:3px">⭐ Clique no plano para selecionar e pagar com PIX</p></div>
         <div class="planos-grid">''' + ''.join([f'''<div class="plano-card" id="plano{p['id']}" onclick="selecionarPlano({p['id']})"><div style="color:#ffd700;font-size:11px">{p['nome']}</div><div class="plano-moedas">🪙 {p['moedas']}</div><div class="plano-preco">R$ {p['preco']:.2f}</div><div class="plano-desc">{p.get('desc','')}</div>{f'<div><span class="plano-desconto">{p["desconto"]}</span></div>' if p.get('desconto') else ''}{f'<div class="plano-tag">{p["tag"]}</div>' if p.get('tag') else ''}<button class="btn btn-buy" style="display:none;margin-top:8px;padding:8px" id="btnPlano{p['id']}" onclick="event.stopPropagation();pagarComPix({p['id']})">💳 PAGAR COM PIX</button></div>''' for p in PLANOS]) + r'''</div>
     </div>
     
@@ -922,9 +587,7 @@ HTML = r'''
 </div>
 
 <script>
-var intervalo=null,botAtivo=false,emailLogado='',planoSelecionado=0,pixAtual=null,estrategiaSel='v_sensitivo';
-
-var estrategias = ''' + json.dumps({k: {'nome': v['nome'], 'desc': v['desc']} for k, v in ESTRATEGIAS.items()}) + r''';
+var intervalo=null,botAtivo=false,emailLogado='',planoSelecionado=0,pixAtual=null;
 
 function openTab(tab){
     document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -932,39 +595,10 @@ function openTab(tab){
     event.target.classList.add('active');
     document.getElementById('panel-'+tab).classList.add('active');
     if(tab=='relatorio'&&emailLogado){document.getElementById('emailRelatorio').value=emailLogado;verRelatorio()}
-    if(tab=='estrategias')renderEstrategias();
-}
-
-function renderEstrategias(){
-    var grid=document.getElementById('estrategiaGrid');
-    var html='';
-    for(var key in estrategias){
-        var e=estrategias[key];
-        var ativa=key==estrategiaSel?' ativa':'';
-        html+='<div class="estrategia-card'+ativa+'" onclick="selecionarEstrategia(\''+key+'\')" id="est_'+key+'">';
-        html+='<div style="font-size:14px;color:#ffd700;font-weight:bold">'+e.nome+'</div>';
-        html+='<div style="font-size:9px;color:#888;margin-top:5px">'+e.desc+'</div>';
-        html+='</div>';
-    }
-    grid.innerHTML=html;
-    document.getElementById('estrategiaAtiva').textContent=estrategias[estrategiaSel].nome;
-    document.getElementById('infoEstrategia').textContent='⚡ '+estrategias[estrategiaSel].nome;
-}
-
-function selecionarEstrategia(key){
-    estrategiaSel=key;
-    document.getElementById('estrategiaAtiva').textContent=estrategias[key].nome;
-    document.getElementById('infoEstrategia').textContent='⚡ '+estrategias[key].nome;
-    document.querySelectorAll('.estrategia-card').forEach(c=>c.classList.remove('ativa'));
-    document.getElementById('est_'+key).classList.add('ativa');
 }
 
 window.onload=function(){
-    renderEstrategias();
     fetch('/status').then(r=>r.json()).then(d=>{
-        if(d.estrategia)estrategiaSel=d.estrategia;
-        renderEstrategias();
-        document.getElementById('estrategiaAtiva').textContent=estrategias[estrategiaSel]?estrategias[estrategiaSel].nome:'--';
         if(d.rodando&&d.email){
             botAtivo=true;emailLogado=d.email;
             document.getElementById('email').value=d.email;
@@ -986,7 +620,7 @@ function iniciarBot(){
     emailLogado=email;
     document.getElementById('btnConectar').disabled=true;
     document.getElementById('btnConectar').textContent='...';
-    fetch('/iniciar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,senha:senha,tipo:tipo,estrategia:estrategiaSel})})
+    fetch('/iniciar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,senha:senha,tipo:tipo})})
     .then(r=>r.json()).then(d=>{
         if(d.ok){
             botAtivo=true;
@@ -994,8 +628,6 @@ function iniciarBot(){
             document.getElementById('btnParar').style.display='inline-block';
             document.getElementById('statusTexto').textContent='🤖 Ativo';
             document.getElementById('statusDot').className='status-dot active';
-            document.getElementById('estrategiaAtiva').textContent=estrategias[estrategiaSel].nome;
-            document.getElementById('infoEstrategia').textContent='⚡ '+estrategias[estrategiaSel].nome;
             if(intervalo)clearInterval(intervalo);
             intervalo=setInterval(atualizar,2000);
         }else{
@@ -1055,8 +687,7 @@ function pagarComPix(planoId){
     });
 }
 
-function copiarPix(){navigator.clipboard.writeText(pixAtual.qr_code).then(()=>alert('Código PIX copiado! Cole no seu banco para pagar.'));}
-
+function copiarPix(){navigator.clipboard.writeText(pixAtual.qr_code).then(()=>alert('Código PIX copiado!'));}
 function verificarPagamento(pixId){
     fetch('/verificar_pix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pix_id:pixId})})
     .then(r=>r.json()).then(d=>{
@@ -1064,12 +695,9 @@ function verificarPagamento(pixId){
             alert('PAGO! '+d.moedas+' moedas adicionadas!');
             document.getElementById('moedasSaldo').textContent=d.saldo;
             fecharModal();
-            document.querySelectorAll('.plano-card').forEach(c=>c.classList.remove('selecionado'));
-            document.querySelectorAll('[id^="btnPlano"]').forEach(b=>b.style.display='none');
-        }else{alert('Pagamento ainda não confirmado. Tente novamente em alguns segundos.');}
+        }else{alert('Pagamento ainda não confirmado.');}
     });
 }
-
 function fecharModal(){document.getElementById('modalPix').classList.remove('active');pixAtual=null;}
 
 function verRelatorio(){
@@ -1091,9 +719,9 @@ function verRelatorio(){
         h+='<div class="relatorio-card"><div class="rlabel">📅 CADASTRO</div><div class="rvalue" style="font-size:10px">'+(d.data_cadastro||'--')+'</div></div>';
         h+='</div>';
         if(d.historico_operacoes&&d.historico_operacoes.length>0){
-            h+='<h4 style="margin-top:10px;color:#ffd700">📋 ÚLTIMAS OPERAÇÕES</h4><table class="historico-table"><tr><th>Data</th><th>Estratégia</th><th>Resultado</th><th>Valor</th><th>Lucro</th></tr>';
+            h+='<h4 style="margin-top:10px;color:#ffd700">📋 ÚLTIMAS OPERAÇÕES</h4><table class="historico-table"><tr><th>Data</th><th>Resultado</th><th>Valor</th><th>Lucro</th></tr>';
             d.historico_operacoes.slice(-15).reverse().forEach(op=>{
-                h+='<tr><td>'+op.data+'</td><td style="font-size:8px">'+(op.estrategia||'--')+'</td><td style="color:'+(op.resultado=='WIN'?'#00ff88':'#ff4444')+'">'+op.resultado+'</td><td>$'+op.valor.toFixed(2)+'</td><td style="color:'+(op.lucro>=0?'#00ff88':'#ff4444')+'">$'+op.lucro.toFixed(2)+'</td></tr>';
+                h+='<tr><td>'+op.data+'</td><td style="color:'+(op.resultado=='WIN'?'#00ff88':'#ff4444')+'">'+op.resultado+'</td><td>$'+op.valor.toFixed(2)+'</td><td style="color:'+(op.lucro>=0?'#00ff88':'#ff4444')+'">$'+op.lucro.toFixed(2)+'</td></tr>';
             });
             h+='</table>';
         }
@@ -1126,7 +754,6 @@ function atualizar(){
         if(d.ops!==undefined)document.getElementById('ops').textContent=d.ops;
         if(d.moedas!==undefined)document.getElementById('moedasSaldo').textContent=d.moedas;
         if(d.sinal)document.getElementById('sinal').textContent=d.sinal;
-        if(d.estrategia_nome)document.getElementById('estrategiaAtiva').textContent=d.estrategia_nome;
         if(d.analise){
             document.getElementById('rsi').textContent=d.analise.rsi?d.analise.rsi.toFixed(1):'--';
             document.getElementById('mm5').textContent=d.analise.mm5?d.analise.mm5.toFixed(5):'--';
@@ -1151,86 +778,51 @@ def index(): return render_template_string(HTML)
 
 @app.route('/status')
 def status():
-    u = carregar_usuario(email_usuario_atual) if email_usuario_atual else {}
+    u=carregar_usuario(email_usuario_atual) if email_usuario_atual else {}
     return jsonify({
-        'rodando': bot_rodando,
-        'email': email_usuario_atual,
-        'banca': API.get_balance() if API else 0,
-        'lucro': lucro,
-        'ops': NumDeOperacoes,
-        'sinal': ultimo_sinal,
-        'analise': ultima_analise,
-        'logs': get_logs_html(40),
-        'moedas': u.get('moedas', 0),
-        'estrategia': estrategia_atual,
-        'estrategia_nome': ESTRATEGIAS.get(estrategia_atual, {}).get('nome', '--')
+        'rodando':bot_rodando,
+        'email':email_usuario_atual,
+        'banca':API.get_balance() if API else 0,
+        'lucro':lucro,
+        'ops':NumDeOperacoes,
+        'sinal':ultimo_sinal,
+        'analise':ultima_analise,
+        'logs':get_logs_html(40),
+        'moedas':u.get('moedas',0)
     })
 
-@app.route('/iniciar', methods=['POST'])
+@app.route('/iniciar',methods=['POST'])
 def iniciar():
-    global API, bot_thread, bot_rodando, lucro, NumDeOperacoes, email_usuario_atual
-    global estrategia_atual, par, timeframe_atual
-    
+    global API,bot_thread,bot_rodando,lucro,NumDeOperacoes,email_usuario_atual,moeda_ja_consumida
     try:
-        d = request.get_json()
-        email = d.get('email', '').strip()
-        senha = d.get('senha', '').strip()
-        tipo = d.get('tipo', 'PRACTICE')
-        est_key = d.get('estrategia', 'v_sensitivo')
-        
-        if not email or not senha:
-            return jsonify({'ok': False, 'erro': 'Email e senha obrigatórios'})
-        
-        # Atualizar estratégia
-        if est_key in ESTRATEGIAS:
-            estrategia_atual = est_key
-            par = ESTRATEGIAS[est_key]['pares'][0]
-            timeframe_atual = ESTRATEGIAS[est_key]['timeframe']
-        
-        email_usuario_atual = email
-        usuario = carregar_usuario(email)
-        if not usuario:
-            usuario = criar_usuario(email)
-            salvar_usuario(email, usuario)
-        
-        hoje = str(datetime.now())[:10]
-        if usuario.get('moedas_ganhas_hoje') != hoje:
-            usuario['moedas'] = usuario.get('moedas', 0) + 1
-            usuario['moedas_ganhas_hoje'] = hoje
-            salvar_usuario(email, usuario)
-        
-        usuario = carregar_usuario(email)
-        
-        add_log('🔌 Conectando...', 'info')
-        API = IQ_Option(email, senha)
-        status_conn, reason = API.connect()
-        
-        if not status_conn:
-            return jsonify({'ok': False, 'erro': str(reason)[:100]})
-        
+        d=request.get_json()
+        email=d.get('email','').strip(); senha=d.get('senha','').strip(); tipo=d.get('tipo','PRACTICE')
+        if not email or not senha: return jsonify({'ok':False,'erro':'Email e senha obrigatórios'})
+        email_usuario_atual=email
+        usuario=carregar_usuario(email)
+        if not usuario: usuario=criar_usuario(email); salvar_usuario(email,usuario)
+        hoje=str(datetime.now())[:10]
+        if usuario.get('moedas_ganhas_hoje')!=hoje:
+            usuario['moedas']=usuario.get('moedas',0)+1; usuario['moedas_ganhas_hoje']=hoje; salvar_usuario(email,usuario)
+        usuario=carregar_usuario(email)
+        add_log('🔌 Conectando...','info')
+        API=IQ_Option(email,senha)
+        status_conn,reason=API.connect()
+        if not status_conn: return jsonify({'ok':False,'erro':str(reason)[:100]})
         API.change_balance(tipo)
-        lucro = 0.0
-        NumDeOperacoes = 0
-        
-        nome_est = ESTRATEGIAS[estrategia_atual]['nome']
-        add_log(f'✅ Conectado! ${API.get_balance():.2f} | 🪙 {usuario.get("moedas", 0)} moedas', 'win')
-        add_log(f'📊 Estratégia: {nome_est} | Par: {par}', 'info')
-        
+        lucro=0.0; NumDeOperacoes=0; moeda_ja_consumida=False
+        add_log(f'✅ Conectado! ${API.get_balance():.2f} | 🪙 {usuario.get("moedas",0)} moedas','win')
+        add_log('⚠️ Moeda será consumida apenas ao ENTRAR na operação','info')
         if not bot_rodando:
-            bot_rodando = True
-            bot_thread = threading.Thread(target=bot_loop, daemon=True)
-            bot_thread.start()
-        
-        return jsonify({'ok': True})
-    except Exception as e:
-        return jsonify({'ok': False, 'erro': str(e)[:100]})
+            bot_rodando=True; bot_thread=threading.Thread(target=bot_loop,daemon=True); bot_thread.start()
+        return jsonify({'ok':True})
+    except Exception as e: return jsonify({'ok':False,'erro':str(e)[:100]})
 
-@app.route('/parar', methods=['POST'])
+@app.route('/parar',methods=['POST'])
 def parar():
     global bot_rodando
-    bot_rodando = False
-    add_log('⏹️ Bot parado', 'info')
-    return jsonify({'ok': True})
+    bot_rodando=False; add_log('⏹️ Bot parado','info')
+    return jsonify({'ok':True})
 
 @app.route('/criar_pix', methods=['POST'])
 def criar_pix():
@@ -1261,10 +853,10 @@ def verificar_pix():
 
 @app.route('/relatorio')
 def relatorio():
-    email = request.args.get('email', '')
-    if not email: return jsonify({'erro': 'Email obrigatório'})
-    u = carregar_usuario(email)
-    return jsonify(u if u else {'erro': 'Não encontrado'})
+    email=request.args.get('email','')
+    if not email: return jsonify({'erro':'Email obrigatório'})
+    u=carregar_usuario(email)
+    return jsonify(u if u else {'erro':'Não encontrado'})
 
 @app.route('/resetar', methods=['POST'])
 def resetar():
@@ -1277,5 +869,5 @@ def resetar():
     salvar_usuario(email, usuario)
     return jsonify({'ok': True, 'msg': '✅ Resetado!'})
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)
+if __name__=='__main__':
+    app.run(host='0.0.0.0',port=5000,debug=False,threaded=True)
