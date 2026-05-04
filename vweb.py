@@ -301,7 +301,7 @@ ESTRATEGIAS = {
 def arquivo_usuario(email):
     return f"{DRIVE_PATH}/{email.replace('@','_').replace('.','_')}.json"
 
-def carregar_usuario(email):
+def carregar_usuario(email_cliente):
     arq=arquivo_usuario(email)
     if os.path.exists(arq): return json.load(open(arq,'r'))
     return None
@@ -967,9 +967,9 @@ def verificador_automatico_pix():
                     pagamentos_pendentes[pix_id]['pago'] = True
                     email = dados['email']
                     moedas = dados['moedas']
-                    usuario = carregar_usuario(email) or criar_usuario(email)
+                    usuario = carregar_usuario(email_cliente) or criar_usuario(email)
                     usuario['moedas'] = usuario.get('moedas', 0) + moedas
-                    salvar_usuario(email, usuario)
+                    salvar_usuario(email_cliente, usuario)
                     add_log(f"✅ PIX {pix_id[:8]}... pago! +{moedas} moedas para {email}", "win")
         except Exception as e:
             pass
@@ -1553,21 +1553,21 @@ def conectar():
             return jsonify({'ok': False, 'erro': 'Email e senha obrigatórios'})
         
         email_usuario_atual = email
-        usuario = carregar_usuario(email)
+        usuario = carregar_usuario(email_cliente)
         if not usuario:
             usuario = criar_usuario(email)
-            salvar_usuario(email, usuario)
+            salvar_usuario(email_cliente, usuario)
         
         hoje = str(datetime.now())[:10]
         if usuario.get('moedas_ganhas_hoje') != hoje:
             usuario['moedas'] = usuario.get('moedas', 0) + 1
             usuario['moedas_ganhas_hoje'] = hoje
-            salvar_usuario(email, usuario)
+            salvar_usuario(email_cliente, usuario)
         
         skin_atual_global = usuario.get('skin_atual', 'skin_padrao')
         par = ESTRATEGIAS[estrategia_atual]['pares'][0]
         timeframe_atual = ESTRATEGIAS[estrategia_atual]['timeframe']
-        usuario = carregar_usuario(email)
+        usuario = carregar_usuario(email_cliente)
         
         add_log('🔌 Conectando na IQ Option...', 'info')
         API = IQ_Option(email, senha)
@@ -1595,13 +1595,13 @@ def comecar_operar():
         if not conectado_iq:
             return jsonify({'ok': False, 'erro': 'Conecte na IQ Option primeiro!'})
         
-        usuario = carregar_usuario(email)
+        usuario = carregar_usuario(email_cliente)
         if not usuario or usuario.get('moedas', 0) < 1:
             return jsonify({'ok': False, 'erro': 'Sem moedas! Compre mais.'})
         
         usuario['moedas'] -= 1
         usuario['total_ciclos'] += 1
-        salvar_usuario(email, usuario)
+        salvar_usuario(email_cliente, usuario)
         
         add_log(f'🪙 Moeda consumida! Restam: {usuario["moedas"]} | Ciclo: {usuario["total_ciclos"]}', 'info')
         
@@ -1651,7 +1651,7 @@ def comprar_skin():
     global skin_atual_global
     d = request.get_json()
     skin_id = d.get('skin_id', '')
-    email_cliente = d.get('email', '')
+    email_cliente = d.get('email', d.get('emailCompra', email_usuario_atual or ''))
     
     if not email_cliente:
         return jsonify({'ok': False, 'erro': 'Informe seu email na seção de moedas!'})
@@ -1708,7 +1708,7 @@ def ativar_skin():
     if not skin:
         return jsonify({'ok': False, 'erro': 'Skin não encontrada'})
     
-    usuario = carregar_usuario(email)
+    usuario = carregar_usuario(email_cliente)
     if not usuario:
         return jsonify({'ok': False, 'erro': 'Usuário não encontrado'})
     
@@ -1722,7 +1722,7 @@ def ativar_skin():
         usuario['skins_compradas'].append(skin_id)
     
     usuario['skin_atual'] = skin_id
-    salvar_usuario(email, usuario)
+    salvar_usuario(email_cliente, usuario)
     
     global skin_atual_global
 
@@ -1752,9 +1752,9 @@ def verificar_pix():
             pagamentos_pendentes[pix_id]['pago'] = True
             email = pagamentos_pendentes[pix_id]['email']
             moedas = pagamentos_pendentes[pix_id]['moedas']
-            usuario = carregar_usuario(email) or criar_usuario(email)
+            usuario = carregar_usuario(email_cliente) or criar_usuario(email)
             usuario['moedas'] = usuario.get('moedas', 0) + moedas
-            salvar_usuario(email, usuario)
+            salvar_usuario(email_cliente, usuario)
             return jsonify({'pago': True, 'moedas': moedas, 'saldo': usuario['moedas']})
         return jsonify({'pago': True})
     return jsonify({'pago': False})
@@ -1763,7 +1763,7 @@ def verificar_pix():
 def relatorio():
     email = request.args.get('email', '')
     if not email: return jsonify({'erro': 'Email obrigatório'})
-    u = carregar_usuario(email)
+    u = carregar_usuario(email_cliente)
     return jsonify(u if u else {'erro': 'Não encontrado'})
 
 @app.route('/resetar', methods=['POST'])
@@ -1774,7 +1774,7 @@ def resetar():
     usuario = criar_usuario(email)
     usuario['moedas_ganhas_hoje'] = str(datetime.now())[:10]
     usuario['moedas'] = 0
-    salvar_usuario(email, usuario)
+    salvar_usuario(email_cliente, usuario)
     return jsonify({'ok': True, 'msg': '✅ Resetado!'})
 
 if __name__ == '__main__':
