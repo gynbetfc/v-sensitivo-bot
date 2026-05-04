@@ -278,7 +278,7 @@ ESTRATEGIAS = {
         'timeframe': 60,
         'pares': ['EURUSD-OTC', 'EURUSD']
     },
-    'nove_e_trinta': {
+    'remover_nove': {
         'nome': '🕤 9:30/EURUSD',
         'desc': 'Opera às 09:34:57-09:35:06, vela M5',
         'timeframe': 300,
@@ -823,7 +823,7 @@ MAPA_SINAIS = {
     'terceira_igual_primeira': sinal_terceira_igual_primeira,
     'quadrante_de_7': sinal_quadrante_de_7,
     'fluxo_de_velas': sinal_fluxo_de_velas,
-    'nove_e_trinta': sinal_nove_e_trinta,
+    'remover_nove': sinal_remover_nove,
     'reversao': sinal_reversao,
     'm5': sinal_m5
 }
