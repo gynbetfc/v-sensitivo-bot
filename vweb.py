@@ -307,7 +307,6 @@ def carregar_usuario(email):
     return None
 
 def salvar_usuario(email,dados):
-    os.system("cd /workspaces/v-sensitivo-bot && git add vsens_users/ && git commit -m backup && git push 2>/dev/null &")
     with open(arquivo_usuario(email),'w') as f: json.dump(dados,f,indent=2)
 
 def criar_usuario(email):
@@ -626,69 +625,6 @@ def sinal_fluxo_de_velas():
             ultimo_sinal="🌊 CALL (FLUXO)"; add_log("FLUXO: CALL!",'sensitive'); return 'call'
         if preco_atual < mm and cores == 'rrrrr' and 'd' not in cores:
             ultimo_sinal="🌊 PUT (FLUXO)"; add_log("FLUXO: PUT!",'sensitive'); return 'put'
-        
-        ultimo_sinal="⏳..."; return None
-    except Exception as e: add_log(f"Erro: {e}",'error'); return None
-
-
-def sinal_nove_e_trinta():
-    """Estratégia 9:30/EURUSD - IGUAL TESLA 369"""
-    global ultimo_sinal, ultima_analise, par
-    try:
-        hora_atual = datetime.now().strftime('%H:%M:%S')
-        
-        if not (hora_atual >= '09:34:57' and hora_atual <= '09:35:06'):
-            ultimo_sinal = f"⏳ 9:30 - {hora_atual}"
-            return None
-        
-        v=API.get_candles(par, timeframe_atual, 1, time.time())
-        if len(v)<1: return None
-        
-        vela_atual = 'g' if v[0]['open'] < v[0]['close'] else ('r' if v[0]['open'] > v[0]['close'] else 'd')
-        pc = v[0]['close']
-        
-        ultima_analise = {'preco':pc,'rsi':None,'mm5':None,'mm10':None,'mm20':None,'stoch':None,'fase':'9:30'}
-        
-        add_log(f"🕤 9:30 | Vela: {vela_atual}",'indicator')
-        
-        if vela_atual == 'g' and 'd' not in vela_atual:
-            ultimo_sinal="🕤 PUT (9:30)"; add_log("9:30: PUT!",'sensitive'); return 'put'
-        if vela_atual == 'r' and 'd' not in vela_atual:
-            ultimo_sinal="🕤 CALL (9:30)"; add_log("9:30: CALL!",'sensitive'); return 'call'
-        
-        ultimo_sinal="⏳..."; return None
-    except Exception as e: add_log(f"Erro: {e}",'error'); return None
-
-
-def sinal_reversao():
-    """Estratégia Reversão - IGUAL TESLA 369"""
-    global ultimo_sinal, ultima_analise
-    try:
-        agora = datetime.now()
-        if agora.second % 55 != 0:
-            return None
-        
-        v=API.get_candles(par, timeframe_atual, 22, time.time())
-        if len(v)<22: return None
-        
-        velas = []
-        for vela in v[-5:]:
-            if vela['open'] < vela['close']: velas.append('g')
-            elif vela['open'] > vela['close']: velas.append('r')
-            else: velas.append('d')
-        
-        cores = ''.join(velas)
-        preco_atual = v[-1]['close']
-        mm = sum(c['close'] for c in v[:-1]) / 21
-        
-        ultima_analise = {'preco':preco_atual,'rsi':None,'mm5':None,'mm10':None,'mm20':round(mm,6),'stoch':None,'fase':'REVERSÃO'}
-        
-        add_log(f"🔄 REV | Velas: {cores}",'indicator')
-        
-        if preco_atual > mm and cores == 'grgrg':
-            ultimo_sinal="🔄 CALL (REV)"; add_log("REVERSÃO: CALL!",'sensitive'); return 'call'
-        if preco_atual < mm and cores == 'rgrgr':
-            ultimo_sinal="🔄 PUT (REV)"; add_log("REVERSÃO: PUT!",'sensitive'); return 'put'
         
         ultimo_sinal="⏳..."; return None
     except Exception as e: add_log(f"Erro: {e}",'error'); return None
