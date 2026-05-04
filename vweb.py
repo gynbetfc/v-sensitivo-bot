@@ -729,6 +729,156 @@ def sinal_m5():
     except Exception as e: add_log(f"Erro: {e}",'error'); return None
 
 
+
+
+# ═══════════════════════════════════════════════════════
+# M30 - 4 VELAS (v.py)
+# ═══════════════════════════════════════════════════════
+def sinal_m30_4velas():
+    """4 velas iguais + 5ª confirma + 6ª entra + RSI + Barreira Mágica"""
+    global ultimo_sinal, ultima_analise
+    try:
+        velas = API.get_candles(par, timeframe_atual, 10, time.time())
+        if len(velas) < 6: return None
+        
+        # 4 velas fechadas
+        v4 = velas[-5:-1]
+        v5 = velas[-1]  # 5ª vela (confirmação)
+        
+        cores_4 = ['g' if v['open'] < v['close'] else 'r' if v['open'] > v['close'] else 'd' for v in v4]
+        cor_v5 = 'g' if v5['open'] < v5['close'] else 'r' if v5['open'] > v5['close'] else 'd'
+        
+        # RSI
+        rsi_val = rsi(velas) if len(velas) >= 10 else None
+        
+        add_log(f"📊 M30: 4v={' '.join(cores_4)} | 5v={cor_v5} | RSI={rsi_val}", 'indicator')
+        
+        # Padrão: 4 velas iguais
+        if len(set(cores_4)) != 1 or cores_4[0] == 'd':
+            return None
+        
+        # RSI obrigatório
+        if rsi_val is None: return None
+        
+        direcao = None
+        if cor_v5 == 'r' and rsi_val <= 35:
+            direcao = 'call'
+            ultimo_sinal = "M30 4VELAS: CALL"
+        elif cor_v5 == 'g' and rsi_val >= 65:
+            direcao = 'put'
+            ultimo_sinal = "M30 4VELAS: PUT"
+        
+        if direcao:
+            # Barreira Mágica: aguardar 6ª vela mesma cor que 5ª
+            t0 = time.time()
+            cor_desejada = cor_v5
+            while time.time() - t0 < 15:
+                v_agora = API.get_candles(par, timeframe_atual, 1, time.time())
+                if len(v_agora) > 0:
+                    cor_atual = 'g' if v_agora[0]['open'] < v_agora[0]['close'] else 'r'
+                    if cor_atual == cor_desejada:
+                        add_log(f"🔮 Barreira Mágica: {cor_desejada.upper()} confirmada!", 'sensitive')
+                        return direcao
+                time.sleep(0.3)
+            add_log("🔮 Barreira Mágica: TIMEOUT", 'error')
+            return None
+        
+        return None
+    except Exception as e:
+        add_log(f"M30 erro: {e}", 'error')
+        return None
+
+
+# ═══════════════════════════════════════════════════════
+# M4 VELOZ - ZERO DELAY (M33.py)
+# ═══════════════════════════════════════════════════════
+def sinal_m4_veloz():
+    """Análise completa em 1 chamada + Barreira Mágica no segundo 1"""
+    global ultimo_sinal, ultima_analise
+    try:
+        # 1 única chamada API
+        velas_15 = API.get_candles(par, timeframe_atual, 15, time.time())
+        if len(velas_15) < 10: return None
+        
+        # 4 velas fechadas
+        velas_4 = velas_15[-5:-1]
+        cores_4 = ['g' if v['open'] < v['close'] else 'r' if v['open'] > v['close'] else 'd' for v in velas_4]
+        
+        # RSI
+        rsi_val = calcular_rsi_veloz(velas_15)
+        
+        # Proteções
+        protecao_ok = verificar_protecoes_veloz(velas_15)
+        
+        add_log(f"⚡ M4: {' '.join(cores_4)} | RSI={rsi_val} | {'✅' if protecao_ok else '🚨'}", 'indicator')
+        
+        if not protecao_ok: return None
+        if len(set(cores_4)) != 1 or cores_4[0] == 'd': return None
+        if rsi_val is None: return None
+        
+        direcao = None
+        if cores_4[0] == 'g' and rsi_val >= 65:
+            direcao = 'put'
+            ultimo_sinal = "M4 VELOZ: PUT"
+        elif cores_4[0] == 'r' and rsi_val <= 35:
+            direcao = 'call'
+            ultimo_sinal = "M4 VELOZ: CALL"
+        
+        if direcao:
+            # Barreira Mágica
+            cor_desejada = 'g' if direcao == 'put' else 'r'
+            t0 = time.time()
+            while time.time() - t0 < 15:
+                v_agora = API.get_candles(par, timeframe_atual, 1, time.time())
+                if len(v_agora) > 0:
+                    cor_atual = 'g' if v_agora[0]['open'] < v_agora[0]['close'] else 'r'
+                    if cor_atual == cor_desejada:
+                        add_log(f"⚡ M4: {cor_desejada.upper()} confirmada!", 'sensitive')
+                        return direcao
+                time.sleep(0.3)
+            return None
+        
+        return None
+    except Exception as e:
+        add_log(f"M4 erro: {e}", 'error')
+        return None
+
+
+def calcular_rsi_veloz(velas, periodo=9):
+    """RSI rápido com velas já obtidas"""
+    try:
+        if len(velas) < periodo + 1: return None
+        ganhos, perdas = [], []
+        for i in range(1, len(velas)):
+            dif = velas[i]['close'] - velas[i-1]['close']
+            ganhos.append(dif if dif > 0 else 0)
+            perdas.append(abs(dif) if dif < 0 else 0)
+        avg_g = sum(ganhos) / periodo
+        avg_p = sum(perdas) / periodo
+        if avg_p == 0: return 100
+        return round(100 - (100 / (1 + avg_g / avg_p)), 2)
+    except: return None
+
+
+def verificar_protecoes_veloz(velas):
+    """Proteções rápidas com velas já obtidas"""
+    try:
+        # Vela explosiva
+        if len(velas) >= 10:
+            corpos = [abs(v['close'] - v['open']) for v in velas]
+            if corpos[-1] > (sum(corpos[:-1]) / len(corpos[:-1])) * 2.0:
+                return False
+        # Sequência mortal (6+ iguais)
+        if len(velas) >= 6:
+            cores = ['g' if v['open'] < v['close'] else 'r' for v in velas]
+            ultima, consec = cores[-1], 1
+            for i in range(len(cores)-2, -1, -1):
+                if cores[i] == ultima: consec += 1
+                else: break
+            if consec >= 6: return False
+        return True
+    except: return False
+
 # Mapeamento de estratégias
 MAPA_SINAIS = {
     'v_sensitivo': sinal_v_sensitivo,
