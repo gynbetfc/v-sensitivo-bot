@@ -132,7 +132,7 @@ SKINS = [
     },
     {
         'id': 'skin_flamengo',
-        'nome': '🔴⚫ FLAMENGO 🇧🇷',
+        'nome': '🔴⚫ FLAMENGO',
         'desc': 'Tema rubro-negro - Mengão!',
         'preco_moedas': 1,
         'cor_fundo': '#1a0000',
@@ -150,7 +150,7 @@ SKINS = [
     },
     {
         'id': 'skin_corinthians',
-        'nome': '⚪⚫ CORINTHIANS 🇧🇷',
+        'nome': '⚪⚫ CORINTHIANS',
         'desc': 'Tema alvinegro - Timão!',
         'preco_moedas': 1,
         'cor_fundo': '#0a0a0a',
@@ -168,7 +168,7 @@ SKINS = [
     },
     {
         'id': 'skin_palmeiras',
-        'nome': '💚 PALMEIRAS 🇧🇷',
+        'nome': '💚 PALMEIRAS',
         'desc': 'Tema verde - Verdão!',
         'preco_moedas': 1,
         'cor_fundo': '#001a00',
@@ -186,7 +186,7 @@ SKINS = [
     },
     {
         'id': 'skin_sao_paulo',
-        'nome': '🔴⚪⚫ SÃO PAULO 🇧🇷',
+        'nome': '🔴⚪⚫ SÃO PAULO',
         'desc': 'Tema tricolor - SPFC!',
         'preco_moedas': 1,
         'cor_fundo': '#1a0a0a',
@@ -204,7 +204,7 @@ SKINS = [
     },
     {
         'id': 'skin_santos',
-        'nome': '⚪⚫ SANTOS 🇧🇷',
+        'nome': '⚪⚫ SANTOS',
         'desc': 'Tema alvinegro praiano - Peixe!',
         'preco_moedas': 1,
         'cor_fundo': '#0a0a0a',
@@ -233,7 +233,7 @@ SKINS = [
         'cor_tab_ativa': '#ffd700',
         'cor_header_bg': 'linear-gradient(135deg,#001a0a,#003315,#004d20,#003315,#001a0a)',
         'cor_header_borda': '#ffd700',
-        'header_extra': '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:80px;z-index:0;opacity:0.4;pointer-events:none">🇧🇷</div>',
+        'header_extra': '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:60px;z-index:0;opacity:0.3;pointer-events:none">🇧🇷</div>',
         'css_extra': '''
             .header h1{color:#ffd700!important;text-shadow:0 0 30px #00cc44!important}
         '''
@@ -301,7 +301,7 @@ ESTRATEGIAS = {
 def arquivo_usuario(email):
     return f"{DRIVE_PATH}/{email.replace('@','_').replace('.','_')}.json"
 
-def carregar_usuario(email_cliente):
+def carregar_usuario(email):
     arq=arquivo_usuario(email)
     if os.path.exists(arq): return json.load(open(arq,'r'))
     return None
@@ -967,9 +967,9 @@ def verificador_automatico_pix():
                     pagamentos_pendentes[pix_id]['pago'] = True
                     email = dados['email']
                     moedas = dados['moedas']
-                    usuario = carregar_usuario(email_cliente) or criar_usuario(email)
+                    usuario = carregar_usuario(email) or criar_usuario(email)
                     usuario['moedas'] = usuario.get('moedas', 0) + moedas
-                    salvar_usuario(email_cliente, usuario)
+                    salvar_usuario(email, usuario)
                     add_log(f"✅ PIX {pix_id[:8]}... pago! +{moedas} moedas para {email}", "win")
         except Exception as e:
             pass
@@ -1076,12 +1076,9 @@ HTML = r'''
             <input type="email" id="email" placeholder="📧 Email IQ Option" style="flex:2">
             <input type="password" id="senha" placeholder="🔒 Senha" style="flex:1">
             <select id="tipo"><option value="PRACTICE">🧪</option><option value="REAL">💰</option></select>
-        </div>
-        <div class="config-row">
-            <button class="btn btn-info" id="btnConectar" onclick="conectarIQ()" style="flex:1">🔌 CONECTAR</button>
-            <button class="btn btn-start" id="btnOperar" onclick="comecarOperar()" style="flex:1;display:none">🚀 COMEÇAR OPERAR</button>
-            <button class="btn btn-stop" id="btnDesconectar" onclick="pararBot()" style="flex:1;display:none;background:linear-gradient(135deg,#cc0000,#ff4444);color:#fff">🔌 DESCONECTAR</button>
-            <button class="btn btn-stop" id="btnPararOperar" onclick="pararOperar()" style="flex:1;display:none">⏹️ PARAR</button>
+            <button class="btn btn-info" id="btnConectar" onclick="conectarIQ()">🔌 CONECTAR</button>
+            <button class="btn btn-start" id="btnOperar" onclick="comecarOperar()" style="display:none">🚀 COMEÇAR OPERAR</button>
+            <button class="btn btn-stop" id="btnParar" onclick="pararBot()" style="display:none">⏹️ PARAR</button>
         </div></div>
         <div class="dashboard">
             <div class="card"><div class="label">💰 BANCA</div><div class="value" id="banca" style="color:#00ff88">--</div></div>
@@ -1166,8 +1163,6 @@ function conectarIQ(){
             conectadoIQ=true;
             document.getElementById('btnConectar').style.display='none';
             document.getElementById('btnOperar').style.display='inline-block';
-            document.getElementById('btnDesconectar').style.display='inline-block';
-            document.getElementById('btnPararOperar').style.display='none';
             document.getElementById('statusTexto').textContent='🟢 Conectado';
             document.getElementById('statusDot').className='status-dot active';
             document.getElementById('moedasSaldo').textContent=d.moedas||0;
@@ -1191,8 +1186,7 @@ function comecarOperar(){
         if(d.ok){
             botAtivo=true;
             document.getElementById('btnOperar').style.display='none';
-            document.getElementById('btnPararOperar').style.display='inline-block';
-            document.getElementById('btnDesconectar').style.display='none';
+            document.getElementById('btnParar').style.display='inline-block';
             document.getElementById('statusTexto').textContent='🤖 Operando';
             document.getElementById('moedasSaldo').textContent=d.moedas;
         }else{
@@ -1200,19 +1194,6 @@ function comecarOperar(){
             document.getElementById('btnOperar').disabled=false;
             document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
         }
-    });
-}
-
-function pararOperar(){
-    if(!confirm('Parar operação?'))return;
-    fetch('/parar_operar',{method:'POST'}).then(r=>r.json()).then(d=>{
-        botAtivo=false;
-        document.getElementById('btnOperar').style.display='inline-block';
-        document.getElementById('btnPararOperar').style.display='none';
-        document.getElementById('btnDesconectar').style.display='inline-block';
-        document.getElementById('btnOperar').disabled=false;
-        document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
-        document.getElementById('statusTexto').textContent='🟢 Conectado';
     });
 }
 
@@ -1291,10 +1272,9 @@ function renderLoja(){
 }
 
 function comprarSkin(skinId){
-    var emailCompra=document.getElementById('emailCompra').value.trim()||emailLogado;
-    if(!emailCompra){alert('Digite seu email na seção de moedas!');return}
+    if(!emailLogado){alert('Conecte primeiro!');return}
     if(!confirm('Comprar esta skin?'))return;
-    fetch('/comprar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId,email:emailCompra})})
+    fetch('/comprar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId})})
     .then(r=>r.json()).then(d=>{
         if(d.ok){alert(d.msg||'Skin comprada!');document.getElementById('moedasSaldo').textContent=d.moedas;renderLoja();setTimeout(function(){location.reload();},500);}
         else{alert('ERRO: '+d.erro);}
@@ -1302,9 +1282,7 @@ function comprarSkin(skinId){
 }
 
 function ativarSkin(skinId){
-    var emailCompra=document.getElementById('emailCompra').value.trim()||emailLogado;
-    if(!emailCompra){alert('Digite seu email na seção de moedas!');return}
-    fetch('/ativar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId,email:emailCompra})})
+    fetch('/ativar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId})})
     .then(r=>r.json()).then(d=>{
         if(d.ok){alert('Skin ativada!');location.reload();}
         else{alert('ERRO: '+d.erro);}
@@ -1391,8 +1369,7 @@ function atualizar(){
             conectadoIQ=false;botAtivo=false;
             document.getElementById('btnConectar').style.display='inline-block';
             document.getElementById('btnOperar').style.display='none';
-            document.getElementById('btnDesconectar').style.display='none';
-            document.getElementById('btnPararOperar').style.display='none';
+            document.getElementById('btnParar').style.display='none';
             document.getElementById('btnConectar').disabled=false;
             document.getElementById('btnConectar').textContent='🔌 CONECTAR';
             document.getElementById('btnOperar').disabled=false;
@@ -1404,8 +1381,7 @@ function atualizar(){
         if(!d.rodando&&botAtivo){
             botAtivo=false;
             document.getElementById('btnOperar').style.display='inline-block';
-            document.getElementById('btnPararOperar').style.display='none';
-            document.getElementById('btnDesconectar').style.display='inline-block';
+            document.getElementById('btnParar').style.display='none';
             document.getElementById('btnOperar').disabled=false;
             document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
             document.getElementById('statusTexto').textContent='🟢 Conectado';
@@ -1463,8 +1439,7 @@ window.onload=function(){
             conectadoIQ=true;emailLogado=d.email;
             document.getElementById('email').value=d.email;
             document.getElementById('btnConectar').style.display='none';
-            document.getElementById('btnDesconectar').style.display='inline-block';
-            if(d.rodando){botAtivo=true;document.getElementById('btnOperar').style.display='none';document.getElementById('btnPararOperar').style.display='inline-block';document.getElementById('btnDesconectar').style.display='none';document.getElementById('statusTexto').textContent='🤖 Operando';}
+            if(d.rodando){botAtivo=true;document.getElementById('btnOperar').style.display='none';document.getElementById('btnParar').style.display='inline-block';document.getElementById('statusTexto').textContent='🤖 Operando';}
             else{document.getElementById('btnOperar').style.display='inline-block';document.getElementById('statusTexto').textContent='🟢 Conectado';}
             document.getElementById('statusDot').className='status-dot active';
             if(intervalo)clearInterval(intervalo);
@@ -1506,6 +1481,11 @@ def index():
 @app.route('/status')
 def status():
     global skin_atual_global, estrategia_atual
+    if email_usuario_atual:
+        u = carregar_usuario(email_usuario_atual)
+        if u:
+            skin_atual_global = u.get('skin_atual', 'skin_padrao')
+    
     u = carregar_usuario(email_usuario_atual) if email_usuario_atual else {}
     
     skins_status = []
@@ -1553,21 +1533,21 @@ def conectar():
             return jsonify({'ok': False, 'erro': 'Email e senha obrigatórios'})
         
         email_usuario_atual = email
-        usuario = carregar_usuario(email_cliente)
+        usuario = carregar_usuario(email)
         if not usuario:
             usuario = criar_usuario(email)
-            salvar_usuario(email_cliente, usuario)
+            salvar_usuario(email, usuario)
         
         hoje = str(datetime.now())[:10]
         if usuario.get('moedas_ganhas_hoje') != hoje:
             usuario['moedas'] = usuario.get('moedas', 0) + 1
             usuario['moedas_ganhas_hoje'] = hoje
-            salvar_usuario(email_cliente, usuario)
+            salvar_usuario(email, usuario)
         
         skin_atual_global = usuario.get('skin_atual', 'skin_padrao')
         par = ESTRATEGIAS[estrategia_atual]['pares'][0]
         timeframe_atual = ESTRATEGIAS[estrategia_atual]['timeframe']
-        usuario = carregar_usuario(email_cliente)
+        usuario = carregar_usuario(email)
         
         add_log('🔌 Conectando na IQ Option...', 'info')
         API = IQ_Option(email, senha)
@@ -1595,13 +1575,13 @@ def comecar_operar():
         if not conectado_iq:
             return jsonify({'ok': False, 'erro': 'Conecte na IQ Option primeiro!'})
         
-        usuario = carregar_usuario(email_cliente)
+        usuario = carregar_usuario(email_usuario_atual)
         if not usuario or usuario.get('moedas', 0) < 1:
             return jsonify({'ok': False, 'erro': 'Sem moedas! Compre mais.'})
         
         usuario['moedas'] -= 1
         usuario['total_ciclos'] += 1
-        salvar_usuario(email_cliente, usuario)
+        salvar_usuario(email_usuario_atual, usuario)
         
         add_log(f'🪙 Moeda consumida! Restam: {usuario["moedas"]} | Ciclo: {usuario["total_ciclos"]}', 'info')
         
@@ -1616,14 +1596,6 @@ def comecar_operar():
         return jsonify({'ok': True, 'moedas': usuario['moedas']})
     except Exception as e:
         return jsonify({'ok': False, 'erro': str(e)[:100]})
-
-
-@app.route('/parar_operar', methods=['POST'])
-def parar_operar():
-    global bot_rodando
-    bot_rodando = False
-    add_log('⏹️ Operação parada (continua conectado)', 'info')
-    return jsonify({'ok': True})
 
 @app.route('/parar', methods=['POST'])
 def parar():
@@ -1651,36 +1623,34 @@ def comprar_skin():
     global skin_atual_global
     d = request.get_json()
     skin_id = d.get('skin_id', '')
-    email_cliente = d.get('email', d.get('emailCompra', email_usuario_atual or ''))
     
-    if not email_cliente:
-        return jsonify({'ok': False, 'erro': 'Informe seu email na seção de moedas!'})
+    if not email_usuario_atual:
+        return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
     
     skin = next((s for s in SKINS if s['id'] == skin_id), None)
     if not skin:
         return jsonify({'ok': False, 'erro': 'Skin não encontrada'})
     
     if skin['preco_moedas'] == 0:
-        usuario = carregar_usuario(email_cliente)
-        if not usuario:
-            usuario = criar_usuario(email_cliente)
-        if 'skins_compradas' not in usuario: usuario['skins_compradas'] = ['skin_padrao']
-        if skin_id not in usuario['skins_compradas']: usuario['skins_compradas'].append(skin_id)
-        usuario['skin_atual'] = skin_id
-        salvar_usuario(email_cliente, usuario)
-        skin_atual_global = skin_id
+        usuario = carregar_usuario(email_usuario_atual)
+        if usuario:
+            if 'skins_compradas' not in usuario: usuario['skins_compradas'] = ['skin_padrao']
+            if skin_id not in usuario['skins_compradas']: usuario['skins_compradas'].append(skin_id)
+            usuario['skin_atual'] = skin_id
+            salvar_usuario(email_usuario_atual, usuario)
+            skin_atual_global = skin_id
         return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0), 'msg': 'Skin grátis ativada!'})
     
-    usuario = carregar_usuario(email_cliente)
+    usuario = carregar_usuario(email_usuario_atual)
     if not usuario:
-        usuario = criar_usuario(email_cliente)
+        return jsonify({'ok': False, 'erro': 'Usuário não encontrado'})
     
     if 'skins_compradas' not in usuario:
         usuario['skins_compradas'] = ['skin_padrao']
     
     if skin_id in usuario['skins_compradas']:
         usuario['skin_atual'] = skin_id
-        salvar_usuario(email_cliente, usuario)
+        salvar_usuario(email_usuario_atual, usuario)
         skin_atual_global = skin_id
         return jsonify({'ok': True, 'moedas': usuario['moedas'], 'msg': 'Skin já comprada! Ativada.'})
     
@@ -1690,7 +1660,7 @@ def comprar_skin():
     usuario['moedas'] -= skin['preco_moedas']
     usuario['skins_compradas'].append(skin_id)
     usuario['skin_atual'] = skin_id
-    salvar_usuario(email_cliente, usuario)
+    salvar_usuario(email_usuario_atual, usuario)
     skin_atual_global = skin_id
     
     add_log(f'🛍️ Skin comprada: {skin["nome"]}', 'win')
@@ -1708,7 +1678,7 @@ def ativar_skin():
     if not skin:
         return jsonify({'ok': False, 'erro': 'Skin não encontrada'})
     
-    usuario = carregar_usuario(email_cliente)
+    usuario = carregar_usuario(email_usuario_atual)
     if not usuario:
         return jsonify({'ok': False, 'erro': 'Usuário não encontrado'})
     
@@ -1722,7 +1692,7 @@ def ativar_skin():
         usuario['skins_compradas'].append(skin_id)
     
     usuario['skin_atual'] = skin_id
-    salvar_usuario(email_cliente, usuario)
+    salvar_usuario(email_usuario_atual, usuario)
     
     global skin_atual_global
 
@@ -1752,9 +1722,9 @@ def verificar_pix():
             pagamentos_pendentes[pix_id]['pago'] = True
             email = pagamentos_pendentes[pix_id]['email']
             moedas = pagamentos_pendentes[pix_id]['moedas']
-            usuario = carregar_usuario(email_cliente) or criar_usuario(email)
+            usuario = carregar_usuario(email) or criar_usuario(email)
             usuario['moedas'] = usuario.get('moedas', 0) + moedas
-            salvar_usuario(email_cliente, usuario)
+            salvar_usuario(email, usuario)
             return jsonify({'pago': True, 'moedas': moedas, 'saldo': usuario['moedas']})
         return jsonify({'pago': True})
     return jsonify({'pago': False})
@@ -1763,7 +1733,7 @@ def verificar_pix():
 def relatorio():
     email = request.args.get('email', '')
     if not email: return jsonify({'erro': 'Email obrigatório'})
-    u = carregar_usuario(email_cliente)
+    u = carregar_usuario(email)
     return jsonify(u if u else {'erro': 'Não encontrado'})
 
 @app.route('/resetar', methods=['POST'])
@@ -1774,7 +1744,7 @@ def resetar():
     usuario = criar_usuario(email)
     usuario['moedas_ganhas_hoje'] = str(datetime.now())[:10]
     usuario['moedas'] = 0
-    salvar_usuario(email_cliente, usuario)
+    salvar_usuario(email, usuario)
     return jsonify({'ok': True, 'msg': '✅ Resetado!'})
 
 if __name__ == '__main__':
