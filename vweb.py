@@ -1066,8 +1066,7 @@ HTML = r'''
     <div class="tabs">
         <div class="tab active" onclick="openTab('bot')">🤖 BOT</div>
         <div class="tab" onclick="openTab('estrategias')">📊 ESTRATÉGIAS</div>
-        <div class="tab" onclick="openTab('moedas')">💸 COMPRAR MOEDAS</div>
-        <div class="tab" onclick="openTab('loja')">🛍️ LOJA</div>
+        <div class="tab" onclick="openTab('loja')">🛍️ LOJA / MOEDAS</div>
         <div class="tab" onclick="openTab('relatorio')">📊 RELATÓRIO</div>
     </div>
     
@@ -1112,15 +1111,11 @@ HTML = r'''
         <div class="estrategia-grid" id="estrategiaGrid"></div>
     </div>
     
-    <!-- PAINEL MOEDAS -->
-    <div class="panel" id="panel-moedas">
-        <div class="config-section"><h3>💳 COMPRAR MOEDAS COM PIX</h3><p style="color:#888;font-size:10px">📧 <input type="email" id="emailCompra" placeholder="Seu email" style="width:220px;padding:6px;background:#111;border:1px solid #333;color:#fff;border-radius:5px"></p><p style="color:#ffd700;font-size:10px;margin-top:5px">🪙 1 moeda = 1 ciclo | +1 moeda grátis/dia</p><p style="color:#888;font-size:9px;margin-top:3px">⭐ Selecione o plano e pague com PIX</p></div>
-        <div class="planos-grid">''' + ''.join([f'''<div class="plano-card" id="plano{p['id']}" onclick="selecionarPlano({p['id']})"><div style="color:#ffd700;font-size:11px">{p['nome']}</div><div class="plano-moedas">🪙 {p['moedas']}</div><div class="plano-preco">R$ {p['preco']:.2f}</div><div class="plano-desc">{p.get('desc','')}</div>{f'<div><span class="plano-desconto">{p["desconto"]}</span></div>' if p.get('desconto') else ''}{f'<div class="plano-tag">{p["tag"]}</div>' if p.get('tag') else ''}<button class="btn btn-buy" style="display:none;margin-top:8px;padding:8px" id="btnPlano{p['id']}" onclick="event.stopPropagation();pagarComPix({p['id']})">💳 PAGAR COM PIX</button></div>''' for p in PLANOS]) + r'''</div>
-    </div>
-    
     <!-- PAINEL LOJA -->
     <div class="panel" id="panel-loja">
-        <div class="config-section"><h3>🛍️ LOJA DE SKINS</h3><p style="color:#888;font-size:10px">Personalize a aparência do seu bot! Skins compradas ficam salvas.</p></div>
+        <div class="config-section"><h3>💳 COMPRAR MOEDAS COM PIX</h3><p style="color:#888;font-size:10px">📧 <input type="email" id="emailCompra" placeholder="Seu email" style="width:220px;padding:6px;background:#111;border:1px solid #333;color:#fff;border-radius:5px"></p><p style="color:#ffd700;font-size:10px;margin-top:5px">🪙 1 moeda = 1 ciclo | +1 moeda grátis/dia</p><p style="color:#888;font-size:9px;margin-top:3px">⭐ Selecione o plano e pague com PIX</p></div>
+        <div class="planos-grid"><div class="plano-card" id="plano1" onclick="selecionarPlano(1)"><div style="color:#ffd700;font-size:11px">🔰 INICIANTE</div><div class="plano-moedas">🪙 1</div><div class="plano-preco">R$ 0.99</div><div class="plano-desc">R$0,99/moeda</div><div class="plano-tag">1 por 1</div><button class="btn btn-buy" style="display:none;margin-top:8px;padding:8px" id="btnPlano1" onclick="event.stopPropagation();pagarComPix(1)">💳 PAGAR COM PIX</button></div><div class="plano-card" id="plano2" onclick="selecionarPlano(2)"><div style="color:#ffd700;font-size:11px">⭐ BÁSICO</div><div class="plano-moedas">🪙 5</div><div class="plano-preco">R$ 4.99</div><div class="plano-desc">R$1,00/moeda</div><button class="btn btn-buy" style="display:none;margin-top:8px;padding:8px" id="btnPlano2" onclick="event.stopPropagation();pagarComPix(2)">💳 PAGAR COM PIX</button></div><div class="plano-card" id="plano3" onclick="selecionarPlano(3)"><div style="color:#ffd700;font-size:11px">💎 INTERMEDIÁRIO</div><div class="plano-moedas">🪙 15</div><div class="plano-preco">R$ 9.99</div><div class="plano-desc">R$0,67/moeda</div><div><span class="plano-desconto">33% OFF</span></div><button class="btn btn-buy" style="display:none;margin-top:8px;padding:8px" id="btnPlano3" onclick="event.stopPropagation();pagarComPix(3)">💳 PAGAR COM PIX</button></div><div class="plano-card" id="plano4" onclick="selecionarPlano(4)"><div style="color:#ffd700;font-size:11px">🔥 PREMIUM</div><div class="plano-moedas">🪙 35</div><div class="plano-preco">R$ 14.99</div><div class="plano-desc">R$0,43/moeda</div><div><span class="plano-desconto">57% OFF</span></div><button class="btn btn-buy" style="display:none;margin-top:8px;padding:8px" id="btnPlano4" onclick="event.stopPropagation();pagarComPix(4)">💳 PAGAR COM PIX</button></div><div class="plano-card" id="plano5" onclick="selecionarPlano(5)"><div style="color:#ffd700;font-size:11px">👑 ULTRA</div><div class="plano-moedas">🪙 60</div><div class="plano-preco">R$ 19.99</div><div class="plano-desc">R$0,33/moeda</div><div><span class="plano-desconto">67% OFF</span></div><button class="btn btn-buy" style="display:none;margin-top:8px;padding:8px" id="btnPlano5" onclick="event.stopPropagation();pagarComPix(5)">💳 PAGAR COM PIX</button></div></div>
+        <div class="config-section" style="margin-top:25px"><h3>🛍️ SKINS DISPONÍVEIS</h3><p style="color:#888;font-size:10px">Personalize a aparência do seu bot! Skins compradas ficam salvas.</p></div>
         <div class="skins-grid" id="skinsGrid"></div>
     </div>
     
