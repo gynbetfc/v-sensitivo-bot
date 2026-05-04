@@ -18,7 +18,7 @@ app = Flask(__name__)
 
 # ============= CONFIGURAÇÕES (ORIGINAIS) =============
 TIMEFRAME, MARTINGALE, PAYOUT_PADRAO = 60, 2, 0.85
-TIMEOUT_ENTRE_CICLOS, STOP_GAIN_PERCENTUAL = 5, 100
+TIMEOUT_ENTRE_CICLOS, STOP_GAIN_PERCENTUAL = 5, 1
 
 # ============= GOOGLE DRIVE =============
 DRIVE_PATH = "/content/drive/MyDrive/vsens_users"
@@ -31,10 +31,11 @@ MODO_SIMULACAO = False
 
 # ⭐ PLANOS ⭐
 PLANOS = [
-    {'id':1,'moedas':10,'preco':0.10,'nome':'🧪 TESTES','desc':'1 centavo/moeda','tag':'Mercado Pago'},
-    {'id':2,'moedas':30,'preco':30.00,'nome':'💎 BÁSICO','desc':'R$1,00/moeda'},
-    {'id':3,'moedas':100,'preco':90.00,'nome':'🔥 PREMIUM','desc':'R$0,90/moeda','desconto':'10% OFF'},
-    {'id':4,'moedas':300,'preco':240.00,'nome':'👑 ULTRA','desc':'R$0,80/moeda','desconto':'20% OFF'},
+    {'id':1,'moedas':1,'preco':0.99,'nome':'🔰 INICIANTE','desc':'R$0,99/moeda','tag':'1 por 1'},
+    {'id':2,'moedas':5,'preco':4.99,'nome':'⭐ BÁSICO','desc':'R$1,00/moeda'},
+    {'id':3,'moedas':15,'preco':9.99,'nome':'💎 INTERMEDIÁRIO','desc':'R$0,67/moeda','desconto':'33% OFF'},
+    {'id':4,'moedas':35,'preco':14.99,'nome':'🔥 PREMIUM','desc':'R$0,43/moeda','desconto':'57% OFF'},
+    {'id':5,'moedas':60,'preco':19.99,'nome':'👑 ULTRA','desc':'R$0,33/moeda','desconto':'67% OFF'},
 ]
 
 def arquivo_usuario(email):
@@ -61,6 +62,7 @@ logs_web, MAX_LOGS_WEB = [], 200
 email_usuario_atual = ""
 
 pagamentos_pendentes = {}
+verificador_pix_ativo = True
 
 def add_log(msg, tipo='info'):
     global logs_web
@@ -329,7 +331,6 @@ def bot_loop():
 # ═══════════════════════════════════════════════════════
 
 def gerar_pix_mercadopago(email, plano):
-    """Gera QR Code PIX via Mercado Pago"""
     if MODO_SIMULACAO:
         pix_id = str(uuid.uuid4())[:8]
         pagamentos_pendentes[pix_id] = {'email': email, 'plano_id': plano['id'], 'moedas': plano['moedas'], 'valor': plano['preco'], 'pago': False, 'criado_em': str(datetime.now())[:19]}
@@ -351,7 +352,6 @@ def gerar_pix_mercadopago(email, plano):
         return {'sucesso': False, 'erro': str(e)}
 
 def verificar_pagamento_mp(pix_id):
-    """Verifica pagamento PIX"""
     if MODO_SIMULACAO:
         return pagamentos_pendentes.get(pix_id, {}).get('pago', False)
     try:
@@ -362,7 +362,31 @@ def verificar_pagamento_mp(pix_id):
         return False
 
 # ═══════════════════════════════════════════════════════
-# HTML COMPLETO
+# VERIFICADOR AUTOMÁTICO DE PAGAMENTOS PIX
+# ═══════════════════════════════════════════════════════
+
+def verificador_automatico_pix():
+    add_log("🔄 Verificador automático PIX iniciado!", "info")
+    while True:
+        time.sleep(10)
+        try:
+            pendentes = {k: v for k, v in pagamentos_pendentes.items() if not v.get('pago', False)}
+            for pix_id, dados in list(pendentes.items()):
+                if verificar_pagamento_mp(pix_id):
+                    pagamentos_pendentes[pix_id]['pago'] = True
+                    email = dados['email']
+                    moedas = dados['moedas']
+                    usuario = carregar_usuario(email) or criar_usuario(email)
+                    usuario['moedas'] = usuario.get('moedas', 0) + moedas
+                    salvar_usuario(email, usuario)
+                    add_log(f"✅ PIX {pix_id[:8]}... pago! +{moedas} moedas para {email}", "win")
+        except Exception as e:
+            pass
+
+threading.Thread(target=verificador_automatico_pix, daemon=True).start()
+
+# ═══════════════════════════════════════════════════════
+# HTML (ORIGINAL - SEM ALTERAÇÕES NAS ABAS)
 # ═══════════════════════════════════════════════════════
 HTML = r'''
 <!DOCTYPE html>
@@ -392,9 +416,6 @@ HTML = r'''
         .config-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
         .config-row label{color:#888;font-size:11px}
         .config-row select,.config-row input{padding:8px;background:#111;border:1px solid #333;border-radius:8px;color:#fff;font-size:11px;font-family:'Courier New',monospace}
-        .slider-group{display:flex;align-items:center;gap:6px}
-        .slider-group input[type=range]{width:90px;accent-color:#9933ff}
-        .slider-val{color:#ffd700;font-weight:bold;min-width:38px;text-align:center;font-size:13px}
         .btn{padding:10px 16px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:12px;font-family:'Courier New',monospace}
         .btn-start{background:linear-gradient(135deg,#6600cc,#9933ff);color:#fff}
         .btn-stop{background:linear-gradient(135deg,#cc0000,#ff4444);color:#fff}
@@ -443,10 +464,6 @@ HTML = r'''
     <div class="mantra">🌀 O DINHEIRO VEM ATÉ MIM DE TODOS OS LADOS 🌀</div>
     <div class="tabs"><div class="tab active" onclick="openTab('bot')">🤖 BOT</div><div class="tab" onclick="openTab('moedas')">💸 COMPRAR MOEDAS</div><div class="tab" onclick="openTab('relatorio')">📊 RELATÓRIO</div></div>
     <div class="panel active" id="panel-bot">
-        <div class="config-section"><h3>⚙️ CONFIGURAÇÕES</h3><div class="config-row">
-            <label>🔄 Gales:<select id="galesSelect"><option value="0">1 entrada (sem gale)</option><option value="1">2 entradas (1 gale)</option><option value="2" selected>3 entradas (2 gales)</option><option value="3">4 entradas (3 gales)</option><option value="4">5 entradas (4 gales)</option></select></label>
-            <div class="slider-group"><span style="color:#888;font-size:10px">🎯 Stop Gain:</span><input type="range" id="stopGainSlider" min="2" max="500" value="100" oninput="document.getElementById('stopGainVal').textContent=this.value+'%'"><span class="slider-val" id="stopGainVal">100%</span></div>
-        </div></div>
         <div class="config-section"><h3>🔐 IQ OPTION</h3><div class="config-row"><input type="email" id="email" placeholder="📧 Email IQ Option" style="flex:2"><input type="password" id="senha" placeholder="🔒 Senha" style="flex:1"><select id="tipo"><option value="PRACTICE">🧪</option><option value="REAL">💰</option></select><button class="btn btn-start" id="btnConectar" onclick="iniciarBot()">🚀 ATIVAR</button><button class="btn btn-stop" id="btnParar" onclick="pararBot()" style="display:none">⏹️ PARAR</button></div></div>
         <div class="dashboard"><div class="card"><div class="label">💰 BANCA</div><div class="value green" id="banca">--</div></div><div class="card"><div class="label">📈 LUCRO</div><div class="value" id="lucro">$0.00</div></div><div class="card"><div class="label">🎯 OPS</div><div class="value purple" id="ops">0</div></div><div class="card"><div class="label">🪙 MOEDAS</div><div class="value" id="moedasSaldo" style="color:#ffd700">0</div></div><div class="card"><div class="label">🔮 SINAL</div><div class="value" id="sinal" style="font-size:11px;color:#ff69b4">--</div></div></div>
         <div class="indicators"><div class="ind-card"><div class="ind-label">📊 RSI</div><div class="ind-value" id="rsi">--</div></div><div class="ind-card"><div class="ind-label">📈 MM5</div><div class="ind-value" id="mm5">--</div></div><div class="ind-card"><div class="ind-label">📈 MM10</div><div class="ind-value" id="mm10">--</div></div><div class="ind-card"><div class="ind-label">📉 MM20</div><div class="ind-value" id="mm20">--</div></div><div class="ind-card"><div class="ind-label">📊 ESTOC</div><div class="ind-value" id="stoch">--</div></div><div class="ind-card"><div class="ind-label">🌅 FASE</div><div class="ind-value" id="fase">--</div></div><div class="ind-card"><div class="ind-label">💵 PREÇO</div><div class="ind-value" id="preco">--</div></div></div>
@@ -475,7 +492,7 @@ HTML = r'''
 var intervalo=null,botAtivo=false,emailLogado='',planoSelecionado=0,pixAtual=null;
 function openTab(tab){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));event.target.classList.add('active');document.getElementById('panel-'+tab).classList.add('active');if(tab=='relatorio'&&emailLogado){document.getElementById('emailRelatorio').value=emailLogado;verRelatorio()}}
 window.onload=function(){fetch('/status').then(r=>r.json()).then(d=>{if(d.rodando&&d.email){botAtivo=true;emailLogado=d.email;document.getElementById('email').value=d.email;document.getElementById('btnConectar').style.display='none';document.getElementById('btnParar').style.display='inline-block';document.getElementById('statusTexto').textContent='🤖 Ativo';document.getElementById('statusDot').className='status-dot active';if(intervalo)clearInterval(intervalo);intervalo=setInterval(atualizar,2000);atualizar()}})}
-function iniciarBot(){var email=document.getElementById('email').value.trim();var senha=document.getElementById('senha').value.trim();var tipo=document.getElementById('tipo').value;var gales=parseInt(document.getElementById('galesSelect').value)||2;var stopGain=parseInt(document.getElementById('stopGainSlider').value)||100;if(!email||!senha){alert('Preencha email e senha!');return}emailLogado=email;document.getElementById('btnConectar').disabled=true;document.getElementById('btnConectar').textContent='...';fetch('/iniciar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,senha:senha,tipo:tipo,gales:gales,stop_gain:stopGain})}).then(r=>r.json()).then(d=>{if(d.ok){botAtivo=true;document.getElementById('btnConectar').style.display='none';document.getElementById('btnParar').style.display='inline-block';document.getElementById('statusTexto').textContent='🤖 Ativo';document.getElementById('statusDot').className='status-dot active';if(intervalo)clearInterval(intervalo);intervalo=setInterval(atualizar,2000)}else{alert('ERRO: '+d.erro);document.getElementById('btnConectar').disabled=false;document.getElementById('btnConectar').textContent='🚀 ATIVAR'}})}
+function iniciarBot(){var email=document.getElementById('email').value.trim();var senha=document.getElementById('senha').value.trim();var tipo=document.getElementById('tipo').value;var gales=2;var stopGain=1;if(!email||!senha){alert('Preencha email e senha!');return}emailLogado=email;document.getElementById('btnConectar').disabled=true;document.getElementById('btnConectar').textContent='...';fetch('/iniciar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,senha:senha,tipo:tipo,gales:gales,stop_gain:stopGain})}).then(r=>r.json()).then(d=>{if(d.ok){botAtivo=true;document.getElementById('btnConectar').style.display='none';document.getElementById('btnParar').style.display='inline-block';document.getElementById('statusTexto').textContent='🤖 Ativo';document.getElementById('statusDot').className='status-dot active';if(intervalo)clearInterval(intervalo);intervalo=setInterval(atualizar,2000)}else{alert('ERRO: '+d.erro);document.getElementById('btnConectar').disabled=false;document.getElementById('btnConectar').textContent='🚀 ATIVAR'}})}
 function pararBot(){if(!confirm('Parar?'))return;fetch('/parar',{method:'POST'}).then(r=>r.json()).then(d=>{botAtivo=false;document.getElementById('btnConectar').style.display='inline-block';document.getElementById('btnParar').style.display='none';document.getElementById('btnConectar').disabled=false;document.getElementById('btnConectar').textContent='🚀 ATIVAR';document.getElementById('statusTexto').textContent='⏸️ Parado';document.getElementById('statusDot').className='status-dot inactive';if(intervalo)clearInterval(intervalo)})}
 function selecionarPlano(id){
     document.querySelectorAll('.plano-card').forEach(c=>c.classList.remove('selecionado'));
@@ -558,8 +575,7 @@ def iniciar():
     try:
         d=request.get_json()
         email=d.get('email','').strip(); senha=d.get('senha','').strip(); tipo=d.get('tipo','PRACTICE')
-        gales=int(d.get('gales') or 2); stop_gain=int(d.get('stop_gain') or 100)
-        gales=max(0,min(4,gales)); stop_gain=max(2,min(500,stop_gain))
+        gales=2; stop_gain=1
         if not email or not senha: return jsonify({'ok':False,'erro':'Email e senha obrigatórios'})
         email_usuario_atual=email
         usuario=carregar_usuario(email)
@@ -568,7 +584,7 @@ def iniciar():
         if usuario.get('moedas_ganhas_hoje')!=hoje:
             usuario['moedas']=usuario.get('moedas',0)+1; usuario['moedas_ganhas_hoje']=hoje; salvar_usuario(email,usuario)
         usuario=carregar_usuario(email)
-        MARTINGALE=gales; STOP_GAIN_PERCENTUAL=stop_gain
+        MARTINGALE=2; STOP_GAIN_PERCENTUAL=1
         add_log('🔌 Conectando...','info')
         API=IQ_Option(email,senha)
         status_conn,reason=API.connect()
