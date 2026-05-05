@@ -322,6 +322,7 @@ def salvar_usuario(email,dados):
     def salvar_github():
         try:
             token = os.environ.get("GH_TOKEN", "")
+            print(f"🔑 GH_TOKEN configurado: {bool(token)}")
             if not token: return
             nome = f"vsens_users/{email.replace('@','_').replace('.','_')}.json"
             url = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/{nome}"
