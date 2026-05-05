@@ -303,12 +303,37 @@ def arquivo_usuario(email):
 
 def carregar_usuario(email):
     arq=arquivo_usuario(email)
-    if os.path.exists(arq): return json.load(open(arq,'r'))
+    if os.path.exists(arq):
+        try: return json.load(open(arq,'r'))
+        except: pass
+    try:
+        nome = f"vsens_users/{email.replace('@','_').replace('.','_')}.json"
+        r = requests.get(f"https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/{nome}")
+        if r.status_code == 200:
+            dados = r.json()
+            os.makedirs(os.path.dirname(arq), exist_ok=True)
+            with open(arq,'w') as f: json.dump(dados,f,indent=2)
+            return dados
+    except: pass
     return None
 
 def salvar_usuario(email,dados):
-    os.system("cd /workspaces/v-sensitivo-bot && git add vsens_users/ && git commit -m backup && git push 2>/dev/null &")
     with open(arquivo_usuario(email),'w') as f: json.dump(dados,f,indent=2)
+    def salvar_github():
+        try:
+            token = os.environ.get("GH_TOKEN", "")
+            if not token: return
+            nome = f"vsens_users/{email.replace('@','_').replace('.','_')}.json"
+            url = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/{nome}"
+            headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
+            r = requests.get(url, headers=headers)
+            sha = r.json().get("sha") if r.status_code == 200 else None
+            conteudo = base64.b64encode(json.dumps(dados, indent=2).encode()).decode()
+            data = {"message": f"Update {email}", "content": conteudo, "branch": "main"}
+            if sha: data["sha"] = sha
+            requests.put(url, json=data, headers=headers)
+        except: pass
+    threading.Thread(target=salvar_github, daemon=True).start()
 
 def criar_usuario(email):
     return {
@@ -737,8 +762,7 @@ MAPA_SINAIS = {
     'terceira_igual_primeira': sinal_terceira_igual_primeira,
     'quadrante_de_7': sinal_quadrante_de_7,
     'fluxo_de_velas': sinal_fluxo_de_velas,
-    'nove_e_trinta': sinal_nove_e_trinta,
-    'reversao': sinal_reversao,
+        'reversao': sinal_reversao,
     'm5': sinal_m5
 }
 
@@ -1076,7 +1100,7 @@ HTML = r'''
             <input type="email" id="email" placeholder="📧 Email IQ Option" style="flex:2">
             <input type="password" id="senha" placeholder="🔒 Senha" style="flex:1">
             <select id="tipo"><option value="PRACTICE">🧪</option><option value="REAL">💰</option></select>
-            <button class="btn btn-info" id="btnConectar" onclick="conectarIQ()">🔌 CONECTAR</button>
+            <button class="btn btn-info" id="btnConectar" onclick="toggleConexao()">🔌 CONECTAR</button>
             <button class="btn btn-start" id="btnOperar" onclick="comecarOperar()" style="display:none">🚀 COMEÇAR OPERAR</button>
             <button class="btn btn-stop" id="btnParar" onclick="pararBot()" style="display:none">⏹️ PARAR</button>
         </div></div>
@@ -1150,22 +1174,21 @@ function openTab(tab){
 }
 
 function toggleConexao(){
-    if(conectadoIQ){ desconectar(); }
-    else{ conectarIQ(); }
-}
-
-function desconectar(){
-    if(!confirm('Desconectar?'))return;
-    fetch('/desconectar',{method:'POST'}).then(r=>r.json()).then(d=>{
-        conectadoIQ=false;botAtivo=false;
-        document.getElementById('btnConectar').textContent='🔌 CONECTAR';
-        document.getElementById('btnConectar').className='btn btn-info';
-        document.getElementById('btnOperar').style.display='none';
-        document.getElementById('btnParar').style.display='none';
-        document.getElementById('statusTexto').textContent='⏸️ Desconectado';
-        document.getElementById('statusDot').className='status-dot inactive';
-        if(intervalo)clearInterval(intervalo);
-    });
+    if(conectadoIQ){
+        if(!confirm('Desconectar?'))return;
+        fetch('/desconectar',{method:'POST'}).then(r=>r.json()).then(d=>{
+            conectadoIQ=false;botAtivo=false;
+            document.getElementById('btnConectar').textContent='🔌 CONECTAR';
+            document.getElementById('btnConectar').className='btn btn-info';
+            document.getElementById('btnOperar').style.display='none';
+            document.getElementById('btnParar').style.display='none';
+            document.getElementById('statusTexto').textContent='⏸️ Desconectado';
+            document.getElementById('statusDot').className='status-dot inactive';
+            if(intervalo)clearInterval(intervalo);
+        });
+        return;
+    }
+    conectarIQ();
 }
 
 function conectarIQ(){
@@ -1179,7 +1202,7 @@ function conectarIQ(){
     fetch('/conectar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,senha:senha,tipo:tipo})})
     .then(r=>r.json()).then(d=>{
         if(d.ok){
-            conectadoIQ=true; document.getElementById('btnConectar').textContent='🔌 DESCONECTAR'; document.getElementById('btnConectar').className='btn btn-stop';
+            conectadoIQ=true;
             document.getElementById('btnConectar').style.display='none';
             document.getElementById('btnOperar').style.display='inline-block';
             document.getElementById('statusTexto').textContent='🟢 Conectado';
@@ -1455,7 +1478,7 @@ window.onload=function(){
         if(d.estrategia){estrategiaSel=d.estrategia;renderEstrategias();}
         if(d.estrategia_nome)document.getElementById('estrategiaAtiva').textContent=d.estrategia_nome;
         if(d.conectado&&d.email){
-            conectadoIQ=true; document.getElementById('btnConectar').textContent='🔌 DESCONECTAR'; document.getElementById('btnConectar').className='btn btn-stop';emailLogado=d.email;
+            conectadoIQ=true;emailLogado=d.email;
             document.getElementById('email').value=d.email;
             document.getElementById('btnConectar').style.display='none';
             if(d.rodando){botAtivo=true;document.getElementById('btnOperar').style.display='none';document.getElementById('btnParar').style.display='inline-block';document.getElementById('statusTexto').textContent='🤖 Operando';}
