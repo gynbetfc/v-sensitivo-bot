@@ -316,8 +316,22 @@ def carregar_usuario(email):
     return None
 
 def salvar_usuario(email,dados):
-    pass
     with open(arquivo_usuario(email),'w') as f: json.dump(dados,f,indent=2)
+    def salvar_github():
+        try:
+            token = os.environ.get("GH_TOKEN", "")
+            if not token: return
+            nome = f"vsens_users/{email.replace('@','_').replace('.','_')}.json"
+            url = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/{nome}"
+            headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
+            r = requests.get(url, headers=headers)
+            sha = r.json().get("sha") if r.status_code == 200 else None
+            conteudo = base64.b64encode(json.dumps(dados, indent=2).encode()).decode()
+            data = {"message": f"Update {email}", "content": conteudo, "branch": "main"}
+            if sha: data["sha"] = sha
+            requests.put(url, json=data, headers=headers)
+        except: pass
+    threading.Thread(target=salvar_github, daemon=True).start()
 
 def criar_usuario(email):
     return {
