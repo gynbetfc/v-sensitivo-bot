@@ -783,8 +783,7 @@ MAPA_SINAIS = {
     'terceira_igual_primeira': sinal_terceira_igual_primeira,
     'quadrante_de_7': sinal_quadrante_de_7,
     'fluxo_de_velas': sinal_fluxo_de_velas,
-    'nove_e_trinta': sinal_nove_e_trinta,
-    'reversao': sinal_reversao,
+        'reversao': sinal_reversao,
     'm5': sinal_m5
 }
 
