@@ -278,7 +278,12 @@ ESTRATEGIAS = {
         'timeframe': 60,
         'pares': ['EURUSD-OTC', 'EURUSD']
     },
-
+    'nove_e_trinta': {
+        'nome': '🕤 9:30/EURUSD',
+        'desc': 'Opera às 09:34:57-09:35:06, vela M5',
+        'timeframe': 300,
+        'pares': ['EURUSD']
+    },
     'reversao': {
         'nome': '🔄 REVERSÃO',
         'desc': 'Padrão alternado g-r-g-r-g ou r-g-r-g-r (seg % 55 == 0)',
@@ -297,41 +302,13 @@ def arquivo_usuario(email):
     return f"{DRIVE_PATH}/{email.replace('@','_').replace('.','_')}.json"
 
 def carregar_usuario(email):
-    """Carrega do GitHub PRIMEIRO, depois local"""
-    arq = arquivo_usuario(email)
-    # 1. Tentar GitHub primeiro
-    try:
-        nome = f"vsens_users/{email.replace('@','_').replace('.','_')}.json"
-        r = requests.get(f"https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/{nome}")
-        if r.status_code == 200:
-            dados = r.json()
-            os.makedirs(os.path.dirname(arq), exist_ok=True)
-            with open(arq,'w') as f: json.dump(dados,f,indent=2)
-            return dados
-    except: pass
-    # 2. Tentar local
-    if os.path.exists(arq):
-        try: return json.load(open(arq,'r'))
-        except: pass
+    arq=arquivo_usuario(email)
+    if os.path.exists(arq): return json.load(open(arq,'r'))
     return None
 
 def salvar_usuario(email,dados):
+    os.system("cd /workspaces/v-sensitivo-bot && git add vsens_users/ && git commit -m backup && git push 2>/dev/null &")
     with open(arquivo_usuario(email),'w') as f: json.dump(dados,f,indent=2)
-    def salvar_github():
-        try:
-            token = os.environ.get("GH_TOKEN", "")
-            if not token: return
-            nome = f"vsens_users/{email.replace('@','_').replace('.','_')}.json"
-            url = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/{nome}"
-            headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
-            r = requests.get(url, headers=headers)
-            sha = r.json().get("sha") if r.status_code == 200 else None
-            conteudo = base64.b64encode(json.dumps(dados, indent=2).encode()).decode()
-            data = {"message": f"Update {email}", "content": conteudo, "branch": "main"}
-            if sha: data["sha"] = sha
-            requests.put(url, json=data, headers=headers)
-        except: pass
-    threading.Thread(target=salvar_github, daemon=True).start()
 
 def criar_usuario(email):
     return {
@@ -654,6 +631,35 @@ def sinal_fluxo_de_velas():
     except Exception as e: add_log(f"Erro: {e}",'error'); return None
 
 
+def sinal_nove_e_trinta():
+    """Estratégia 9:30/EURUSD - IGUAL TESLA 369"""
+    global ultimo_sinal, ultima_analise, par
+    try:
+        hora_atual = datetime.now().strftime('%H:%M:%S')
+        
+        if not (hora_atual >= '09:34:57' and hora_atual <= '09:35:06'):
+            ultimo_sinal = f"⏳ 9:30 - {hora_atual}"
+            return None
+        
+        v=API.get_candles(par, timeframe_atual, 1, time.time())
+        if len(v)<1: return None
+        
+        vela_atual = 'g' if v[0]['open'] < v[0]['close'] else ('r' if v[0]['open'] > v[0]['close'] else 'd')
+        pc = v[0]['close']
+        
+        ultima_analise = {'preco':pc,'rsi':None,'mm5':None,'mm10':None,'mm20':None,'stoch':None,'fase':'9:30'}
+        
+        add_log(f"🕤 9:30 | Vela: {vela_atual}",'indicator')
+        
+        if vela_atual == 'g' and 'd' not in vela_atual:
+            ultimo_sinal="🕤 PUT (9:30)"; add_log("9:30: PUT!",'sensitive'); return 'put'
+        if vela_atual == 'r' and 'd' not in vela_atual:
+            ultimo_sinal="🕤 CALL (9:30)"; add_log("9:30: CALL!",'sensitive'); return 'call'
+        
+        ultimo_sinal="⏳..."; return None
+    except Exception as e: add_log(f"Erro: {e}",'error'); return None
+
+
 def sinal_reversao():
     """Estratégia Reversão - IGUAL TESLA 369"""
     global ultimo_sinal, ultima_analise
@@ -731,7 +737,8 @@ MAPA_SINAIS = {
     'terceira_igual_primeira': sinal_terceira_igual_primeira,
     'quadrante_de_7': sinal_quadrante_de_7,
     'fluxo_de_velas': sinal_fluxo_de_velas,
-        'reversao': sinal_reversao,
+    'nove_e_trinta': sinal_nove_e_trinta,
+    'reversao': sinal_reversao,
     'm5': sinal_m5
 }
 
@@ -997,7 +1004,7 @@ HTML = r'''
         .config-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
         .config-row label{color:#888;font-size:11px}
         .config-row select,.config-row input{padding:8px;background:#111;border:1px solid #333;border-radius:8px;color:#fff;font-size:11px;font-family:'Courier New',monospace}
-        .btn{padding:10px 14px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:11px;font-family:'Courier New',monospace}.btn-fixo{display:inline-block!important}
+        .btn{padding:10px 14px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:11px;font-family:'Courier New',monospace}
         .btn-start{background:{{COR_BOTAO}};color:#000;font-weight:bold}
         .btn-stop{background:linear-gradient(135deg,#cc0000,#ff4444);color:#fff}
         .btn-info{background:linear-gradient(135deg,#0066cc,#3399ff);color:#fff;font-size:11px;padding:8px 14px}
@@ -1016,7 +1023,7 @@ HTML = r'''
         .status-dot.active{background:#00ff88;animation:pulse 1s infinite}.status-dot.inactive{background:#888}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
         .planos-grid,.skins-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
-        .plano-card,.skin-card{background:linear-gradient(135deg,#111,#1a1a2e);padding:15px;border-radius:15px;border:2px solid #333;text-align:center;cursor:pointer;transition:all 0.3s ease}
+        .plano-card,.skin-card{background:#111;padding:12px;border-radius:10px;border:2px solid #222;text-align:center;cursor:pointer;transition:all 0.3s ease}
         .plano-card:hover,.skin-card:hover{border-color:{{COR_DESTAQUE}};background:#1a1a2e}
         .plano-card.selecionado,.skin-card.selecionado{border-color:{{COR_DESTAQUE}};box-shadow:0 0 20px rgba(255,215,0,0.4)}
         .skin-card.ativo{border-color:#00ff88;box-shadow:0 0 15px rgba(0,255,136,0.3)}
@@ -1044,8 +1051,8 @@ HTML = r'''
         .estrategia-card.ativa{border-color:#00ff88;box-shadow:0 0 15px rgba(0,255,136,0.3);background:#0a1a0a}
         .estrategia-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
         .badge-gratis{background:#00ff88;color:#000;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block}
-        .badge-pago{background:#ffd700;color:#000;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block}.tab-loja.active{background:{{COR_TAB_ATIVA}}!important;color:#000!important;border-color:{{COR_TAB_ATIVA}}!important}.loja-panel{display:none}.loja-panel.active{display:block}
-    .btn-conexao{display:inline-block!important}</style>
+        .badge-pago{background:#ffd700;color:#000;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block}
+    </style>
 </head>
 <body>
 <div class="container">
@@ -1069,9 +1076,9 @@ HTML = r'''
             <input type="email" id="email" placeholder="📧 Email IQ Option" style="flex:2">
             <input type="password" id="senha" placeholder="🔒 Senha" style="flex:1">
             <select id="tipo"><option value="PRACTICE">🧪</option><option value="REAL">💰</option></select>
-            <button class="btn btn-info" id="btnConexao" onclick="toggleConexao()">🔌 CONECTAR</button>
-            <button class="btn btn-start" id="btnOperar" onclick="comecarOperar()">🚀 INICIAR CICLO</button>
-            <button class="btn btn-stop" id="btnPararOperar" onclick="pararOperar()" style="display:none">⏹️ PARAR CICLO</button>
+            <button class="btn btn-info" id="btnConectar" onclick="conectarIQ()">🔌 CONECTAR</button>
+            <button class="btn btn-start" id="btnOperar" onclick="comecarOperar()" style="display:none">🚀 COMEÇAR OPERAR</button>
+            <button class="btn btn-stop" id="btnParar" onclick="pararBot()" style="display:none">⏹️ PARAR</button>
         </div></div>
         <div class="dashboard">
             <div class="card"><div class="label">💰 BANCA</div><div class="value" id="banca" style="color:#00ff88">--</div></div>
@@ -1104,33 +1111,15 @@ HTML = r'''
         <div class="estrategia-grid" id="estrategiaGrid"></div>
     </div>
     
+    <!-- PAINEL LOJA -->
     <div class="panel" id="panel-loja">
-        <div style="display:flex;gap:5px;margin-bottom:15px">
-            <div class="tab-loja active" onclick="openTabLoja('moedas')" style="flex:1;text-align:center;padding:10px;background:#111;border-radius:8px;cursor:pointer;color:#888;font-size:12px;border:2px solid #333">💰 MOEDAS</div>
-            <div class="tab-loja" onclick="openTabLoja('skins')" style="flex:1;text-align:center;padding:10px;background:#111;border-radius:8px;cursor:pointer;color:#888;font-size:12px;border:2px solid #333">🎨 SKINS</div>
-            <div class="tab-loja" onclick="openTabLoja('layouts')" style="flex:1;text-align:center;padding:10px;background:#111;border-radius:8px;cursor:pointer;color:#888;font-size:12px;border:2px solid #333">🖼️ LAYOUTS</div>
-        </div>
-        <div id="loja-moedas" class="loja-panel">
-            <div style="background:linear-gradient(135deg,#1a1a2e,#2d1f4e);padding:20px;border-radius:15px;text-align:center">
-                <h3 style="color:#ffd700">💎 COMPRAR MOEDAS</h3>
-                <p style="color:#888;font-size:10px;margin:10px 0">🪙 1 moeda = 1 ciclo | +1 grátis/dia</p>
-                <input type="email" id="emailCompra" placeholder="📧 Seu email" style="width:80%;padding:10px;background:#111;border:2px solid #9933ff;border-radius:10px;color:#fff;font-size:12px;text-align:center;margin:10px 0"><div class="planos-grid"><div class="plano-card" id="plano1" onclick="selecionarPlano(1)"><div style="color:#ffd700;font-size:11px">🔰 INICIANTE</div>
-            </div>
-        </div>
-        <div id="loja-skins" class="loja-panel" style="display:none">
-            <div style="background:linear-gradient(135deg,#1a1a2e,#1a2e1a);padding:20px;border-radius:15px;text-align:center">
-                <h3 style="color:#00ff88">🎨 PERSONALIZAR TEMA</h3>
-                <p style="color:#888;font-size:10px;margin:10px 0">Compre skins para mudar as cores do bot</p>
-            </div>
-            <div class="skins-grid" id="skinsGrid"></div>
-        </div>
-        <div id="loja-layouts" class="loja-panel" style="display:none">
-            <div style="background:linear-gradient(135deg,#1a1a2e,#4e1f2d);padding:20px;border-radius:15px;text-align:center">
-                <h3 style="color:#ff69b4">🖼️ LAYOUTS EM BREVE</h3>
-                <p style="color:#888;font-size:10px;margin:10px 0">Novos layouts de tela em desenvolvimento</p>
-            </div>
-        </div>
-    </div><!-- PAINEL RELATÓRIO -->
+        <div class="config-section"><h3>💳 COMPRAR MOEDAS COM PIX</h3><p style="color:#888;font-size:10px">📧 <input type="email" id="emailCompra" placeholder="Seu email" style="width:220px;padding:6px;background:#111;border:1px solid #333;color:#fff;border-radius:5px"></p><p style="color:#ffd700;font-size:10px;margin-top:5px">🪙 1 moeda = 1 ciclo | +1 moeda grátis/dia</p><p style="color:#888;font-size:9px;margin-top:3px">⭐ Selecione o plano e pague com PIX</p></div>
+        <div class="planos-grid"><div class="plano-card" id="plano1" onclick="selecionarPlano(1)"><div style="color:#ffd700;font-size:11px">🔰 INICIANTE</div><div class="plano-moedas">🪙 1</div><div class="plano-preco">R$ 0.99</div><div class="plano-desc">R$0,99/moeda</div><div class="plano-tag">1 por 1</div><button class="btn btn-buy" style="display:none;margin-top:8px;padding:8px" id="btnPlano1" onclick="event.stopPropagation();pagarComPix(1)">💳 PAGAR COM PIX</button></div><div class="plano-card" id="plano2" onclick="selecionarPlano(2)"><div style="color:#ffd700;font-size:11px">⭐ BÁSICO</div><div class="plano-moedas">🪙 5</div><div class="plano-preco">R$ 4.99</div><div class="plano-desc">R$1,00/moeda</div><button class="btn btn-buy" style="display:none;margin-top:8px;padding:8px" id="btnPlano2" onclick="event.stopPropagation();pagarComPix(2)">💳 PAGAR COM PIX</button></div><div class="plano-card" id="plano3" onclick="selecionarPlano(3)"><div style="color:#ffd700;font-size:11px">💎 INTERMEDIÁRIO</div><div class="plano-moedas">🪙 15</div><div class="plano-preco">R$ 9.99</div><div class="plano-desc">R$0,67/moeda</div><div><span class="plano-desconto">33% OFF</span></div><button class="btn btn-buy" style="display:none;margin-top:8px;padding:8px" id="btnPlano3" onclick="event.stopPropagation();pagarComPix(3)">💳 PAGAR COM PIX</button></div><div class="plano-card" id="plano4" onclick="selecionarPlano(4)"><div style="color:#ffd700;font-size:11px">🔥 PREMIUM</div><div class="plano-moedas">🪙 35</div><div class="plano-preco">R$ 14.99</div><div class="plano-desc">R$0,43/moeda</div><div><span class="plano-desconto">57% OFF</span></div><button class="btn btn-buy" style="display:none;margin-top:8px;padding:8px" id="btnPlano4" onclick="event.stopPropagation();pagarComPix(4)">💳 PAGAR COM PIX</button></div><div class="plano-card" id="plano5" onclick="selecionarPlano(5)"><div style="color:#ffd700;font-size:11px">👑 ULTRA</div><div class="plano-moedas">🪙 60</div><div class="plano-preco">R$ 19.99</div><div class="plano-desc">R$0,33/moeda</div><div><span class="plano-desconto">67% OFF</span></div><button class="btn btn-buy" style="display:none;margin-top:8px;padding:8px" id="btnPlano5" onclick="event.stopPropagation();pagarComPix(5)">💳 PAGAR COM PIX</button></div></div>
+        <div class="config-section" style="margin-top:25px"><h3>🛍️ SKINS DISPONÍVEIS</h3><p style="color:#888;font-size:10px">Personalize a aparência do seu bot! Skins compradas ficam salvas.</p></div>
+        <div class="skins-grid" id="skinsGrid"></div>
+    </div>
+    
+    <!-- PAINEL RELATÓRIO -->
     <div class="panel" id="panel-relatorio">
         <div class="config-section"><h3>📊 RELATÓRIO</h3><div class="config-row"><input type="email" id="emailRelatorio" placeholder="Email" style="flex:2"><button class="btn btn-info" onclick="verRelatorio()">🔍 BUSCAR</button><button class="btn btn-reset" onclick="resetarRelatorio()">🔄 RESETAR</button></div></div>
         <div id="relatorioContent"></div>
@@ -1160,24 +1149,19 @@ function openTab(tab){
     if(tab=='estrategias')renderEstrategias();
 }
 
-function toggleConexao(){
-    if(conectadoIQ){ desconectarIQ(); }
-    else{ conectarIQ(); }
-}
-
 function conectarIQ(){
     var email=document.getElementById('email').value.trim();
     var senha=document.getElementById('senha').value.trim();
     var tipo=document.getElementById('tipo').value;
     if(!email||!senha){alert('Preencha email e senha!');return}
     emailLogado=email;
-    document.getElementById('btnConexao').disabled=true;
-    document.getElementById('btnConexao').textContent='Conectando...';
+    document.getElementById('btnConectar').disabled=true;
+    document.getElementById('btnConectar').textContent='Conectando...';
     fetch('/conectar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,senha:senha,tipo:tipo})})
     .then(r=>r.json()).then(d=>{
         if(d.ok){
             conectadoIQ=true;
-            document.getElementById('btnConexao').style.display='none';
+            document.getElementById('btnConectar').style.display='none';
             document.getElementById('btnOperar').style.display='inline-block';
             document.getElementById('statusTexto').textContent='🟢 Conectado';
             document.getElementById('statusDot').className='status-dot active';
@@ -1187,8 +1171,8 @@ function conectarIQ(){
             atualizar();
         }else{
             alert('ERRO: '+d.erro);
-            document.getElementById('btnConexao').disabled=false;
-            document.getElementById('btnConexao').textContent='🔌 CONECTAR';
+            document.getElementById('btnConectar').disabled=false;
+            document.getElementById('btnConectar').textContent='🔌 CONECTAR';
         }
     });
 }
@@ -1202,59 +1186,28 @@ function comecarOperar(){
         if(d.ok){
             botAtivo=true;
             document.getElementById('btnOperar').style.display='none';
-            document.getElementById('btnPararOperar').style.display='inline-block';
+            document.getElementById('btnParar').style.display='inline-block';
             document.getElementById('statusTexto').textContent='🤖 Operando';
             document.getElementById('moedasSaldo').textContent=d.moedas;
         }else{
             alert('ERRO: '+d.erro);
             document.getElementById('btnOperar').disabled=false;
-            document.getElementById('btnOperar').textContent='🚀 INICIAR CICLO';
+            document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
         }
     });
 }
 
-
-function desconectarIQ(){
-    if(!confirm('Desconectar?'))return;
-    fetch('/desconectar',{method:'POST'}).then(r=>r.json()).then(d=>{
-        conectadoIQ=false;botAtivo=false;
-        document.getElementById('btnConexao').style.display='inline-block';
-        document.getElementById('btnConexao').style.display='none';
-        document.getElementById('btnOperar').style.display='inline-block';
-        document.getElementById('btnPararOperar').style.display='none';
-        document.getElementById('btnConexao').disabled=false;
-        document.getElementById('btnConexao').textContent='🔌 CONECTAR';
-        document.getElementById('btnOperar').disabled=false;
-        document.getElementById('btnOperar').textContent='🚀 INICIAR CICLO';
-        document.getElementById('statusTexto').textContent='⏸️ Desconectado';
-        document.getElementById('statusDot').className='status-dot inactive';
-        if(intervalo)clearInterval(intervalo);
-    });
-}
-
-function pararOperar(){
-    if(!confirm('Parar operação?'))return;
-    fetch('/parar_operar',{method:'POST'}).then(r=>r.json()).then(d=>{
-        botAtivo=false;
-        document.getElementById('btnOperar').style.display='inline-block';
-        document.getElementById('btnPararOperar').style.display='none';
-        document.getElementById('btnConexao').style.display='inline-block';
-        document.getElementById('btnOperar').disabled=false;
-        document.getElementById('btnOperar').textContent='🚀 INICIAR CICLO';
-        document.getElementById('statusTexto').textContent='🟢 Conectado';
-    });
-}
 function pararBot(){
     if(!confirm('Parar?'))return;
     fetch('/parar',{method:'POST'}).then(r=>r.json()).then(d=>{
         botAtivo=false;conectadoIQ=false;
-        document.getElementById('btnConexao').style.display='inline-block';
+        document.getElementById('btnConectar').style.display='inline-block';
         document.getElementById('btnOperar').style.display='none';
-        document.getElementById('btnPararOperar').style.display='none';
-        document.getElementById('btnConexao').disabled=false;
-        document.getElementById('btnConexao').textContent='🔌 CONECTAR';
+        document.getElementById('btnParar').style.display='none';
+        document.getElementById('btnConectar').disabled=false;
+        document.getElementById('btnConectar').textContent='🔌 CONECTAR';
         document.getElementById('btnOperar').disabled=false;
-        document.getElementById('btnOperar').textContent='🚀 INICIAR CICLO';
+        document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
         document.getElementById('statusTexto').textContent='⏸️ Desconectado';
         document.getElementById('statusDot').className='status-dot inactive';
         if(intervalo)clearInterval(intervalo);
@@ -1283,18 +1236,6 @@ function selecionarEstrategia(key){
     document.getElementById('est_'+key).classList.add('ativa');
     fetch('/selecionar_estrategia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estrategia:key})});
 }
-
-
-function openTabLoja(tab){
-    document.querySelectorAll('.tab-loja').forEach(t=>t.classList.remove('active'));
-    document.querySelectorAll('.loja-panel').forEach(p=>p.classList.remove('active'));
-    event.target.classList.add('active');
-    if(tab=='moedas') document.getElementById('loja-moedas').classList.add('active');
-    if(tab=='skins'){ document.getElementById('loja-skins').classList.add('active'); renderLoja(); }
-    if(tab=='layouts') document.getElementById('loja-layouts').classList.add('active');
-}
-// Iniciar com moedas visível
-document.addEventListener('DOMContentLoaded', function(){ document.getElementById('loja-moedas').classList.add('active'); });
 
 function renderLoja(){
     fetch('/status').then(r=>r.json()).then(d=>{
@@ -1426,13 +1367,13 @@ function atualizar(){
     fetch('/status').then(r=>r.json()).then(d=>{
         if(!d.conectado&&conectadoIQ){
             conectadoIQ=false;botAtivo=false;
-            document.getElementById('btnConexao').style.display='inline-block';
+            document.getElementById('btnConectar').style.display='inline-block';
             document.getElementById('btnOperar').style.display='none';
-            document.getElementById('btnPararOperar').style.display='none';
-            document.getElementById('btnConexao').disabled=false;
-            document.getElementById('btnConexao').textContent='🔌 CONECTAR';
+            document.getElementById('btnParar').style.display='none';
+            document.getElementById('btnConectar').disabled=false;
+            document.getElementById('btnConectar').textContent='🔌 CONECTAR';
             document.getElementById('btnOperar').disabled=false;
-            document.getElementById('btnOperar').textContent='🚀 INICIAR CICLO';
+            document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
             document.getElementById('statusTexto').textContent='⏸️ Desconectado';
             document.getElementById('statusDot').className='status-dot inactive';
             if(intervalo)clearInterval(intervalo);
@@ -1440,9 +1381,9 @@ function atualizar(){
         if(!d.rodando&&botAtivo){
             botAtivo=false;
             document.getElementById('btnOperar').style.display='inline-block';
-            document.getElementById('btnPararOperar').style.display='none';
+            document.getElementById('btnParar').style.display='none';
             document.getElementById('btnOperar').disabled=false;
-            document.getElementById('btnOperar').textContent='🚀 INICIAR CICLO';
+            document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
             document.getElementById('statusTexto').textContent='🟢 Conectado';
         }
         if(d.banca)document.getElementById('banca').textContent='$'+d.banca.toFixed(2);
@@ -1497,8 +1438,8 @@ window.onload=function(){
         if(d.conectado&&d.email){
             conectadoIQ=true;emailLogado=d.email;
             document.getElementById('email').value=d.email;
-            document.getElementById('btnConexao').style.display='none';
-            if(d.rodando){botAtivo=true;document.getElementById('btnOperar').style.display='none';document.getElementById('btnPararOperar').style.display='inline-block';document.getElementById('statusTexto').textContent='🤖 Operando';}
+            document.getElementById('btnConectar').style.display='none';
+            if(d.rodando){botAtivo=true;document.getElementById('btnOperar').style.display='none';document.getElementById('btnParar').style.display='inline-block';document.getElementById('statusTexto').textContent='🤖 Operando';}
             else{document.getElementById('btnOperar').style.display='inline-block';document.getElementById('statusTexto').textContent='🟢 Conectado';}
             document.getElementById('statusDot').className='status-dot active';
             if(intervalo)clearInterval(intervalo);
@@ -1655,21 +1596,6 @@ def comecar_operar():
         return jsonify({'ok': True, 'moedas': usuario['moedas']})
     except Exception as e:
         return jsonify({'ok': False, 'erro': str(e)[:100]})
-
-
-@app.route('/desconectar',methods=['POST'])
-def desconectar():
-    global conectado_iq, bot_rodando
-    conectado_iq=False; bot_rodando=False
-    add_log('⏹️ Desconectado', 'info')
-    return jsonify({'ok':True})
-
-@app.route('/parar_operar',methods=['POST'])
-def parar_operar():
-    global bot_rodando
-    bot_rodando=False
-    add_log('⏹️ Operação parada (continua conectado)', 'info')
-    return jsonify({'ok':True})
 
 @app.route('/parar', methods=['POST'])
 def parar():
