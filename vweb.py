@@ -1623,7 +1623,7 @@ def comecar_operar():
             return jsonify({'ok': False, 'erro': 'Sem moedas! Compre mais.'})
         
         usuario['moedas'] -= 1
-        usuario['total_ciclos'] += 1
+        usuario['total_ciclos'] = usuario.get('total_ciclos', 0) + 1
         salvar_usuario(email_usuario_atual, usuario)
         
         add_log(f'🪙 Moeda consumida! Restam: {usuario["moedas"]} | Ciclo: {usuario["total_ciclos"]}', 'info')
