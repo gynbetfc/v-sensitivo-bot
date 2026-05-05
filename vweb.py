@@ -1030,7 +1030,7 @@ HTML = r'''
         .estrategia-card.ativa{border-color:#00ff88;box-shadow:0 0 15px rgba(0,255,136,0.3);background:#0a1a0a}
         .estrategia-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
         .badge-gratis{background:#00ff88;color:#000;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block}
-        .badge-pago{background:#ffd700;color:#000;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block}
+        .badge-pago{background:#ffd700;color:#000;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block}.tab-loja.active{background:{{COR_TAB_ATIVA}}!important;color:#000!important;border-color:{{COR_TAB_ATIVA}}!important}.loja-panel{display:none}.loja-panel.active{display:block}
     </style>
 </head>
 <body>
@@ -1055,8 +1055,7 @@ HTML = r'''
             <input type="email" id="email" placeholder="📧 Email IQ Option" style="flex:2">
             <input type="password" id="senha" placeholder="🔒 Senha" style="flex:1">
             <select id="tipo"><option value="PRACTICE">🧪</option><option value="REAL">💰</option></select>
-            <button class="btn btn-info btn-fixo" id="btnConectar" onclick="conectarIQ()">🔌 CONECTAR</button>
-            <button class="btn btn-stop btn-fixo" id="btnDesconectar" onclick="desconectarIQ()" style="display:none">🔌 DESCONECTAR</button>
+            <button class="btn btn-info" id="btnConexao" onclick="toggleConexao()">🔌 CONECTAR</button>
             <button class="btn btn-start" id="btnOperar" onclick="comecarOperar()">🚀 INICIAR CICLO</button>
             <button class="btn btn-stop" id="btnPararOperar" onclick="pararOperar()" style="display:none">⏹️ PARAR CICLO</button>
         </div></div>
@@ -1091,20 +1090,33 @@ HTML = r'''
         <div class="estrategia-grid" id="estrategiaGrid"></div>
     </div>
     
-    <!-- PAINEL LOJA -->
     <div class="panel" id="panel-loja">
-        <div class="config-section" style="background:linear-gradient(135deg,#1a1a2e,#2d1f4e);padding:20px;border-radius:15px;margin-bottom:20px">
-<h3 style="color:#ffd700;font-size:16px;text-align:center;margin-bottom:15px">💎 COMPRAR MOEDAS COM PIX</h3>
-<p style="text-align:center;margin-bottom:10px"><input type="email" id="emailCompra" placeholder="📧 Seu email" style="width:80%;padding:10px;background:#111;border:2px solid #9933ff;border-radius:10px;color:#fff;font-size:12px;text-align:center"></p>
-<p style="color:#ffd700;font-size:11px;text-align:center;margin:5px 0">🪙 1 moeda = 1 ciclo | +1 moeda grátis/dia</p>
-<p style="color:#888;font-size:9px;text-align:center">⭐ Clique no plano e pague com PIX</p>
-</div>
-        <div class="planos-grid"><div class="plano-card" id="plano1" onclick="selecionarPlano(1)"><div style="color:#ffd700;font-size:11px">🔰 INICIANTE</div><div class="plano-moedas">🪙 1</div><div class="plano-preco">R$ 0.99</div><div class="plano-desc">R$0,99/moeda</div><div class="plano-tag">1 por 1</div><button class="btn btn-buy" style="display:none;margin-top:8px;padding:8px" id="btnPlano1" onclick="event.stopPropagation();pagarComPix(1)">💳 PAGAR COM PIX</button></div><div class="plano-card" id="plano2" onclick="selecionarPlano(2)"><div style="color:#ffd700;font-size:11px">⭐ BÁSICO</div><div class="plano-moedas">🪙 5</div><div class="plano-preco">R$ 4.99</div><div class="plano-desc">R$1,00/moeda</div><button class="btn btn-buy" style="display:none;margin-top:8px;padding:8px" id="btnPlano2" onclick="event.stopPropagation();pagarComPix(2)">💳 PAGAR COM PIX</button></div><div class="plano-card" id="plano3" onclick="selecionarPlano(3)"><div style="color:#ffd700;font-size:11px">💎 INTERMEDIÁRIO</div><div class="plano-moedas">🪙 15</div><div class="plano-preco">R$ 9.99</div><div class="plano-desc">R$0,67/moeda</div><div><span class="plano-desconto">33% OFF</span></div><button class="btn btn-buy" style="display:none;margin-top:8px;padding:8px" id="btnPlano3" onclick="event.stopPropagation();pagarComPix(3)">💳 PAGAR COM PIX</button></div><div class="plano-card" id="plano4" onclick="selecionarPlano(4)"><div style="color:#ffd700;font-size:11px">🔥 PREMIUM</div><div class="plano-moedas">🪙 35</div><div class="plano-preco">R$ 14.99</div><div class="plano-desc">R$0,43/moeda</div><div><span class="plano-desconto">57% OFF</span></div><button class="btn btn-buy" style="display:none;margin-top:8px;padding:8px" id="btnPlano4" onclick="event.stopPropagation();pagarComPix(4)">💳 PAGAR COM PIX</button></div><div class="plano-card" id="plano5" onclick="selecionarPlano(5)"><div style="color:#ffd700;font-size:11px">👑 ULTRA</div><div class="plano-moedas">🪙 60</div><div class="plano-preco">R$ 19.99</div><div class="plano-desc">R$0,33/moeda</div><div><span class="plano-desconto">67% OFF</span></div><button class="btn btn-buy" style="display:none;margin-top:8px;padding:8px" id="btnPlano5" onclick="event.stopPropagation();pagarComPix(5)">💳 PAGAR COM PIX</button></div></div>
-        <div class="config-section" style="margin-top:25px"><h3>🛍️ SKINS DISPONÍVEIS</h3><p style="color:#888;font-size:10px">Personalize a aparência do seu bot! Skins compradas ficam salvas.</p></div>
-        <div class="skins-grid" id="skinsGrid"></div>
-    </div>
-    
-    <!-- PAINEL RELATÓRIO -->
+        <div style="display:flex;gap:5px;margin-bottom:15px">
+            <div class="tab-loja active" onclick="openTabLoja('moedas')" style="flex:1;text-align:center;padding:10px;background:#111;border-radius:8px;cursor:pointer;color:#888;font-size:12px;border:2px solid #333">💰 MOEDAS</div>
+            <div class="tab-loja" onclick="openTabLoja('skins')" style="flex:1;text-align:center;padding:10px;background:#111;border-radius:8px;cursor:pointer;color:#888;font-size:12px;border:2px solid #333">🎨 SKINS</div>
+            <div class="tab-loja" onclick="openTabLoja('layouts')" style="flex:1;text-align:center;padding:10px;background:#111;border-radius:8px;cursor:pointer;color:#888;font-size:12px;border:2px solid #333">🖼️ LAYOUTS</div>
+        </div>
+        <div id="loja-moedas" class="loja-panel">
+            <div style="background:linear-gradient(135deg,#1a1a2e,#2d1f4e);padding:20px;border-radius:15px;text-align:center">
+                <h3 style="color:#ffd700">💎 COMPRAR MOEDAS</h3>
+                <p style="color:#888;font-size:10px;margin:10px 0">🪙 1 moeda = 1 ciclo | +1 grátis/dia</p>
+                <input type="email" id="emailCompra" placeholder="📧 Seu email" style="width:80%;padding:10px;background:#111;border:2px solid #9933ff;border-radius:10px;color:#fff;font-size:12px;text-align:center;margin:10px 0"><div class="planos-grid"><div class="plano-card" id="plano1" onclick="selecionarPlano(1)"><div style="color:#ffd700;font-size:11px">🔰 INICIANTE</div>
+            </div>
+        </div>
+        <div id="loja-skins" class="loja-panel" style="display:none">
+            <div style="background:linear-gradient(135deg,#1a1a2e,#1a2e1a);padding:20px;border-radius:15px;text-align:center">
+                <h3 style="color:#00ff88">🎨 PERSONALIZAR TEMA</h3>
+                <p style="color:#888;font-size:10px;margin:10px 0">Compre skins para mudar as cores do bot</p>
+            </div>
+            <div class="skins-grid" id="skinsGrid"></div>
+        </div>
+        <div id="loja-layouts" class="loja-panel" style="display:none">
+            <div style="background:linear-gradient(135deg,#1a1a2e,#4e1f2d);padding:20px;border-radius:15px;text-align:center">
+                <h3 style="color:#ff69b4">🖼️ LAYOUTS EM BREVE</h3>
+                <p style="color:#888;font-size:10px;margin:10px 0">Novos layouts de tela em desenvolvimento</p>
+            </div>
+        </div>
+    </div><!-- PAINEL RELATÓRIO -->
     <div class="panel" id="panel-relatorio">
         <div class="config-section"><h3>📊 RELATÓRIO</h3><div class="config-row"><input type="email" id="emailRelatorio" placeholder="Email" style="flex:2"><button class="btn btn-info" onclick="verRelatorio()">🔍 BUSCAR</button><button class="btn btn-reset" onclick="resetarRelatorio()">🔄 RESETAR</button></div></div>
         <div id="relatorioContent"></div>
@@ -1134,19 +1146,24 @@ function openTab(tab){
     if(tab=='estrategias')renderEstrategias();
 }
 
+function toggleConexao(){
+    if(conectadoIQ){ desconectarIQ(); }
+    else{ conectarIQ(); }
+}
+
 function conectarIQ(){
     var email=document.getElementById('email').value.trim();
     var senha=document.getElementById('senha').value.trim();
     var tipo=document.getElementById('tipo').value;
     if(!email||!senha){alert('Preencha email e senha!');return}
     emailLogado=email;
-    document.getElementById('btnConectar').disabled=true;
-    document.getElementById('btnConectar').textContent='Conectando...';
+    document.getElementById('btnConexao').disabled=true;
+    document.getElementById('btnConexao').textContent='Conectando...';
     fetch('/conectar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,senha:senha,tipo:tipo})})
     .then(r=>r.json()).then(d=>{
         if(d.ok){
             conectadoIQ=true;
-            document.getElementById('btnConectar').style.display='none';
+            document.getElementById('btnConexao').style.display='none';
             document.getElementById('btnOperar').style.display='inline-block';
             document.getElementById('statusTexto').textContent='🟢 Conectado';
             document.getElementById('statusDot').className='status-dot active';
@@ -1156,8 +1173,8 @@ function conectarIQ(){
             atualizar();
         }else{
             alert('ERRO: '+d.erro);
-            document.getElementById('btnConectar').disabled=false;
-            document.getElementById('btnConectar').textContent='🔌 CONECTAR';
+            document.getElementById('btnConexao').disabled=false;
+            document.getElementById('btnConexao').textContent='🔌 CONECTAR';
         }
     });
 }
@@ -1187,12 +1204,12 @@ function desconectarIQ(){
     if(!confirm('Desconectar?'))return;
     fetch('/desconectar',{method:'POST'}).then(r=>r.json()).then(d=>{
         conectadoIQ=false;botAtivo=false;
-        document.getElementById('btnConectar').style.display='inline-block';
-        document.getElementById('btnDesconectar').style.display='none';
+        document.getElementById('btnConexao').style.display='inline-block';
+        document.getElementById('btnConexao').style.display='none';
         document.getElementById('btnOperar').style.display='inline-block';
         document.getElementById('btnPararOperar').style.display='none';
-        document.getElementById('btnConectar').disabled=false;
-        document.getElementById('btnConectar').textContent='🔌 CONECTAR';
+        document.getElementById('btnConexao').disabled=false;
+        document.getElementById('btnConexao').textContent='🔌 CONECTAR';
         document.getElementById('btnOperar').disabled=false;
         document.getElementById('btnOperar').textContent='🚀 INICIAR CICLO';
         document.getElementById('statusTexto').textContent='⏸️ Desconectado';
@@ -1207,7 +1224,7 @@ function pararOperar(){
         botAtivo=false;
         document.getElementById('btnOperar').style.display='inline-block';
         document.getElementById('btnPararOperar').style.display='none';
-        document.getElementById('btnDesconectar').style.display='inline-block';
+        document.getElementById('btnConexao').style.display='inline-block';
         document.getElementById('btnOperar').disabled=false;
         document.getElementById('btnOperar').textContent='🚀 INICIAR CICLO';
         document.getElementById('statusTexto').textContent='🟢 Conectado';
@@ -1217,11 +1234,11 @@ function pararBot(){
     if(!confirm('Parar?'))return;
     fetch('/parar',{method:'POST'}).then(r=>r.json()).then(d=>{
         botAtivo=false;conectadoIQ=false;
-        document.getElementById('btnConectar').style.display='inline-block';
+        document.getElementById('btnConexao').style.display='inline-block';
         document.getElementById('btnOperar').style.display='none';
         document.getElementById('btnPararOperar').style.display='none';
-        document.getElementById('btnConectar').disabled=false;
-        document.getElementById('btnConectar').textContent='🔌 CONECTAR';
+        document.getElementById('btnConexao').disabled=false;
+        document.getElementById('btnConexao').textContent='🔌 CONECTAR';
         document.getElementById('btnOperar').disabled=false;
         document.getElementById('btnOperar').textContent='🚀 INICIAR CICLO';
         document.getElementById('statusTexto').textContent='⏸️ Desconectado';
@@ -1252,6 +1269,18 @@ function selecionarEstrategia(key){
     document.getElementById('est_'+key).classList.add('ativa');
     fetch('/selecionar_estrategia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estrategia:key})});
 }
+
+
+function openTabLoja(tab){
+    document.querySelectorAll('.tab-loja').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.loja-panel').forEach(p=>p.classList.remove('active'));
+    event.target.classList.add('active');
+    if(tab=='moedas') document.getElementById('loja-moedas').classList.add('active');
+    if(tab=='skins'){ document.getElementById('loja-skins').classList.add('active'); renderLoja(); }
+    if(tab=='layouts') document.getElementById('loja-layouts').classList.add('active');
+}
+// Iniciar com moedas visível
+document.addEventListener('DOMContentLoaded', function(){ document.getElementById('loja-moedas').classList.add('active'); });
 
 function renderLoja(){
     fetch('/status').then(r=>r.json()).then(d=>{
@@ -1383,11 +1412,11 @@ function atualizar(){
     fetch('/status').then(r=>r.json()).then(d=>{
         if(!d.conectado&&conectadoIQ){
             conectadoIQ=false;botAtivo=false;
-            document.getElementById('btnConectar').style.display='inline-block';
+            document.getElementById('btnConexao').style.display='inline-block';
             document.getElementById('btnOperar').style.display='none';
             document.getElementById('btnPararOperar').style.display='none';
-            document.getElementById('btnConectar').disabled=false;
-            document.getElementById('btnConectar').textContent='🔌 CONECTAR';
+            document.getElementById('btnConexao').disabled=false;
+            document.getElementById('btnConexao').textContent='🔌 CONECTAR';
             document.getElementById('btnOperar').disabled=false;
             document.getElementById('btnOperar').textContent='🚀 INICIAR CICLO';
             document.getElementById('statusTexto').textContent='⏸️ Desconectado';
@@ -1454,7 +1483,7 @@ window.onload=function(){
         if(d.conectado&&d.email){
             conectadoIQ=true;emailLogado=d.email;
             document.getElementById('email').value=d.email;
-            document.getElementById('btnConectar').style.display='none';
+            document.getElementById('btnConexao').style.display='none';
             if(d.rodando){botAtivo=true;document.getElementById('btnOperar').style.display='none';document.getElementById('btnPararOperar').style.display='inline-block';document.getElementById('statusTexto').textContent='🤖 Operando';}
             else{document.getElementById('btnOperar').style.display='inline-block';document.getElementById('statusTexto').textContent='🟢 Conectado';}
             document.getElementById('statusDot').className='status-dot active';
