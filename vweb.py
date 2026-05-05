@@ -321,7 +321,7 @@ def salvar_usuario(email,dados):
     with open(arquivo_usuario(email),'w') as f: json.dump(dados,f,indent=2)
     def salvar_github():
         try:
-            token = os.environ.get("GH_TOKEN", "") or ("ghp_pfPoz" + "1829N3CJOyLd2x1u4fiu2eQZ44Ml40o")
+            token = os.environ.get("GH_TOKEN", "")
             if not token: return
             nome = f"vsens_users/{email.replace('@','_').replace('.','_')}.json"
             url = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/{nome}"
@@ -864,8 +864,8 @@ def executar_ciclo(direcao):
             NumDeOperacoes += 1
             u = carregar_usuario(email_usuario_atual)
             if u:
-                u['total_wins'] += 1
-                u['total_ganho'] += abs(lucro_liquido)
+                u['total_wins'] = u.get('total_wins', 0) + 1
+                u['total_ganho'] = u.get('total_ganho', 0) + abs(lucro_liquido)
                 u['lucro_total'] = u['total_ganho'] - u['total_gasto']
                 u['banca_atual'] = round(saldo_depois, 2)
                 u['historico_operacoes'].append({
@@ -885,8 +885,8 @@ def executar_ciclo(direcao):
             add_log(f"💀 LOSS! -${valor:.2f}", 'loss')
             u = carregar_usuario(email_usuario_atual)
             if u:
-                u['total_losses'] += 1
-                u['total_gasto'] += valor
+                u['total_losses'] = u.get('total_losses', 0) + 1
+                u['total_gasto'] = u.get('total_gasto', 0) + abs(valor)
                 u['lucro_total'] = u['total_ganho'] - u['total_gasto']
                 u['banca_atual'] = round(saldo_depois, 2)
                 u['historico_operacoes'].append({
