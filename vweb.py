@@ -24,12 +24,11 @@ TIMEOUT_ENTRE_CICLOS, STOP_GAIN_PERCENTUAL = 5, 100
 DRIVE_PATH = "/content/drive/MyDrive/vsens_users"
 os.makedirs(DRIVE_PATH, exist_ok=True)
 
-# ⭐ NOVOS PLANOS - PLANO 1 PARA TESTES (1 CENTAVO POR MOEDA), OUTROS COM DESCONTO PROGRESSIVO ⭐
 PLANOS = [
-    {'id':1,'moedas':10,'preco':0.10,'nome':'🧪 TESTES','desc':'1 centavo/moeda','tag':'Mercado Pago'},
-    {'id':2,'moedas':30,'preco':30.00,'nome':'💎 BÁSICO','desc':'R$1,00/moeda'},
-    {'id':3,'moedas':100,'preco':90.00,'nome':'🔥 PREMIUM','desc':'R$0,90/moeda','desconto':'10% OFF'},
-    {'id':4,'moedas':300,'preco':240.00,'nome':'👑 ULTRA','desc':'R$0,80/moeda','desconto':'20% OFF'},
+    {'id':1,'moedas':3,'preco':5.00,'nome':'🌟 Básico'},
+    {'id':2,'moedas':10,'preco':10.00,'nome':'💎 Popular','destaque':True},
+    {'id':3,'moedas':30,'preco':20.00,'nome':'🔥 Premium'},
+    {'id':4,'moedas':100,'preco':50.00,'nome':'👑 Ultra','desconto':'50% OFF'},
 ]
 
 def arquivo_usuario(email):
@@ -331,9 +330,7 @@ def bot_loop():
             time.sleep(0.3)
         except Exception as e: add_log(f"Erro: {e}",'error'); time.sleep(5); conectar_api()
 
-# ═══════════════════════════════════════════════════════
-# ⭐ HTML NOVO - DESTAQUE SÓ APARECE AO CLICAR + PLANOS REFORMULADOS ⭐
-# ═══════════════════════════════════════════════════════
+# ============= HTML NOVO =============
 HTML = r'''
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -383,16 +380,9 @@ HTML = r'''
         .status-dot.active{background:#00ff88;animation:pulse 1s infinite}.status-dot.inactive{background:#888}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
         .planos-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
-        /* ⭐ CARDS COMEÇAM TODOS SEM DESTAQUE ⭐ */
-        .plano-card{background:#111;padding:12px;border-radius:10px;border:2px solid #222;text-align:center;cursor:pointer;transition:all 0.3s ease}
-        .plano-card:hover{border-color:#9933ff;background:#1a1a2e}
-        /* ⭐ CLASSE DESTAQUE SÓ ATIVADA VIA JAVASCRIPT NO CLIQUE ⭐ */
-        .plano-card.selecionado{border-color:#ffd700;box-shadow:0 0 20px rgba(255,215,0,0.4);background:#1a1a2e}
-        .plano-moedas{font-size:24px;color:#ffd700;font-weight:bold}
+        .plano-card{background:#111;padding:12px;border-radius:10px;border:2px solid #222;text-align:center;cursor:pointer}
+        .plano-card.destaque{border-color:#ffd700}.plano-moedas{font-size:24px;color:#ffd700;font-weight:bold}
         .plano-preco{font-size:14px;color:#00ff88;margin:5px 0}
-        .plano-desc{font-size:9px;color:#888;margin-top:4px}
-        .plano-tag{background:#9933ff22;color:#cc66ff;font-size:9px;padding:2px 8px;border-radius:10px;display:inline-block;margin-top:4px}
-        .plano-desconto{background:#ff4444;color:#fff;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block;margin-left:4px}
         .relatorio-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:6px}
         .relatorio-card{background:#111;padding:8px;border-radius:8px;border:1px solid #222;text-align:center}
         .relatorio-card .rlabel{color:#666;font-size:9px}.relatorio-card .rvalue{color:#ffd700;font-size:14px;font-weight:bold}
@@ -417,8 +407,8 @@ HTML = r'''
         <div class="barra-status"><span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Parado</span></span><span>⚡ M1 | v_SENSITIVO</span></div>
     </div>
     <div class="panel" id="panel-moedas">
-        <div class="config-section"><h3>💳 COMPRAR MOEDAS</h3><p style="color:#888;font-size:10px">📧 <input type="email" id="emailCompra" placeholder="Seu email IQ Option" style="width:220px;padding:6px;background:#111;border:1px solid #333;color:#fff;border-radius:5px"></p><p style="color:#ffd700;font-size:10px;margin-top:5px">🪙 1 moeda = 1 ciclo | Ganhe 1 moeda grátis por dia!</p><p style="color:#888;font-size:9px;margin-top:3px">⭐ Clique no plano para selecionar</p></div>
-        <div class="planos-grid">''' + ''.join([f'''<div class="plano-card" id="plano{p['id']}" onclick="selecionarPlano({p['id']})"><div style="color:#cc66ff;font-size:11px">{p['nome']}</div><div class="plano-moedas">🪙 {p['moedas']}</div><div class="plano-preco">R$ {p['preco']:.2f}</div><div class="plano-desc">{p.get('desc','')}</div>{f'<div><span class="plano-desconto">{p["desconto"]}</span></div>' if p.get('desconto') else ''}{f'<div class="plano-tag">{p["tag"]}</div>' if p.get('tag') else ''}<button class="btn btn-buy" style="display:none;margin-top:8px;padding:8px" id="btnPlano{p['id']}">COMPRAR</button></div>''' for p in PLANOS]) + r'''</div>
+        <div class="config-section"><h3>💳 COMPRAR MOEDAS</h3><p style="color:#888;font-size:10px">📧 <input type="email" id="emailCompra" placeholder="Seu email IQ Option" style="width:220px;padding:6px;background:#111;border:1px solid #333;color:#fff;border-radius:5px"></p><p style="color:#ffd700;font-size:10px;margin-top:5px">🪙 1 moeda = 1 ciclo | Ganhe 1 moeda grátis por dia!</p></div>
+        <div class="planos-grid">''' + ''.join([f'''<div class="plano-card{' destaque' if p.get('destaque') else ''}" onclick="comprarPlano({p['id']})"><div style="color:#cc66ff;font-size:11px">{p['nome']}</div><div class="plano-moedas">🪙 {p['moedas']}</div><div class="plano-preco">R$ {p['preco']:.2f}</div>{f'<span style="background:#ff4444;color:#fff;font-size:9px;padding:2px 6px;border-radius:10px">{p["desconto"]}</span>' if p.get('desconto') else ''}</div>''' for p in PLANOS]) + r'''</div>
     </div>
     <div class="panel" id="panel-relatorio">
         <div class="config-section"><h3>📊 RELATÓRIO COMPLETO</h3><div class="config-row"><input type="email" id="emailRelatorio" placeholder="Email IQ Option" style="flex:2"><button class="btn btn-info" onclick="verRelatorio()">🔍 BUSCAR</button><button class="btn btn-reset" onclick="resetarRelatorio()">🔄 RESETAR</button></div></div>
@@ -426,39 +416,12 @@ HTML = r'''
     </div>
 </div>
 <script>
-var intervalo=null,botAtivo=false,emailLogado='',planoSelecionado=0;
+var intervalo=null,botAtivo=false,emailLogado='';
 function openTab(tab){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));event.target.classList.add('active');document.getElementById('panel-'+tab).classList.add('active');if(tab=='relatorio'&&emailLogado){document.getElementById('emailRelatorio').value=emailLogado;verRelatorio()}}
 window.onload=function(){fetch('/status').then(r=>r.json()).then(d=>{if(d.rodando&&d.email){botAtivo=true;emailLogado=d.email;document.getElementById('email').value=d.email;document.getElementById('btnConectar').style.display='none';document.getElementById('btnParar').style.display='inline-block';document.getElementById('statusTexto').textContent='🤖 Ativo';document.getElementById('statusDot').className='status-dot active';if(intervalo)clearInterval(intervalo);intervalo=setInterval(atualizar,2000);atualizar()}})}
 function iniciarBot(){var email=document.getElementById('email').value.trim();var senha=document.getElementById('senha').value.trim();var tipo=document.getElementById('tipo').value;var gales=parseInt(document.getElementById('galesSelect').value)||2;var stopGain=parseInt(document.getElementById('stopGainSlider').value)||100;if(!email||!senha){alert('⚠️ Preencha email e senha!');return}emailLogado=email;document.getElementById('btnConectar').disabled=true;document.getElementById('btnConectar').textContent='⏳...';fetch('/iniciar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,senha:senha,tipo:tipo,gales:gales,stop_gain:stopGain})}).then(r=>r.json()).then(d=>{if(d.ok){botAtivo=true;document.getElementById('btnConectar').style.display='none';document.getElementById('btnParar').style.display='inline-block';document.getElementById('statusTexto').textContent='🤖 Ativo';document.getElementById('statusDot').className='status-dot active';if(intervalo)clearInterval(intervalo);intervalo=setInterval(atualizar,2000)}else{alert('❌ '+d.erro);document.getElementById('btnConectar').disabled=false;document.getElementById('btnConectar').textContent='🚀 ATIVAR'}})}
 function pararBot(){if(!confirm('Parar?'))return;fetch('/parar',{method:'POST'}).then(r=>r.json()).then(d=>{botAtivo=false;document.getElementById('btnConectar').style.display='inline-block';document.getElementById('btnParar').style.display='none';document.getElementById('btnConectar').disabled=false;document.getElementById('btnConectar').textContent='🚀 ATIVAR';document.getElementById('statusTexto').textContent='⏸️ Parado';document.getElementById('statusDot').className='status-dot inactive';if(intervalo)clearInterval(intervalo)})}
-// ⭐ NOVA FUNÇÃO: DESTAQUE SÓ APARECE AO CLICAR ⭐
-function selecionarPlano(id){
-    // Remove destaque de todos
-    document.querySelectorAll('.plano-card').forEach(c=>{
-        c.classList.remove('selecionado');
-        // Esconde botão de comprar dos não selecionados
-    });
-    document.querySelectorAll('[id^="btnPlano"]').forEach(b=>b.style.display='none');
-    
-    // Adiciona destaque ao plano clicado
-    var card=document.getElementById('plano'+id);
-    card.classList.add('selecionado');
-    document.getElementById('btnPlano'+id).style.display='block';
-    planoSelecionado=id;
-}
-// ⭐ MODIFICADA: USA O PLANO SELECIONADO ⭐
-function comprarPlano(id){
-    var email=document.getElementById('emailCompra').value.trim()||emailLogado;
-    if(!email){alert('Digite seu email!');return}
-    fetch('/comprar_moedas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,plano_id:id})}).then(r=>r.json()).then(d=>{
-        alert(d.msg);
-        document.getElementById('moedasSaldo').textContent=d.saldo;
-        // Remove destaque após compra
-        document.querySelectorAll('.plano-card').forEach(c=>c.classList.remove('selecionado'));
-        document.querySelectorAll('[id^="btnPlano"]').forEach(b=>b.style.display='none');
-        planoSelecionado=0;
-    })
-}
+function comprarPlano(id){var email=document.getElementById('emailCompra').value.trim()||emailLogado;if(!email){alert('Digite seu email!');return}fetch('/comprar_moedas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,plano_id:id})}).then(r=>r.json()).then(d=>{alert(d.msg);document.getElementById('moedasSaldo').textContent=d.saldo})}
 function verRelatorio(){var email=document.getElementById('emailRelatorio').value.trim();if(!email){alert('Digite o email!');return}fetch('/relatorio?email='+email).then(r=>r.json()).then(d=>{if(d.erro){alert(d.erro);return}var h='<div class="relatorio-grid">';h+='<div class="relatorio-card"><div class="rlabel">🪙 MOEDAS</div><div class="rvalue">'+(d.moedas||0)+'</div></div>';h+='<div class="relatorio-card"><div class="rlabel">📈 LUCRO TOTAL</div><div class="rvalue" style="color:'+(d.lucro_total>=0?'#00ff88':'#ff4444')+'">$'+(d.lucro_total||0).toFixed(2)+'</div></div>';h+='<div class="relatorio-card"><div class="rlabel">✅ WINS</div><div class="rvalue" style="color:#00ff88">'+(d.total_wins||0)+'</div></div>';h+='<div class="relatorio-card"><div class="rlabel">❌ LOSSES</div><div class="rvalue" style="color:#ff4444">'+(d.total_losses||0)+'</div></div>';h+='<div class="relatorio-card"><div class="rlabel">🔄 CICLOS</div><div class="rvalue">'+(d.total_ciclos||0)+'</div></div>';h+='<div class="relatorio-card"><div class="rlabel">💵 GASTO</div><div class="rvalue">$'+(d.total_gasto||0).toFixed(2)+'</div></div>';h+='<div class="relatorio-card"><div class="rlabel">💰 GANHO</div><div class="rvalue">$'+(d.total_ganho||0).toFixed(2)+'</div></div>';h+='<div class="relatorio-card"><div class="rlabel">📅 DIAS</div><div class="rvalue">'+Object.keys(d.dias_ativos||{}).length+'</div></div>';h+='<div class="relatorio-card"><div class="rlabel">🎯 TAXA</div><div class="rvalue">'+(d.total_ciclos>0?((d.total_wins/d.total_ciclos)*100).toFixed(1):0)+'%</div></div>';h+='<div class="relatorio-card"><div class="rlabel">💰 BANCA</div><div class="rvalue">$'+(d.banca_atual||0).toFixed(2)+'</div></div>';h+='<div class="relatorio-card"><div class="rlabel">📅 CADASTRO</div><div class="rvalue" style="font-size:10px">'+(d.data_cadastro||'--')+'</div></div>';h+='</div>';if(d.historico_operacoes&&d.historico_operacoes.length>0){h+='<h4 style="margin-top:10px;color:#cc66ff">📋 ÚLTIMAS</h4><table class="historico-table"><tr><th>Data</th><th>Resultado</th><th>Valor</th><th>Lucro</th></tr>';d.historico_operacoes.slice(-15).reverse().forEach(op=>{h+='<tr><td>'+op.data+'</td><td style="color:'+(op.resultado=='WIN'?'#00ff88':'#ff4444')+'">'+op.resultado+'</td><td>$'+op.valor.toFixed(2)+'</td><td style="color:'+(op.lucro>=0?'#00ff88':'#ff4444')+'">$'+op.lucro.toFixed(2)+'</td></tr>'});h+='</table>'}document.getElementById('relatorioContent').innerHTML=h})}
 function resetarRelatorio(){var email=document.getElementById('emailRelatorio').value.trim();if(!email){alert('Digite o email!');return}if(!confirm('⚠️ Resetar?'))return;fetch('/resetar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email})}).then(r=>r.json()).then(d=>{alert(d.msg);if(d.ok)verRelatorio()})}
 function atualizar(){fetch('/status').then(r=>r.json()).then(d=>{if(d.banca)document.getElementById('banca').textContent='$'+d.banca.toFixed(2);if(d.lucro!==undefined){var el=document.getElementById('lucro');el.textContent='$'+d.lucro.toFixed(2);el.style.color=d.lucro>=0?'#00ff88':'#ff4444'}if(d.ops!==undefined)document.getElementById('ops').textContent=d.ops;if(d.moedas!==undefined)document.getElementById('moedasSaldo').textContent=d.moedas;if(d.sinal)document.getElementById('sinal').textContent=d.sinal;if(d.analise){document.getElementById('rsi').textContent=d.analise.rsi?d.analise.rsi.toFixed(1):'--';document.getElementById('mm5').textContent=d.analise.mm5?d.analise.mm5.toFixed(5):'--';document.getElementById('mm10').textContent=d.analise.mm10?d.analise.mm10.toFixed(5):'--';document.getElementById('mm20').textContent=d.analise.mm20?d.analise.mm20.toFixed(5):'--';document.getElementById('stoch').textContent=d.analise.stoch?d.analise.stoch.toFixed(1):'--';document.getElementById('fase').textContent=d.analise.fase||'--';document.getElementById('preco').textContent=d.analise.preco?d.analise.preco.toFixed(5):'--'}if(d.logs)document.getElementById('terminal').innerHTML=d.logs;document.getElementById('terminal').scrollTop=document.getElementById('terminal').scrollHeight})}
@@ -528,6 +491,8 @@ def relatorio():
     u=carregar_usuario(email)
     return jsonify(u if u else {'erro':'Não encontrado'})
 
+
+    
 @app.route('/resetar', methods=['POST'])
 def resetar():
     d = request.get_json()
@@ -535,11 +500,22 @@ def resetar():
     if not email: return jsonify({'ok': False, 'msg': 'Email obrigatório'})
     
     usuario = criar_usuario(email)
+    # ⭐ Manter a data da moeda grátis para não ganhar de novo ⭐
     usuario['moedas_ganhas_hoje'] = str(datetime.now())[:10]
-    usuario['moedas'] = 0
+    usuario['moedas'] = 0  # Começa com 0 moedas (sem a moeda grátis)
     salvar_usuario(email, usuario)
     
-    return jsonify({'ok': True, 'msg': '✅ Resetado!'})
+    return jsonify({'ok': True, 'msg': '✅ Resetado!'}) 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
 if __name__=='__main__':
     app.run(host='0.0.0.0',port=5000,debug=False,threaded=True)
