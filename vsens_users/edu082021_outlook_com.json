@@ -1,36 +1,11 @@
 {
   "email": "edu082021@outlook.com",
-  "moedas": 9,
-  "moedas_ganhas_hoje": "2026-05-04",
-  "total_ciclos": 2,
-  "total_wins": 2,
-  "total_losses": 1,
-  "total_gasto": 24.41,
-  "total_ganho": 121.64999999999999,
-  "lucro_total": 97.24,
-  "banca_atual": 306.22,
-  "data_cadastro": "2026-05-04 02:34:37",
-  "historico_operacoes": [
-    {
-      "data": "2026-05-04 02:35:02",
-      "resultado": "LOSS",
-      "valor": 24.41,
-      "lucro": -24.41
-    },
-    {
-      "data": "2026-05-04 02:36:02",
-      "resultado": "WIN",
-      "valor": 57.45,
-      "lucro": 93.99
-    },
-    {
-      "data": "2026-05-04 02:38:02",
-      "resultado": "WIN",
-      "valor": 32.54,
-      "lucro": 27.66
-    }
+  "moedas": 999,
+  "skin_atual": "skin_flamengo",
+  "skins_compradas": [
+    "skin_padrao",
+    "skin_flamengo",
+    "skin_magos"
   ],
-  "dias_ativos": {
-    "2026-05-04": 3
-  }
+  "teste": "FUNCIONANDO - 2026-05-05 14:37:35.686024"
 }
