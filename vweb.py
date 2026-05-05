@@ -297,10 +297,9 @@ def arquivo_usuario(email):
     return f"{DRIVE_PATH}/{email.replace('@','_').replace('.','_')}.json"
 
 def carregar_usuario(email):
-    arq=arquivo_usuario(email)
-    if os.path.exists(arq):
-        try: return json.load(open(arq,'r'))
-        except: pass
+    """Carrega do GitHub PRIMEIRO, depois local"""
+    arq = arquivo_usuario(email)
+    # 1. Tentar GitHub primeiro
     try:
         nome = f"vsens_users/{email.replace('@','_').replace('.','_')}.json"
         r = requests.get(f"https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/{nome}")
@@ -310,6 +309,10 @@ def carregar_usuario(email):
             with open(arq,'w') as f: json.dump(dados,f,indent=2)
             return dados
     except: pass
+    # 2. Tentar local
+    if os.path.exists(arq):
+        try: return json.load(open(arq,'r'))
+        except: pass
     return None
 
 def salvar_usuario(email,dados):
@@ -980,7 +983,7 @@ HTML = r'''
         .config-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
         .config-row label{color:#888;font-size:11px}
         .config-row select,.config-row input{padding:8px;background:#111;border:1px solid #333;border-radius:8px;color:#fff;font-size:11px;font-family:'Courier New',monospace}
-        .btn{padding:10px 14px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:11px;font-family:'Courier New',monospace}
+        .btn{padding:10px 14px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:11px;font-family:'Courier New',monospace}.btn-fixo{display:inline-block!important}
         .btn-start{background:{{COR_BOTAO}};color:#000;font-weight:bold}
         .btn-stop{background:linear-gradient(135deg,#cc0000,#ff4444);color:#fff}
         .btn-info{background:linear-gradient(135deg,#0066cc,#3399ff);color:#fff;font-size:11px;padding:8px 14px}
@@ -1052,8 +1055,8 @@ HTML = r'''
             <input type="email" id="email" placeholder="📧 Email IQ Option" style="flex:2">
             <input type="password" id="senha" placeholder="🔒 Senha" style="flex:1">
             <select id="tipo"><option value="PRACTICE">🧪</option><option value="REAL">💰</option></select>
-            <button class="btn btn-info" id="btnConectar" onclick="conectarIQ()">🔌 CONECTAR</button>
-            <button class="btn btn-stop" id="btnDesconectar" onclick="desconectarIQ()" style="display:none">🔌 DESCONECTAR</button>
+            <button class="btn btn-info btn-fixo" id="btnConectar" onclick="conectarIQ()">🔌 CONECTAR</button>
+            <button class="btn btn-stop btn-fixo" id="btnDesconectar" onclick="desconectarIQ()" style="display:none">🔌 DESCONECTAR</button>
             <button class="btn btn-start" id="btnOperar" onclick="comecarOperar()">🚀 INICIAR CICLO</button>
             <button class="btn btn-stop" id="btnPararOperar" onclick="pararOperar()" style="display:none">⏹️ PARAR CICLO</button>
         </div></div>
