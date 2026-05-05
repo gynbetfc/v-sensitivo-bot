@@ -322,7 +322,6 @@ def salvar_usuario(email,dados):
     def salvar_github():
         try:
             token = os.environ.get("GH_TOKEN", "")
-            print(f"🔑 GH_TOKEN configurado: {bool(token)}")
             if not token: return
             nome = f"vsens_users/{email.replace('@','_').replace('.','_')}.json"
             url = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/{nome}"
@@ -1083,7 +1082,7 @@ HTML = r'''
 <div class="container">
     <div class="header">
         {{HEADER_EXTRA}}
-        <h1>⚡ TESLA 369 BOT ⚡ <span style="font-size:12px;color:#888">v2.0</span></h1>
+        <h1>⚡ TESLA 369 BOT ⚡ <span style="font-size:12px;color:#888">v3.0</span></h1>
         <p style="font-size:10px;color:#ffd700">by EJS SOFTWARES</p>
         <p>🔮 9 ESTRATÉGIAS | GALE 2 | STOP GAIN 1 WIN | LOJA DE SKINS</p>
         <p>⚡ O BOT QUE SENTE A VELA ⚡</p>
