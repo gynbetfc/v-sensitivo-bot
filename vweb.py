@@ -1158,8 +1158,8 @@ function desconectar(){
     if(!confirm('Desconectar?'))return;
     fetch('/desconectar',{method:'POST'}).then(r=>r.json()).then(d=>{
         conectadoIQ=false;botAtivo=false;
-        document.getElementById('btnConexao').textContent='🔌 CONECTAR';
-        document.getElementById('btnConexao').className='btn btn-info';
+        document.getElementById('btnConectar').textContent='🔌 CONECTAR';
+        document.getElementById('btnConectar').className='btn btn-info';
         document.getElementById('btnOperar').style.display='none';
         document.getElementById('btnParar').style.display='none';
         document.getElementById('statusTexto').textContent='⏸️ Desconectado';
@@ -1174,13 +1174,13 @@ function conectarIQ(){
     var tipo=document.getElementById('tipo').value;
     if(!email||!senha){alert('Preencha email e senha!');return}
     emailLogado=email;
-    document.getElementById('btnConexao').disabled=true;
-    document.getElementById('btnConexao').textContent='Conectando...';
+    document.getElementById('btnConectar').disabled=true;
+    document.getElementById('btnConectar').textContent='Conectando...';
     fetch('/conectar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,senha:senha,tipo:tipo})})
     .then(r=>r.json()).then(d=>{
         if(d.ok){
-            conectadoIQ=true; document.getElementById('btnConexao').textContent='🔌 DESCONECTAR'; document.getElementById('btnConexao').className='btn btn-stop';
-            document.getElementById('btnConexao').style.display='none';
+            conectadoIQ=true; document.getElementById('btnConectar').textContent='🔌 DESCONECTAR'; document.getElementById('btnConectar').className='btn btn-stop';
+            document.getElementById('btnConectar').style.display='none';
             document.getElementById('btnOperar').style.display='inline-block';
             document.getElementById('statusTexto').textContent='🟢 Conectado';
             document.getElementById('statusDot').className='status-dot active';
@@ -1190,8 +1190,8 @@ function conectarIQ(){
             atualizar();
         }else{
             alert('ERRO: '+d.erro);
-            document.getElementById('btnConexao').disabled=false;
-            document.getElementById('btnConexao').textContent='🔌 CONECTAR';
+            document.getElementById('btnConectar').disabled=false;
+            document.getElementById('btnConectar').textContent='🔌 CONECTAR';
         }
     });
 }
@@ -1220,11 +1220,11 @@ function pararBot(){
     if(!confirm('Parar?'))return;
     fetch('/parar',{method:'POST'}).then(r=>r.json()).then(d=>{
         botAtivo=false;conectadoIQ=false;
-        document.getElementById('btnConexao').style.display='inline-block';
+        document.getElementById('btnConectar').style.display='inline-block';
         document.getElementById('btnOperar').style.display='none';
         document.getElementById('btnParar').style.display='none';
-        document.getElementById('btnConexao').disabled=false;
-        document.getElementById('btnConexao').textContent='🔌 CONECTAR';
+        document.getElementById('btnConectar').disabled=false;
+        document.getElementById('btnConectar').textContent='🔌 CONECTAR';
         document.getElementById('btnOperar').disabled=false;
         document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
         document.getElementById('statusTexto').textContent='⏸️ Desconectado';
@@ -1386,11 +1386,11 @@ function atualizar(){
     fetch('/status').then(r=>r.json()).then(d=>{
         if(!d.conectado&&conectadoIQ){
             conectadoIQ=false;botAtivo=false;
-            document.getElementById('btnConexao').style.display='inline-block';
+            document.getElementById('btnConectar').style.display='inline-block';
             document.getElementById('btnOperar').style.display='none';
             document.getElementById('btnParar').style.display='none';
-            document.getElementById('btnConexao').disabled=false;
-            document.getElementById('btnConexao').textContent='🔌 CONECTAR';
+            document.getElementById('btnConectar').disabled=false;
+            document.getElementById('btnConectar').textContent='🔌 CONECTAR';
             document.getElementById('btnOperar').disabled=false;
             document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
             document.getElementById('statusTexto').textContent='⏸️ Desconectado';
@@ -1455,9 +1455,9 @@ window.onload=function(){
         if(d.estrategia){estrategiaSel=d.estrategia;renderEstrategias();}
         if(d.estrategia_nome)document.getElementById('estrategiaAtiva').textContent=d.estrategia_nome;
         if(d.conectado&&d.email){
-            conectadoIQ=true; document.getElementById('btnConexao').textContent='🔌 DESCONECTAR'; document.getElementById('btnConexao').className='btn btn-stop';emailLogado=d.email;
+            conectadoIQ=true; document.getElementById('btnConectar').textContent='🔌 DESCONECTAR'; document.getElementById('btnConectar').className='btn btn-stop';emailLogado=d.email;
             document.getElementById('email').value=d.email;
-            document.getElementById('btnConexao').style.display='none';
+            document.getElementById('btnConectar').style.display='none';
             if(d.rodando){botAtivo=true;document.getElementById('btnOperar').style.display='none';document.getElementById('btnParar').style.display='inline-block';document.getElementById('statusTexto').textContent='🤖 Operando';}
             else{document.getElementById('btnOperar').style.display='inline-block';document.getElementById('statusTexto').textContent='🟢 Conectado';}
             document.getElementById('statusDot').className='status-dot active';
