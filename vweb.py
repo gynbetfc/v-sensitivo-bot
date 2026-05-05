@@ -1082,7 +1082,8 @@ HTML = r'''
 <div class="container">
     <div class="header">
         {{HEADER_EXTRA}}
-        <h1>⚡ TESLA 369 BOT ⚡</h1>
+        <h1>⚡ TESLA 369 BOT ⚡ <span style="font-size:12px;color:#888">v2.0</span></h1>
+        <p style="font-size:10px;color:#ffd700">by EJS SOFTWARES</p>
         <p>🔮 9 ESTRATÉGIAS | GALE 2 | STOP GAIN 1 WIN | LOJA DE SKINS</p>
         <p>⚡ O BOT QUE SENTE A VELA ⚡</p>
     </div>
