@@ -866,8 +866,9 @@ def executar_ciclo(direcao):
             if u:
                 u['total_wins'] = u.get('total_wins', 0) + 1
                 u['total_ganho'] = u.get('total_ganho', 0) + abs(lucro_liquido)
-                u['lucro_total'] = u['total_ganho'] - u['total_gasto']
-                u['banca_atual'] = round(saldo_depois, 2)
+                u['lucro_total'] = u.get('total_ganho', 0) - u.get('total_gasto', 0)
+                u['banca_atual'] = round(saldo_depois if 'saldo_depois' in dir() else 0, 2)
+                if 'historico_operacoes' not in u: u['historico_operacoes'] = []
                 u['historico_operacoes'].append({
                     'data': str(datetime.now())[:19],
                     'resultado': 'WIN',
@@ -875,6 +876,7 @@ def executar_ciclo(direcao):
                     'lucro': lucro_liquido,
                     'estrategia': estrategia_atual
                 })
+                u.setdefault('dias_ativos', {}).setdefault(str(datetime.now())[:10], 0)
                 u['dias_ativos'][str(datetime.now())[:10]] = u['dias_ativos'].get(str(datetime.now())[:10], 0) + 1
                 salvar_usuario(email_usuario_atual, u)
             
@@ -887,8 +889,9 @@ def executar_ciclo(direcao):
             if u:
                 u['total_losses'] = u.get('total_losses', 0) + 1
                 u['total_gasto'] = u.get('total_gasto', 0) + abs(valor)
-                u['lucro_total'] = u['total_ganho'] - u['total_gasto']
-                u['banca_atual'] = round(saldo_depois, 2)
+                u['lucro_total'] = u.get('total_ganho', 0) - u.get('total_gasto', 0)
+                u['banca_atual'] = round(saldo_depois if 'saldo_depois' in dir() else 0, 2)
+                if 'historico_operacoes' not in u: u['historico_operacoes'] = []
                 u['historico_operacoes'].append({
                     'data': str(datetime.now())[:19],
                     'resultado': 'LOSS',
@@ -896,6 +899,7 @@ def executar_ciclo(direcao):
                     'lucro': -valor,
                     'estrategia': estrategia_atual
                 })
+                u.setdefault('dias_ativos', {}).setdefault(str(datetime.now())[:10], 0)
                 u['dias_ativos'][str(datetime.now())[:10]] = u['dias_ativos'].get(str(datetime.now())[:10], 0) + 1
                 salvar_usuario(email_usuario_atual, u)
             if i < MARTINGALE:
