@@ -1045,7 +1045,7 @@ HTML = r'''
         .estrategia-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
         .badge-gratis{background:#00ff88;color:#000;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block}
         .badge-pago{background:#ffd700;color:#000;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block}.tab-loja.active{background:{{COR_TAB_ATIVA}}!important;color:#000!important;border-color:{{COR_TAB_ATIVA}}!important}.loja-panel{display:none}.loja-panel.active{display:block}
-    </style>
+    .btn-conexao{display:inline-block!important}</style>
 </head>
 <body>
 <div class="container">
