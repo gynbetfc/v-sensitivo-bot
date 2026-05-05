@@ -301,60 +301,14 @@ ESTRATEGIAS = {
 def arquivo_usuario(email):
     return f"{DRIVE_PATH}/{email.replace('@','_').replace('.','_')}.json"
 
-
 def carregar_usuario(email):
-    """Carrega local primeiro. Se não achar, busca no GitHub"""
-    arq = arquivo_usuario(email)
-    if os.path.exists(arq):
-        try:
-            return json.load(open(arq, 'r'))
-        except:
-            pass
-    
-    # Buscar no GitHub
-    try:
-        nome_arquivo = f"vsens_users/{email.replace('@', '_').replace('.', '_')}.json"
-        url = f"https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/{nome_arquivo}"
-        r = requests.get(url)
-        if r.status_code == 200:
-            dados = r.json()
-            os.makedirs(os.path.dirname(arq), exist_ok=True)
-            with open(arq, 'w') as f:
-                json.dump(dados, f, indent=2)
-            return dados
-    except:
-        pass
+    arq=arquivo_usuario(email)
+    if os.path.exists(arq): return json.load(open(arq,'r'))
     return None
 
-def salvar_usuario(email, dados):
-    """Salva no GitHub via API - persiste para sempre!"""
-    # Salvar local primeiro (fallback)
-    with open(arquivo_usuario(email), 'w') as f:
-        json.dump(dados, f, indent=2)
-    
-    # Salvar no GitHub via API
-    def salvar_github():
-        try:
-            token_gh = os.environ.get("GH_TOKEN", "")
-            if not token_gh:
-                return  # Sem token configurado
-            nome_arquivo = f"vsens_users/{email.replace('@', '_').replace('.', '_')}.json"
-            url = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/{nome_arquivo}"
-            headers = {"Authorization": f"token {token_gh}", "Accept": "application/vnd.github.v3+json"}
-            
-            r = requests.get(url, headers=headers)
-            sha = r.json().get("sha") if r.status_code == 200 else None
-            
-            conteudo = base64.b64encode(json.dumps(dados, indent=2).encode()).decode()
-            data = {"message": f"Update {email}", "content": conteudo, "branch": "main"}
-            if sha:
-                data["sha"] = sha
-            
-            requests.put(url, json=data, headers=headers)
-        except:
-            pass
-    
-    threading.Thread(target=salvar_github, daemon=True).start()
+def salvar_usuario(email,dados):
+    os.system("cd /workspaces/v-sensitivo-bot && git add vsens_users/ && git commit -m backup && git push 2>/dev/null &")
+    with open(arquivo_usuario(email),'w') as f: json.dump(dados,f,indent=2)
 
 def criar_usuario(email):
     return {
@@ -783,7 +737,8 @@ MAPA_SINAIS = {
     'terceira_igual_primeira': sinal_terceira_igual_primeira,
     'quadrante_de_7': sinal_quadrante_de_7,
     'fluxo_de_velas': sinal_fluxo_de_velas,
-        'reversao': sinal_reversao,
+    'nove_e_trinta': sinal_nove_e_trinta,
+    'reversao': sinal_reversao,
     'm5': sinal_m5
 }
 
