@@ -278,13 +278,7 @@ ESTRATEGIAS = {
         'timeframe': 60,
         'pares': ['EURUSD-OTC', 'EURUSD']
     },
-    'nove_e_trinta': {
-        'nome': '🕤 9:30/EURUSD',
-        'desc': 'Opera às 09:34:57-09:35:06, vela M5',
-        'timeframe': 300,
-        'pares': ['EURUSD']
-    },
-    'reversao': {
+        'reversao': {
         'nome': '🔄 REVERSÃO',
         'desc': 'Padrão alternado g-r-g-r-g ou r-g-r-g-r (seg % 55 == 0)',
         'timeframe': 60,
@@ -677,34 +671,6 @@ def sinal_fluxo_de_velas():
     except Exception as e: add_log(f"Erro: {e}",'error'); return None
 
 
-def sinal_nove_e_trinta():
-    """Estratégia 9:30/EURUSD - IGUAL TESLA 369"""
-    global ultimo_sinal, ultima_analise, par
-    try:
-        hora_atual = datetime.now().strftime('%H:%M:%S')
-        
-        if not (hora_atual >= '09:34:57' and hora_atual <= '09:35:06'):
-            ultimo_sinal = f"⏳ 9:30 - {hora_atual}"
-            return None
-        
-        v=API.get_candles(par, timeframe_atual, 1, time.time())
-        if len(v)<1: return None
-        
-        vela_atual = 'g' if v[0]['open'] < v[0]['close'] else ('r' if v[0]['open'] > v[0]['close'] else 'd')
-        pc = v[0]['close']
-        
-        ultima_analise = {'preco':pc,'rsi':None,'mm5':None,'mm10':None,'mm20':None,'stoch':None,'fase':'9:30'}
-        
-        add_log(f"🕤 9:30 | Vela: {vela_atual}",'indicator')
-        
-        if vela_atual == 'g' and 'd' not in vela_atual:
-            ultimo_sinal="🕤 PUT (9:30)"; add_log("9:30: PUT!",'sensitive'); return 'put'
-        if vela_atual == 'r' and 'd' not in vela_atual:
-            ultimo_sinal="🕤 CALL (9:30)"; add_log("9:30: CALL!",'sensitive'); return 'call'
-        
-        ultimo_sinal="⏳..."; return None
-    except Exception as e: add_log(f"Erro: {e}",'error'); return None
-
 
 def sinal_reversao():
     """Estratégia Reversão - IGUAL TESLA 369"""
@@ -783,8 +749,7 @@ MAPA_SINAIS = {
     'terceira_igual_primeira': sinal_terceira_igual_primeira,
     'quadrante_de_7': sinal_quadrante_de_7,
     'fluxo_de_velas': sinal_fluxo_de_velas,
-    'nove_e_trinta': sinal_nove_e_trinta,
-    'reversao': sinal_reversao,
+        'reversao': sinal_reversao,
     'm5': sinal_m5
 }
 
