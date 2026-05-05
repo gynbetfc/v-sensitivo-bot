@@ -1053,9 +1053,9 @@ HTML = r'''
             <input type="password" id="senha" placeholder="🔒 Senha" style="flex:1">
             <select id="tipo"><option value="PRACTICE">🧪</option><option value="REAL">💰</option></select>
             <button class="btn btn-info" id="btnConectar" onclick="conectarIQ()">🔌 CONECTAR</button>
-            <button class="btn btn-start" id="btnOperar" onclick="comecarOperar()" style="display:none">🚀 COMEÇAR OPERAR</button>
             <button class="btn btn-stop" id="btnDesconectar" onclick="desconectarIQ()" style="display:none">🔌 DESCONECTAR</button>
-            <button class="btn btn-stop" id="btnPararOperar" onclick="pararOperar()" style="display:none">⏹️ PARAR</button>
+            <button class="btn btn-start" id="btnOperar" onclick="comecarOperar()">🚀 INICIAR CICLO</button>
+            <button class="btn btn-stop" id="btnPararOperar" onclick="pararOperar()" style="display:none">⏹️ PARAR CICLO</button>
         </div></div>
         <div class="dashboard">
             <div class="card"><div class="label">💰 BANCA</div><div class="value" id="banca" style="color:#00ff88">--</div></div>
@@ -1174,7 +1174,7 @@ function comecarOperar(){
         }else{
             alert('ERRO: '+d.erro);
             document.getElementById('btnOperar').disabled=false;
-            document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
+            document.getElementById('btnOperar').textContent='🚀 INICIAR CICLO';
         }
     });
 }
@@ -1185,11 +1185,13 @@ function desconectarIQ(){
     fetch('/desconectar',{method:'POST'}).then(r=>r.json()).then(d=>{
         conectadoIQ=false;botAtivo=false;
         document.getElementById('btnConectar').style.display='inline-block';
-        document.getElementById('btnOperar').style.display='none';
         document.getElementById('btnDesconectar').style.display='none';
+        document.getElementById('btnOperar').style.display='inline-block';
         document.getElementById('btnPararOperar').style.display='none';
         document.getElementById('btnConectar').disabled=false;
         document.getElementById('btnConectar').textContent='🔌 CONECTAR';
+        document.getElementById('btnOperar').disabled=false;
+        document.getElementById('btnOperar').textContent='🚀 INICIAR CICLO';
         document.getElementById('statusTexto').textContent='⏸️ Desconectado';
         document.getElementById('statusDot').className='status-dot inactive';
         if(intervalo)clearInterval(intervalo);
@@ -1204,7 +1206,7 @@ function pararOperar(){
         document.getElementById('btnPararOperar').style.display='none';
         document.getElementById('btnDesconectar').style.display='inline-block';
         document.getElementById('btnOperar').disabled=false;
-        document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
+        document.getElementById('btnOperar').textContent='🚀 INICIAR CICLO';
         document.getElementById('statusTexto').textContent='🟢 Conectado';
     });
 }
@@ -1218,7 +1220,7 @@ function pararBot(){
         document.getElementById('btnConectar').disabled=false;
         document.getElementById('btnConectar').textContent='🔌 CONECTAR';
         document.getElementById('btnOperar').disabled=false;
-        document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
+        document.getElementById('btnOperar').textContent='🚀 INICIAR CICLO';
         document.getElementById('statusTexto').textContent='⏸️ Desconectado';
         document.getElementById('statusDot').className='status-dot inactive';
         if(intervalo)clearInterval(intervalo);
@@ -1384,7 +1386,7 @@ function atualizar(){
             document.getElementById('btnConectar').disabled=false;
             document.getElementById('btnConectar').textContent='🔌 CONECTAR';
             document.getElementById('btnOperar').disabled=false;
-            document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
+            document.getElementById('btnOperar').textContent='🚀 INICIAR CICLO';
             document.getElementById('statusTexto').textContent='⏸️ Desconectado';
             document.getElementById('statusDot').className='status-dot inactive';
             if(intervalo)clearInterval(intervalo);
@@ -1394,7 +1396,7 @@ function atualizar(){
             document.getElementById('btnOperar').style.display='inline-block';
             document.getElementById('btnPararOperar').style.display='none';
             document.getElementById('btnOperar').disabled=false;
-            document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
+            document.getElementById('btnOperar').textContent='🚀 INICIAR CICLO';
             document.getElementById('statusTexto').textContent='🟢 Conectado';
         }
         if(d.banca)document.getElementById('banca').textContent='$'+d.banca.toFixed(2);
