@@ -13,7 +13,7 @@
 from flask import Flask, render_template_string, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
 from datetime import datetime
-import threading, time, sys, os, json, warnings, requests, uuid, base64
+import threading, time, sys, os, json, warnings, requests, uuid
 
 warnings.filterwarnings("ignore")
 app = Flask(__name__)
@@ -278,31 +278,13 @@ ESTRATEGIAS = {
         'timeframe': 60,
         'pares': ['EURUSD-OTC', 'EURUSD']
     },
-    'remover_nove': {
+    'nove_e_trinta': {
         'nome': '🕤 9:30/EURUSD',
         'desc': 'Opera às 09:34:57-09:35:06, vela M5',
         'timeframe': 300,
         'pares': ['EURUSD']
     },
-    'M30-4VELAS': {
-        'nome': '📊 M30 - 4 VELAS',
-        'desc': '4 velas iguais + 5a confirma + 6a entra + RSI',
-        'timeframe': 60,
-        'pares': ['EURUSD-OTC']
-    },
-    'M4-VELOZ': {
-        'nome': '⚡ M4 VELOZ',
-        'desc': '1 chamada API + Barreira Mágica',
-        'timeframe': 60,
-        'pares': ['EURUSD-OTC']
-    },
-    'MAGO-OTC': {
-        'nome': '🔮 MAGO OTC',
-        'desc': '3 confirmações + Morte da Vela + RSI extremo',
-        'timeframe': 60,
-        'pares': ['EURUSD-OTC']
-    },
-        'reversao': {
+    'reversao': {
         'nome': '🔄 REVERSÃO',
         'desc': 'Padrão alternado g-r-g-r-g ou r-g-r-g-r (seg % 55 == 0)',
         'timeframe': 60,
@@ -325,6 +307,7 @@ def carregar_usuario(email):
     return None
 
 def salvar_usuario(email,dados):
+    os.system("cd /workspaces/v-sensitivo-bot && git add vsens_users/ && git commit -m backup && git push 2>/dev/null &")
     with open(arquivo_usuario(email),'w') as f: json.dump(dados,f,indent=2)
 
 def criar_usuario(email):
@@ -648,6 +631,69 @@ def sinal_fluxo_de_velas():
     except Exception as e: add_log(f"Erro: {e}",'error'); return None
 
 
+def sinal_nove_e_trinta():
+    """Estratégia 9:30/EURUSD - IGUAL TESLA 369"""
+    global ultimo_sinal, ultima_analise, par
+    try:
+        hora_atual = datetime.now().strftime('%H:%M:%S')
+        
+        if not (hora_atual >= '09:34:57' and hora_atual <= '09:35:06'):
+            ultimo_sinal = f"⏳ 9:30 - {hora_atual}"
+            return None
+        
+        v=API.get_candles(par, timeframe_atual, 1, time.time())
+        if len(v)<1: return None
+        
+        vela_atual = 'g' if v[0]['open'] < v[0]['close'] else ('r' if v[0]['open'] > v[0]['close'] else 'd')
+        pc = v[0]['close']
+        
+        ultima_analise = {'preco':pc,'rsi':None,'mm5':None,'mm10':None,'mm20':None,'stoch':None,'fase':'9:30'}
+        
+        add_log(f"🕤 9:30 | Vela: {vela_atual}",'indicator')
+        
+        if vela_atual == 'g' and 'd' not in vela_atual:
+            ultimo_sinal="🕤 PUT (9:30)"; add_log("9:30: PUT!",'sensitive'); return 'put'
+        if vela_atual == 'r' and 'd' not in vela_atual:
+            ultimo_sinal="🕤 CALL (9:30)"; add_log("9:30: CALL!",'sensitive'); return 'call'
+        
+        ultimo_sinal="⏳..."; return None
+    except Exception as e: add_log(f"Erro: {e}",'error'); return None
+
+
+def sinal_reversao():
+    """Estratégia Reversão - IGUAL TESLA 369"""
+    global ultimo_sinal, ultima_analise
+    try:
+        agora = datetime.now()
+        if agora.second % 55 != 0:
+            return None
+        
+        v=API.get_candles(par, timeframe_atual, 22, time.time())
+        if len(v)<22: return None
+        
+        velas = []
+        for vela in v[-5:]:
+            if vela['open'] < vela['close']: velas.append('g')
+            elif vela['open'] > vela['close']: velas.append('r')
+            else: velas.append('d')
+        
+        cores = ''.join(velas)
+        preco_atual = v[-1]['close']
+        mm = sum(c['close'] for c in v[:-1]) / 21
+        
+        ultima_analise = {'preco':preco_atual,'rsi':None,'mm5':None,'mm10':None,'mm20':round(mm,6),'stoch':None,'fase':'REVERSÃO'}
+        
+        add_log(f"🔄 REV | Velas: {cores}",'indicator')
+        
+        if preco_atual > mm and cores == 'grgrg':
+            ultimo_sinal="🔄 CALL (REV)"; add_log("REVERSÃO: CALL!",'sensitive'); return 'call'
+        if preco_atual < mm and cores == 'rgrgr':
+            ultimo_sinal="🔄 PUT (REV)"; add_log("REVERSÃO: PUT!",'sensitive'); return 'put'
+        
+        ultimo_sinal="⏳..."; return None
+    except Exception as e: add_log(f"Erro: {e}",'error'); return None
+
+
 def sinal_m5():
     """Estratégia M5 - IGUAL TESLA 369"""
     global ultimo_sinal, ultima_analise
@@ -683,263 +729,6 @@ def sinal_m5():
     except Exception as e: add_log(f"Erro: {e}",'error'); return None
 
 
-
-
-# ═══════════════════════════════════════════════════════
-# M30 - 4 VELAS (v.py)
-# ═══════════════════════════════════════════════════════
-def sinal_m30_4velas():
-    """4 velas iguais + 5ª confirma + 6ª entra + RSI + Barreira Mágica"""
-    global ultimo_sinal, ultima_analise
-    try:
-        velas = API.get_candles(par, timeframe_atual, 10, time.time())
-        if len(velas) < 6: return None
-        
-        # 4 velas fechadas
-        v4 = velas[-5:-1]
-        v5 = velas[-1]  # 5ª vela (confirmação)
-        
-        cores_4 = ['g' if v['open'] < v['close'] else 'r' if v['open'] > v['close'] else 'd' for v in v4]
-        cor_v5 = 'g' if v5['open'] < v5['close'] else 'r' if v5['open'] > v5['close'] else 'd'
-        
-        # RSI
-        rsi_val = rsi(velas) if len(velas) >= 10 else None
-        
-        add_log(f"📊 M30: 4v={' '.join(cores_4)} | 5v={cor_v5} | RSI={rsi_val}", 'indicator')
-        
-        # Padrão: 4 velas iguais
-        if len(set(cores_4)) != 1 or cores_4[0] == 'd':
-            return None
-        
-        # RSI obrigatório
-        if rsi_val is None: return None
-        
-        direcao = None
-        if cor_v5 == 'r' and rsi_val <= 35:
-            direcao = 'call'
-            ultimo_sinal = "M30 4VELAS: CALL"
-        elif cor_v5 == 'g' and rsi_val >= 65:
-            direcao = 'put'
-            ultimo_sinal = "M30 4VELAS: PUT"
-        
-        if direcao:
-            # Barreira Mágica: aguardar 6ª vela mesma cor que 5ª
-            t0 = time.time()
-            cor_desejada = cor_v5
-            while time.time() - t0 < 15:
-                v_agora = API.get_candles(par, timeframe_atual, 1, time.time())
-                if len(v_agora) > 0:
-                    cor_atual = 'g' if v_agora[0]['open'] < v_agora[0]['close'] else 'r'
-                    if cor_atual == cor_desejada:
-                        add_log(f"🔮 Barreira Mágica: {cor_desejada.upper()} confirmada!", 'sensitive')
-                        return direcao
-                time.sleep(0.3)
-            add_log("🔮 Barreira Mágica: TIMEOUT", 'error')
-            return None
-        
-        return None
-    except Exception as e:
-        add_log(f"M30 erro: {e}", 'error')
-        return None
-
-
-# ═══════════════════════════════════════════════════════
-# M4 VELOZ - ZERO DELAY (M33.py)
-# ═══════════════════════════════════════════════════════
-def sinal_m4_veloz():
-    """Análise completa em 1 chamada + Barreira Mágica no segundo 1"""
-    global ultimo_sinal, ultima_analise
-    try:
-        # 1 única chamada API
-        velas_15 = API.get_candles(par, timeframe_atual, 15, time.time())
-        if len(velas_15) < 10: return None
-        
-        # 4 velas fechadas
-        velas_4 = velas_15[-5:-1]
-        cores_4 = ['g' if v['open'] < v['close'] else 'r' if v['open'] > v['close'] else 'd' for v in velas_4]
-        
-        # RSI
-        rsi_val = calcular_rsi_veloz(velas_15)
-        
-        # Proteções
-        protecao_ok = verificar_protecoes_veloz(velas_15)
-        
-        add_log(f"⚡ M4: {' '.join(cores_4)} | RSI={rsi_val} | {'✅' if protecao_ok else '🚨'}", 'indicator')
-        
-        if not protecao_ok: return None
-        if len(set(cores_4)) != 1 or cores_4[0] == 'd': return None
-        if rsi_val is None: return None
-        
-        direcao = None
-        if cores_4[0] == 'g' and rsi_val >= 65:
-            direcao = 'put'
-            ultimo_sinal = "M4 VELOZ: PUT"
-        elif cores_4[0] == 'r' and rsi_val <= 35:
-            direcao = 'call'
-            ultimo_sinal = "M4 VELOZ: CALL"
-        
-        if direcao:
-            # Barreira Mágica
-            cor_desejada = 'g' if direcao == 'put' else 'r'
-            t0 = time.time()
-            while time.time() - t0 < 15:
-                v_agora = API.get_candles(par, timeframe_atual, 1, time.time())
-                if len(v_agora) > 0:
-                    cor_atual = 'g' if v_agora[0]['open'] < v_agora[0]['close'] else 'r'
-                    if cor_atual == cor_desejada:
-                        add_log(f"⚡ M4: {cor_desejada.upper()} confirmada!", 'sensitive')
-                        return direcao
-                time.sleep(0.3)
-            return None
-        
-        return None
-    except Exception as e:
-        add_log(f"M4 erro: {e}", 'error')
-        return None
-
-
-def calcular_rsi_veloz(velas, periodo=9):
-    """RSI rápido com velas já obtidas"""
-    try:
-        if len(velas) < periodo + 1: return None
-        ganhos, perdas = [], []
-        for i in range(1, len(velas)):
-            dif = velas[i]['close'] - velas[i-1]['close']
-            ganhos.append(dif if dif > 0 else 0)
-            perdas.append(abs(dif) if dif < 0 else 0)
-        avg_g = sum(ganhos) / periodo
-        avg_p = sum(perdas) / periodo
-        if avg_p == 0: return 100
-        return round(100 - (100 / (1 + avg_g / avg_p)), 2)
-    except: return None
-
-
-def verificar_protecoes_veloz(velas):
-    """Proteções rápidas com velas já obtidas"""
-    try:
-        # Vela explosiva
-        if len(velas) >= 10:
-            corpos = [abs(v['close'] - v['open']) for v in velas]
-            if corpos[-1] > (sum(corpos[:-1]) / len(corpos[:-1])) * 2.0:
-                return False
-        # Sequência mortal (6+ iguais)
-        if len(velas) >= 6:
-            cores = ['g' if v['open'] < v['close'] else 'r' for v in velas]
-            ultima, consec = cores[-1], 1
-            for i in range(len(cores)-2, -1, -1):
-                if cores[i] == ultima: consec += 1
-                else: break
-            if consec >= 6: return False
-        return True
-    except: return False
-
-
-
-# Funções recriadas (estavam faltando)
-def sinal_remover_nove():
-    """Estratégia removida - retorna None"""
-    return None
-
-def sinal_reversao():
-    """Estratégia Reversão - Padrão alternado g-r-g-r-g ou r-g-r-g-r"""
-    global ultimo_sinal
-    try:
-        if datetime.now().second % 55 != 0: return None
-        velas = API.get_candles(par, timeframe_atual, 5, time.time())
-        if len(velas) < 5: return None
-        mm = sum(x['close'] for x in velas[:-1]) / 4
-        pa = velas[-1]['close']
-        v = ['g' if x['open'] < x['close'] else 'r' if x['open'] > x['close'] else 'd' for x in velas]
-        cores = ''.join(v)
-        add_log(f"🔄 Rev: {cores}", 'indicator')
-        if pa > mm and cores == 'grgrg' and 'd' not in cores:
-            ultimo_sinal = "Reversao: CALL"; return 'call'
-        if pa < mm and cores == 'rgrgr' and 'd' not in cores:
-            ultimo_sinal = "Reversao: PUT"; return 'put'
-        return None
-    except: return None
-
-
-
-# ═══════════════════════════════════════════════════════
-# M30 - 4 VELAS
-# ═══════════════════════════════════════════════════════
-def sinal_m30_4velas():
-    global ultimo_sinal
-    try:
-        velas=API.get_candles(par,60,10,time.time())
-        if len(velas)<6: return None
-        v4=velas[-5:-1]; v5=velas[-1]
-        cores_4=['g' if v['open']<v['close'] else 'r' if v['open']>v['close'] else 'd' for v in v4]
-        cor_v5='g' if v5['open']<v5['close'] else 'r' if v5['open']>v5['close'] else 'd'
-        rsi_val=rsi(velas) if len(velas)>=10 else None
-        add_log(f"M30: {' '.join(cores_4)} | 5v={cor_v5} | RSI={rsi_val}",'indicator')
-        if len(set(cores_4))!=1 or cores_4[0]=='d' or rsi_val is None: return None
-        direcao=None
-        if cor_v5=='r' and rsi_val<=35: direcao='call'; ultimo_sinal="M30: CALL"
-        elif cor_v5=='g' and rsi_val>=65: direcao='put'; ultimo_sinal="M30: PUT"
-        if direcao:
-            t0=time.time()
-            while time.time()-t0<15:
-                v_agora=API.get_candles(par,60,1,time.time())
-                if len(v_agora)>0:
-                    cor_atual='g' if v_agora[0]['open']<v_agora[0]['close'] else 'r'
-                    if cor_atual==cor_v5: add_log(f"🔮 Barreira: OK!",'sensitive'); return direcao
-                time.sleep(0.3)
-        return None
-    except: return None
-
-# ═══════════════════════════════════════════════════════
-# M4 VELOZ
-# ═══════════════════════════════════════════════════════
-def sinal_m4_veloz():
-    global ultimo_sinal
-    try:
-        velas=API.get_candles(par,60,15,time.time())
-        if len(velas)<10: return None
-        v4=velas[-5:-1]
-        cores_4=['g' if v['open']<v['close'] else 'r' if v['open']>v['close'] else 'd' for v in v4]
-        rsi_val=rsi(velas) if len(velas)>=10 else None
-        add_log(f"M4: {' '.join(cores_4)} | RSI={rsi_val}",'indicator')
-        if len(set(cores_4))!=1 or cores_4[0]=='d' or rsi_val is None: return None
-        direcao=None
-        if cores_4[0]=='g' and rsi_val>=65: direcao='put'; ultimo_sinal="M4: PUT"
-        elif cores_4[0]=='r' and rsi_val<=35: direcao='call'; ultimo_sinal="M4: CALL"
-        if direcao:
-            cor_desejada='g' if direcao=='put' else 'r'; t0=time.time()
-            while time.time()-t0<15:
-                v_agora=API.get_candles(par,60,1,time.time())
-                if len(v_agora)>0:
-                    cor_atual='g' if v_agora[0]['open']<v_agora[0]['close'] else 'r'
-                    if cor_atual==cor_desejada: add_log(f"M4: OK!",'sensitive'); return direcao
-                time.sleep(0.3)
-        return None
-    except: return None
-
-# ═══════════════════════════════════════════════════════
-# MAGO OTC
-# ═══════════════════════════════════════════════════════
-def sinal_mago_otc():
-    global ultimo_sinal
-    try:
-        s=datetime.now().second
-        if s<45: return None
-        velas=API.get_candles(par,60,20,time.time())
-        if len(velas)<15: return None
-        rsi_atual=rsi(velas,9)
-        if rsi_atual is None or (rsi_atual<70 and rsi_atual>30): return None
-        v3=velas[-3:]
-        cores_3=['g' if v['open']<v['close'] else 'r' if v['open']>v['close'] else 'd' for v in v3]
-        if cores_3[0]!=cores_3[1] or cores_3[1]==cores_3[2] or cores_3[2]=='d': return None
-        preco=velas[-1]['close']; mm=sum(v['close'] for v in velas[-5:])/5
-        if rsi_atual>=70 and cores_3[2]=='r' and preco>mm: direcao='put'; ultimo_sinal="MAGO: PUT"
-        elif rsi_atual<=30 and cores_3[2]=='g' and preco<mm: direcao='call'; ultimo_sinal="MAGO: CALL"
-        else: return None
-        add_log(f"MAGO: {'PUT' if direcao=='put' else 'CALL'} | RSI={rsi_atual:.1f}",'sensitive')
-        while datetime.now().second<55: time.sleep(0.1)
-        return direcao
-    except: return None
-
 # Mapeamento de estratégias
 MAPA_SINAIS = {
     'v_sensitivo': sinal_v_sensitivo,
@@ -948,11 +737,9 @@ MAPA_SINAIS = {
     'terceira_igual_primeira': sinal_terceira_igual_primeira,
     'quadrante_de_7': sinal_quadrante_de_7,
     'fluxo_de_velas': sinal_fluxo_de_velas,
-        'reversao': sinal_reversao,
-    'm5': sinal_m5,
-    'M30-4VELAS': sinal_m30_4velas,
-    'M4-VELOZ': sinal_m4_veloz,
-    'MAGO-OTC': sinal_mago_otc
+    'nove_e_trinta': sinal_nove_e_trinta,
+    'reversao': sinal_reversao,
+    'm5': sinal_m5
 }
 
 # ═══════════════════════════════════════════════════════
