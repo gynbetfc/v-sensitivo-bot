@@ -27,40 +27,56 @@ DRIVE_PATH = "vsens_users"
 os.makedirs(DRIVE_PATH, exist_ok=True)
 
 def salvar_usuario(email, dados):
-    """Salva no GitHub via API + backup local"""
-    os.makedirs(DRIVE_PATH, exist_ok=True)
-    with open(f"{DRIVE_PATH}/{email.replace('@', '_').replace('.', '_')}.json", 'w') as f:
-        json.dump(dados, f, indent=2)
+    """Salva no GitHub via API"""
+    os.makedirs("vsens_users", exist_ok=True)
+    path = f"vsens_users/{email.replace('@', '_').replace('.', '_')}.json"
+    with open(path, 'w') as f: json.dump(dados, f, indent=2)
     try:
-        token = os.environ.get("GITHUB_TOKEN", "")
-        if token:
-            filename = f"vsens_users/{email.replace('@', '_').replace('.', '_')}.json"
-            url_api = "https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/" + filename
-            headers_api = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
-            content = json.dumps(dados, indent=2)
-            r_check = requests.get(url_api, headers=headers_api)
-            payload = {"message": f"Update {email}", "content": base64.b64encode(content.encode()).decode(), "branch": "main"}
-            if r_check.status_code == 200: payload["sha"] = r_check.json()["sha"]
-            requests.put(url_api, json=payload, headers=headers_api)
+        t = os.environ.get("GITHUB_TOKEN", "")
+        if t:
+            fn = f"vsens_users/{email.replace('@', '_').replace('.', '_')}.json"
+            u = "https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/" + fn
+            h = {"Authorization": f"token {t}", "Accept": "application/vnd.github.v3+json"}
+            c = json.dumps(dados, indent=2)
+            rc = requests.get(u, headers=h)
+            p = {"message": f"Update {email}", "content": base64.b64encode(c.encode()).decode(), "branch": "main"}
+            if rc.status_code == 200: p["sha"] = rc.json()["sha"]
+            requests.put(u, json=p, headers=h)
     except: pass
 
 
 def carregar_usuario(email):
-    """Carrega usuario do GitHub ou local"""
+    """Carrega do GitHub ou local"""
     path = f"vsens_users/{email.replace('@', '_').replace('.', '_')}.json"
     if os.path.exists(path):
         with open(path, 'r') as f: return json.load(f)
-    token = os.environ.get("GITHUB_TOKEN", "")
-    if token:
-        try:
-            filename = f"vsens_users/{email.replace('@', '_').replace('.', '_')}.json"
-            url_api = "https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/" + filename
-            headers_api = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
-            r = requests.get(url_api, headers=headers_api)
-            if r.status_code == 200:
-                return json.loads(base64.b64decode(r.json()["content"]).decode())
-        except: pass
+    try:
+        t = os.environ.get("GITHUB_TOKEN", "")
+        if t:
+            fn = f"vsens_users/{email.replace('@', '_').replace('.', '_')}.json"
+            u = "https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/" + fn
+            h = {"Authorization": f"token {t}", "Accept": "application/vnd.github.v3+json"}
+            r = requests.get(u, headers=h)
+            if r.status_code == 200: return json.loads(base64.b64decode(r.json()["content"]).decode())
+    except: pass
     return None
+
+
+def criar_usuario(email):
+    """Cria novo usuário"""
+    dados = {
+        'email': email, 'moedas': 1,
+        'moedas_ganhas_hoje': str(datetime.now())[:10],
+        'total_ciclos': 0, 'total_wins': 0, 'total_losses': 0,
+        'total_gasto': 0.0, 'total_ganho': 0.0, 'lucro_total': 0.0, 'banca_atual': 0.0,
+        'data_cadastro': str(datetime.now())[:19],
+        'historico_operacoes': [], 'dias_ativos': {},
+        'skin_atual': 'skin_padrao', 'skins_compradas': ['skin_padrao']
+    }
+    salvar_usuario(email, dados)
+    return dados
+
+
 def criar_usuario(email):
     """Cria novo usuario"""
     dados = {'email': email, 'moedas': 1, 'moedas_ganhas_hoje': str(datetime.now())[:10], 'total_ciclos': 0, 'total_wins': 0, 'total_losses': 0, 'total_gasto': 0.0, 'total_ganho': 0.0, 'lucro_total': 0.0, 'banca_atual': 0.0, 'data_cadastro': str(datetime.now())[:19], 'historico_operacoes': [], 'dias_ativos': {}, 'skin_atual': 'skin_padrao', 'skins_compradas': ['skin_padrao']}
