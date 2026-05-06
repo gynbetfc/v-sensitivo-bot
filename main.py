@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT - COMPLETO ⚡
+# ⚡ TESLA 369 BOT - COMPLETO v4.0 ⚡
 # 9 ESTRATÉGIAS | LOJA DE SKINS | 2 BOTÕES | MERCADO PAGO | DRIVE
 # MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -298,63 +298,26 @@ ESTRATEGIAS = {
     }
 }
 
-
-def salvar_usuario(email, dados):
-    """Salva local + GitHub (via variável de ambiente)"""
-    arquivo = f"{DRIVE_PATH}/{email.replace('@', '_').replace('.', '_')}.json"
-    os.makedirs(DRIVE_PATH, exist_ok=True)
-    with open(arquivo, 'w') as f:
-        json.dump(dados, f, indent=2)
-    # Tenta GitHub se token existir
-    try:
-        token = os.environ.get("GITHUB_TOKEN", "")
-        if token:
-            fn = f"vsens_users/{email.replace('@', '_').replace('.', '_')}.json"
-            u = "https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/" + fn
-            h = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github.v3+json"}
-            c = json.dumps(dados, indent=2)
-            rc = requests.get(u, headers=h)
-            p = {"message": "Update", "content": base64.b64encode(c.encode()).decode(), "branch": "main"}
-            if rc.status_code == 200:
-                p["sha"] = rc.json()["sha"]
-            requests.put(u, json=p, headers=h)
-    except:
-        pass
-
+def arquivo_usuario(email):
+    return f"{DRIVE_PATH}/{email.replace('@','_').replace('.','_')}.json"
 
 def carregar_usuario(email):
-    """Carrega local + GitHub"""
-    arquivo = f"{DRIVE_PATH}/{email.replace('@', '_').replace('.', '_')}.json"
-    if os.path.exists(arquivo):
-        with open(arquivo, 'r') as f:
-            return json.load(f)
-    try:
-        token = os.environ.get("GITHUB_TOKEN", "")
-        if token:
-            fn = f"vsens_users/{email.replace('@', '_').replace('.', '_')}.json"
-            u = "https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/" + fn
-            h = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github.v3+json"}
-            r = requests.get(u, headers=h)
-            if r.status_code == 200:
-                return json.loads(base64.b64decode(r.json()["content"]).decode())
-    except:
-        pass
+    arq=arquivo_usuario(email)
+    if os.path.exists(arq): return json.load(open(arq,'r'))
     return None
 
+def salvar_usuario(email,dados):
+    os.system("cd /workspaces/v-sensitivo-bot && git add vsens_users/ && git commit -m backup && git push 2>/dev/null &")
+    with open(arquivo_usuario(email),'w') as f: json.dump(dados,f,indent=2)
 
 def criar_usuario(email):
-    """Cria novo usuário"""
-    dados = {
-        'email': email, 'moedas': 1,
-        'moedas_ganhas_hoje': str(datetime.now())[:10],
-        'total_ciclos': 0, 'total_wins': 0, 'total_losses': 0,
-        'total_gasto': 0.0, 'total_ganho': 0.0, 'lucro_total': 0.0, 'banca_atual': 0.0,
-        'data_cadastro': str(datetime.now())[:19],
-        'historico_operacoes': [], 'dias_ativos': {},
-        'skin_atual': 'skin_padrao', 'skins_compradas': ['skin_padrao']
+    return {
+        'email':email,'moedas':1,'moedas_ganhas_hoje':'',
+        'total_ciclos':0,'total_wins':0,'total_losses':0,
+        'total_gasto':0.0,'total_ganho':0.0,'lucro_total':0.0,'banca_atual':0.0,
+        'data_cadastro':str(datetime.now())[:19],'historico_operacoes':[],'dias_ativos':{},
+        'skin_atual':'skin_padrao','skins_compradas':['skin_padrao']
     }
-    salvar_usuario(email, dados)
-    return dados
 
 # ============= VARIÁVEIS GLOBAIS =============
 API, par = None, "EURUSD-OTC"
