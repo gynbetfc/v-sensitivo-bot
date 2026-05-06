@@ -26,102 +26,54 @@ PAYOUT_PADRAO = 0.85
 DRIVE_PATH = "vsens_users"
 os.makedirs(DRIVE_PATH, exist_ok=True)
 
-# ═══════════════════════════════════════════════════════
-# BANCO DE DADOS VIA GITHUB API (FUNCIONANDO!)
-# ═══════════════════════════════════════════════════════
-
 def salvar_usuario(email, dados):
-    """Salva dados do usuário no GitHub via API"""
+    """Salva no GitHub e local"""
+    os.makedirs("vsens_users", exist_ok=True)
+    path = f"vsens_users/{email.replace('@', '_').replace('.', '_')}.json"
+    with open(path, 'w') as f: json.dump(dados, f, indent=2)
     try:
         token = os.environ.get("GITHUB_TOKEN", "")
-        if not token:
-            token = "TOKEN_VIA_ENV"
-        filename = f"vsens_users/{email.replace('@', '_').replace('.', '_')}.json"
-        content = json.dumps(dados, indent=2, ensure_ascii=False)
-        url = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/{filename}"
-        headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
-        r = requests.get(url, headers=headers)
-        payload = {
-            "message": f"Update: {email}",
-            "content": base64.b64encode(content.encode('utf-8')).decode('utf-8'),
-            "branch": "main"
-        }
-        if r.status_code == 200:
-            payload["sha"] = r.json()['sha']
-        requests.put(url, json=payload, headers=headers)
-    except:
-        pass
-    # Backup local sempre
-    os.makedirs("vsens_users", exist_ok=True)
-    with open(f"vsens_users/{email.replace('@', '_').replace('.', '_')}.json", 'w') as f:
-        json.dump(dados, f, indent=2)
-
+        if token:
+            import requests as req, base64 as b64
+            filename = f"vsens_users/{email.replace('@', '_').replace('.', '_')}.json"
+            url_api = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/{filename}"
+            headers_api = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
+            content = json.dumps(dados, indent=2)
+            r_api = req.get(url_api, headers=headers_api)
+            payload = {"message": f"Update {email}", "content": b64.b64encode(content.encode()).decode(), "branch": "main"}
+            if r_api.status_code == 200: payload["sha"] = r_api.json()["sha"]
+            req.put(url_api, json=payload, headers=headers_api)
+    except: pass
 
 def carregar_usuario(email):
-    """Carrega dados do usuário do GitHub"""
-    try:
-        token = os.environ.get("GITHUB_TOKEN", "")
-        if not token:
-            token = "TOKEN_VIA_ENV"
-        filename = f"vsens_users/{email.replace('@', '_').replace('.', '_')}.json"
-        url = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/{filename}"
-        headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
-        r = requests.get(url, headers=headers)
-        if r.status_code == 200:
-            data = r.json()
-            content = base64.b64decode(data['content']).decode('utf-8')
-            return json.loads(content)
-    except:
-        pass
-    # Fallback local
+    """Carrega do local ou GitHub"""
     path = f"vsens_users/{email.replace('@', '_').replace('.', '_')}.json"
     if os.path.exists(path):
-        with open(path, 'r') as f:
-            return json.load(f)
+        with open(path, 'r') as f: return json.load(f)
+    try:
+        token = os.environ.get("GITHUB_TOKEN", "")
+        if token:
+            import requests as req, base64 as b64
+            filename = f"vsens_users/{email.replace('@', '_').replace('.', '_')}.json"
+            url_api = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/{filename}"
+            headers_api = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
+            r_api = req.get(url_api, headers=headers_api)
+            if r_api.status_code == 200:
+                return json.loads(b64.b64decode(r_api.json()["content"]).decode())
+    except: pass
     return None
-
 
 def criar_usuario(email):
     """Cria novo usuário"""
-    dados = {
-        'email': email, 'moedas': 1,
-        'moedas_ganhas_hoje': str(datetime.now())[:10],
-        'total_ciclos': 0, 'total_wins': 0, 'total_losses': 0,
-        'total_gasto': 0.0, 'total_ganho': 0.0, 'lucro_total': 0.0, 'banca_atual': 0.0,
-        'data_cadastro': str(datetime.now())[:19],
-        'historico_operacoes': [], 'dias_ativos': {},
-        'skin_atual': 'skin_padrao', 'skins_compradas': ['skin_padrao']
-    }
+    dados = {'email': email, 'moedas': 1, 'moedas_ganhas_hoje': str(datetime.now())[:10], 'total_ciclos': 0, 'total_wins': 0, 'total_losses': 0, 'total_gasto': 0.0, 'total_ganho': 0.0, 'lucro_total': 0.0, 'banca_atual': 0.0, 'data_cadastro': str(datetime.now())[:19], 'historico_operacoes': [], 'dias_ativos': {}, 'skin_atual': 'skin_padrao', 'skins_compradas': ['skin_padrao']}
     salvar_usuario(email, dados)
     return dados
 
 
 # ═══════════════════════════════════════════════════════
-# BANCO DE DADOS VIA GITHUB API (TOKEN VIA VARIÁVEL DE AMBIENTE)
+# BANCO DE DADOS VIA GITHUB API (FUNCIONANDO!)
 # ═══════════════════════════════════════════════════════
-GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
-GITHUB_USER = "gynbetfc"
-GITHUB_REPO = "v-sensitivo-bot"
 
-def salvar_usuario(email, dados):
-    """Salva no GitHub via API"""
-    try:
-        if not GITHUB_TOKEN:
-            raise Exception("Token não configurado")
-        filename = f"vsens_users/{email.replace('@', '_').replace('.', '_')}.json"
-        content = json.dumps(dados, indent=2, ensure_ascii=False)
-        url = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{filename}"
-        headers = {"Authorization": f"token {GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
-        r = requests.get(url, headers=headers)
-        payload = {"message": f"Update: {email}", "content": base64.b64encode(content.encode('utf-8')).decode('utf-8'), "branch": "main"}
-        if r.status_code == 200: payload["sha"] = r.json()['sha']
-        requests.put(url, json=payload, headers=headers)
-    except:
-        pass
-    # Sempre salva local como backup
-    os.makedirs("vsens_users", exist_ok=True)
-    with open(f"vsens_users/{email.replace('@', '_').replace('.', '_')}.json", 'w') as f:
-        json.dump(dados, f, indent=2)
 
 
 
