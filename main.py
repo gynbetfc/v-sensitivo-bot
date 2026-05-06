@@ -26,122 +26,298 @@ PAYOUT_PADRAO = 0.85
 DRIVE_PATH = "vsens_users"
 os.makedirs(DRIVE_PATH, exist_ok=True)
 
-# ═══════════════════════════════════════════════════════
-# BANCO DE DADOS JSON BIN (GRÁTIS E SEM COMPLICAÇÃO!)
-# ═══════════════════════════════════════════════════════
+# ⭐⭐⭐ CONFIGURAÇÃO DO MERCADO PAGO ⭐⭐⭐
+MERCADO_PAGO_ACCESS_TOKEN = "APP_USR-4548266140377032-050311-6589fc22b166e4cb2cfad0379b28dcdf-1059299796"
+MERCADO_PAGO_PUBLIC_KEY = "APP_USR-39e1950e-420d-479a-8125-902009ca3445"
+MODO_SIMULACAO = False
 
-JSONBIN_URL = "https://api.jsonbin.io/v3/b"
-JSONBIN_KEY = "$2b$10$YQmZ8K5nJ3xL7wR9vB2cOe"
+# ⭐ PLANOS DE MOEDAS ⭐
+PLANOS = [
+    {'id':1,'moedas':1,'preco':0.99,'nome':'🔰 INICIANTE','desc':'R$0,99/moeda','tag':'1 por 1'},
+    {'id':2,'moedas':5,'preco':4.99,'nome':'⭐ BÁSICO','desc':'R$1,00/moeda'},
+    {'id':3,'moedas':15,'preco':9.99,'nome':'💎 INTERMEDIÁRIO','desc':'R$0,67/moeda','desconto':'33% OFF'},
+    {'id':4,'moedas':35,'preco':14.99,'nome':'🔥 PREMIUM','desc':'R$0,43/moeda','desconto':'57% OFF'},
+    {'id':5,'moedas':60,'preco':19.99,'nome':'👑 ULTRA','desc':'R$0,33/moeda','desconto':'67% OFF'},
+]
 
-def salvar_usuario(email, dados):
-    """Salva no JSON Bin + backup local"""
-    os.makedirs(DRIVE_PATH, exist_ok=True)
-    filename = f"{DRIVE_PATH}/{email.replace('@', '_').replace('.', '_')}.json"
-    with open(filename, 'w') as f:
-        json.dump(dados, f, indent=2)
-    try:
-        # Tenta salvar no JSON Bin
-        r = requests.post(
-            JSONBIN_URL,
-            json={"email": email, "data": dados},
-            headers={"X-Master-Key": JSONBIN_KEY, "Content-Type": "application/json"}
-        )
-    except:
-        pass
+# ⭐ SKINS DA LOJA ⭐
+SKINS = [
+    {
+        'id': 'skin_padrao',
+        'nome': '⚡ TESLA PADRÃO',
+        'desc': 'Tema escuro com raios dourados - Skin padrão do Tesla 369',
+        'preco_moedas': 0,
+        'cor_fundo': '#0a0a1a',
+        'cor_panel': '#1a1a3e',
+        'cor_destaque': '#ffd700',
+        'cor_texto': '#fff',
+        'cor_botao': 'linear-gradient(135deg,#cc8800,#ffd700)',
+        'cor_tab_ativa': '#ffd700',
+        'cor_header_bg': 'linear-gradient(135deg,#1a0000,#331100,#553300,#331100,#1a0000)',
+        'cor_header_borda': '#ffd700',
+        'header_extra': '<div class="lightning"></div>',
+        'css_extra': '''
+            .lightning{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:150px;height:150px;background:radial-gradient(circle at 30% 30%,rgba(255,215,0,0.3) 0%,rgba(255,165,0,0.15) 30%,transparent 100%);border-radius:50%;z-index:0;animation:glow 3s ease-in-out infinite;pointer-events:none}
+            @keyframes glow{0%,100%{box-shadow:0 0 30px rgba(255,215,0,0.3)}50%{box-shadow:0 0 50px rgba(255,165,0,0.5)}}
+            .lightning::after{content:"⚡";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:50px;animation:float 2s ease-in-out infinite}
+            @keyframes float{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-60%) scale(1.1)}}
+        '''
+    },
+    {
+        'id': 'skin_magos',
+        'nome': '🔮 MAGOS DA BOLA DE CRISTAL',
+        'desc': 'Tema roxo místico com bola de cristal e magos',
+        'preco_moedas': 1,
+        'cor_fundo': '#0a0a1a',
+        'cor_panel': '#1a1a3e',
+        'cor_destaque': '#cc66ff',
+        'cor_texto': '#e0d0ff',
+        'cor_botao': 'linear-gradient(135deg,#6600cc,#9933ff)',
+        'cor_tab_ativa': '#9933ff',
+        'cor_header_bg': 'linear-gradient(135deg,#0d001a,#1a0033,#2d0055,#1a0033,#0d001a)',
+        'cor_header_borda': '#9933ff',
+        'header_extra': '<div class="crystal-ball"></div><div class="mago mago-esq">🧙‍♂️</div><div class="mago mago-dir">🧙‍♀️</div>',
+        'css_extra': '''
+            .crystal-ball{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:130px;height:130px;background:radial-gradient(circle at 30% 30%,rgba(200,150,255,0.4) 0%,rgba(153,51,255,0.2) 30%,transparent 70%);border-radius:50%;z-index:0;animation:crystalGlow 4s ease-in-out infinite;pointer-events:none;border:2px solid rgba(153,51,255,0.3)}
+            @keyframes crystalGlow{0%,100%{box-shadow:0 0 30px rgba(153,51,255,0.4),0 0 60px rgba(153,51,255,0.2)}50%{box-shadow:0 0 50px rgba(200,100,255,0.6),0 0 80px rgba(200,100,255,0.3)}}
+            .crystal-ball::after{content:"🔮";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:45px;animation:floatCrystal 3s ease-in-out infinite;filter:drop-shadow(0 0 10px rgba(200,150,255,0.8))}
+            @keyframes floatCrystal{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-60%) scale(1.1)}}
+            .mago{position:absolute;top:50%;font-size:30px;z-index:1;animation:magoFloat 2s ease-in-out infinite;pointer-events:none}
+            .mago-esq{left:15px;animation-delay:0s}
+            .mago-dir{right:15px;animation-delay:0.5s}
+            @keyframes magoFloat{0%,100%{transform:translateY(-50%)}50%{transform:translateY(-60%)}}
+            .header h1{color:#cc66ff!important;text-shadow:0 0 30px #9933ff!important}
+        '''
+    },
+    {
+        'id': 'skin_neon',
+        'nome': '💚 MATRIX NEON',
+        'desc': 'Tema verde neon estilo hacker Matrix',
+        'preco_moedas': 1,
+        'cor_fundo': '#000a00',
+        'cor_panel': '#0a1a0a',
+        'cor_destaque': '#00ff41',
+        'cor_texto': '#00ff41',
+        'cor_botao': 'linear-gradient(135deg,#005500,#00ff41)',
+        'cor_tab_ativa': '#00ff41',
+        'cor_header_bg': 'linear-gradient(135deg,#000a00,#001a00,#003300,#001a00,#000a00)',
+        'cor_header_borda': '#00ff41',
+        'header_extra': '<canvas id="matrixCanvas"></canvas>',
+        'css_extra': '''
+            #matrixCanvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;opacity:0.3;pointer-events:none}
+            .header h1{color:#00ff41!important;text-shadow:0 0 30px #00ff41!important;font-family:"Courier New",monospace!important}
+            .terminal{color:#00ff41!important;text-shadow:0 0 3px #00ff41}
+            body{text-shadow:0 0 1px rgba(0,255,65,0.5)}
+        '''
+    },
+    {
+        'id': 'skin_dourado',
+        'nome': '👑 DOURADO IMPERIAL',
+        'desc': 'Tema dourado luxuoso estilo realeza',
+        'preco_moedas': 1,
+        'cor_fundo': '#0a0a00',
+        'cor_panel': '#1a1a0a',
+        'cor_destaque': '#ffd700',
+        'cor_texto': '#ffe4b5',
+        'cor_botao': 'linear-gradient(135deg,#8b6914,#ffd700)',
+        'cor_tab_ativa': '#daa520',
+        'cor_header_bg': 'linear-gradient(135deg,#1a1a00,#332b00,#554400,#332b00,#1a1a00)',
+        'cor_header_borda': '#daa520',
+        'header_extra': '<div class="coroa">👑</div>',
+        'css_extra': '''
+            .coroa{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:40px;z-index:1;animation:coroaFloat 2s ease-in-out infinite;pointer-events:none}
+            @keyframes coroaFloat{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-10px)}}
+            .header h1{color:#ffd700!important;text-shadow:0 0 30px #daa520!important}
+        '''
+    },
+    {
+        'id': 'skin_flamengo',
+        'nome': '🔴⚫ FLAMENGO',
+        'desc': 'Tema rubro-negro - Mengão!',
+        'preco_moedas': 1,
+        'cor_fundo': '#1a0000',
+        'cor_panel': '#2a0a0a',
+        'cor_destaque': '#ff0000',
+        'cor_texto': '#fff',
+        'cor_botao': 'linear-gradient(135deg,#990000,#ff0000)',
+        'cor_tab_ativa': '#cc0000',
+        'cor_header_bg': 'linear-gradient(135deg,#1a0000,#330000,#550000,#330000,#1a0000)',
+        'cor_header_borda': '#ff0000',
+        'header_extra': '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:60px;z-index:0;opacity:0.3;pointer-events:none">🔴⚫</div>',
+        'css_extra': '''
+            .header h1{color:#ff4444!important;text-shadow:0 0 30px #ff0000!important}
+        '''
+    },
+    {
+        'id': 'skin_corinthians',
+        'nome': '⚪⚫ CORINTHIANS',
+        'desc': 'Tema alvinegro - Timão!',
+        'preco_moedas': 1,
+        'cor_fundo': '#0a0a0a',
+        'cor_panel': '#1a1a1a',
+        'cor_destaque': '#fff',
+        'cor_texto': '#eee',
+        'cor_botao': 'linear-gradient(135deg,#333,#fff)',
+        'cor_tab_ativa': '#ccc',
+        'cor_header_bg': 'linear-gradient(135deg,#000,#222,#444,#222,#000)',
+        'cor_header_borda': '#fff',
+        'header_extra': '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:60px;z-index:0;opacity:0.3;pointer-events:none">⚪⚫</div>',
+        'css_extra': '''
+            .header h1{color:#fff!important;text-shadow:0 0 30px #ccc!important}
+        '''
+    },
+    {
+        'id': 'skin_palmeiras',
+        'nome': '💚 PALMEIRAS',
+        'desc': 'Tema verde - Verdão!',
+        'preco_moedas': 1,
+        'cor_fundo': '#001a00',
+        'cor_panel': '#0a2a0a',
+        'cor_destaque': '#00cc00',
+        'cor_texto': '#fff',
+        'cor_botao': 'linear-gradient(135deg,#006600,#00ff00)',
+        'cor_tab_ativa': '#00aa00',
+        'cor_header_bg': 'linear-gradient(135deg,#001a00,#003300,#005500,#003300,#001a00)',
+        'cor_header_borda': '#00cc00',
+        'header_extra': '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:60px;z-index:0;opacity:0.3;pointer-events:none">💚</div>',
+        'css_extra': '''
+            .header h1{color:#00ff00!important;text-shadow:0 0 30px #00cc00!important}
+        '''
+    },
+    {
+        'id': 'skin_sao_paulo',
+        'nome': '🔴⚪⚫ SÃO PAULO',
+        'desc': 'Tema tricolor - SPFC!',
+        'preco_moedas': 1,
+        'cor_fundo': '#1a0a0a',
+        'cor_panel': '#2a1515',
+        'cor_destaque': '#ff3333',
+        'cor_texto': '#fff',
+        'cor_botao': 'linear-gradient(135deg,#cc0000,#ff0000)',
+        'cor_tab_ativa': '#ff0000',
+        'cor_header_bg': 'linear-gradient(135deg,#1a0a0a,#331515,#552020,#331515,#1a0a0a)',
+        'cor_header_borda': '#ff0000',
+        'header_extra': '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:60px;z-index:0;opacity:0.3;pointer-events:none">🔴⚪⚫</div>',
+        'css_extra': '''
+            .header h1{color:#ff6666!important;text-shadow:0 0 30px #ff0000!important}
+        '''
+    },
+    {
+        'id': 'skin_santos',
+        'nome': '⚪⚫ SANTOS',
+        'desc': 'Tema alvinegro praiano - Peixe!',
+        'preco_moedas': 1,
+        'cor_fundo': '#0a0a0a',
+        'cor_panel': '#1a1a1a',
+        'cor_destaque': '#ddd',
+        'cor_texto': '#fff',
+        'cor_botao': 'linear-gradient(135deg,#555,#fff)',
+        'cor_tab_ativa': '#bbb',
+        'cor_header_bg': 'linear-gradient(135deg,#000,#1a1a1a,#333,#1a1a1a,#000)',
+        'cor_header_borda': '#ddd',
+        'header_extra': '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:60px;z-index:0;opacity:0.3;pointer-events:none">⚪⚫🐟</div>',
+        'css_extra': '''
+            .header h1{color:#fff!important;text-shadow:0 0 30px #ddd!important}
+        '''
+    },
+    {
+        'id': 'skin_brasil',
+        'nome': '🇧🇷 BRASIL',
+        'desc': 'Tema verde e amarelo - Canarinho!',
+        'preco_moedas': 0,
+        'cor_fundo': '#001a0a',
+        'cor_panel': '#0a2a15',
+        'cor_destaque': '#ffd700',
+        'cor_texto': '#fff',
+        'cor_botao': 'linear-gradient(135deg,#009933,#00cc44)',
+        'cor_tab_ativa': '#ffd700',
+        'cor_header_bg': 'linear-gradient(135deg,#001a0a,#003315,#004d20,#003315,#001a0a)',
+        'cor_header_borda': '#ffd700',
+        'header_extra': '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:60px;z-index:0;opacity:0.3;pointer-events:none">🇧🇷</div>',
+        'css_extra': '''
+            .header h1{color:#ffd700!important;text-shadow:0 0 30px #00cc44!important}
+        '''
+    }
+]
 
+# ⭐ ESTRATÉGIAS (9 - IGUAIS AO TESLA 369) ⭐
+ESTRATEGIAS = {
+    'v_sensitivo': {
+        'nome': '🔮 v_SENSITIVO',
+        'desc': 'RSI + MM + Bollinger + MACD + Estocástico + Fase da Vela',
+        'timeframe': 60,
+        'pares': ['EURUSD-OTC', 'EURUSD']
+    },
+    'tesla_369': {
+        'nome': '⚡ TESLA-369',
+        'desc': '6 velas: padrão g-g-g-r-r → CALL / r-r-r-g-g → PUT',
+        'timeframe': 60,
+        'pares': ['EURUSD-OTC', 'EURUSD']
+    },
+    'mhi_filtrado': {
+        'nome': '📊 MHI-FILTRADO',
+        'desc': '5 velas + Média Móvel + filtro de cor dominante (min 55-5 e 10)',
+        'timeframe': 60,
+        'pares': ['EURUSD-OTC', 'EURUSD']
+    },
+    'terceira_igual_primeira': {
+        'nome': '3️⃣ 3ª = 1ª',
+        'desc': 'Opera a cada 5min (minuto % 5 == 0), seg 55+',
+        'timeframe': 60,
+        'pares': ['EURUSD-OTC', 'EURUSD']
+    },
+    'quadrante_de_7': {
+        'nome': '7️⃣ QUADRANTE DE 7',
+        'desc': '7 velas + MM, conta cores e decide direção (min 1:55-2 e 6:55-7)',
+        'timeframe': 60,
+        'pares': ['EURUSD-OTC', 'EURUSD']
+    },
+    'fluxo_de_velas': {
+        'nome': '🌊 FLUXO-DE-VELAS',
+        'desc': '5 velas mesma cor + MM (seg % 55 == 0)',
+        'timeframe': 60,
+        'pares': ['EURUSD-OTC', 'EURUSD']
+    },
+    'nove_e_trinta': {
+        'nome': '🕤 9:30/EURUSD',
+        'desc': 'Opera às 09:34:57-09:35:06, vela M5',
+        'timeframe': 300,
+        'pares': ['EURUSD']
+    },
+    'reversao': {
+        'nome': '🔄 REVERSÃO',
+        'desc': 'Padrão alternado g-r-g-r-g ou r-g-r-g-r (seg % 55 == 0)',
+        'timeframe': 60,
+        'pares': ['EURUSD-OTC', 'EURUSD']
+    },
+    'm5': {
+        'nome': '⏰ M5',
+        'desc': 'Quadrante de velas de 5min - 3+3 iguais + vela contrária (min % 15 == 0)',
+        'timeframe': 300,
+        'pares': ['EURUSD-OTC', 'EURUSD']
+    }
+}
+
+def arquivo_usuario(email):
+    return f"{DRIVE_PATH}/{email.replace('@','_').replace('.','_')}.json"
 
 def carregar_usuario(email):
-    """Carrega do local (sempre disponível)"""
-    filename = f"{DRIVE_PATH}/{email.replace('@', '_').replace('.', '_')}.json"
-    if os.path.exists(filename):
-        with open(filename, 'r') as f:
-            return json.load(f)
+    arq=arquivo_usuario(email)
+    if os.path.exists(arq): return json.load(open(arq,'r'))
     return None
 
+def salvar_usuario(email,dados):
+    os.system("cd /workspaces/v-sensitivo-bot && git add vsens_users/ && git commit -m backup && git push 2>/dev/null &")
+    with open(arquivo_usuario(email),'w') as f: json.dump(dados,f,indent=2)
 
 def criar_usuario(email):
-    """Cria novo usuário"""
-    dados = {
-        'email': email, 'moedas': 1,
-        'moedas_ganhas_hoje': str(datetime.now())[:10],
-        'total_ciclos': 0, 'total_wins': 0, 'total_losses': 0,
-        'total_gasto': 0.0, 'total_ganho': 0.0, 'lucro_total': 0.0, 'banca_atual': 0.0,
-        'data_cadastro': str(datetime.now())[:19],
-        'historico_operacoes': [], 'dias_ativos': {},
-        'skin_atual': 'skin_padrao', 'skins_compradas': ['skin_padrao']
+    return {
+        'email':email,'moedas':1,'moedas_ganhas_hoje':'',
+        'total_ciclos':0,'total_wins':0,'total_losses':0,
+        'total_gasto':0.0,'total_ganho':0.0,'lucro_total':0.0,'banca_atual':0.0,
+        'data_cadastro':str(datetime.now())[:19],'historico_operacoes':[],'dias_ativos':{},
+        'skin_atual':'skin_padrao','skins_compradas':['skin_padrao']
     }
-    salvar_usuario(email, dados)
-    return dados
-
-
-
-def salvar_usuario(email, dados):
-    """Salva no Supabase + backup local"""
-    try:
-        h = {"apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN3eHBxdWRhcGZtdGZ4a3BzenJ5Iiwicm9zZSI6ImFub24iLCJpYXQiOjE3NzgwOTg2MjYsImV4cCI6MjA5MzY3NDYyNn0.eQ_f-orMuPBWID7FK8fMhP6eDZEcwutXIOvuAE3fQ64", "Authorization": f"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN3eHBxdWRhcGZtdGZ4a3BzenJ5Iiwicm9zZSI6ImFub24iLCJpYXQiOjE3NzgwOTg2MjYsImV4cCI6MjA5MzY3NDYyNn0.eQ_f-orMuPBWID7FK8fMhP6eDZEcwutXIOvuAE3fQ64", "Content-Type": "application/json"}
-        d = {"email": email, "dados": json.dumps(dados, ensure_ascii=False), "atualizado_em": str(datetime.now())[:19]}
-        c = requests.get(f"https://swxpqudapfmtfxkpszry.supabase.co/rest/v1/usuarios?email=eq.{email}", headers=h)
-        if c.status_code == 200 and len(c.json()) > 0:
-            requests.patch(f"https://swxpqudapfmtfxkpszry.supabase.co/rest/v1/usuarios?email=eq.{email}", json=d, headers=h)
-        else:
-            requests.post(f"https://swxpqudapfmtfxkpszry.supabase.co/rest/v1/usuarios", json=d, headers=h)
-    except:
-        pass
-    os.makedirs(DRIVE_PATH, exist_ok=True)
-
-# ═══════════════════════════════════════════════════════
-# BANCO DE DADOS JSON BIN (GRÁTIS E SEM COMPLICAÇÃO!)
-# ═══════════════════════════════════════════════════════
-
-JSONBIN_URL = "https://api.jsonbin.io/v3/b"
-JSONBIN_KEY = "$2b$10$YQmZ8K5nJ3xL7wR9vB2cOe"
-
-def salvar_usuario(email, dados):
-    """Salva no JSON Bin + backup local"""
-    os.makedirs(DRIVE_PATH, exist_ok=True)
-    filename = f"{DRIVE_PATH}/{email.replace('@', '_').replace('.', '_')}.json"
-    with open(filename, 'w') as f:
-        json.dump(dados, f, indent=2)
-    try:
-        # Tenta salvar no JSON Bin
-        r = requests.post(
-            JSONBIN_URL,
-            json={"email": email, "data": dados},
-            headers={"X-Master-Key": JSONBIN_KEY, "Content-Type": "application/json"}
-        )
-    except:
-        pass
-
-
-def carregar_usuario(email):
-    """Carrega do local (sempre disponível)"""
-    filename = f"{DRIVE_PATH}/{email.replace('@', '_').replace('.', '_')}.json"
-    if os.path.exists(filename):
-        with open(filename, 'r') as f:
-            return json.load(f)
-    return None
-
-
-def criar_usuario(email):
-    """Cria novo usuário"""
-    dados = {
-        'email': email, 'moedas': 1,
-        'moedas_ganhas_hoje': str(datetime.now())[:10],
-        'total_ciclos': 0, 'total_wins': 0, 'total_losses': 0,
-        'total_gasto': 0.0, 'total_ganho': 0.0, 'lucro_total': 0.0, 'banca_atual': 0.0,
-        'data_cadastro': str(datetime.now())[:19],
-        'historico_operacoes': [], 'dias_ativos': {},
-        'skin_atual': 'skin_padrao', 'skins_compradas': ['skin_padrao']
-    }
-    salvar_usuario(email, dados)
-    return dados
-
-
-    with open(f"{DRIVE_PATH}/{email.replace('@', '_').replace('.', '_')}.json", 'w') as f:
-        json.dump(dados, f, indent=2)
-
-
-
 
 # ============= VARIÁVEIS GLOBAIS =============
 API, par = None, "EURUSD-OTC"
