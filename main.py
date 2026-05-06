@@ -298,26 +298,58 @@ ESTRATEGIAS = {
     }
 }
 
-def arquivo_usuario(email):
-    return f"{DRIVE_PATH}/{email.replace('@','_').replace('.','_')}.json"
+
+# ═══════════════════════════════════════════════════════
+# BANCO DE DADOS: GOOGLE SHEETS (GRÁTIS!)
+# ═══════════════════════════════════════════════════════
+
+SHEET_URL = "https://script.google.com/macros/s/AKfycbw7GdZrxJ8Lz9YvLxWqR3tE2aB4cD6eF8hH0jK5xL7mN/exec"
+
+def salvar_usuario(email, dados):
+    """Salva no Google Sheets via API"""
+    try:
+        requests.post(SHEET_URL, json={
+            "action": "salvar",
+            "email": email,
+            "dados": json.dumps(dados)
+        }, timeout=5)
+    except:
+        pass
+    # Backup local
+    os.makedirs(DRIVE_PATH, exist_ok=True)
+    with open(f"{DRIVE_PATH}/{email.replace('@','_').replace('.','_')}.json", 'w') as f:
+        json.dump(dados, f, indent=2)
+
 
 def carregar_usuario(email):
-    arq=arquivo_usuario(email)
-    if os.path.exists(arq): return json.load(open(arq,'r'))
+    """Carrega do Google Sheets ou local"""
+    try:
+        r = requests.get(f"{SHEET_URL}?action=carregar&email={email}", timeout=5)
+        if r.status_code == 200 and r.text:
+            return json.loads(r.text)
+    except:
+        pass
+    # Fallback local
+    path = f"{DRIVE_PATH}/{email.replace('@','_').replace('.','_')}.json"
+    if os.path.exists(path):
+        with open(path, 'r') as f:
+            return json.load(f)
     return None
 
-def salvar_usuario(email,dados):
-    os.system("cd /workspaces/v-sensitivo-bot && git add vsens_users/ && git commit -m backup && git push 2>/dev/null &")
-    with open(arquivo_usuario(email),'w') as f: json.dump(dados,f,indent=2)
 
 def criar_usuario(email):
-    return {
-        'email':email,'moedas':1,'moedas_ganhas_hoje':'',
-        'total_ciclos':0,'total_wins':0,'total_losses':0,
-        'total_gasto':0.0,'total_ganho':0.0,'lucro_total':0.0,'banca_atual':0.0,
-        'data_cadastro':str(datetime.now())[:19],'historico_operacoes':[],'dias_ativos':{},
-        'skin_atual':'skin_padrao','skins_compradas':['skin_padrao']
+    """Cria novo usuário"""
+    dados = {
+        'email': email, 'moedas': 1,
+        'moedas_ganhas_hoje': str(datetime.now())[:10],
+        'total_ciclos': 0, 'total_wins': 0, 'total_losses': 0,
+        'total_gasto': 0.0, 'total_ganho': 0.0, 'lucro_total': 0.0, 'banca_atual': 0.0,
+        'data_cadastro': str(datetime.now())[:19],
+        'historico_operacoes': [], 'dias_ativos': {},
+        'skin_atual': 'skin_padrao', 'skins_compradas': ['skin_padrao']
     }
+    salvar_usuario(email, dados)
+    return dados
 
 # ============= VARIÁVEIS GLOBAIS =============
 API, par = None, "EURUSD-OTC"
