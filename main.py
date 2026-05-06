@@ -1499,10 +1499,10 @@ def get_html_template() -> str:
     
     <!-- TABS -->
     <div class="tabs">
-        <div class="tab active" onclick="openTab('bot')">🤖 BOT</div>
-        <div class="tab" onclick="openTab('estrategias')">📊 ESTRATÉGIAS</div>
-        <div class="tab" onclick="openTab('moedas')">💸 COMPRAR MOEDAS</div>
-        <div class="tab" onclick="openTab('relatorio')">📊 RELATÓRIO</div>
+        <div class="tab active" onclick="openTab('bot', event)">🤖 BOT</div>
+        <div class="tab" onclick="openTab('estrategias', event)">📊 ESTRATÉGIAS</div>
+        <div class="tab" onclick="openTab('moedas', event)">💸 COMPRAR MOEDAS</div>
+        <div class="tab" onclick="openTab('relatorio', event)">📊 RELATÓRIO</div>
     </div>
     
     <!-- PAINEL BOT -->
@@ -1601,10 +1601,10 @@ def get_html_template() -> str:
 var intervalo=null,botAtivo=false,emailLogado='',planoSelecionado=0,pixAtual=null;
 
 // ═══════════ TABS ═══════════
-function openTab(tab){{
+function openTab(tab, event){{
     document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
     document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-    event.target.classList.add('active');
+    (event ? event.target : document.querySelector('.tab')).classList.add('active');
     document.getElementById('panel-'+tab).classList.add('active');
     if(tab=='relatorio'&&emailLogado){{document.getElementById('emailRelatorio').value=emailLogado;verRelatorio()}}
     if(tab=='estrategias')carregarEstrategias();
