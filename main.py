@@ -26,10 +26,15 @@ PAYOUT_PADRAO = 0.85
 DRIVE_PATH = "vsens_users"
 os.makedirs(DRIVE_PATH, exist_ok=True)
 
+# ═══════════════════════════════════════════════════════
+# BANCO DE DADOS SUPABASE
+# ═══════════════════════════════════════════════════════
+
 SUPABASE_URL = "https://swxpqudapfmtfxkpszry.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN3eHBxdWRhcGZtdGZ4a3BzenJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwOTg2MjYsImV4cCI6MjA5MzY3NDYyNn0.eQ_f-orMuPBWID7FK8fMhP6eDZEcwutXIOvuAE3fQ64"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN3eHBxdWRhcGZtdGZ4a3BzenJ5Iiwicm9zZSI6ImFub24iLCJpYXQiOjE3NzgwOTg2MjYsImV4cCI6MjA5MzY3NDYyNn0.eQ_f-orMuPBWID7FK8fMhP6eDZEcwutXIOvuAE3fQ64"
 
 def salvar_usuario(email, dados):
+    """Salva no Supabase"""
     try:
         h = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}", "Content-Type": "application/json"}
         d = {"email": email, "dados": json.dumps(dados, ensure_ascii=False), "atualizado_em": str(datetime.now())[:19]}
@@ -40,22 +45,28 @@ def salvar_usuario(email, dados):
             requests.post(f"{SUPABASE_URL}/rest/v1/usuarios", json=d, headers=h)
         return True
     except:
-        os.makedirs("vsens_users", exist_ok=True)
-        with open(f"vsens_users/{email.replace('@', '_').replace('.', '_')}.json", 'w') as f: json.dump(dados, f, indent=2)
-        return False
+        pass
+    os.makedirs("vsens_users", exist_ok=True)
+    with open(f"vsens_users/{email.replace('@', '_').replace('.', '_')}.json", 'w') as f:
+        json.dump(dados, f, indent=2)
+    return False
 
 def carregar_usuario(email):
+    """Carrega do Supabase"""
     try:
         h = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
         r = requests.get(f"{SUPABASE_URL}/rest/v1/usuarios?email=eq.{email}", headers=h)
-        if r.status_code == 200 and len(r.json()) > 0: return json.loads(r.json()[0]["dados"])
-    except: pass
+        if r.status_code == 200 and len(r.json()) > 0:
+            return json.loads(r.json()[0]["dados"])
+    except:
+        pass
     path = f"vsens_users/{email.replace('@', '_').replace('.', '_')}.json"
     if os.path.exists(path):
         with open(path, 'r') as f: return json.load(f)
     return None
 
 def criar_usuario(email):
+    """Cria novo usuário"""
     dados = {'email': email, 'moedas': 1, 'moedas_ganhas_hoje': str(datetime.now())[:10], 'total_ciclos': 0, 'total_wins': 0, 'total_losses': 0, 'total_gasto': 0.0, 'total_ganho': 0.0, 'lucro_total': 0.0, 'banca_atual': 0.0, 'data_cadastro': str(datetime.now())[:19], 'historico_operacoes': [], 'dias_ativos': {}, 'skin_atual': 'skin_padrao', 'skins_compradas': ['skin_padrao']}
     salvar_usuario(email, dados)
     return dados
@@ -65,20 +76,6 @@ def criar_usuario(email):
 SUPABASE_URL = "https://swxpqudapfmtfxkpszry.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN3eHBxdWRhcGZtdGZ4a3BzenJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwOTg2MjYsImV4cCI6MjA5MzY3NDYyNn0.eQ_f-orMuPBWID7FK8fMhP6eDZEcwutXIOvuAE3fQ64"
 
-def salvar_usuario(email, dados):
-    try:
-        h = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}", "Content-Type": "application/json"}
-        d = {"email": email, "dados": json.dumps(dados, ensure_ascii=False), "atualizado_em": str(datetime.now())[:19]}
-        c = requests.get(f"{SUPABASE_URL}/rest/v1/usuarios?email=eq.{email}", headers=h)
-        if c.status_code == 200 and len(c.json()) > 0:
-            requests.patch(f"{SUPABASE_URL}/rest/v1/usuarios?email=eq.{email}", json=d, headers=h)
-        else:
-            requests.post(f"{SUPABASE_URL}/rest/v1/usuarios", json=d, headers=h)
-        return True
-    except:
-        os.makedirs("vsens_users", exist_ok=True)
-        with open(f"vsens_users/{email.replace('@', '_').replace('.', '_')}.json", 'w') as f: json.dump(dados, f, indent=2)
-        return False
 
 
 
