@@ -26,6 +26,60 @@ PAYOUT_PADRAO = 0.85
 DRIVE_PATH = "vsens_users"
 os.makedirs(DRIVE_PATH, exist_ok=True)
 
+def salvar_usuario(email, dados):
+    """Salva no GitHub via API + backup local"""
+    os.makedirs(DRIVE_PATH, exist_ok=True)
+    with open(f"{DRIVE_PATH}/{email.replace('@', '_').replace('.', '_')}.json", 'w') as f:
+        json.dump(dados, f, indent=2)
+    try:
+        token = os.environ.get("GITHUB_TOKEN", "")
+        if token:
+            fn = f"vsens_users/{email.replace('@', '_').replace('.', '_')}.json"
+            u = "https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/" + fn
+            h = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
+            c = json.dumps(dados, indent=2)
+            rc = requests.get(u, headers=h)
+            p = {"message": f"Update {email}", "content": base64.b64encode(c.encode()).decode(), "branch": "main"}
+            if rc.status_code == 200: p["sha"] = rc.json()["sha"]
+            requests.put(u, json=p, headers=h)
+    except: pass
+
+
+def carregar_usuario(email):
+    """Carrega do GitHub ou local"""
+    path = f"{DRIVE_PATH}/{email.replace('@', '_').replace('.', '_')}.json"
+    if os.path.exists(path):
+        with open(path, 'r') as f: return json.load(f)
+    try:
+        token = os.environ.get("GITHUB_TOKEN", "")
+        if token:
+            fn = f"vsens_users/{email.replace('@', '_').replace('.', '_')}.json"
+            u = "https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/" + fn
+            h = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
+            r = requests.get(u, headers=h)
+            if r.status_code == 200:
+                return json.loads(base64.b64decode(r.json()["content"]).decode())
+    except: pass
+    return None
+
+
+def criar_usuario(email):
+    """Cria novo usuário"""
+    dados = {
+        'email': email, 'moedas': 1,
+        'moedas_ganhas_hoje': str(datetime.now())[:10],
+        'total_ciclos': 0, 'total_wins': 0, 'total_losses': 0,
+        'total_gasto': 0.0, 'total_ganho': 0.0, 'lucro_total': 0.0, 'banca_atual': 0.0,
+        'data_cadastro': str(datetime.now())[:19],
+        'historico_operacoes': [], 'dias_ativos': {},
+        'skin_atual': 'skin_padrao', 'skins_compradas': ['skin_padrao']
+    }
+    salvar_usuario(email, dados)
+    return dados
+
+
+
+
 # ⭐⭐⭐ CONFIGURAÇÃO DO MERCADO PAGO ⭐⭐⭐
 MERCADO_PAGO_ACCESS_TOKEN = "APP_USR-4548266140377032-050311-6589fc22b166e4cb2cfad0379b28dcdf-1059299796"
 MERCADO_PAGO_PUBLIC_KEY = "APP_USR-39e1950e-420d-479a-8125-902009ca3445"
@@ -298,26 +352,9 @@ ESTRATEGIAS = {
     }
 }
 
-def arquivo_usuario(email):
-    return f"{DRIVE_PATH}/{email.replace('@','_').replace('.','_')}.json"
 
-def carregar_usuario(email):
-    arq=arquivo_usuario(email)
-    if os.path.exists(arq): return json.load(open(arq,'r'))
-    return None
 
-def salvar_usuario(email,dados):
-    os.system("cd /workspaces/v-sensitivo-bot && git add vsens_users/ && git commit -m backup && git push 2>/dev/null &")
-    with open(arquivo_usuario(email),'w') as f: json.dump(dados,f,indent=2)
 
-def criar_usuario(email):
-    return {
-        'email':email,'moedas':1,'moedas_ganhas_hoje':'',
-        'total_ciclos':0,'total_wins':0,'total_losses':0,
-        'total_gasto':0.0,'total_ganho':0.0,'lucro_total':0.0,'banca_atual':0.0,
-        'data_cadastro':str(datetime.now())[:19],'historico_operacoes':[],'dias_ativos':{},
-        'skin_atual':'skin_padrao','skins_compradas':['skin_padrao']
-    }
 
 # ============= VARIÁVEIS GLOBAIS =============
 API, par = None, "EURUSD-OTC"
