@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT - COMPLETO v4.2.0 ⚡
+# ⚡ TESLA 369 BOT - COMPLETO v4.3.0 ⚡
 # 8 ESTRATÉGIAS | LOJA DE SKINS | MERCADO PAGO | RENDER READY
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -62,7 +62,7 @@ SKINS = [
         'cor_botao': 'linear-gradient(135deg,#003300,#00ff41)', 'cor_tab_ativa': '#00ff41',
         'cor_header_bg': 'linear-gradient(135deg,#000500,#001a00,#003300,#001a00,#000500)', 'cor_header_borda': '#00ff41',
         'header_extra': '<canvas id="matrixCanvas"></canvas>',
-        'css_extra': '#matrixCanvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;opacity:0.4;pointer-events:none}.header h1{color:#00ff41!important;text-shadow:0 0 30px #00ff41!important;font-family:"Courier New",monospace!important}.terminal{color:#00ff41!important;text-shadow:0 0 3px #00ff41}body{text-shadow:0 0 1px rgba(0,255,65,0.3)}.tab{background:#000a00!important;border-color:#00ff4133!important}.panel{background:#000a00!important;border-color:#00ff4133!important}.card{background:#000a00!important;border-color:#00ff4133!important}'
+        'css_extra': '#matrixCanvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;opacity:0.3;pointer-events:none}.header h1{color:#00ff41!important;text-shadow:0 0 30px #00ff41!important;font-family:"Courier New",monospace!important;letter-spacing:3px}.terminal{color:#00ff41!important;text-shadow:0 0 5px #00ff41;background:#000000!important;border:1px solid #00ff4133!important}body{background:#000500!important}input,select{background:#000a00!important;border:1px solid #00ff4155!important;color:#00ff41!important}.tab{background:#000a00!important;border-color:#00ff4133!important;color:#00aa33!important}.tab.active{background:#00ff41!important;color:#000!important}.panel{background:#000a00!important;border-color:#00ff4133!important}.card{background:#000a00!important;border-color:#00ff4133!important}.card .label{color:#00aa33!important}.card .value{color:#00ff41!important}.btn-start{background:linear-gradient(135deg,#003300,#00ff41)!important;color:#000!important}.btn-stop{background:linear-gradient(135deg,#330000,#ff0041)!important}.btn-info{background:linear-gradient(135deg,#001133,#00aaff)!important}.status-dot.active{background:#00ff41!important;box-shadow:0 0 10px #00ff41!important}'
     },
     {
         'id': 'skin_dourado', 'nome': '👑 DOURADO IMPERIAL', 'desc': 'Tema dourado luxuoso - 2 🪙', 'preco_moedas': 2,
@@ -85,7 +85,7 @@ SKINS = [
         'cor_botao': 'linear-gradient(135deg,#004466,#00aaff)', 'cor_tab_ativa': '#00aaff',
         'cor_header_bg': 'linear-gradient(135deg,#000510,#001030,#002050,#001030,#000510)', 'cor_header_borda': '#00aaff',
         'header_extra': '<div class="bolhas"></div><div class="peixe">🐠</div>',
-        'css_extra': '.bolhas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;opacity:0.3;pointer-events:none;background:radial-gradient(circle at 20% 80%,rgba(0,170,255,0.2) 0%,transparent 50%),radial-gradient(circle at 80% 20%,rgba(0,170,255,0.2) 0%,transparent 50%),radial-gradient(circle at 50% 50%,rgba(0,170,255,0.15) 0%,transparent 50%)}.peixe{position:absolute;top:60%;left:70%;font-size:40px;z-index:1;animation:peixeFloat 3s ease-in-out infinite;pointer-events:none}@keyframes peixeFloat{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-20px) rotate(-10deg)}}.header h1{color:#00aaff!important;text-shadow:0 0 30px #0066cc!important}'
+        'css_extra': '.bolhas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;overflow:hidden}.bolhas::before{content:"";position:absolute;top:100%;left:20%;width:20px;height:20px;background:radial-gradient(circle,rgba(255,255,255,0.4),rgba(0,170,255,0.1));border-radius:50%;animation:bubbleRise 3s ease-in infinite}.bolhas::after{content:"";position:absolute;top:100%;left:60%;width:30px;height:30px;background:radial-gradient(circle,rgba(255,255,255,0.3),rgba(0,170,255,0.1));border-radius:50%;animation:bubbleRise 4s ease-in 1s infinite}@keyframes bubbleRise{0%{top:100%;opacity:0}20%{opacity:1}100%{top:-50px;opacity:0}}.peixe{position:absolute;top:65%;left:75%;font-size:45px;z-index:1;animation:peixeSwim 4s ease-in-out infinite;pointer-events:none;filter:drop-shadow(0 0 10px rgba(0,170,255,0.5))}@keyframes peixeSwim{0%{transform:translateX(0) translateY(0) scaleX(1)}25%{transform:translateX(-30px) translateY(-15px) scaleX(1)}50%{transform:translateX(-60px) translateY(0) scaleX(-1)}75%{transform:translateX(-30px) translateY(-15px) scaleX(-1)}100%{transform:translateX(0) translateY(0) scaleX(1)}}.header h1{color:#00aaff!important;text-shadow:0 0 40px #0066cc,0 0 80px #004488!important}body{background:#000a14!important}.card{border-color:#00aaff33!important}.terminal{border:1px solid #00aaff33!important}'
     },
     {
         'id': 'skin_fogo', 'nome': '🔥 CHAMAS DO DRAGÃO', 'desc': 'Tema vermelho flamejante - 2 🪙', 'preco_moedas': 2,
@@ -93,7 +93,7 @@ SKINS = [
         'cor_botao': 'linear-gradient(135deg,#8b0000,#ff4500)', 'cor_tab_ativa': '#ff4500',
         'cor_header_bg': 'linear-gradient(135deg,#1a0000,#330a00,#552000,#330a00,#1a0000)', 'cor_header_borda': '#ff4500',
         'header_extra': '<div class="fogo"></div><div class="dragao">🐉</div>',
-        'css_extra': '.fogo{position:absolute;bottom:0;left:0;width:100%;height:60%;z-index:0;opacity:0.15;pointer-events:none;background:linear-gradient(to top,#ff4500,#ff8c00,transparent);animation:fireFlicker 1s ease-in-out infinite}@keyframes fireFlicker{0%,100%{opacity:0.15}50%{opacity:0.25}}.dragao{position:absolute;top:10px;right:20px;font-size:50px;z-index:1;animation:dragonFloat 2s ease-in-out infinite;pointer-events:none}@keyframes dragonFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-15px)}}.header h1{color:#ff6347!important;text-shadow:0 0 30px #ff4500!important}'
+        'css_extra': '.fogo{position:absolute;bottom:0;left:0;width:100%;height:50%;z-index:0;pointer-events:none;background:linear-gradient(0deg,transparent 0%,#ff450044 20%,#ff8c0088 40%,#ff450044 60%,#ff000033 80%,transparent 100%);animation:fireWave 0.5s ease-in-out infinite alternate}@keyframes fireWave{0%{transform:scaleY(1);opacity:0.8}100%{transform:scaleY(1.1);opacity:1}}.fogo::after{content:"";position:absolute;bottom:0;left:0;width:100%;height:30%;background:radial-gradient(ellipse at center,#ffff00 0%,#ff4500 40%,transparent 70%);animation:glowPulse 1s ease-in-out infinite}.dragao{position:absolute;top:15px;right:25px;font-size:55px;z-index:1;animation:dragonFloat 2s ease-in-out infinite;pointer-events:none;filter:drop-shadow(0 0 20px #ff4500)}@keyframes dragonFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-20px) scale(1.1)}}@keyframes glowPulse{0%,100%{opacity:0.6}50%{opacity:1}}.header h1{color:#ff4444!important;text-shadow:0 0 40px #ff4500,0 0 80px #ff0000!important;animation:textGlow 0.5s ease-in-out infinite alternate}@keyframes textGlow{0%{text-shadow:0 0 40px #ff4500,0 0 80px #ff0000}100%{text-shadow:0 0 60px #ff8c00,0 0 100px #ff4500}}body{background:#0a0000!important}.card{border-color:#ff450044!important}.btn-start{background:linear-gradient(135deg,#8b0000,#ff4500)!important}.terminal{background:#0a0000!important;border:1px solid #ff450044!important}'
     },
     {
         'id': 'skin_galaxia', 'nome': '🌌 GALÁXIA CÓSMICA', 'desc': 'Tema espacial com estrelas - 1 🪙', 'preco_moedas': 1,
@@ -728,7 +728,7 @@ HTML = r'''
 <div class="container">
     <div class="header">
         {{HEADER_EXTRA}}
-        <h1>⚡ TESLA 369 BOT v4.2.0 ⚡</h1>
+        <h1>⚡ TESLA 369 BOT v4.3.0 ⚡</h1>
         <p>🔮 8 ESTRATÉGIAS | GALE 2 | STOP GAIN 1 WIN | LOJA DE SKINS</p>
         <p>⚡ O BOT QUE SENTE A VELA ⚡</p>
     </div>
@@ -769,7 +769,7 @@ HTML = r'''
         <div class="terminal" id="terminal">📡 Aguardando...</div>
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
-            <span>⚡ TESLA 369 v4.2.0</span>
+            <span>⚡ TESLA 369 v4.3.0</span>
             <span>GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
@@ -1141,6 +1141,7 @@ def conectar():
             usuario['moedas'] = usuario.get('moedas', 0) + 1; usuario['moedas_ganhas_hoje'] = hoje
             salvar_usuario(email, usuario)
         skin_atual_global = usuario.get('skin_atual', 'skin_padrao')
+        print(f'SKIN APLICADA: {skin_atual_global}')
         par = ESTRATEGIAS[estrategia_atual]['pares'][0]; timeframe_atual = ESTRATEGIAS[estrategia_atual]['timeframe']
         add_log('🔌 Conectando na IQ Option...', 'info')
         API = IQ_Option(email, senha); status_conn, reason = API.connect()
@@ -1254,7 +1255,7 @@ def resetar():
 
 if __name__ == '__main__':
     print("=" * 50)
-    print("⚡ TESLA 369 BOT v4.2.0 ⚡")
+    print("⚡ TESLA 369 BOT v4.3.0 ⚡")
     print("=" * 50)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
