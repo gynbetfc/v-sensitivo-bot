@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT - COMPLETO v4.1.1.11 ⚡
+# ⚡ TESLA 369 BOT - COMPLETO v4.1.1.10 ⚡
 # 8 ESTRATÉGIAS | LOJA DE SKINS | MERCADO PAGO | RENDER READY
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -63,55 +63,6 @@ SKINS = [
         'cor_header_bg': 'linear-gradient(135deg,#001a0a,#003315,#004d20,#003315,#001a0a)', 'cor_header_borda': '#ffd700',
         'header_extra': '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:60px;z-index:0;opacity:0.3;pointer-events:none">🇧🇷</div>', 'css_extra': ''
     }
-    {
-        'id': 'skin_oceano', 'nome': '🌊 OCEANO PROFUNDO', 'desc': 'Azul profundo com bolhas flutuantes', 'preco_moedas': 2,
-        'cor_fundo': '#000a14', 'cor_panel': '#0a1525', 'cor_destaque': '#00aaff', 'cor_texto': '#88ccff',
-        'cor_botao': 'linear-gradient(135deg,#004466,#00aaff)', 'cor_tab_ativa': '#00aaff',
-        'cor_header_bg': 'linear-gradient(135deg,#000a14,#001030,#002050,#001030,#000a14)', 'cor_header_borda': '#00aaff',
-        'header_extra': '<div class="bolha"></div><div class="bolha2"></div><div class="peixe">🐠</div>',
-        'css_extra': '.bolha{position:absolute;bottom:-50px;left:15%;width:20px;height:20px;background:radial-gradient(circle,rgba(255,255,255,0.3),rgba(0,170,255,0.1));border-radius:50%;animation:subirBolha 6s ease-in infinite}.bolha2{position:absolute;bottom:-30px;right:20%;width:30px;height:30px;background:radial-gradient(circle,rgba(255,255,255,0.3),rgba(0,170,255,0.1));border-radius:50%;animation:subirBolha 8s ease-in 2s infinite}@keyframes subirBolha{0%{bottom:-50px;opacity:0}20%{opacity:1}100%{bottom:110%;opacity:0}}.peixe{position:absolute;top:60%;right:15%;font-size:45px;z-index:1;animation:peixeNadar 4s ease-in-out infinite}@keyframes peixeNadar{0%,100%{transform:translateX(0) scaleX(1)}50%{transform:translateX(-60px) scaleX(-1)}}.header h1{color:#00aaff!important;text-shadow:0 0 40px #0066cc!important}'
-    },
-    {
-        'id': 'skin_vulcao', 'nome': '🔥 VULCÃO EM ERUPÇÃO', 'desc': 'Vermelho com partículas de fogo', 'preco_moedas': 2,
-        'cor_fundo': '#0a0000', 'cor_panel': '#1a0500', 'cor_destaque': '#ff4500', 'cor_texto': '#ffcc88',
-        'cor_botao': 'linear-gradient(135deg,#8b0000,#ff4500)', 'cor_tab_ativa': '#ff4500',
-        'cor_header_bg': 'linear-gradient(135deg,#0a0000,#1a0500,#2a0a00,#1a0500,#0a0000)', 'cor_header_borda': '#ff4500',
-        'header_extra': '<div class="lava"></div><div class="particula"></div><div class="particula2"></div>',
-        'css_extra': '.lava{position:absolute;bottom:0;left:0;width:100%;height:40%;background:linear-gradient(0deg,#ff4500 0%,#ff8c00 30%,#ff6600 60%,transparent 100%);animation:lavaFerver 0.5s ease-in-out infinite alternate;z-index:0;opacity:0.6}@keyframes lavaFerver{0%{transform:scaleY(1)}100%{transform:scaleY(1.08)}}.particula{position:absolute;bottom:30%;left:30%;width:8px;height:8px;background:#ff8c00;border-radius:50%;animation:subirParticula 2s ease-out infinite;z-index:1}.particula2{position:absolute;bottom:25%;right:35%;width:6px;height:6px;background:#ff6600;border-radius:50%;animation:subirParticula 2.5s ease-out 0.5s infinite;z-index:1}@keyframes subirParticula{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-80px);opacity:0}}.header h1{color:#ff6347!important;text-shadow:0 0 40px #ff4500,0 0 80px #ff0000!important}'
-    },
-    {
-        'id': 'skin_noite', 'nome': '🌙 NOITE ESTRELADA', 'desc': 'Fundo escuro com estrelas brilhantes', 'preco_moedas': 1,
-        'cor_fundo': '#000020', 'cor_panel': '#101030', 'cor_destaque': '#ffd700', 'cor_texto': '#ccccff',
-        'cor_botao': 'linear-gradient(135deg,#1a1a40,#ffd700)', 'cor_tab_ativa': '#ffd700',
-        'cor_header_bg': 'linear-gradient(135deg,#000020,#101040,#202060,#101040,#000020)', 'cor_header_borda': '#ffd700',
-        'header_extra': '<div class="lua">🌙</div><div class="estrela1"></div><div class="estrela2"></div><div class="estrela3"></div>',
-        'css_extra': '.lua{position:absolute;top:15px;right:25px;font-size:50px;z-index:1;animation:luaBrilha 3s ease-in-out infinite;filter:drop-shadow(0 0 15px #ffd700)}@keyframes luaBrilha{0%,100%{filter:drop-shadow(0 0 15px #ffd700)}50%{filter:drop-shadow(0 0 30px #ffd700)}}.estrela1,.estrela2,.estrela3{position:absolute;width:3px;height:3px;background:#fff;border-radius:50%;z-index:0;animation:estrelaPisca 1.5s ease-in-out infinite}.estrela1{top:20%;left:20%;animation-delay:0s}.estrela2{top:40%;left:60%;width:4px;height:4px;animation-delay:0.5s}.estrela3{top:70%;left:35%;animation-delay:1s}@keyframes estrelaPisca{0%,100%{opacity:0.3;transform:scale(1)}50%{opacity:1;transform:scale(1.5)}}.header h1{color:#ffd700!important;text-shadow:0 0 30px #ffd700!important}'
-    },
-    {
-        'id': 'skin_neon', 'nome': '🌈 ARCO-ÍRIS NEON', 'desc': 'Borda neon colorida pulsante', 'preco_moedas': 2,
-        'cor_fundo': '#0a0a0a', 'cor_panel': '#1a1a1a', 'cor_destaque': '#ff00ff', 'cor_texto': '#ffffff',
-        'cor_botao': 'linear-gradient(135deg,#ff00ff,#00ffff)', 'cor_tab_ativa': '#ff00ff',
-        'cor_header_bg': 'linear-gradient(135deg,#0a0a0a,#1a1a1a,#2a2a2a,#1a1a1a,#0a0a0a)', 'cor_header_borda': '#ff00ff',
-        'header_extra': '<div class="neon-ring"></div>',
-        'css_extra': '.neon-ring{position:absolute;top:-5px;left:-5px;right:-5px;bottom:-5px;border-radius:25px;z-index:0;pointer-events:none;background:transparent;box-shadow:0 0 20px #ff00ff,0 0 40px #00ffff,0 0 60px #ff00ff;animation:neonPulse 2s ease-in-out infinite}@keyframes neonPulse{0%,100%{box-shadow:0 0 20px #ff00ff,0 0 40px #00ffff,0 0 60px #ff00ff}50%{box-shadow:0 0 40px #00ffff,0 0 80px #ff00ff,0 0 120px #00ffff}}.header h1{color:#ff00ff!important;text-shadow:0 0 30px #ff00ff,0 0 60px #00ffff!important;animation:neonText 2s ease-in-out infinite alternate}@keyframes neonText{0%{text-shadow:0 0 30px #ff00ff,0 0 60px #00ffff}100%{text-shadow:0 0 30px #00ffff,0 0 60px #ff00ff}}'
-    },
-    {
-        'id': 'skin_ouro24k', 'nome': '🏆 OURO 24K', 'desc': 'Dourado luxuoso com glitter', 'preco_moedas': 2,
-        'cor_fundo': '#0a0a00', 'cor_panel': '#1a1a05', 'cor_destaque': '#ffd700', 'cor_texto': '#fff8dc',
-        'cor_botao': 'linear-gradient(135deg,#8b7500,#ffd700)', 'cor_tab_ativa': '#daa520',
-        'cor_header_bg': 'linear-gradient(135deg,#0a0a00,#1a1a05,#2a2a0a,#1a1a05,#0a0a00)', 'cor_header_borda': '#daa520',
-        'header_extra': '<div class="glitter"></div><div class="glitter2"></div><div class="trofeu">🏆</div>',
-        'css_extra': '.glitter{position:absolute;top:20%;left:25%;width:4px;height:4px;background:#ffd700;border-radius:50%;animation:glitterBrilha 1s ease-in-out infinite;z-index:1}.glitter2{position:absolute;top:60%;right:30%;width:6px;height:6px;background:#daa520;border-radius:50%;animation:glitterBrilha 1.5s ease-in-out 0.3s infinite;z-index:1}@keyframes glitterBrilha{0%,100%{opacity:0.3;transform:scale(1)}50%{opacity:1;transform:scale(2)}}.trofeu{position:absolute;top:10px;right:20px;font-size:45px;z-index:1;animation:trofeuFloat 2s ease-in-out infinite}@keyframes trofeuFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}.header h1{color:#ffd700!important;text-shadow:0 0 30px #daa520,0 0 60px #ffd700!important}'
-    },
-    {
-        'id': 'skin_caveira', 'nome': '💀 CAVEIRA PIRATA', 'desc': 'Tema escuro com caveira', 'preco_moedas': 1,
-        'cor_fundo': '#050505', 'cor_panel': '#151515', 'cor_destaque': '#c0c0c0', 'cor_texto': '#cccccc',
-        'cor_botao': 'linear-gradient(135deg,#333,#999)', 'cor_tab_ativa': '#999',
-        'cor_header_bg': 'linear-gradient(135deg,#050505,#151515,#252525,#151515,#050505)', 'cor_header_borda': '#666',
-        'header_extra': '<div class="caveira">💀</div><div class="ossos">☠️</div>',
-        'css_extra': '.caveira{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:50px;z-index:1;animation:caveiraFloat 2s ease-in-out infinite}.ossos{position:absolute;bottom:20px;right:20px;font-size:35px;z-index:1;animation:ossosGira 4s linear infinite}@keyframes caveiraFloat{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-10px)}}@keyframes ossosGira{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}.header h1{color:#c0c0c0!important;text-shadow:0 0 30px #666!important}.terminal{background:#000!important;color:#999!important;border:1px solid #333!important}'
-    },
-]
 ]
 
 # ⭐ ESTRATÉGIAS (8 - SEM 9:30) ⭐
@@ -728,7 +679,7 @@ HTML = r'''
 <div class="container">
     <div class="header">
         {{HEADER_EXTRA}}
-        <h1>⚡ TESLA 369 BOT v4.1.1.11 ⚡</h1>
+        <h1>⚡ TESLA 369 BOT v4.1.1.10 ⚡</h1>
         <p>🔮 8 ESTRATÉGIAS | GALE 2 | STOP GAIN 1 WIN | LOJA DE SKINS</p>
         <p>⚡ O BOT QUE SENTE A VELA ⚡</p>
     </div>
@@ -769,7 +720,7 @@ HTML = r'''
         <div class="terminal" id="terminal">📡 Aguardando...</div>
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
-            <span>⚡ TESLA 369 v4.1.1.11</span>
+            <span>⚡ TESLA 369 v4.1.1.10</span>
             <span>GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
@@ -1293,7 +1244,7 @@ def resetar():
 
 if __name__ == '__main__':
     print("=" * 50)
-    print("⚡ TESLA 369 BOT v4.1.1.11 ⚡")
+    print("⚡ TESLA 369 BOT v4.1.1.10 ⚡")
     print("=" * 50)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
