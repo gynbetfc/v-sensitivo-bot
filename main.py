@@ -71,6 +71,15 @@ SKINS = [
         'header_extra': '<div class="coroa-princesa">👑</div><div class="brilho1"></div><div class="brilho2"></div><div class="brilho3"></div><div class="estrelinha">⭐</div>',
         'css_extra': '.coroa-princesa{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:45px;z-index:1;animation:coroaFloat 2s ease-in-out infinite;filter:drop-shadow(0 0 15px #ff69b4)}@keyframes coroaFloat{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-10px)}}.brilho1,.brilho2,.brilho3{position:absolute;width:8px;height:8px;background:#ff69b4;border-radius:50%;z-index:0;animation:brilhoPisca 1.5s ease-in-out infinite;box-shadow:0 0 10px #ff69b4,0 0 20px #ff1493}.brilho1{top:25%;left:15%;animation-delay:0s}.brilho2{top:50%;right:20%;animation-delay:0.5s}.brilho3{bottom:30%;left:40%;animation-delay:1s}@keyframes brilhoPisca{0%,100%{opacity:0.3;transform:scale(1)}50%{opacity:1;transform:scale(2.5)}}.estrelinha{position:absolute;top:70%;left:20%;font-size:30px;z-index:1;animation:estrelaGira 4s linear infinite}@keyframes estrelaGira{0%{transform:rotate(0deg) scale(1)}50%{transform:rotate(180deg) scale(1.3)}100%{transform:rotate(360deg) scale(1)}}.header h1{color:#ff69b4!important;text-shadow:0 0 30px #ff1493,0 0 60px #ff69b4!important}.card{border-color:#ff69b455!important}.tab{background:#1a0010!important}.tab.active{background:#ff69b4!important;color:#000!important}.btn-info{background:linear-gradient(135deg,#cc3388,#ff69b4)!important}.terminal{border:1px solid #ff69b455!important}'
     }
+    {
+        'id': 'skin_oceano', 'nome': '🌊 OCEANO PROFUNDO', 'desc': 'Azul profundo com bolhas flutuantes - 2 🪙', 'preco_moedas': 2,
+        'cor_fundo': '#000a14', 'cor_panel': '#0a1525', 'cor_destaque': '#00aaff', 'cor_texto': '#88ccff',
+        'cor_botao': 'linear-gradient(135deg,#004466,#00aaff)', 'cor_tab_ativa': '#00aaff',
+        'cor_header_bg': 'linear-gradient(135deg,#000a14,#001030,#002050,#001030,#000a14)', 'cor_header_borda': '#00aaff',
+        'header_extra': '<div class="bolha"></div><div class="bolha2"></div><div class="peixe">🐠</div>',
+        'css_extra': '.bolha{position:absolute;bottom:-50px;left:15%;width:20px;height:20px;background:radial-gradient(circle,rgba(255,255,255,0.3),rgba(0,170,255,0.1));border-radius:50%;animation:subirBolha 6s ease-in infinite}.bolha2{position:absolute;bottom:-30px;right:20%;width:30px;height:30px;background:radial-gradient(circle,rgba(255,255,255,0.3),rgba(0,170,255,0.1));border-radius:50%;animation:subirBolha 8s ease-in 2s infinite}@keyframes subirBolha{0%{bottom:-50px;opacity:0}20%{opacity:1}100%{bottom:110%;opacity:0}}.peixe{position:absolute;top:60%;right:15%;font-size:45px;z-index:1;animation:peixeNadar 4s ease-in-out infinite}@keyframes peixeNadar{0%,100%{transform:translateX(0) scaleX(1)}50%{transform:translateX(-60px) scaleX(-1)}}.header h1{color:#00aaff!important;text-shadow:0 0 40px #0066cc!important}'
+    },
+]
 ]
 
 # ⭐ ESTRATÉGIAS (8 - SEM 9:30) ⭐
