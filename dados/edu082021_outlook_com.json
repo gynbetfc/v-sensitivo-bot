@@ -1,6 +1,6 @@
 {
   "email": "edu082021@outlook.com",
-  "moedas": 1,
+  "moedas": 0,
   "moedas_ganhas_hoje": "2026-05-07",
   "total_ciclos": 0,
   "total_wins": 0,
@@ -12,8 +12,9 @@
   "data_cadastro": "2026-05-07 14:32:36",
   "historico_operacoes": [],
   "dias_ativos": {},
-  "skin_atual": "skin_padrao",
+  "skin_atual": "skin_magos",
   "skins_compradas": [
-    "skin_padrao"
+    "skin_padrao",
+    "skin_magos"
   ]
 }
