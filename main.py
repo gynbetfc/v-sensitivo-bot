@@ -666,7 +666,14 @@ HTML = r'''
         .estrategia-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
         .badge-gratis{background:#00ff88;color:#000;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block}
         .badge-pago{background:#ffd700;color:#000;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block}
-    </style>
+    
+.sub-tabs{display:flex;gap:5px;margin-bottom:15px}
+.sub-tab{padding:8px 16px;background:#111;border:1px solid #333;border-radius:8px 8px 0 0;cursor:pointer;color:#888;font-size:11px}
+.sub-tab.active{background:linear-gradient(135deg,#cc8800,#ffd700);color:#000;font-weight:bold;border-color:#ffd700}
+.sub-tab:hover{background:#1a1a2e;color:#fff}
+.sub-panel{display:none}
+.sub-panel.active{display:block}
+</style>
 </head>
 <body>
 <div class="container">
@@ -680,7 +687,7 @@ HTML = r'''
     <div class="tabs">
         <div class="tab active" onclick="openTab('bot')">🤖 BOT</div>
         <div class="tab" onclick="openTab('estrategias')">📊 ESTRATÉGIAS</div>
-        <div class="tab" onclick="openTab('loja')">🛍️ LOJA / MOEDAS</div>
+        <div class="tab" onclick="openTab('loja')">🛍️ LOJA</div>
         <div class="tab" onclick="openTab('relatorio')">📊 RELATÓRIO</div>
     </div>
     
@@ -724,10 +731,16 @@ HTML = r'''
     </div>
     
     <div class="panel" id="panel-loja">
-        <div class="config-section"><h3>💳 COMPRAR MOEDAS COM PIX</h3><p style="color:#888;font-size:10px">📧 <input type="email" id="emailCompra" placeholder="Seu email" style="width:220px;padding:6px;background:#111;border:1px solid #333;color:#fff;border-radius:5px"></p><p style="color:#ffd700;font-size:10px;margin-top:5px">🪙 1 moeda = 1 ciclo | +1 moeda grátis/dia</p><p style="color:#888;font-size:9px;margin-top:3px">⭐ Selecione o plano e pague com PIX</p></div>
+        <div class="sub-tabs">
+            <div class="sub-tab active" id="sub-tab-moedas" onclick="mostrarSubAba('moedas')">COMPRAR MOEDAS</div>
+            <div class="sub-tab" id="sub-tab-skins" onclick="mostrarSubAba('skins')">LOJA DE SKINS</div>
+        </div>
+        <div class="sub-panel active" id="sub-panel-moedas">
+            <div class="config-section"><h3>💳 COMPRAR MOEDAS COM PIX</h3><p style="color:#888;font-size:10px">📧 <input type="email" id="emailCompra" placeholder="Seu email" style="width:220px;padding:6px;background:#111;border:1px solid #333;color:#fff;border-radius:5px"></p><p style="color:#ffd700;font-size:10px;margin-top:5px">🪙 1 moeda = 1 ciclo | +1 moeda grátis/dia</p><p style="color:#888;font-size:9px;margin-top:3px">⭐ Selecione o plano e pague com PIX</p></div>
         <div class="planos-grid">''' + ''.join([f'<div class="plano-card" id="plano{p["id"]}" onclick="selecionarPlano({p["id"]})"><div style="color:#ffd700;font-size:11px">{p["nome"]}</div><div class="plano-moedas">🪙 {p["moedas"]}</div><div class="plano-preco">R$ {p["preco"]:.2f}</div><div class="plano-desc">{p.get("desc","")}</div>{f"<div><span class=\"plano-desconto\">{p['desconto']}</span></div>" if p.get("desconto") else ""}{f"<div class=\"plano-tag\">{p['tag']}</div>" if p.get("tag") else ""}<button class="btn btn-buy" style="display:none;margin-top:8px;padding:8px" id="btnPlano{p['id']}" onclick="event.stopPropagation();pagarComPix({p['id']})">💳 PAGAR COM PIX</button></div>' for p in PLANOS]) + r'''</div>
         <div class="config-section" style="margin-top:25px"><h3>🛍️ SKINS DISPONÍVEIS</h3><p style="color:#888;font-size:10px">Personalize a aparência do seu bot! Skins compradas ficam salvas.</p></div>
         <div class="skins-grid" id="skinsGrid"></div>
+        </div>
     </div>
     
     <div class="panel" id="panel-relatorio">
@@ -745,6 +758,15 @@ HTML = r'''
 </div>
 
 <script>
+
+function mostrarSubAba(aba){
+    document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.sub-panel').forEach(p=>p.classList.remove('active'));
+    document.getElementById('sub-tab-'+aba).classList.add('active');
+    document.getElementById('sub-panel-'+aba).classList.add('active');
+    if(aba==='skins') renderLoja();
+}
+
 var intervalo=null,botAtivo=false,conectadoIQ=false,emailLogado='',planoSelecionado=0,pixAtual=null;
 var estrategiaSel='v_sensitivo';
 var estrategias = ''' + json.dumps({k: {'nome': v['nome'], 'desc': v['desc']} for k, v in ESTRATEGIAS.items()}) + r''';
@@ -755,7 +777,7 @@ function openTab(tab){
     event.target.classList.add('active');
     document.getElementById('panel-'+tab).classList.add('active');
     if(tab=='relatorio'&&emailLogado){document.getElementById('emailRelatorio').value=emailLogado;verRelatorio()}
-    if(tab=='loja')renderLoja();
+    if(tab=='loja'){renderLoja();mostrarSubAba('moedas');}
     if(tab=='estrategias')renderEstrategias();
 }
 
