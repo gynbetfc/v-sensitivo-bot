@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT - COMPLETO v4.1.1.10 ⚡
+# ⚡ TESLA 369 BOT - COMPLETO v4.2.0 ⚡
 # 8 ESTRATÉGIAS | LOJA DE SKINS | MERCADO PAGO | RENDER READY
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -55,6 +55,22 @@ SKINS = [
         'cor_header_bg': 'linear-gradient(135deg,#0d001a,#1a0033,#2d0055,#1a0033,#0d001a)', 'cor_header_borda': '#9933ff',
         'header_extra': '<div class="crystal-ball"></div><div class="mago mago-esq">🧙‍♂️</div><div class="mago mago-dir">🧙‍♀️</div>',
         'css_extra': '.crystal-ball{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:130px;height:130px;background:radial-gradient(circle at 30% 30%,rgba(200,150,255,0.4) 0%,rgba(153,51,255,0.2) 30%,transparent 70%);border-radius:50%;z-index:0;animation:crystalGlow 4s ease-in-out infinite;pointer-events:none;border:2px solid rgba(153,51,255,0.3)}@keyframes crystalGlow{0%,100%{box-shadow:0 0 30px rgba(153,51,255,0.4),0 0 60px rgba(153,51,255,0.2)}50%{box-shadow:0 0 50px rgba(200,100,255,0.6),0 0 80px rgba(200,100,255,0.3)}}.crystal-ball::after{content:"🔮";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:45px;animation:floatCrystal 3s ease-in-out infinite}@keyframes floatCrystal{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-60%) scale(1.1)}}.mago{position:absolute;top:50%;font-size:30px;z-index:1;animation:magoFloat 2s ease-in-out infinite;pointer-events:none}.mago-esq{left:15px}.mago-dir{right:15px;animation-delay:0.5s}@keyframes magoFloat{0%,100%{transform:translateY(-50%)}50%{transform:translateY(-60%)}}'
+    },
+    {
+        'id': 'skin_neon', 'nome': '💚 MATRIX NEON', 'desc': 'Tema verde neon estilo hacker', 'preco_moedas': 1,
+        'cor_fundo': '#000a00', 'cor_panel': '#0a1a0a', 'cor_destaque': '#00ff41', 'cor_texto': '#00ff41',
+        'cor_botao': 'linear-gradient(135deg,#005500,#00ff41)', 'cor_tab_ativa': '#00ff41',
+        'cor_header_bg': 'linear-gradient(135deg,#000a00,#001a00,#003300,#001a00,#000a00)', 'cor_header_borda': '#00ff41',
+        'header_extra': '<canvas id="matrixCanvas"></canvas>',
+        'css_extra': '#matrixCanvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;opacity:0.3;pointer-events:none}.header h1{color:#00ff41!important;text-shadow:0 0 30px #00ff41!important;font-family:"Courier New",monospace!important}'
+    },
+    {
+        'id': 'skin_dourado', 'nome': '👑 DOURADO IMPERIAL', 'desc': 'Tema dourado luxuoso', 'preco_moedas': 1,
+        'cor_fundo': '#0a0a00', 'cor_panel': '#1a1a0a', 'cor_destaque': '#ffd700', 'cor_texto': '#ffe4b5',
+        'cor_botao': 'linear-gradient(135deg,#8b6914,#ffd700)', 'cor_tab_ativa': '#daa520',
+        'cor_header_bg': 'linear-gradient(135deg,#1a1a00,#332b00,#554400,#332b00,#1a1a00)', 'cor_header_borda': '#daa520',
+        'header_extra': '<div class="coroa">👑</div>',
+        'css_extra': '.coroa{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:40px;z-index:1;animation:coroaFloat 2s ease-in-out infinite;pointer-events:none}@keyframes coroaFloat{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-10px)}}'
     },
     {
         'id': 'skin_brasil', 'nome': '🇧🇷 BRASIL', 'desc': 'Tema verde e amarelo', 'preco_moedas': 0,
@@ -672,7 +688,7 @@ HTML = r'''
 <div class="container">
     <div class="header">
         {{HEADER_EXTRA}}
-        <h1>⚡ TESLA 369 BOT v4.1.1.10 ⚡</h1>
+        <h1>⚡ TESLA 369 BOT v4.2.0 ⚡</h1>
         <p>🔮 8 ESTRATÉGIAS | GALE 2 | STOP GAIN 1 WIN | LOJA DE SKINS</p>
         <p>⚡ O BOT QUE SENTE A VELA ⚡</p>
     </div>
@@ -713,7 +729,7 @@ HTML = r'''
         <div class="terminal" id="terminal">📡 Aguardando...</div>
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
-            <span>⚡ TESLA 369 v4.1.1.10</span>
+            <span>⚡ TESLA 369 v4.2.0</span>
             <span>GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
@@ -1198,7 +1214,7 @@ def resetar():
 
 if __name__ == '__main__':
     print("=" * 50)
-    print("⚡ TESLA 369 BOT v4.1.1.10 ⚡")
+    print("⚡ TESLA 369 BOT v4.2.0 ⚡")
     print("=" * 50)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
