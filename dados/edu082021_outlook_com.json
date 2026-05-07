@@ -12,10 +12,11 @@
   "data_cadastro": "2026-05-07 20:39:04",
   "historico_operacoes": [],
   "dias_ativos": {},
-  "skin_atual": "skin_princesa",
+  "skin_atual": "skin_brasil",
   "skins_compradas": [
     "skin_padrao",
     "skin_magos",
-    "skin_princesa"
+    "skin_princesa",
+    "skin_brasil"
   ]
 }
