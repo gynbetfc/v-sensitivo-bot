@@ -1217,9 +1217,31 @@ def relatorio():
 def resetar():
     d = request.get_json(); email = d.get('email', '')
     if not email: return jsonify({'ok': False, 'msg': 'Email obrigatório'})
-    usuario = criar_usuario(email); usuario['moedas_ganhas_hoje'] = str(datetime.now())[:10]; usuario['moedas'] = 0
+    usuario = carregar_usuario(email)
+    if not usuario: return jsonify({'ok': False, 'msg': 'Usuário não encontrado'})
+    # Mantém moedas, skins e data de cadastro
+    moedas = usuario.get('moedas', 0)
+    skins_compradas = usuario.get('skins_compradas', ['skin_padrao'])
+    skin_atual = usuario.get('skin_atual', 'skin_padrao')
+    data_cadastro = usuario.get('data_cadastro', str(datetime.now())[:19])
+    # Zera apenas estatísticas
+    usuario['total_ciclos'] = 0
+    usuario['total_wins'] = 0
+    usuario['total_losses'] = 0
+    usuario['total_gasto'] = 0.0
+    usuario['total_ganho'] = 0.0
+    usuario['lucro_total'] = 0.0
+    usuario['historico_operacoes'] = []
+    usuario['dias_ativos'] = {}
+    usuario['banca_atual'] = 0.0
+    # Mantém moedas e skins
+    usuario['moedas'] = moedas
+    usuario['skins_compradas'] = skins_compradas
+    usuario['skin_atual'] = skin_atual
+    usuario['data_cadastro'] = data_cadastro
+    usuario['moedas_ganhas_hoje'] = str(datetime.now())[:10]
     salvar_usuario(email, usuario)
-    return jsonify({'ok': True, 'msg': '✅ Resetado!'})
+    return jsonify({'ok': True, 'msg': '✅ Estatísticas resetadas! Moedas e skins mantidas.'})
 
 if __name__ == '__main__':
     print("=" * 50)
