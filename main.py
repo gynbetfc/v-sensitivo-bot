@@ -301,18 +301,53 @@ ESTRATEGIAS = {
 
 
 
+
+def arquivo_usuario(email):
+    return f"{DRIVE_PATH}/{email.replace('@', '_').replace('.', '_')}.json"
+
 def salvar_usuario(email, dados):
+    """Salva no GitHub via API"""
+    try:
+        token = os.environ.get("GITHUB_TOKEN", "")
+        if token:
+            fn = f"dados/{email.replace('@', '_').replace('.', '_')}.json"
+            u = "https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/" + fn
+            h = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github.v3+json"}
+            c = json.dumps(dados, indent=2)
+            r = requests.get(u, headers=h)
+            p = {"message": "Update", "content": base64.b64encode(c.encode()).decode(), "branch": "main"}
+            if r.status_code == 200:
+                p["sha"] = r.json()["sha"]
+            requests.put(u, json=p, headers=h)
+    except:
+        pass
+    # Backup local
     os.makedirs(DRIVE_PATH, exist_ok=True)
     with open(f"{DRIVE_PATH}/{email.replace('@', '_').replace('.', '_')}.json", 'w') as f:
         json.dump(dados, f, indent=2)
 
 def carregar_usuario(email):
+    """Carrega do GitHub ou local"""
+    try:
+        token = os.environ.get("GITHUB_TOKEN", "")
+        if token:
+            fn = f"dados/{email.replace('@', '_').replace('.', '_')}.json"
+            u = "https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/" + fn
+            h = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github.v3+json"}
+            r = requests.get(u, headers=h)
+            if r.status_code == 200:
+                return json.loads(base64.b64decode(r.json()["content"]).decode())
+    except:
+        pass
+    # Fallback local
     arq = f"{DRIVE_PATH}/{email.replace('@', '_').replace('.', '_')}.json"
     if os.path.exists(arq):
-        with open(arq, 'r') as f: return json.load(f)
+        with open(arq, 'r') as f:
+            return json.load(f)
     return None
 
 def criar_usuario(email):
+    """Cria novo usuário"""
     dados = {
         'email': email, 'moedas': 1,
         'moedas_ganhas_hoje': str(datetime.now())[:10],
