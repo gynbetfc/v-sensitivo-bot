@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT - COMPLETO v4.1.1.13 ⚡
+# ⚡ TESLA 369 BOT - COMPLETO v4.1.1.10 ⚡
 # 8 ESTRATÉGIAS | LOJA DE SKINS | MERCADO PAGO | RENDER READY
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -62,22 +62,15 @@ SKINS = [
         'cor_botao': 'linear-gradient(135deg,#009933,#00cc44)', 'cor_tab_ativa': '#ffd700',
         'cor_header_bg': 'linear-gradient(135deg,#001a0a,#003315,#004d20,#003315,#001a0a)', 'cor_header_borda': '#ffd700',
         'header_extra': '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:60px;z-index:0;opacity:0.3;pointer-events:none">🇧🇷</div>', 'css_extra': ''
-    },
+    }
+,
     {
-        'id': 'skin_princesa', 'nome': '👸 PRINCESA ENCANTADA', 'desc': 'Tema rosa com brilhos e coroa - 2 🪙', 'preco_moedas': 2,
+        'id': 'skin_princesa', 'nome': '👸 PRINCESA', 'desc': 'Tema rosa com brilhos', 'preco_moedas': 2,
         'cor_fundo': '#1a0010', 'cor_panel': '#2a0a20', 'cor_destaque': '#ff69b4', 'cor_texto': '#ffe0f0',
         'cor_botao': 'linear-gradient(135deg,#cc3388,#ff69b4)', 'cor_tab_ativa': '#ff69b4',
         'cor_header_bg': 'linear-gradient(135deg,#1a0010,#2a0a20,#3a1530,#2a0a20,#1a0010)', 'cor_header_borda': '#ff69b4',
-        'header_extra': '<div class="coroa-princesa">👑</div><div class="brilho1"></div><div class="brilho2"></div><div class="brilho3"></div><div class="estrelinha">⭐</div>',
-        'css_extra': '.coroa-princesa{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:45px;z-index:1;animation:coroaFloat 2s ease-in-out infinite;filter:drop-shadow(0 0 15px #ff69b4)}@keyframes coroaFloat{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-10px)}}.brilho1,.brilho2,.brilho3{position:absolute;width:8px;height:8px;background:#ff69b4;border-radius:50%;z-index:0;animation:brilhoPisca 1.5s ease-in-out infinite;box-shadow:0 0 10px #ff69b4,0 0 20px #ff1493}.brilho1{top:25%;left:15%;animation-delay:0s}.brilho2{top:50%;right:20%;animation-delay:0.5s}.brilho3{bottom:30%;left:40%;animation-delay:1s}@keyframes brilhoPisca{0%,100%{opacity:0.3;transform:scale(1)}50%{opacity:1;transform:scale(2.5)}}.estrelinha{position:absolute;top:70%;left:20%;font-size:30px;z-index:1;animation:estrelaGira 4s linear infinite}@keyframes estrelaGira{0%{transform:rotate(0deg) scale(1)}50%{transform:rotate(180deg) scale(1.3)}100%{transform:rotate(360deg) scale(1)}}.header h1{color:#ff69b4!important;text-shadow:0 0 30px #ff1493,0 0 60px #ff69b4!important}.card{border-color:#ff69b455!important}.tab{background:#1a0010!important}.tab.active{background:#ff69b4!important;color:#000!important}.btn-info{background:linear-gradient(135deg,#cc3388,#ff69b4)!important}.terminal{border:1px solid #ff69b455!important}'
-    }
-    {
-        'id': 'skin_oceano', 'nome': '🌊 OCEANO PROFUNDO', 'desc': 'Azul profundo com bolhas flutuantes - 2 🪙', 'preco_moedas': 2,
-        'cor_fundo': '#000a14', 'cor_panel': '#0a1525', 'cor_destaque': '#00aaff', 'cor_texto': '#88ccff',
-        'cor_botao': 'linear-gradient(135deg,#004466,#00aaff)', 'cor_tab_ativa': '#00aaff',
-        'cor_header_bg': 'linear-gradient(135deg,#000a14,#001030,#002050,#001030,#000a14)', 'cor_header_borda': '#00aaff',
-        'header_extra': '<div class="bolha"></div><div class="bolha2"></div><div class="peixe">🐠</div>',
-        'css_extra': '.bolha{position:absolute;bottom:-50px;left:15%;width:20px;height:20px;background:radial-gradient(circle,rgba(255,255,255,0.3),rgba(0,170,255,0.1));border-radius:50%;animation:subirBolha 6s ease-in infinite}.bolha2{position:absolute;bottom:-30px;right:20%;width:30px;height:30px;background:radial-gradient(circle,rgba(255,255,255,0.3),rgba(0,170,255,0.1));border-radius:50%;animation:subirBolha 8s ease-in 2s infinite}@keyframes subirBolha{0%{bottom:-50px;opacity:0}20%{opacity:1}100%{bottom:110%;opacity:0}}.peixe{position:absolute;top:60%;right:15%;font-size:45px;z-index:1;animation:peixeNadar 4s ease-in-out infinite}@keyframes peixeNadar{0%,100%{transform:translateX(0) scaleX(1)}50%{transform:translateX(-60px) scaleX(-1)}}.header h1{color:#00aaff!important;text-shadow:0 0 40px #0066cc!important}'
+        'header_extra': '<div class="coroa-p">👑</div>',
+        'css_extra': '.coroa-p{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:40px;animation:float 2s ease-in-out infinite}@keyframes float{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-10px)}}.header h1{color:#ff69b4!important;text-shadow:0 0 30px #ff1493!important}'
     }
 ]
 
@@ -695,7 +688,7 @@ HTML = r'''
 <div class="container">
     <div class="header">
         {{HEADER_EXTRA}}
-        <h1>⚡ TESLA 369 BOT v4.1.1.13 ⚡</h1>
+        <h1>⚡ TESLA 369 BOT v4.1.1.10 ⚡</h1>
         <p>🔮 8 ESTRATÉGIAS | GALE 2 | STOP GAIN 1 WIN | LOJA DE SKINS</p>
         <p>⚡ O BOT QUE SENTE A VELA ⚡</p>
     </div>
@@ -736,7 +729,7 @@ HTML = r'''
         <div class="terminal" id="terminal">📡 Aguardando...</div>
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
-            <span>⚡ TESLA 369 v4.1.1.13</span>
+            <span>⚡ TESLA 369 v4.1.1.10</span>
             <span>GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
@@ -1260,7 +1253,7 @@ def resetar():
 
 if __name__ == '__main__':
     print("=" * 50)
-    print("⚡ TESLA 369 BOT v4.1.1.13 ⚡")
+    print("⚡ TESLA 369 BOT v4.1.1.10 ⚡")
     print("=" * 50)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
