@@ -849,14 +849,17 @@ function desconectarIQ(){
         return;
     }
     if(confirm('Desconectar da IQ Option?')){
-        conectadoIQ=false;
-        document.getElementById('btnConectar').style.display='inline-block';
-        document.getElementById('btnOperar').style.display='none';
-        document.getElementById('btnParar').style.display='none';
-        document.getElementById('btnDesconectar').style.display='none';
-        document.getElementById('statusTexto').textContent='⏸️ Desconectado';
-        document.getElementById('statusDot').className='status-dot inactive';
-        if(intervalo)clearInterval(intervalo);
+        fetch('/parar',{method:'POST'}).then(r=>r.json()).then(d=>{
+            conectadoIQ=false;
+            botAtivo=false;
+            document.getElementById('btnConectar').style.display='inline-block';
+            document.getElementById('btnOperar').style.display='none';
+            document.getElementById('btnParar').style.display='none';
+            document.getElementById('btnDesconectar').style.display='none';
+            document.getElementById('statusTexto').textContent='⏸️ Desconectado';
+            document.getElementById('statusDot').className='status-dot inactive';
+            if(intervalo)clearInterval(intervalo);
+        });
     }
 }
 
