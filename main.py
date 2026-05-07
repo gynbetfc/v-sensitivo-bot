@@ -62,7 +62,7 @@ SKINS = [
         'cor_botao': 'linear-gradient(135deg,#009933,#00cc44)', 'cor_tab_ativa': '#ffd700',
         'cor_header_bg': 'linear-gradient(135deg,#001a0a,#003315,#004d20,#003315,#001a0a)', 'cor_header_borda': '#ffd700',
         'header_extra': '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:60px;z-index:0;opacity:0.3;pointer-events:none">🇧🇷</div>', 'css_extra': ''
-    }
+    },
     {
         'id': 'skin_princesa', 'nome': '👸 PRINCESA ENCANTADA', 'desc': 'Tema rosa com brilhos e coroa - 2 🪙', 'preco_moedas': 2,
         'cor_fundo': '#1a0010', 'cor_panel': '#2a0a20', 'cor_destaque': '#ff69b4', 'cor_texto': '#ffe0f0',
@@ -70,8 +70,7 @@ SKINS = [
         'cor_header_bg': 'linear-gradient(135deg,#1a0010,#2a0a20,#3a1530,#2a0a20,#1a0010)', 'cor_header_borda': '#ff69b4',
         'header_extra': '<div class="coroa-princesa">👑</div><div class="brilho1"></div><div class="brilho2"></div><div class="brilho3"></div><div class="estrelinha">⭐</div>',
         'css_extra': '.coroa-princesa{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:45px;z-index:1;animation:coroaFloat 2s ease-in-out infinite;filter:drop-shadow(0 0 15px #ff69b4)}@keyframes coroaFloat{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-10px)}}.brilho1,.brilho2,.brilho3{position:absolute;width:8px;height:8px;background:#ff69b4;border-radius:50%;z-index:0;animation:brilhoPisca 1.5s ease-in-out infinite;box-shadow:0 0 10px #ff69b4,0 0 20px #ff1493}.brilho1{top:25%;left:15%;animation-delay:0s}.brilho2{top:50%;right:20%;animation-delay:0.5s}.brilho3{bottom:30%;left:40%;animation-delay:1s}@keyframes brilhoPisca{0%,100%{opacity:0.3;transform:scale(1)}50%{opacity:1;transform:scale(2.5)}}.estrelinha{position:absolute;top:70%;left:20%;font-size:30px;z-index:1;animation:estrelaGira 4s linear infinite}@keyframes estrelaGira{0%{transform:rotate(0deg) scale(1)}50%{transform:rotate(180deg) scale(1.3)}100%{transform:rotate(360deg) scale(1)}}.header h1{color:#ff69b4!important;text-shadow:0 0 30px #ff1493,0 0 60px #ff69b4!important}.card{border-color:#ff69b455!important}.tab{background:#1a0010!important}.tab.active{background:#ff69b4!important;color:#000!important}.btn-info{background:linear-gradient(135deg,#cc3388,#ff69b4)!important}.terminal{border:1px solid #ff69b455!important}'
-    },
-]
+    }
 ]
 
 # ⭐ ESTRATÉGIAS (8 - SEM 9:30) ⭐
