@@ -41,7 +41,7 @@ PLANOS = [
 # ⭐ SKINS DA LOJA ⭐
 SKINS = [
     {
-        'id': 'skin_padrao', 'nome': '⚡ TESLA PADRÃO', 'desc': 'Tema escuro com raios dourados', 'preco_moedas': 0,
+        'id': 'skin_padrao', 'nome': '⚡ TESLA PADRÃO', 'desc': 'Tema escuro com raios dourados - Grátis', 'preco_moedas': 0,
         'cor_fundo': '#0a0a1a', 'cor_panel': '#1a1a3e', 'cor_destaque': '#ffd700', 'cor_texto': '#fff',
         'cor_botao': 'linear-gradient(135deg,#cc8800,#ffd700)', 'cor_tab_ativa': '#ffd700',
         'cor_header_bg': 'linear-gradient(135deg,#1a0000,#331100,#553300,#331100,#1a0000)', 'cor_header_borda': '#ffd700',
@@ -49,7 +49,7 @@ SKINS = [
         'css_extra': '.lightning{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:150px;height:150px;background:radial-gradient(circle at 30% 30%,rgba(255,215,0,0.3) 0%,rgba(255,165,0,0.15) 30%,transparent 100%);border-radius:50%;z-index:0;animation:glow 3s ease-in-out infinite;pointer-events:none}@keyframes glow{0%,100%{box-shadow:0 0 30px rgba(255,215,0,0.3)}50%{box-shadow:0 0 50px rgba(255,165,0,0.5)}}.lightning::after{content:"⚡";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:50px;animation:float 2s ease-in-out infinite}@keyframes float{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-60%) scale(1.1)}}'
     },
     {
-        'id': 'skin_magos', 'nome': '🔮 MAGOS DA BOLA DE CRISTAL', 'desc': 'Tema roxo místico', 'preco_moedas': 1,
+        'id': 'skin_magos', 'nome': '🔮 MAGOS DA BOLA DE CRISTAL', 'desc': 'Tema roxo místico - 1 🪙', 'preco_moedas': 1,
         'cor_fundo': '#0a0a1a', 'cor_panel': '#1a1a3e', 'cor_destaque': '#cc66ff', 'cor_texto': '#e0d0ff',
         'cor_botao': 'linear-gradient(135deg,#6600cc,#9933ff)', 'cor_tab_ativa': '#9933ff',
         'cor_header_bg': 'linear-gradient(135deg,#0d001a,#1a0033,#2d0055,#1a0033,#0d001a)', 'cor_header_borda': '#9933ff',
@@ -57,27 +57,67 @@ SKINS = [
         'css_extra': '.crystal-ball{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:130px;height:130px;background:radial-gradient(circle at 30% 30%,rgba(200,150,255,0.4) 0%,rgba(153,51,255,0.2) 30%,transparent 70%);border-radius:50%;z-index:0;animation:crystalGlow 4s ease-in-out infinite;pointer-events:none;border:2px solid rgba(153,51,255,0.3)}@keyframes crystalGlow{0%,100%{box-shadow:0 0 30px rgba(153,51,255,0.4),0 0 60px rgba(153,51,255,0.2)}50%{box-shadow:0 0 50px rgba(200,100,255,0.6),0 0 80px rgba(200,100,255,0.3)}}.crystal-ball::after{content:"🔮";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:45px;animation:floatCrystal 3s ease-in-out infinite}@keyframes floatCrystal{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-60%) scale(1.1)}}.mago{position:absolute;top:50%;font-size:30px;z-index:1;animation:magoFloat 2s ease-in-out infinite;pointer-events:none}.mago-esq{left:15px}.mago-dir{right:15px;animation-delay:0.5s}@keyframes magoFloat{0%,100%{transform:translateY(-50%)}50%{transform:translateY(-60%)}}'
     },
     {
-        'id': 'skin_neon', 'nome': '💚 MATRIX NEON', 'desc': 'Tema verde neon estilo hacker', 'preco_moedas': 1,
-        'cor_fundo': '#000a00', 'cor_panel': '#0a1a0a', 'cor_destaque': '#00ff41', 'cor_texto': '#00ff41',
-        'cor_botao': 'linear-gradient(135deg,#005500,#00ff41)', 'cor_tab_ativa': '#00ff41',
-        'cor_header_bg': 'linear-gradient(135deg,#000a00,#001a00,#003300,#001a00,#000a00)', 'cor_header_borda': '#00ff41',
+        'id': 'skin_matrix', 'nome': '💚 MATRIX RAIN', 'desc': 'Efeito cascata estilo Matrix - 2 🪙', 'preco_moedas': 2,
+        'cor_fundo': '#000500', 'cor_panel': '#0a1a0a', 'cor_destaque': '#00ff41', 'cor_texto': '#00cc33',
+        'cor_botao': 'linear-gradient(135deg,#003300,#00ff41)', 'cor_tab_ativa': '#00ff41',
+        'cor_header_bg': 'linear-gradient(135deg,#000500,#001a00,#003300,#001a00,#000500)', 'cor_header_borda': '#00ff41',
         'header_extra': '<canvas id="matrixCanvas"></canvas>',
-        'css_extra': '#matrixCanvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;opacity:0.3;pointer-events:none}.header h1{color:#00ff41!important;text-shadow:0 0 30px #00ff41!important;font-family:"Courier New",monospace!important}'
+        'css_extra': '#matrixCanvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;opacity:0.4;pointer-events:none}.header h1{color:#00ff41!important;text-shadow:0 0 30px #00ff41!important;font-family:"Courier New",monospace!important}.terminal{color:#00ff41!important;text-shadow:0 0 3px #00ff41}body{text-shadow:0 0 1px rgba(0,255,65,0.3)}.tab{background:#000a00!important;border-color:#00ff4133!important}.panel{background:#000a00!important;border-color:#00ff4133!important}.card{background:#000a00!important;border-color:#00ff4133!important}'
     },
     {
-        'id': 'skin_dourado', 'nome': '👑 DOURADO IMPERIAL', 'desc': 'Tema dourado luxuoso', 'preco_moedas': 1,
+        'id': 'skin_dourado', 'nome': '👑 DOURADO IMPERIAL', 'desc': 'Tema dourado luxuoso - 2 🪙', 'preco_moedas': 2,
         'cor_fundo': '#0a0a00', 'cor_panel': '#1a1a0a', 'cor_destaque': '#ffd700', 'cor_texto': '#ffe4b5',
         'cor_botao': 'linear-gradient(135deg,#8b6914,#ffd700)', 'cor_tab_ativa': '#daa520',
         'cor_header_bg': 'linear-gradient(135deg,#1a1a00,#332b00,#554400,#332b00,#1a1a00)', 'cor_header_borda': '#daa520',
         'header_extra': '<div class="coroa">👑</div>',
-        'css_extra': '.coroa{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:40px;z-index:1;animation:coroaFloat 2s ease-in-out infinite;pointer-events:none}@keyframes coroaFloat{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-10px)}}'
+        'css_extra': '.coroa{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:40px;z-index:1;animation:coroaFloat 2s ease-in-out infinite;pointer-events:none}@keyframes coroaFloat{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-10px)}}.header h1{color:#ffd700!important;text-shadow:0 0 30px #daa520!important}'
     },
     {
-        'id': 'skin_brasil', 'nome': '🇧🇷 BRASIL', 'desc': 'Tema verde e amarelo', 'preco_moedas': 0,
+        'id': 'skin_brasil', 'nome': '🇧🇷 BRASIL', 'desc': 'Tema verde e amarelo - Grátis', 'preco_moedas': 0,
         'cor_fundo': '#001a0a', 'cor_panel': '#0a2a15', 'cor_destaque': '#ffd700', 'cor_texto': '#fff',
         'cor_botao': 'linear-gradient(135deg,#009933,#00cc44)', 'cor_tab_ativa': '#ffd700',
         'cor_header_bg': 'linear-gradient(135deg,#001a0a,#003315,#004d20,#003315,#001a0a)', 'cor_header_borda': '#ffd700',
         'header_extra': '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:60px;z-index:0;opacity:0.3;pointer-events:none">🇧🇷</div>', 'css_extra': ''
+    },
+    {
+        'id': 'skin_oceano', 'nome': '🌊 PROFUNDEZAS DO OCEANO', 'desc': 'Tema azul profundo - 1 🪙', 'preco_moedas': 1,
+        'cor_fundo': '#000510', 'cor_panel': '#0a1025', 'cor_destaque': '#00aaff', 'cor_texto': '#88ccff',
+        'cor_botao': 'linear-gradient(135deg,#004466,#00aaff)', 'cor_tab_ativa': '#00aaff',
+        'cor_header_bg': 'linear-gradient(135deg,#000510,#001030,#002050,#001030,#000510)', 'cor_header_borda': '#00aaff',
+        'header_extra': '<div class="bolhas"></div><div class="peixe">🐠</div>',
+        'css_extra': '.bolhas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;opacity:0.3;pointer-events:none;background:radial-gradient(circle at 20% 80%,rgba(0,170,255,0.2) 0%,transparent 50%),radial-gradient(circle at 80% 20%,rgba(0,170,255,0.2) 0%,transparent 50%),radial-gradient(circle at 50% 50%,rgba(0,170,255,0.15) 0%,transparent 50%)}.peixe{position:absolute;top:60%;left:70%;font-size:40px;z-index:1;animation:peixeFloat 3s ease-in-out infinite;pointer-events:none}@keyframes peixeFloat{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-20px) rotate(-10deg)}}.header h1{color:#00aaff!important;text-shadow:0 0 30px #0066cc!important}'
+    },
+    {
+        'id': 'skin_fogo', 'nome': '🔥 CHAMAS DO DRAGÃO', 'desc': 'Tema vermelho flamejante - 2 🪙', 'preco_moedas': 2,
+        'cor_fundo': '#1a0000', 'cor_panel': '#2a0a00', 'cor_destaque': '#ff4500', 'cor_texto': '#ffcc88',
+        'cor_botao': 'linear-gradient(135deg,#8b0000,#ff4500)', 'cor_tab_ativa': '#ff4500',
+        'cor_header_bg': 'linear-gradient(135deg,#1a0000,#330a00,#552000,#330a00,#1a0000)', 'cor_header_borda': '#ff4500',
+        'header_extra': '<div class="fogo"></div><div class="dragao">🐉</div>',
+        'css_extra': '.fogo{position:absolute;bottom:0;left:0;width:100%;height:60%;z-index:0;opacity:0.15;pointer-events:none;background:linear-gradient(to top,#ff4500,#ff8c00,transparent);animation:fireFlicker 1s ease-in-out infinite}@keyframes fireFlicker{0%,100%{opacity:0.15}50%{opacity:0.25}}.dragao{position:absolute;top:10px;right:20px;font-size:50px;z-index:1;animation:dragonFloat 2s ease-in-out infinite;pointer-events:none}@keyframes dragonFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-15px)}}.header h1{color:#ff6347!important;text-shadow:0 0 30px #ff4500!important}'
+    },
+    {
+        'id': 'skin_galaxia', 'nome': '🌌 GALÁXIA CÓSMICA', 'desc': 'Tema espacial com estrelas - 1 🪙', 'preco_moedas': 1,
+        'cor_fundo': '#000020', 'cor_panel': '#101040', 'cor_destaque': '#cc66ff', 'cor_texto': '#ccccff',
+        'cor_botao': 'linear-gradient(135deg,#330066,#cc66ff)', 'cor_tab_ativa': '#cc66ff',
+        'cor_header_bg': 'linear-gradient(135deg,#000020,#100040,#200060,#100040,#000020)', 'cor_header_borda': '#cc66ff',
+        'header_extra': '<div class="estrelas"></div><div class="planeta">🪐</div>',
+        'css_extra': '.estrelas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;opacity:0.5;pointer-events:none;background:radial-gradient(1px 1px at 10% 20%,white,transparent),radial-gradient(1px 1px at 30% 60%,white,transparent),radial-gradient(1px 1px at 50% 10%,white,transparent),radial-gradient(1px 1px at 70% 80%,white,transparent),radial-gradient(2px 2px at 90% 40%,#cc66ff,transparent),radial-gradient(2px 2px at 15% 70%,#cc66ff,transparent),radial-gradient(1px 1px at 85% 15%,white,transparent)}.planeta{position:absolute;top:30%;right:30px;font-size:45px;z-index:1;animation:planetSpin 8s linear infinite;pointer-events:none}@keyframes planetSpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}.header h1{color:#cc66ff!important;text-shadow:0 0 30px #9933ff!important}'
+    },
+    {
+        'id': 'skin_japao', 'nome': '⛩️ TEMPLO JAPONÊS', 'desc': 'Tema vermelho e branco - 1 🪙', 'preco_moedas': 1,
+        'cor_fundo': '#1a0000', 'cor_panel': '#2a0a0a', 'cor_destaque': '#ff4444', 'cor_texto': '#fff5f5',
+        'cor_botao': 'linear-gradient(135deg,#8b0000,#ff4444)', 'cor_tab_ativa': '#ff4444',
+        'cor_header_bg': 'linear-gradient(135deg,#1a0000,#2a0a0a,#3a1515,#2a0a0a,#1a0000)', 'cor_header_borda': '#ff4444',
+        'header_extra': '<div class="tori">⛩️</div><div class="sakura">🌸</div>',
+        'css_extra': '.tori{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:45px;z-index:1;filter:drop-shadow(0 0 10px rgba(255,68,68,0.5));pointer-events:none}.sakura{position:absolute;top:60%;right:20px;font-size:30px;z-index:1;animation:sakuraFall 3s ease-in-out infinite;pointer-events:none}@keyframes sakuraFall{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-15px) rotate(15deg)}}.header h1{color:#ff6666!important;text-shadow:0 0 30px #cc0000!important}'
+    },
+    {
+        'id': 'skin_ouro_negro', 'nome': '🛢️ OURO NEGRO', 'desc': 'Tema petróleo e ouro - 2 🪙', 'preco_moedas': 2,
+        'cor_fundo': '#050505', 'cor_panel': '#151515', 'cor_destaque': '#ffd700', 'cor_texto': '#dddddd',
+        'cor_botao': 'linear-gradient(135deg,#1a1a00,#ffd700)', 'cor_tab_ativa': '#ffd700',
+        'cor_header_bg': 'linear-gradient(135deg,#050505,#151515,#252525,#151515,#050505)', 'cor_header_borda': '#ffd700',
+        'header_extra': '<div class="barril">🛢️</div><div class="moeda">💰</div>',
+        'css_extra': '.barril{position:absolute;top:20px;left:15px;font-size:35px;z-index:1;pointer-events:none}.moeda{position:absolute;top:20px;right:15px;font-size:35px;z-index:1;animation:moedaGira 2s ease-in-out infinite;pointer-events:none}@keyframes moedaGira{0%,100%{transform:rotateY(0deg)}50%{transform:rotateY(180deg)}}.header h1{color:#ffd700!important;text-shadow:0 0 30px #daa520!important}'
     }
 ]
 
