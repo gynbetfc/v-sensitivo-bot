@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT - COMPLETO v4.4.0 ⚡
+# ⚡ TESLA 369 BOT - COMPLETO v4.5.0 ⚡
 # 8 ESTRATÉGIAS | LOJA DE SKINS | MERCADO PAGO | RENDER READY
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -722,13 +722,35 @@ HTML = r'''
         .estrategia-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
         .badge-gratis{background:#00ff88;color:#000;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block}
         .badge-pago{background:#ffd700;color:#000;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block}
-    </style>
+    
+/* LOJA ORGANIZADA */
+.loja-section{background:linear-gradient(135deg,#111122,#1a1a3e);border-radius:15px;padding:20px;margin-bottom:15px;border:1px solid #333}
+.loja-section-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #333}
+.loja-icon{font-size:24px}
+.loja-section-header h3{color:#ffd700;font-size:14px;margin:0}
+.loja-separator{text-align:center;margin:20px 0;position:relative}
+.loja-separator::before{content:'';position:absolute;top:50%;left:0;width:100%;height:1px;background:linear-gradient(90deg,transparent,#ffd700,transparent)}
+.loja-separator span{background:#0a0a1a;padding:0 20px;color:#ffd700;font-size:12px;position:relative;z-index:1}
+.plano-card{background:linear-gradient(135deg,#111,#1a1a2e);padding:15px;border-radius:15px;border:2px solid #222;text-align:center;cursor:pointer;transition:all 0.3s ease;position:relative}
+.plano-card:hover{border-color:#ffd700;transform:translateY(-3px);box-shadow:0 10px 30px rgba(0,0,0,0.5)}
+.plano-card.selecionado{border-color:#00ff88;box-shadow:0 0 30px rgba(0,255,136,0.3)}
+.plano-nome{color:#ffd700;font-size:12px;margin-bottom:8px;font-weight:bold}
+.plano-moedas{font-size:28px;color:#ffd700;font-weight:bold;margin:5px 0}
+.plano-preco{font-size:16px;color:#00ff88;margin:5px 0;font-weight:bold}
+.plano-desc{font-size:9px;color:#888;margin-top:4px}
+.plano-desconto{background:#ff4444;color:#fff;font-size:10px;padding:3px 8px;border-radius:10px;display:inline-block;margin-top:5px;font-weight:bold;animation:pulse 1.5s infinite}
+.plano-tag{background:#ffd70022;color:#ffd700;font-size:9px;padding:2px 8px;border-radius:10px;display:inline-block;margin-top:4px}
+.btn-buy{background:linear-gradient(135deg,#00aa44,#00cc55)!important;color:#fff!important;width:100%;padding:12px!important;font-size:13px!important;border-radius:25px!important;transition:all 0.3s!important}
+.btn-buy:hover{transform:scale(1.05);box-shadow:0 5px 20px rgba(0,255,136,0.4)}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+
+</style>
 </head>
 <body>
 <div class="container">
     <div class="header">
         {{HEADER_EXTRA}}
-        <h1>⚡ TESLA 369 BOT v4.4.0 ⚡</h1>
+        <h1>⚡ TESLA 369 BOT v4.5.0 ⚡</h1>
         <p>🔮 8 ESTRATÉGIAS | GALE 2 | STOP GAIN 1 WIN | LOJA DE SKINS</p>
         <p>⚡ O BOT QUE SENTE A VELA ⚡</p>
     </div>
@@ -736,8 +758,7 @@ HTML = r'''
     <div class="tabs">
         <div class="tab active" onclick="openTab('bot')">🤖 BOT</div>
         <div class="tab" onclick="openTab('estrategias')">📊 ESTRATÉGIAS</div>
-        <div class="tab" onclick="openTab('moedas')">💸 COMPRAR MOEDAS</div>
-        <div class="tab" onclick="openTab('skins')">🎨 LOJA DE SKINS</div>
+        <div class="tab" onclick="openTab('loja')">🛍️ LOJA</div>
         <div class="tab" onclick="openTab('relatorio')">📊 RELATÓRIO</div>
     </div>
     
@@ -770,7 +791,7 @@ HTML = r'''
         <div class="terminal" id="terminal">📡 Aguardando...</div>
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
-            <span>⚡ TESLA 369 v4.4.0</span>
+            <span>⚡ TESLA 369 v4.5.0</span>
             <span>GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
@@ -780,19 +801,36 @@ HTML = r'''
         <div class="estrategia-grid" id="estrategiaGrid"></div>
     </div>
     
-    <div class="panel" id="panel-moedas">
-        <div class="config-section"><h3>💳 COMPRAR MOEDAS COM PIX</h3><p style="color:#888;font-size:10px">📧 <input type="email" id="emailCompra" placeholder="Seu email" style="width:220px;padding:6px;background:#111;border:1px solid #333;color:#fff;border-radius:5px"></p><p style="color:#ffd700;font-size:10px;margin-top:5px">🪙 1 moeda = 1 ciclo | +1 moeda grátis/dia</p><p style="color:#888;font-size:9px;margin-top:3px">⭐ Selecione o plano e pague com PIX</p></div>
-        <div class="planos-grid">''' + ''.join([f'<div class="plano-card" id="plano{p["id"]}" onclick="selecionarPlano({p["id"]})"><div style="color:#ffd700;font-size:11px">{p["nome"]}</div><div class="plano-moedas">🪙 {p["moedas"]}</div><div class="plano-preco">R$ {p["preco"]:.2f}</div><div class="plano-desc">{p.get("desc","")}</div>{f"<div><span class=\"plano-desconto\">{p['desconto']}</span></div>" if p.get("desconto") else ""}{f"<div class=\"plano-tag\">{p['tag']}</div>" if p.get("tag") else ""}<button class="btn btn-buy" style="display:none;margin-top:8px;padding:8px" id="btnPlano{p['id']}" onclick="event.stopPropagation();pagarComPix({p['id']})">💳 PAGAR COM PIX</button></div>' for p in PLANOS]) + r'''</div>
-        <div class="config-section" style="margin-top:25px"><h3>🛍️ SKINS DISPONÍVEIS</h3><p style="color:#888;font-size:10px">Personalize a aparência do seu bot! Skins compradas ficam salvas.</p></div>
-        <div class="skins-grid" id="skinsGrid"></div>
+        <div class="panel" id="panel-loja">
+        <!-- SEÇÃO MOEDAS -->
+        <div class="loja-section">
+            <div class="loja-section-header">
+                <span class="loja-icon">💳</span>
+                <h3>COMPRAR MOEDAS COM PIX</h3>
+            </div>
+            <p style="color:#888;font-size:10px;margin:5px 0 10px 0">📧 <input type="email" id="emailCompra" placeholder="Seu email" style="width:220px;padding:6px;background:#111;border:1px solid #333;color:#fff;border-radius:5px;font-size:10px"></p>
+            <p style="color:#ffd700;font-size:10px;margin:5px 0">🪙 1 moeda = 1 ciclo | +1 moeda grátis/dia</p>
+            <p style="color:#888;font-size:9px;margin-bottom:10px">⭐ Selecione o plano e pague com PIX</p>
+            <div class="planos-grid">''' + ''.join([f'<div class="plano-card" id="plano{p["id"]}" onclick="selecionarPlano({p["id"]})"><div class="plano-nome">{p["nome"]}</div><div class="plano-moedas">🪙 {p["moedas"]}</div><div class="plano-preco">R$ {p["preco"]:.2f}</div><div class="plano-desc">{p.get("desc","")}</div>{f"<div class="plano-desconto">{p['desconto']}</div>" if p.get("desconto") else ""}{f"<div class="plano-tag">{p['tag']}</div>" if p.get("tag") else ""}<button class="btn btn-buy" style="display:none;margin-top:8px;padding:8px;font-size:11px" id="btnPlano{p['id']}" onclick="event.stopPropagation();pagarComPix({p['id']})">💳 PAGAR COM PIX</button></div>' for p in PLANOS]) + r'''</div>
+        </div>
+        
+        <!-- SEPARADOR -->
+        <div class="loja-separator">
+            <span>🎨 SKINS DISPONÍVEIS</span>
+        </div>
+        
+        <!-- SEÇÃO SKINS -->
+        <div class="loja-section">
+            <div class="loja-section-header">
+                <span class="loja-icon">🎨</span>
+                <h3>PERSONALIZE SEU BOT</h3>
+            </div>
+            <p style="color:#888;font-size:10px;margin-bottom:10px">Compre skins para mudar a aparência do seu bot!</p>
+            <div class="skins-grid" id="skinsGrid"></div>
+        </div>
     </div>
     
-    
-    <div class="panel" id="panel-skins">
-        <div class="config-section"><h3>🎨 LOJA DE SKINS</h3><p style="color:#888;font-size:10px">Personalize a aparência do seu bot! Skins compradas ficam salvas.</p></div>
-        <div class="skins-grid" id="skinsGrid"></div>
-    </div>
-
+    <!-- PAINEL RELATÓRIO -->
     <div class="panel" id="panel-relatorio">
         <div class="config-section"><h3>📊 RELATÓRIO</h3><div class="config-row"><input type="email" id="emailRelatorio" placeholder="Email" style="flex:2"><button class="btn btn-info" onclick="verRelatorio()">🔍 BUSCAR</button><button class="btn btn-reset" onclick="resetarRelatorio()">🔄 RESETAR</button></div></div>
         <div id="relatorioContent"></div>
@@ -818,8 +856,8 @@ function openTab(tab){
     event.target.classList.add('active');
     document.getElementById('panel-'+tab).classList.add('active');
     if(tab=='relatorio'&&emailLogado){document.getElementById('emailRelatorio').value=emailLogado;verRelatorio()}
-    if(tab=='moedas')renderMoedas();
-    if(tab=='skins')renderLoja();
+    
+    if(tab=='loja'){renderLoja();renderMoedas();}
     if(tab=='estrategias')renderEstrategias();
 }
 
@@ -1085,10 +1123,8 @@ window.onload=function(){
     fetch('/status').then(r=>r.json()).then(d=>{
         if(d.estrategia){estrategiaSel=d.estrategia;renderEstrategias();}
         if(d.estrategia_nome)document.getElementById('estrategiaAtiva').textContent=d.estrategia_nome;
-        // Aplicar skin automaticamente
         if(d.skin_id && d.skin_id !== 'skin_padrao'){
-            fetch('/ativar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:d.skin_id})})
-            .then(r=>r.json()).then(s=>{if(s.ok){console.log('Skin aplicada: '+d.skin_id);location.reload();}});
+            fetch('/ativar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:d.skin_id})});
         }
         if(d.conectado&&d.email){
             conectadoIQ=true;emailLogado=d.email;
@@ -1102,7 +1138,6 @@ window.onload=function(){
         }
     });
 }
-
 // Matrix Rain Effect
 (function(){
     var canvas = document.getElementById('matrixCanvas');
@@ -1126,6 +1161,36 @@ window.onload=function(){
             var text = chars[Math.floor(Math.random() * chars.length)];
             ctx.fillText(text, i * fontSize, drops[i] * fontSize);
             if(drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+            drops[i]++;
+        }
+    }
+    setInterval(draw, 50);
+})();
+
+
+// Matrix Rain Effect
+(function(){
+    var canvas = document.getElementById('matrixCanvas');
+    if(!canvas) return;
+    var ctx = canvas.getContext('2d');
+    function resize(){ canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
+    resize(); window.addEventListener('resize', resize);
+    var chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789'.split('');
+    var fontSize = 14;
+    var columns = Math.floor(canvas.width / fontSize);
+    var drops = [];
+    for(var i = 0; i < columns; i++) drops[i] = Math.floor(Math.random() * canvas.height / fontSize) * -1;
+    function draw(){
+        ctx.fillStyle = 'rgba(0, 5, 0, 0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#00ff41';
+        ctx.font = fontSize + 'px monospace';
+        for(var i = 0; i < drops.length; i++){
+            var text = chars[Math.floor(Math.random() * chars.length)];
+            var x = i * fontSize;
+            var y = drops[i] * fontSize;
+            ctx.fillText(text, x, y);
+            if(y > canvas.height && Math.random() > 0.975) drops[i] = 0;
             drops[i]++;
         }
     }
@@ -1298,7 +1363,7 @@ def resetar():
 
 if __name__ == '__main__':
     print("=" * 50)
-    print("⚡ TESLA 369 BOT v4.4.0 ⚡")
+    print("⚡ TESLA 369 BOT v4.5.0 ⚡")
     print("=" * 50)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
