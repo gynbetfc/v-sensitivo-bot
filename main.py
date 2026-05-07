@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT - COMPLETO v5.2.0 ⚡
+# ⚡ TESLA 369 BOT - COMPLETO v4.1.1.10 ⚡
 # 8 ESTRATÉGIAS | LOJA DE SKINS | MERCADO PAGO | RENDER READY
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -63,47 +63,6 @@ SKINS = [
         'cor_header_bg': 'linear-gradient(135deg,#001a0a,#003315,#004d20,#003315,#001a0a)', 'cor_header_borda': '#ffd700',
         'header_extra': '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:60px;z-index:0;opacity:0.3;pointer-events:none">🇧🇷</div>', 'css_extra': ''
     }
-    {
-        'id': 'skin_oceano', 'nome': '🌊 PROFUNDEZAS DO OCEANO', 'desc': 'Tema azul com bolhas e peixes', 'preco_moedas': 1,
-        'cor_fundo': '#000a14', 'cor_panel': '#0a1525', 'cor_destaque': '#00aaff', 'cor_texto': '#88ccff',
-        'cor_botao': 'linear-gradient(135deg,#004466,#00aaff)', 'cor_tab_ativa': '#00aaff',
-        'cor_header_bg': 'linear-gradient(135deg,#000a14,#001030,#002050,#001030,#000a14)', 'cor_header_borda': '#00aaff',
-        'header_extra': '<div class="bolhas"></div><div class="peixe">🐠</div>',
-        'css_extra': '.bolhas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;background:radial-gradient(circle at 20% 80%,rgba(0,170,255,0.2) 0%,transparent 50%),radial-gradient(circle at 80% 20%,rgba(0,170,255,0.2) 0%,transparent 50%)}.peixe{position:absolute;top:60%;left:70%;font-size:40px;z-index:1;animation:peixeFloat 3s ease-in-out infinite;pointer-events:none}@keyframes peixeFloat{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-20px) rotate(-10deg)}}.header h1{color:#00aaff!important;text-shadow:0 0 30px #0066cc!important}'
-    },
-    {
-        'id': 'skin_fogo', 'nome': '🔥 CHAMAS DO DRAGAO', 'desc': 'Tema vermelho flamejante', 'preco_moedas': 2,
-        'cor_fundo': '#0a0000', 'cor_panel': '#1a0505', 'cor_destaque': '#ff4500', 'cor_texto': '#ffcc88',
-        'cor_botao': 'linear-gradient(135deg,#8b0000,#ff4500)', 'cor_tab_ativa': '#ff4500',
-        'cor_header_bg': 'linear-gradient(135deg,#0a0000,#1a0505,#2a0a00,#1a0505,#0a0000)', 'cor_header_borda': '#ff4500',
-        'header_extra': '<div class="fogo"></div><div class="dragao">🐉</div>',
-        'css_extra': '.fogo{position:absolute;bottom:0;left:0;width:100%;height:50%;z-index:0;pointer-events:none;background:linear-gradient(0deg,transparent,#ff450044,#ff8c0088,#ff450044,transparent);animation:fireWave 1s ease-in-out infinite alternate}@keyframes fireWave{0%{opacity:0.6}100%{opacity:1}}.dragao{position:absolute;top:15px;right:25px;font-size:50px;z-index:1;animation:dragonFloat 2s ease-in-out infinite;pointer-events:none}@keyframes dragonFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-15px)}}.header h1{color:#ff6347!important;text-shadow:0 0 30px #ff4500!important}'
-    },
-    {
-        'id': 'skin_galaxia', 'nome': '🌌 GALAXIA COSMICA', 'desc': 'Tema espacial com estrelas', 'preco_moedas': 1,
-        'cor_fundo': '#000020', 'cor_panel': '#101040', 'cor_destaque': '#cc66ff', 'cor_texto': '#ccccff',
-        'cor_botao': 'linear-gradient(135deg,#330066,#cc66ff)', 'cor_tab_ativa': '#cc66ff',
-        'cor_header_bg': 'linear-gradient(135deg,#000020,#100040,#200060,#100040,#000020)', 'cor_header_borda': '#cc66ff',
-        'header_extra': '<div class="estrelas"></div><div class="planeta">🪐</div>',
-        'css_extra': '.estrelas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;background:radial-gradient(2px 2px at 10% 20%,white,transparent),radial-gradient(1px 1px at 30% 60%,white,transparent),radial-gradient(2px 2px at 50% 10%,white,transparent),radial-gradient(1px 1px at 70% 80%,white,transparent),radial-gradient(2px 2px at 90% 40%,#cc66ff,transparent)}.planeta{position:absolute;top:30%;right:30px;font-size:45px;z-index:1;animation:planetSpin 8s linear infinite;pointer-events:none}@keyframes planetSpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}.header h1{color:#cc66ff!important;text-shadow:0 0 30px #9933ff!important}'
-    },
-    {
-        'id': 'skin_japao', 'nome': '⛩️ TEMPLO JAPONES', 'desc': 'Tema vermelho cerejeira', 'preco_moedas': 1,
-        'cor_fundo': '#1a0000', 'cor_panel': '#2a0a0a', 'cor_destaque': '#ff4444', 'cor_texto': '#fff5f5',
-        'cor_botao': 'linear-gradient(135deg,#8b0000,#ff4444)', 'cor_tab_ativa': '#ff4444',
-        'cor_header_bg': 'linear-gradient(135deg,#1a0000,#2a0a0a,#3a1515,#2a0a0a,#1a0000)', 'cor_header_borda': '#ff4444',
-        'header_extra': '<div class="tori">⛩️</div><div class="sakura">🌸</div>',
-        'css_extra': '.tori{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:40px;z-index:1;pointer-events:none}.sakura{position:absolute;top:60%;right:20px;font-size:30px;z-index:1;animation:sakuraFall 3s ease-in-out infinite;pointer-events:none}@keyframes sakuraFall{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-15px) rotate(15deg)}}.header h1{color:#ff6666!important;text-shadow:0 0 30px #cc0000!important}'
-    },
-    {
-        'id': 'skin_ouro_negro', 'nome': '🛢️ OURO NEGRO', 'desc': 'Tema petroleo e ouro', 'preco_moedas': 2,
-        'cor_fundo': '#050505', 'cor_panel': '#151515', 'cor_destaque': '#ffd700', 'cor_texto': '#dddddd',
-        'cor_botao': 'linear-gradient(135deg,#1a1a00,#ffd700)', 'cor_tab_ativa': '#ffd700',
-        'cor_header_bg': 'linear-gradient(135deg,#050505,#151515,#252525,#151515,#050505)', 'cor_header_borda': '#ffd700',
-        'header_extra': '<div class="barril">🛢️</div><div class="moeda">💰</div>',
-        'css_extra': '.barril{position:absolute;top:20px;left:15px;font-size:35px;z-index:1;pointer-events:none}.moeda{position:absolute;top:20px;right:15px;font-size:35px;z-index:1;animation:moedaGira 2s ease-in-out infinite;pointer-events:none}@keyframes moedaGira{0%,100%{transform:rotateY(0deg)}50%{transform:rotateY(180deg)}}.header h1{color:#ffd700!important;text-shadow:0 0 30px #daa520!important}'
-    },
-]
 ]
 
 # ⭐ ESTRATÉGIAS (8 - SEM 9:30) ⭐
@@ -720,7 +679,7 @@ HTML = r'''
 <div class="container">
     <div class="header">
         {{HEADER_EXTRA}}
-        <h1>⚡ TESLA 369 BOT v5.2.0 ⚡</h1>
+        <h1>⚡ TESLA 369 BOT v4.1.1.10 ⚡</h1>
         <p>🔮 8 ESTRATÉGIAS | GALE 2 | STOP GAIN 1 WIN | LOJA DE SKINS</p>
         <p>⚡ O BOT QUE SENTE A VELA ⚡</p>
     </div>
@@ -761,7 +720,7 @@ HTML = r'''
         <div class="terminal" id="terminal">📡 Aguardando...</div>
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
-            <span>⚡ TESLA 369 v5.2.0</span>
+            <span>⚡ TESLA 369 v4.1.1.10</span>
             <span>GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
@@ -1261,7 +1220,7 @@ def resetar():
 
 if __name__ == '__main__':
     print("=" * 50)
-    print("⚡ TESLA 369 BOT v5.2.0 ⚡")
+    print("⚡ TESLA 369 BOT v4.1.1.10 ⚡")
     print("=" * 50)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
