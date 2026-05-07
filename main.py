@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT - COMPLETO v5.0.1 ⚡
+# ⚡ TESLA 369 BOT - COMPLETO v4.1.1.10 ⚡
 # 8 ESTRATÉGIAS | LOJA DE SKINS | MERCADO PAGO | RENDER READY
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -41,7 +41,7 @@ PLANOS = [
 # ⭐ SKINS DA LOJA ⭐
 SKINS = [
     {
-        'id': 'skin_padrao', 'nome': '⚡ TESLA PADRÃO', 'desc': 'Clássico tema escuro com raios dourados', 'preco_moedas': 0,
+        'id': 'skin_padrao', 'nome': '⚡ TESLA PADRÃO', 'desc': 'Tema escuro com raios dourados', 'preco_moedas': 0,
         'cor_fundo': '#0a0a1a', 'cor_panel': '#1a1a3e', 'cor_destaque': '#ffd700', 'cor_texto': '#fff',
         'cor_botao': 'linear-gradient(135deg,#cc8800,#ffd700)', 'cor_tab_ativa': '#ffd700',
         'cor_header_bg': 'linear-gradient(135deg,#1a0000,#331100,#553300,#331100,#1a0000)', 'cor_header_borda': '#ffd700',
@@ -49,31 +49,15 @@ SKINS = [
         'css_extra': '.lightning{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:150px;height:150px;background:radial-gradient(circle at 30% 30%,rgba(255,215,0,0.3) 0%,rgba(255,165,0,0.15) 30%,transparent 100%);border-radius:50%;z-index:0;animation:glow 3s ease-in-out infinite;pointer-events:none}@keyframes glow{0%,100%{box-shadow:0 0 30px rgba(255,215,0,0.3)}50%{box-shadow:0 0 50px rgba(255,165,0,0.5)}}.lightning::after{content:"⚡";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:50px;animation:float 2s ease-in-out infinite}@keyframes float{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-60%) scale(1.1)}}'
     },
     {
-        'id': 'skin_magos', 'nome': '🔮 MAGOS DA BOLA DE CRISTAL', 'desc': 'Tema roxo místico com magos e cristal', 'preco_moedas': 1,
+        'id': 'skin_magos', 'nome': '🔮 MAGOS DA BOLA DE CRISTAL', 'desc': 'Tema roxo místico', 'preco_moedas': 1,
         'cor_fundo': '#0a0a1a', 'cor_panel': '#1a1a3e', 'cor_destaque': '#cc66ff', 'cor_texto': '#e0d0ff',
         'cor_botao': 'linear-gradient(135deg,#6600cc,#9933ff)', 'cor_tab_ativa': '#9933ff',
         'cor_header_bg': 'linear-gradient(135deg,#0d001a,#1a0033,#2d0055,#1a0033,#0d001a)', 'cor_header_borda': '#9933ff',
         'header_extra': '<div class="crystal-ball"></div><div class="mago mago-esq">🧙‍♂️</div><div class="mago mago-dir">🧙‍♀️</div>',
-        'css_extra': '.crystal-ball{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:130px;height:130px;background:radial-gradient(circle at 30% 30%,rgba(200,150,255,0.4) 0%,rgba(153,51,255,0.2) 30%,transparent 70%);border-radius:50%;z-index:0;animation:crystalGlow 4s ease-in-out infinite;pointer-events:none;border:2px solid rgba(153,51,255,0.3)}@keyframes crystalGlow{0%,100%{box-shadow:0 0 30px rgba(153,51,255,0.4),0 0 60px rgba(153,51,255,0.2)}50%{box-shadow:0 0 50px rgba(200,100,255,0.6),0 0 80px rgba(200,100,255,0.3)}}.crystal-ball::after{content:"🔮";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:45px;animation:floatCrystal 3s ease-in-out infinite}@keyframes floatCrystal{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-60%) scale(1.1)}}.mago{position:absolute;top:50%;font-size:30px;z-index:1;animation:magoFloat 2s ease-in-out infinite;pointer-events:none}.mago-esq{left:15px}.mago-dir{right:15px;animation-delay:0.5s}@keyframes magoFloat{0%,100%{transform:translateY(-50%)}50%{transform:translateY(-60%)}}.header h1{color:#cc66ff!important;text-shadow:0 0 30px #9933ff!important}'
+        'css_extra': '.crystal-ball{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:130px;height:130px;background:radial-gradient(circle at 30% 30%,rgba(200,150,255,0.4) 0%,rgba(153,51,255,0.2) 30%,transparent 70%);border-radius:50%;z-index:0;animation:crystalGlow 4s ease-in-out infinite;pointer-events:none;border:2px solid rgba(153,51,255,0.3)}@keyframes crystalGlow{0%,100%{box-shadow:0 0 30px rgba(153,51,255,0.4),0 0 60px rgba(153,51,255,0.2)}50%{box-shadow:0 0 50px rgba(200,100,255,0.6),0 0 80px rgba(200,100,255,0.3)}}.crystal-ball::after{content:"🔮";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:45px;animation:floatCrystal 3s ease-in-out infinite}@keyframes floatCrystal{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-60%) scale(1.1)}}.mago{position:absolute;top:50%;font-size:30px;z-index:1;animation:magoFloat 2s ease-in-out infinite;pointer-events:none}.mago-esq{left:15px}.mago-dir{right:15px;animation-delay:0.5s}@keyframes magoFloat{0%,100%{transform:translateY(-50%)}50%{transform:translateY(-60%)}}'
     },
     {
-        'id': 'skin_neon', 'nome': '💚 MATRIX RAIN', 'desc': 'Chuva de caracteres estilo Matrix', 'preco_moedas': 2,
-        'cor_fundo': '#000500', 'cor_panel': '#0a1a0a', 'cor_destaque': '#00ff41', 'cor_texto': '#00cc33',
-        'cor_botao': 'linear-gradient(135deg,#003300,#00ff41)', 'cor_tab_ativa': '#00ff41',
-        'cor_header_bg': 'linear-gradient(135deg,#000500,#001a00,#003300,#001a00,#000500)', 'cor_header_borda': '#00ff41',
-        'header_extra': '<canvas id="matrixCanvas"></canvas>',
-        'css_extra': '#matrixCanvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;opacity:0.3;pointer-events:none}.header h1{color:#00ff41!important;text-shadow:0 0 30px #00ff41!important;font-family:"Courier New",monospace!important}'
-    },
-    {
-        'id': 'skin_dourado', 'nome': '👑 OURO 24K', 'desc': 'Tema dourado luxuoso real', 'preco_moedas': 2,
-        'cor_fundo': '#0a0a00', 'cor_panel': '#1a1a0a', 'cor_destaque': '#ffd700', 'cor_texto': '#ffe4b5',
-        'cor_botao': 'linear-gradient(135deg,#8b6914,#ffd700)', 'cor_tab_ativa': '#daa520',
-        'cor_header_bg': 'linear-gradient(135deg,#1a1a00,#332b00,#554400,#332b00,#1a1a00)', 'cor_header_borda': '#daa520',
-        'header_extra': '<div class="coroa">👑</div>',
-        'css_extra': '.coroa{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:40px;z-index:1;animation:coroaFloat 2s ease-in-out infinite;pointer-events:none}@keyframes coroaFloat{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-10px)}}.header h1{color:#ffd700!important;text-shadow:0 0 30px #daa520!important}'
-    },
-    {
-        'id': 'skin_brasil', 'nome': '🇧🇷 BRASIL', 'desc': 'Tema verde e amarelo canarinho', 'preco_moedas': 0,
+        'id': 'skin_brasil', 'nome': '🇧🇷 BRASIL', 'desc': 'Tema verde e amarelo', 'preco_moedas': 0,
         'cor_fundo': '#001a0a', 'cor_panel': '#0a2a15', 'cor_destaque': '#ffd700', 'cor_texto': '#fff',
         'cor_botao': 'linear-gradient(135deg,#009933,#00cc44)', 'cor_tab_ativa': '#ffd700',
         'cor_header_bg': 'linear-gradient(135deg,#001a0a,#003315,#004d20,#003315,#001a0a)', 'cor_header_borda': '#ffd700',
@@ -688,7 +672,7 @@ HTML = r'''
 <div class="container">
     <div class="header">
         {{HEADER_EXTRA}}
-        <h1>⚡ TESLA 369 BOT v5.0.1 ⚡</h1>
+        <h1>⚡ TESLA 369 BOT v4.1.1.10 ⚡</h1>
         <p>🔮 8 ESTRATÉGIAS | GALE 2 | STOP GAIN 1 WIN | LOJA DE SKINS</p>
         <p>⚡ O BOT QUE SENTE A VELA ⚡</p>
     </div>
@@ -729,7 +713,7 @@ HTML = r'''
         <div class="terminal" id="terminal">📡 Aguardando...</div>
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
-            <span>⚡ TESLA 369 v5.0.1</span>
+            <span>⚡ TESLA 369 v4.1.1.10</span>
             <span>GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
@@ -795,12 +779,6 @@ function conectarIQ(){
             if(intervalo)clearInterval(intervalo);
             intervalo=setInterval(atualizar,2000);
             atualizar();
-            // Auto-aplicar skin
-            fetch('/status').then(r=>r.json()).then(s=>{
-                if(s.skin_id && s.skin_id !== 'skin_padrao'){
-                    fetch('/ativar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:s.skin_id})});
-                }
-            });
         }else{
             alert('ERRO: '+d.erro);
             document.getElementById('btnConectar').disabled=false;
@@ -1041,10 +1019,6 @@ function atualizar(){
 window.onload=function(){
     renderEstrategias();
     fetch('/status').then(r=>r.json()).then(d=>{
-        // Auto-aplicar skin ao carregar
-        if(d.skin_id && d.skin_id !== 'skin_padrao'){
-            fetch('/ativar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:d.skin_id})}).then(()=>location.reload());
-        }
         if(d.estrategia){estrategiaSel=d.estrategia;renderEstrategias();}
         if(d.estrategia_nome)document.getElementById('estrategiaAtiva').textContent=d.estrategia_nome;
         if(d.conectado&&d.email){
@@ -1059,37 +1033,6 @@ window.onload=function(){
         }
     });
 }
-
-// Matrix Rain Effect - COMPLETO
-(function(){
-    setTimeout(function(){
-        var canvas = document.getElementById('matrixCanvas');
-        if(!canvas) return;
-        var ctx = canvas.getContext('2d');
-        function resize(){ canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
-        resize();
-        window.addEventListener('resize', resize);
-        var chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789'.split('');
-        var fontSize = 12;
-        var columns = Math.floor(canvas.width / fontSize);
-        var drops = [];
-        for(var i = 0; i < columns; i++) drops[i] = Math.floor(Math.random() * canvas.height / fontSize) * -1;
-        function draw(){
-            ctx.fillStyle = 'rgba(0, 10, 0, 0.05)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#00ff41';
-            ctx.font = fontSize + 'px monospace';
-            for(var i = 0; i < drops.length; i++){
-                var text = chars[Math.floor(Math.random() * chars.length)];
-                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-                if(drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
-                drops[i]++;
-            }
-        }
-        setInterval(draw, 50);
-    }, 500);
-})();
-
 </script>
 </body>
 </html>
@@ -1255,7 +1198,7 @@ def resetar():
 
 if __name__ == '__main__':
     print("=" * 50)
-    print("⚡ TESLA 369 BOT v5.0.1 ⚡")
+    print("⚡ TESLA 369 BOT v4.1.1.10 ⚡")
     print("=" * 50)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
