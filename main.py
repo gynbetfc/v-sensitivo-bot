@@ -741,6 +741,7 @@ HTML = r'''
         <div class="config-section" style="margin-top:25px"><h3>🛍️ SKINS DISPONÍVEIS</h3><p style="color:#888;font-size:10px">Personalize a aparência do seu bot! Skins compradas ficam salvas.</p></div>
         <div class="skins-grid" id="skinsGrid"></div>
         </div>
+        </div>
     </div>
     
     <div class="panel" id="panel-relatorio">
