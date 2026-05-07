@@ -303,7 +303,7 @@ ESTRATEGIAS = {
 # BANCO DE DADOS: GOOGLE SHEETS (GRÁTIS!)
 # ═══════════════════════════════════════════════════════
 
-SHEET_URL = "https://script.google.com/macros/s/AKfycbw7GdZrxJ8Lz9YvLxWqR3tE2aB4cD6eF8hH0jK5xL7mN/exec"
+GDRIVE_TOKEN = os.environ.get("GDRIVE_TOKEN", "")  # Configure no Render!
 
 def salvar_usuario(email, dados):
     """Salva no Google Sheets via API"""
