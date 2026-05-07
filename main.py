@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT - COMPLETO v4.5.0 ⚡
+# ⚡ TESLA 369 BOT - COMPLETO v4.1.1.10 ⚡
 # 8 ESTRATÉGIAS | LOJA DE SKINS | MERCADO PAGO | RENDER READY
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -41,7 +41,7 @@ PLANOS = [
 # ⭐ SKINS DA LOJA ⭐
 SKINS = [
     {
-        'id': 'skin_padrao', 'nome': '⚡ TESLA PADRÃO', 'desc': 'Tema escuro com raios dourados - Grátis', 'preco_moedas': 0,
+        'id': 'skin_padrao', 'nome': '⚡ TESLA PADRÃO', 'desc': 'Tema escuro com raios dourados', 'preco_moedas': 0,
         'cor_fundo': '#0a0a1a', 'cor_panel': '#1a1a3e', 'cor_destaque': '#ffd700', 'cor_texto': '#fff',
         'cor_botao': 'linear-gradient(135deg,#cc8800,#ffd700)', 'cor_tab_ativa': '#ffd700',
         'cor_header_bg': 'linear-gradient(135deg,#1a0000,#331100,#553300,#331100,#1a0000)', 'cor_header_borda': '#ffd700',
@@ -49,7 +49,7 @@ SKINS = [
         'css_extra': '.lightning{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:150px;height:150px;background:radial-gradient(circle at 30% 30%,rgba(255,215,0,0.3) 0%,rgba(255,165,0,0.15) 30%,transparent 100%);border-radius:50%;z-index:0;animation:glow 3s ease-in-out infinite;pointer-events:none}@keyframes glow{0%,100%{box-shadow:0 0 30px rgba(255,215,0,0.3)}50%{box-shadow:0 0 50px rgba(255,165,0,0.5)}}.lightning::after{content:"⚡";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:50px;animation:float 2s ease-in-out infinite}@keyframes float{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-60%) scale(1.1)}}'
     },
     {
-        'id': 'skin_magos', 'nome': '🔮 MAGOS DA BOLA DE CRISTAL', 'desc': 'Tema roxo místico - 1 🪙', 'preco_moedas': 1,
+        'id': 'skin_magos', 'nome': '🔮 MAGOS DA BOLA DE CRISTAL', 'desc': 'Tema roxo místico', 'preco_moedas': 1,
         'cor_fundo': '#0a0a1a', 'cor_panel': '#1a1a3e', 'cor_destaque': '#cc66ff', 'cor_texto': '#e0d0ff',
         'cor_botao': 'linear-gradient(135deg,#6600cc,#9933ff)', 'cor_tab_ativa': '#9933ff',
         'cor_header_bg': 'linear-gradient(135deg,#0d001a,#1a0033,#2d0055,#1a0033,#0d001a)', 'cor_header_borda': '#9933ff',
@@ -57,67 +57,11 @@ SKINS = [
         'css_extra': '.crystal-ball{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:130px;height:130px;background:radial-gradient(circle at 30% 30%,rgba(200,150,255,0.4) 0%,rgba(153,51,255,0.2) 30%,transparent 70%);border-radius:50%;z-index:0;animation:crystalGlow 4s ease-in-out infinite;pointer-events:none;border:2px solid rgba(153,51,255,0.3)}@keyframes crystalGlow{0%,100%{box-shadow:0 0 30px rgba(153,51,255,0.4),0 0 60px rgba(153,51,255,0.2)}50%{box-shadow:0 0 50px rgba(200,100,255,0.6),0 0 80px rgba(200,100,255,0.3)}}.crystal-ball::after{content:"🔮";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:45px;animation:floatCrystal 3s ease-in-out infinite}@keyframes floatCrystal{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-60%) scale(1.1)}}.mago{position:absolute;top:50%;font-size:30px;z-index:1;animation:magoFloat 2s ease-in-out infinite;pointer-events:none}.mago-esq{left:15px}.mago-dir{right:15px;animation-delay:0.5s}@keyframes magoFloat{0%,100%{transform:translateY(-50%)}50%{transform:translateY(-60%)}}'
     },
     {
-        'id': 'skin_matrix', 'nome': '💚 MATRIX RAIN', 'desc': 'Efeito cascata estilo Matrix - 2 🪙', 'preco_moedas': 2,
-        'cor_fundo': '#000500', 'cor_panel': '#0a1a0a', 'cor_destaque': '#00ff41', 'cor_texto': '#00cc33',
-        'cor_botao': 'linear-gradient(135deg,#003300,#00ff41)', 'cor_tab_ativa': '#00ff41',
-        'cor_header_bg': 'linear-gradient(135deg,#000500,#001a00,#003300,#001a00,#000500)', 'cor_header_borda': '#00ff41',
-        'header_extra': '<canvas id="matrixCanvas"></canvas>',
-        'css_extra': '#matrixCanvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;opacity:0.3;pointer-events:none}.header h1{color:#00ff41!important;text-shadow:0 0 30px #00ff41!important;font-family:"Courier New",monospace!important;letter-spacing:3px}.terminal{color:#00ff41!important;text-shadow:0 0 5px #00ff41;background:#000000!important;border:1px solid #00ff4133!important}body{background:#000500!important}input,select{background:#000a00!important;border:1px solid #00ff4155!important;color:#00ff41!important}.tab{background:#000a00!important;border-color:#00ff4133!important;color:#00aa33!important}.tab.active{background:#00ff41!important;color:#000!important}.panel{background:#000a00!important;border-color:#00ff4133!important}.card{background:#000a00!important;border-color:#00ff4133!important}.card .label{color:#00aa33!important}.card .value{color:#00ff41!important}.btn-start{background:linear-gradient(135deg,#003300,#00ff41)!important;color:#000!important}.btn-stop{background:linear-gradient(135deg,#330000,#ff0041)!important}.btn-info{background:linear-gradient(135deg,#001133,#00aaff)!important}.status-dot.active{background:#00ff41!important;box-shadow:0 0 10px #00ff41!important}'
-    },
-    {
-        'id': 'skin_dourado', 'nome': '👑 DOURADO IMPERIAL', 'desc': 'Tema dourado luxuoso - 2 🪙', 'preco_moedas': 2,
-        'cor_fundo': '#0a0a00', 'cor_panel': '#1a1a0a', 'cor_destaque': '#ffd700', 'cor_texto': '#ffe4b5',
-        'cor_botao': 'linear-gradient(135deg,#8b6914,#ffd700)', 'cor_tab_ativa': '#daa520',
-        'cor_header_bg': 'linear-gradient(135deg,#1a1a00,#332b00,#554400,#332b00,#1a1a00)', 'cor_header_borda': '#daa520',
-        'header_extra': '<div class="coroa">👑</div>',
-        'css_extra': '.coroa{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:40px;z-index:1;animation:coroaFloat 2s ease-in-out infinite;pointer-events:none}@keyframes coroaFloat{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-10px)}}.header h1{color:#ffd700!important;text-shadow:0 0 30px #daa520!important}'
-    },
-    {
-        'id': 'skin_brasil', 'nome': '🇧🇷 BRASIL', 'desc': 'Tema verde e amarelo - Grátis', 'preco_moedas': 0,
+        'id': 'skin_brasil', 'nome': '🇧🇷 BRASIL', 'desc': 'Tema verde e amarelo', 'preco_moedas': 0,
         'cor_fundo': '#001a0a', 'cor_panel': '#0a2a15', 'cor_destaque': '#ffd700', 'cor_texto': '#fff',
         'cor_botao': 'linear-gradient(135deg,#009933,#00cc44)', 'cor_tab_ativa': '#ffd700',
         'cor_header_bg': 'linear-gradient(135deg,#001a0a,#003315,#004d20,#003315,#001a0a)', 'cor_header_borda': '#ffd700',
         'header_extra': '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:60px;z-index:0;opacity:0.3;pointer-events:none">🇧🇷</div>', 'css_extra': ''
-    },
-    {
-        'id': 'skin_oceano', 'nome': '🌊 PROFUNDEZAS DO OCEANO', 'desc': 'Tema azul profundo - 1 🪙', 'preco_moedas': 1,
-        'cor_fundo': '#000510', 'cor_panel': '#0a1025', 'cor_destaque': '#00aaff', 'cor_texto': '#88ccff',
-        'cor_botao': 'linear-gradient(135deg,#004466,#00aaff)', 'cor_tab_ativa': '#00aaff',
-        'cor_header_bg': 'linear-gradient(135deg,#000510,#001030,#002050,#001030,#000510)', 'cor_header_borda': '#00aaff',
-        'header_extra': '<div class="bolhas"></div><div class="peixe">🐠</div>',
-        'css_extra': '.bolhas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;overflow:hidden}.bolhas::before{content:"";position:absolute;top:100%;left:20%;width:20px;height:20px;background:radial-gradient(circle,rgba(255,255,255,0.4),rgba(0,170,255,0.1));border-radius:50%;animation:bubbleRise 3s ease-in infinite}.bolhas::after{content:"";position:absolute;top:100%;left:60%;width:30px;height:30px;background:radial-gradient(circle,rgba(255,255,255,0.3),rgba(0,170,255,0.1));border-radius:50%;animation:bubbleRise 4s ease-in 1s infinite}@keyframes bubbleRise{0%{top:100%;opacity:0}20%{opacity:1}100%{top:-50px;opacity:0}}.peixe{position:absolute;top:65%;left:75%;font-size:45px;z-index:1;animation:peixeSwim 4s ease-in-out infinite;pointer-events:none;filter:drop-shadow(0 0 10px rgba(0,170,255,0.5))}@keyframes peixeSwim{0%{transform:translateX(0) translateY(0) scaleX(1)}25%{transform:translateX(-30px) translateY(-15px) scaleX(1)}50%{transform:translateX(-60px) translateY(0) scaleX(-1)}75%{transform:translateX(-30px) translateY(-15px) scaleX(-1)}100%{transform:translateX(0) translateY(0) scaleX(1)}}.header h1{color:#00aaff!important;text-shadow:0 0 40px #0066cc,0 0 80px #004488!important}body{background:#000a14!important}.card{border-color:#00aaff33!important}.terminal{border:1px solid #00aaff33!important}'
-    },
-    {
-        'id': 'skin_fogo', 'nome': '🔥 CHAMAS DO DRAGÃO', 'desc': 'Tema vermelho flamejante - 2 🪙', 'preco_moedas': 2,
-        'cor_fundo': '#1a0000', 'cor_panel': '#2a0a00', 'cor_destaque': '#ff4500', 'cor_texto': '#ffcc88',
-        'cor_botao': 'linear-gradient(135deg,#8b0000,#ff4500)', 'cor_tab_ativa': '#ff4500',
-        'cor_header_bg': 'linear-gradient(135deg,#1a0000,#330a00,#552000,#330a00,#1a0000)', 'cor_header_borda': '#ff4500',
-        'header_extra': '<div class="fogo"></div><div class="dragao">🐉</div>',
-        'css_extra': '.fogo{position:absolute;bottom:0;left:0;width:100%;height:50%;z-index:0;pointer-events:none;background:linear-gradient(0deg,transparent 0%,#ff450044 20%,#ff8c0088 40%,#ff450044 60%,#ff000033 80%,transparent 100%);animation:fireWave 0.5s ease-in-out infinite alternate}@keyframes fireWave{0%{transform:scaleY(1);opacity:0.8}100%{transform:scaleY(1.1);opacity:1}}.fogo::after{content:"";position:absolute;bottom:0;left:0;width:100%;height:30%;background:radial-gradient(ellipse at center,#ffff00 0%,#ff4500 40%,transparent 70%);animation:glowPulse 1s ease-in-out infinite}.dragao{position:absolute;top:15px;right:25px;font-size:55px;z-index:1;animation:dragonFloat 2s ease-in-out infinite;pointer-events:none;filter:drop-shadow(0 0 20px #ff4500)}@keyframes dragonFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-20px) scale(1.1)}}@keyframes glowPulse{0%,100%{opacity:0.6}50%{opacity:1}}.header h1{color:#ff4444!important;text-shadow:0 0 40px #ff4500,0 0 80px #ff0000!important;animation:textGlow 0.5s ease-in-out infinite alternate}@keyframes textGlow{0%{text-shadow:0 0 40px #ff4500,0 0 80px #ff0000}100%{text-shadow:0 0 60px #ff8c00,0 0 100px #ff4500}}body{background:#0a0000!important}.card{border-color:#ff450044!important}.btn-start{background:linear-gradient(135deg,#8b0000,#ff4500)!important}.terminal{background:#0a0000!important;border:1px solid #ff450044!important}'
-    },
-    {
-        'id': 'skin_galaxia', 'nome': '🌌 GALÁXIA CÓSMICA', 'desc': 'Tema espacial com estrelas - 1 🪙', 'preco_moedas': 1,
-        'cor_fundo': '#000020', 'cor_panel': '#101040', 'cor_destaque': '#cc66ff', 'cor_texto': '#ccccff',
-        'cor_botao': 'linear-gradient(135deg,#330066,#cc66ff)', 'cor_tab_ativa': '#cc66ff',
-        'cor_header_bg': 'linear-gradient(135deg,#000020,#100040,#200060,#100040,#000020)', 'cor_header_borda': '#cc66ff',
-        'header_extra': '<div class="estrelas"></div><div class="planeta">🪐</div>',
-        'css_extra': '.estrelas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;opacity:0.5;pointer-events:none;background:radial-gradient(1px 1px at 10% 20%,white,transparent),radial-gradient(1px 1px at 30% 60%,white,transparent),radial-gradient(1px 1px at 50% 10%,white,transparent),radial-gradient(1px 1px at 70% 80%,white,transparent),radial-gradient(2px 2px at 90% 40%,#cc66ff,transparent),radial-gradient(2px 2px at 15% 70%,#cc66ff,transparent),radial-gradient(1px 1px at 85% 15%,white,transparent)}.planeta{position:absolute;top:30%;right:30px;font-size:45px;z-index:1;animation:planetSpin 8s linear infinite;pointer-events:none}@keyframes planetSpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}.header h1{color:#cc66ff!important;text-shadow:0 0 30px #9933ff!important}'
-    },
-    {
-        'id': 'skin_japao', 'nome': '⛩️ TEMPLO JAPONÊS', 'desc': 'Tema vermelho e branco - 1 🪙', 'preco_moedas': 1,
-        'cor_fundo': '#1a0000', 'cor_panel': '#2a0a0a', 'cor_destaque': '#ff4444', 'cor_texto': '#fff5f5',
-        'cor_botao': 'linear-gradient(135deg,#8b0000,#ff4444)', 'cor_tab_ativa': '#ff4444',
-        'cor_header_bg': 'linear-gradient(135deg,#1a0000,#2a0a0a,#3a1515,#2a0a0a,#1a0000)', 'cor_header_borda': '#ff4444',
-        'header_extra': '<div class="tori">⛩️</div><div class="sakura">🌸</div>',
-        'css_extra': '.tori{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:45px;z-index:1;filter:drop-shadow(0 0 10px rgba(255,68,68,0.5));pointer-events:none}.sakura{position:absolute;top:60%;right:20px;font-size:30px;z-index:1;animation:sakuraFall 3s ease-in-out infinite;pointer-events:none}@keyframes sakuraFall{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-15px) rotate(15deg)}}.header h1{color:#ff6666!important;text-shadow:0 0 30px #cc0000!important}'
-    },
-    {
-        'id': 'skin_ouro_negro', 'nome': '🛢️ OURO NEGRO', 'desc': 'Tema petróleo e ouro - 2 🪙', 'preco_moedas': 2,
-        'cor_fundo': '#050505', 'cor_panel': '#151515', 'cor_destaque': '#ffd700', 'cor_texto': '#dddddd',
-        'cor_botao': 'linear-gradient(135deg,#1a1a00,#ffd700)', 'cor_tab_ativa': '#ffd700',
-        'cor_header_bg': 'linear-gradient(135deg,#050505,#151515,#252525,#151515,#050505)', 'cor_header_borda': '#ffd700',
-        'header_extra': '<div class="barril">🛢️</div><div class="moeda">💰</div>',
-        'css_extra': '.barril{position:absolute;top:20px;left:15px;font-size:35px;z-index:1;pointer-events:none}.moeda{position:absolute;top:20px;right:15px;font-size:35px;z-index:1;animation:moedaGira 2s ease-in-out infinite;pointer-events:none}@keyframes moedaGira{0%,100%{transform:rotateY(0deg)}50%{transform:rotateY(180deg)}}.header h1{color:#ffd700!important;text-shadow:0 0 30px #daa520!important}'
     }
 ]
 
@@ -722,35 +666,13 @@ HTML = r'''
         .estrategia-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
         .badge-gratis{background:#00ff88;color:#000;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block}
         .badge-pago{background:#ffd700;color:#000;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block}
-    
-/* LOJA ORGANIZADA */
-.loja-section{background:linear-gradient(135deg,#111122,#1a1a3e);border-radius:15px;padding:20px;margin-bottom:15px;border:1px solid #333}
-.loja-section-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #333}
-.loja-icon{font-size:24px}
-.loja-section-header h3{color:#ffd700;font-size:14px;margin:0}
-.loja-separator{text-align:center;margin:20px 0;position:relative}
-.loja-separator::before{content:'';position:absolute;top:50%;left:0;width:100%;height:1px;background:linear-gradient(90deg,transparent,#ffd700,transparent)}
-.loja-separator span{background:#0a0a1a;padding:0 20px;color:#ffd700;font-size:12px;position:relative;z-index:1}
-.plano-card{background:linear-gradient(135deg,#111,#1a1a2e);padding:15px;border-radius:15px;border:2px solid #222;text-align:center;cursor:pointer;transition:all 0.3s ease;position:relative}
-.plano-card:hover{border-color:#ffd700;transform:translateY(-3px);box-shadow:0 10px 30px rgba(0,0,0,0.5)}
-.plano-card.selecionado{border-color:#00ff88;box-shadow:0 0 30px rgba(0,255,136,0.3)}
-.plano-nome{color:#ffd700;font-size:12px;margin-bottom:8px;font-weight:bold}
-.plano-moedas{font-size:28px;color:#ffd700;font-weight:bold;margin:5px 0}
-.plano-preco{font-size:16px;color:#00ff88;margin:5px 0;font-weight:bold}
-.plano-desc{font-size:9px;color:#888;margin-top:4px}
-.plano-desconto{background:#ff4444;color:#fff;font-size:10px;padding:3px 8px;border-radius:10px;display:inline-block;margin-top:5px;font-weight:bold;animation:pulse 1.5s infinite}
-.plano-tag{background:#ffd70022;color:#ffd700;font-size:9px;padding:2px 8px;border-radius:10px;display:inline-block;margin-top:4px}
-.btn-buy{background:linear-gradient(135deg,#00aa44,#00cc55)!important;color:#fff!important;width:100%;padding:12px!important;font-size:13px!important;border-radius:25px!important;transition:all 0.3s!important}
-.btn-buy:hover{transform:scale(1.05);box-shadow:0 5px 20px rgba(0,255,136,0.4)}
-@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
-
-</style>
+    </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
         {{HEADER_EXTRA}}
-        <h1>⚡ TESLA 369 BOT v4.5.0 ⚡</h1>
+        <h1>⚡ TESLA 369 BOT v4.1.1.10 ⚡</h1>
         <p>🔮 8 ESTRATÉGIAS | GALE 2 | STOP GAIN 1 WIN | LOJA DE SKINS</p>
         <p>⚡ O BOT QUE SENTE A VELA ⚡</p>
     </div>
@@ -758,7 +680,7 @@ HTML = r'''
     <div class="tabs">
         <div class="tab active" onclick="openTab('bot')">🤖 BOT</div>
         <div class="tab" onclick="openTab('estrategias')">📊 ESTRATÉGIAS</div>
-        <div class="tab" onclick="openTab('loja')">🛍️ LOJA</div>
+        <div class="tab" onclick="openTab('loja')">🛍️ LOJA / MOEDAS</div>
         <div class="tab" onclick="openTab('relatorio')">📊 RELATÓRIO</div>
     </div>
     
@@ -791,7 +713,7 @@ HTML = r'''
         <div class="terminal" id="terminal">📡 Aguardando...</div>
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
-            <span>⚡ TESLA 369 v4.5.0</span>
+            <span>⚡ TESLA 369 v4.1.1.10</span>
             <span>GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
@@ -801,36 +723,13 @@ HTML = r'''
         <div class="estrategia-grid" id="estrategiaGrid"></div>
     </div>
     
-        <div class="panel" id="panel-loja">
-        <!-- SEÇÃO MOEDAS -->
-        <div class="loja-section">
-            <div class="loja-section-header">
-                <span class="loja-icon">💳</span>
-                <h3>COMPRAR MOEDAS COM PIX</h3>
-            </div>
-            <p style="color:#888;font-size:10px;margin:5px 0 10px 0">📧 <input type="email" id="emailCompra" placeholder="Seu email" style="width:220px;padding:6px;background:#111;border:1px solid #333;color:#fff;border-radius:5px;font-size:10px"></p>
-            <p style="color:#ffd700;font-size:10px;margin:5px 0">🪙 1 moeda = 1 ciclo | +1 moeda grátis/dia</p>
-            <p style="color:#888;font-size:9px;margin-bottom:10px">⭐ Selecione o plano e pague com PIX</p>
-            <div class="planos-grid">''' + ''.join([f'<div class="plano-card" id="plano{p["id"]}" onclick="selecionarPlano({p["id"]})"><div class="plano-nome">{p["nome"]}</div><div class="plano-moedas">🪙 {p["moedas"]}</div><div class="plano-preco">R$ {p["preco"]:.2f}</div><div class="plano-desc">{p.get("desc","")}</div>{f"<div class="plano-desconto">{p['desconto']}</div>" if p.get("desconto") else ""}{f"<div class="plano-tag">{p['tag']}</div>" if p.get("tag") else ""}<button class="btn btn-buy" style="display:none;margin-top:8px;padding:8px;font-size:11px" id="btnPlano{p['id']}" onclick="event.stopPropagation();pagarComPix({p['id']})">💳 PAGAR COM PIX</button></div>' for p in PLANOS]) + r'''</div>
-        </div>
-        
-        <!-- SEPARADOR -->
-        <div class="loja-separator">
-            <span>🎨 SKINS DISPONÍVEIS</span>
-        </div>
-        
-        <!-- SEÇÃO SKINS -->
-        <div class="loja-section">
-            <div class="loja-section-header">
-                <span class="loja-icon">🎨</span>
-                <h3>PERSONALIZE SEU BOT</h3>
-            </div>
-            <p style="color:#888;font-size:10px;margin-bottom:10px">Compre skins para mudar a aparência do seu bot!</p>
-            <div class="skins-grid" id="skinsGrid"></div>
-        </div>
+    <div class="panel" id="panel-loja">
+        <div class="config-section"><h3>💳 COMPRAR MOEDAS COM PIX</h3><p style="color:#888;font-size:10px">📧 <input type="email" id="emailCompra" placeholder="Seu email" style="width:220px;padding:6px;background:#111;border:1px solid #333;color:#fff;border-radius:5px"></p><p style="color:#ffd700;font-size:10px;margin-top:5px">🪙 1 moeda = 1 ciclo | +1 moeda grátis/dia</p><p style="color:#888;font-size:9px;margin-top:3px">⭐ Selecione o plano e pague com PIX</p></div>
+        <div class="planos-grid">''' + ''.join([f'<div class="plano-card" id="plano{p["id"]}" onclick="selecionarPlano({p["id"]})"><div style="color:#ffd700;font-size:11px">{p["nome"]}</div><div class="plano-moedas">🪙 {p["moedas"]}</div><div class="plano-preco">R$ {p["preco"]:.2f}</div><div class="plano-desc">{p.get("desc","")}</div>{f"<div><span class=\"plano-desconto\">{p['desconto']}</span></div>" if p.get("desconto") else ""}{f"<div class=\"plano-tag\">{p['tag']}</div>" if p.get("tag") else ""}<button class="btn btn-buy" style="display:none;margin-top:8px;padding:8px" id="btnPlano{p['id']}" onclick="event.stopPropagation();pagarComPix({p['id']})">💳 PAGAR COM PIX</button></div>' for p in PLANOS]) + r'''</div>
+        <div class="config-section" style="margin-top:25px"><h3>🛍️ SKINS DISPONÍVEIS</h3><p style="color:#888;font-size:10px">Personalize a aparência do seu bot! Skins compradas ficam salvas.</p></div>
+        <div class="skins-grid" id="skinsGrid"></div>
     </div>
     
-    <!-- PAINEL RELATÓRIO -->
     <div class="panel" id="panel-relatorio">
         <div class="config-section"><h3>📊 RELATÓRIO</h3><div class="config-row"><input type="email" id="emailRelatorio" placeholder="Email" style="flex:2"><button class="btn btn-info" onclick="verRelatorio()">🔍 BUSCAR</button><button class="btn btn-reset" onclick="resetarRelatorio()">🔄 RESETAR</button></div></div>
         <div id="relatorioContent"></div>
@@ -856,8 +755,7 @@ function openTab(tab){
     event.target.classList.add('active');
     document.getElementById('panel-'+tab).classList.add('active');
     if(tab=='relatorio'&&emailLogado){document.getElementById('emailRelatorio').value=emailLogado;verRelatorio()}
-    
-    if(tab=='loja'){renderLoja();renderMoedas();}
+    if(tab=='loja')renderLoja();
     if(tab=='estrategias')renderEstrategias();
 }
 
@@ -1123,9 +1021,6 @@ window.onload=function(){
     fetch('/status').then(r=>r.json()).then(d=>{
         if(d.estrategia){estrategiaSel=d.estrategia;renderEstrategias();}
         if(d.estrategia_nome)document.getElementById('estrategiaAtiva').textContent=d.estrategia_nome;
-        if(d.skin_id && d.skin_id !== 'skin_padrao'){
-            fetch('/ativar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:d.skin_id})});
-        }
         if(d.conectado&&d.email){
             conectadoIQ=true;emailLogado=d.email;
             document.getElementById('email').value=d.email;
@@ -1138,65 +1033,6 @@ window.onload=function(){
         }
     });
 }
-// Matrix Rain Effect
-(function(){
-    var canvas = document.getElementById('matrixCanvas');
-    if(!canvas) return;
-    var ctx = canvas.getContext('2d');
-    function resize(){ canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
-    resize(); window.addEventListener('resize', resize);
-    var katakana = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン';
-    var latin = '0123456789ABCDEF';
-    var chars = (katakana + latin).split('');
-    var fontSize = 14;
-    var columns = Math.floor(canvas.width / fontSize);
-    var drops = [];
-    for(var i = 0; i < columns; i++) drops[i] = Math.floor(Math.random() * canvas.height / fontSize) * -1;
-    function draw(){
-        ctx.fillStyle = 'rgba(0, 5, 0, 0.05)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#00ff41';
-        ctx.font = fontSize + 'px monospace';
-        for(var i = 0; i < drops.length; i++){
-            var text = chars[Math.floor(Math.random() * chars.length)];
-            ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-            if(drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
-            drops[i]++;
-        }
-    }
-    setInterval(draw, 50);
-})();
-
-
-// Matrix Rain Effect
-(function(){
-    var canvas = document.getElementById('matrixCanvas');
-    if(!canvas) return;
-    var ctx = canvas.getContext('2d');
-    function resize(){ canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
-    resize(); window.addEventListener('resize', resize);
-    var chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789'.split('');
-    var fontSize = 14;
-    var columns = Math.floor(canvas.width / fontSize);
-    var drops = [];
-    for(var i = 0; i < columns; i++) drops[i] = Math.floor(Math.random() * canvas.height / fontSize) * -1;
-    function draw(){
-        ctx.fillStyle = 'rgba(0, 5, 0, 0.05)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#00ff41';
-        ctx.font = fontSize + 'px monospace';
-        for(var i = 0; i < drops.length; i++){
-            var text = chars[Math.floor(Math.random() * chars.length)];
-            var x = i * fontSize;
-            var y = drops[i] * fontSize;
-            ctx.fillText(text, x, y);
-            if(y > canvas.height && Math.random() > 0.975) drops[i] = 0;
-            drops[i]++;
-        }
-    }
-    setInterval(draw, 50);
-})();
-
 </script>
 </body>
 </html>
@@ -1249,7 +1085,6 @@ def conectar():
             usuario['moedas'] = usuario.get('moedas', 0) + 1; usuario['moedas_ganhas_hoje'] = hoje
             salvar_usuario(email, usuario)
         skin_atual_global = usuario.get('skin_atual', 'skin_padrao')
-        print(f'SKIN APLICADA: {skin_atual_global}')
         par = ESTRATEGIAS[estrategia_atual]['pares'][0]; timeframe_atual = ESTRATEGIAS[estrategia_atual]['timeframe']
         add_log('🔌 Conectando na IQ Option...', 'info')
         API = IQ_Option(email, senha); status_conn, reason = API.connect()
@@ -1363,7 +1198,7 @@ def resetar():
 
 if __name__ == '__main__':
     print("=" * 50)
-    print("⚡ TESLA 369 BOT v4.5.0 ⚡")
+    print("⚡ TESLA 369 BOT v4.1.1.10 ⚡")
     print("=" * 50)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
