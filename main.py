@@ -708,6 +708,7 @@ HTML = r'''
             <button class="btn btn-info" id="btnConectar" onclick="conectarIQ()">🔌 CONECTAR</button>
             <button class="btn btn-start" id="btnOperar" onclick="comecarOperar()" style="display:none">🚀 COMEÇAR OPERAR</button>
             <button class="btn btn-stop" id="btnParar" onclick="pararBot()" style="display:none">⏹️ PARAR</button>
+            <button class="btn btn-stop" id="btnDesconectar" onclick="desconectarIQ()" style="display:none">🔌 DESCONECTAR</button>
         </div></div>
         <div class="dashboard">
             <div class="card"><div class="label">💰 BANCA</div><div class="value" id="banca" style="color:#00ff88">--</div></div>
@@ -806,6 +807,7 @@ function conectarIQ(){
             conectadoIQ=true;
             document.getElementById('btnConectar').style.display='none';
             document.getElementById('btnOperar').style.display='inline-block';
+            document.getElementById('btnDesconectar').style.display='inline-block';
             document.getElementById('statusTexto').textContent='🟢 Conectado';
             document.getElementById('statusDot').className='status-dot active';
             document.getElementById('moedasSaldo').textContent=d.moedas||0;
@@ -838,6 +840,24 @@ function comecarOperar(){
             document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
         }
     });
+}
+
+
+function desconectarIQ(){
+    if(botAtivo){
+        alert('⚠️ Pare o bot primeiro antes de desconectar!');
+        return;
+    }
+    if(confirm('Desconectar da IQ Option?')){
+        conectadoIQ=false;
+        document.getElementById('btnConectar').style.display='inline-block';
+        document.getElementById('btnOperar').style.display='none';
+        document.getElementById('btnParar').style.display='none';
+        document.getElementById('btnDesconectar').style.display='none';
+        document.getElementById('statusTexto').textContent='⏸️ Desconectado';
+        document.getElementById('statusDot').className='status-dot inactive';
+        if(intervalo)clearInterval(intervalo);
+    }
 }
 
 function pararBot(){
@@ -1013,6 +1033,7 @@ function atualizar(){
             document.getElementById('btnConectar').style.display='inline-block';
             document.getElementById('btnOperar').style.display='none';
             document.getElementById('btnParar').style.display='none';
+            document.getElementById('btnDesconectar').style.display='none';
             document.getElementById('btnConectar').disabled=false;
             document.getElementById('btnConectar').textContent='🔌 CONECTAR';
             document.getElementById('btnOperar').disabled=false;
@@ -1024,6 +1045,7 @@ function atualizar(){
         if(!d.rodando&&botAtivo){
             botAtivo=false;
             document.getElementById('btnOperar').style.display='inline-block';
+            document.getElementById('btnDesconectar').style.display='inline-block';
             document.getElementById('btnParar').style.display='none';
             document.getElementById('btnOperar').disabled=false;
             document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
@@ -1059,7 +1081,8 @@ window.onload=function(){
             document.getElementById('email').value=d.email;
             document.getElementById('btnConectar').style.display='none';
             if(d.rodando){botAtivo=true;document.getElementById('btnOperar').style.display='none';document.getElementById('btnParar').style.display='inline-block';document.getElementById('statusTexto').textContent='🤖 Operando';}
-            else{document.getElementById('btnOperar').style.display='inline-block';document.getElementById('statusTexto').textContent='🟢 Conectado';}
+            else{document.getElementById('btnOperar').style.display='inline-block';
+            document.getElementById('btnDesconectar').style.display='inline-block';document.getElementById('statusTexto').textContent='🟢 Conectado';}
             document.getElementById('statusDot').className='status-dot active';
             if(intervalo)clearInterval(intervalo);
             intervalo=setInterval(atualizar,2000);atualizar();
