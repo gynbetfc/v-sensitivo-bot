@@ -1732,7 +1732,7 @@ def salvar_usuario(email, dados):
     try:
         fn = f"dados/{email.replace('@', '_').replace('.', '_')}.json"
         u = "https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/" + fn
-        h = {"Authorization": "token os.environ.get("GH_TOKEN", "")", "Accept": "application/vnd.github.v3+json"}
+        h = {"Authorization": "token os.environ.get("GITHUB_TOKEN", "")", "Accept": "application/vnd.github.v3+json"}
         c = json.dumps(dados, indent=2)
         r = requests.get(u, headers=h)
         p = {"message": "Update", "content": base64.b64encode(c.encode()).decode(), "branch": "main"}
@@ -1746,7 +1746,7 @@ def carregar_usuario(email):
     try:
         fn = f"dados/{email.replace('@', '_').replace('.', '_')}.json"
         u = "https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/" + fn
-        h = {"Authorization": "token os.environ.get("GH_TOKEN", "")", "Accept": "application/vnd.github.v3+json"}
+        h = {"Authorization": "token os.environ.get("GITHUB_TOKEN", "")", "Accept": "application/vnd.github.v3+json"}
         r = requests.get(u, headers=h)
         if r.status_code == 200:
             return json.loads(base64.b64decode(r.json()["content"]).decode())
