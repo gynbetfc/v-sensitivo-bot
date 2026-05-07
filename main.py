@@ -303,42 +303,21 @@ ESTRATEGIAS = {
 # BANCO DE DADOS: GOOGLE SHEETS (GRÁTIS!)
 # ═══════════════════════════════════════════════════════
 
-GDRIVE_TOKEN = os.environ.get("GDRIVE_TOKEN", "")  # Configure no Render!
+
+
 
 def salvar_usuario(email, dados):
-    """Salva no Google Sheets via API"""
-    try:
-        requests.post(SHEET_URL, json={
-            "action": "salvar",
-            "email": email,
-            "dados": json.dumps(dados)
-        }, timeout=5)
-    except:
-        pass
-    # Backup local
     os.makedirs(DRIVE_PATH, exist_ok=True)
-    with open(f"{DRIVE_PATH}/{email.replace('@','_').replace('.','_')}.json", 'w') as f:
+    with open(f"{DRIVE_PATH}/{email.replace('@', '_').replace('.', '_')}.json", 'w') as f:
         json.dump(dados, f, indent=2)
 
-
 def carregar_usuario(email):
-    """Carrega do Google Sheets ou local"""
-    try:
-        r = requests.get(f"{SHEET_URL}?action=carregar&email={email}", timeout=5)
-        if r.status_code == 200 and r.text:
-            return json.loads(r.text)
-    except:
-        pass
-    # Fallback local
-    path = f"{DRIVE_PATH}/{email.replace('@','_').replace('.','_')}.json"
-    if os.path.exists(path):
-        with open(path, 'r') as f:
-            return json.load(f)
+    arq = f"{DRIVE_PATH}/{email.replace('@', '_').replace('.', '_')}.json"
+    if os.path.exists(arq):
+        with open(arq, 'r') as f: return json.load(f)
     return None
 
-
 def criar_usuario(email):
-    """Cria novo usuário"""
     dados = {
         'email': email, 'moedas': 1,
         'moedas_ganhas_hoje': str(datetime.now())[:10],
