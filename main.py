@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT - COMPLETO v4.1.1.12 ⚡
+# ⚡ TESLA 369 BOT - COMPLETO v4.1.1.13 ⚡
 # 8 ESTRATÉGIAS | LOJA DE SKINS | MERCADO PAGO | RENDER READY
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -78,8 +78,7 @@ SKINS = [
         'cor_header_bg': 'linear-gradient(135deg,#000a14,#001030,#002050,#001030,#000a14)', 'cor_header_borda': '#00aaff',
         'header_extra': '<div class="bolha"></div><div class="bolha2"></div><div class="peixe">🐠</div>',
         'css_extra': '.bolha{position:absolute;bottom:-50px;left:15%;width:20px;height:20px;background:radial-gradient(circle,rgba(255,255,255,0.3),rgba(0,170,255,0.1));border-radius:50%;animation:subirBolha 6s ease-in infinite}.bolha2{position:absolute;bottom:-30px;right:20%;width:30px;height:30px;background:radial-gradient(circle,rgba(255,255,255,0.3),rgba(0,170,255,0.1));border-radius:50%;animation:subirBolha 8s ease-in 2s infinite}@keyframes subirBolha{0%{bottom:-50px;opacity:0}20%{opacity:1}100%{bottom:110%;opacity:0}}.peixe{position:absolute;top:60%;right:15%;font-size:45px;z-index:1;animation:peixeNadar 4s ease-in-out infinite}@keyframes peixeNadar{0%,100%{transform:translateX(0) scaleX(1)}50%{transform:translateX(-60px) scaleX(-1)}}.header h1{color:#00aaff!important;text-shadow:0 0 40px #0066cc!important}'
-    },
-]
+    }
 ]
 
 # ⭐ ESTRATÉGIAS (8 - SEM 9:30) ⭐
@@ -696,7 +695,7 @@ HTML = r'''
 <div class="container">
     <div class="header">
         {{HEADER_EXTRA}}
-        <h1>⚡ TESLA 369 BOT v4.1.1.12 ⚡</h1>
+        <h1>⚡ TESLA 369 BOT v4.1.1.13 ⚡</h1>
         <p>🔮 8 ESTRATÉGIAS | GALE 2 | STOP GAIN 1 WIN | LOJA DE SKINS</p>
         <p>⚡ O BOT QUE SENTE A VELA ⚡</p>
     </div>
@@ -737,7 +736,7 @@ HTML = r'''
         <div class="terminal" id="terminal">📡 Aguardando...</div>
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
-            <span>⚡ TESLA 369 v4.1.1.12</span>
+            <span>⚡ TESLA 369 v4.1.1.13</span>
             <span>GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
@@ -1261,7 +1260,7 @@ def resetar():
 
 if __name__ == '__main__':
     print("=" * 50)
-    print("⚡ TESLA 369 BOT v4.1.1.12 ⚡")
+    print("⚡ TESLA 369 BOT v4.1.1.13 ⚡")
     print("=" * 50)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
