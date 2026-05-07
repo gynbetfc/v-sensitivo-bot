@@ -2,33 +2,16 @@
   "email": "edu082021@outlook.com",
   "moedas": 28,
   "moedas_ganhas_hoje": "2026-05-07",
-  "total_ciclos": 1,
-  "total_wins": 1,
-  "total_losses": 1,
-  "total_gasto": 21.25,
-  "total_ganho": 42.5,
-  "lucro_total": 21.25,
-  "banca_atual": 203.13,
+  "total_ciclos": 0,
+  "total_wins": 0,
+  "total_losses": 0,
+  "total_gasto": 0.0,
+  "total_ganho": 0.0,
+  "lucro_total": 0.0,
+  "banca_atual": 0.0,
   "data_cadastro": "2026-05-07 20:39:04",
-  "historico_operacoes": [
-    {
-      "data": "2026-05-07 20:49:03",
-      "resultado": "LOSS",
-      "valor": 21.25,
-      "lucro": -21.25,
-      "estrategia": "v_sensitivo"
-    },
-    {
-      "data": "2026-05-07 20:50:03",
-      "resultado": "WIN",
-      "valor": 50.0,
-      "lucro": 42.5,
-      "estrategia": "v_sensitivo"
-    }
-  ],
-  "dias_ativos": {
-    "2026-05-07": 2
-  },
+  "historico_operacoes": [],
+  "dias_ativos": {},
   "skin_atual": "skin_magos",
   "skins_compradas": [
     "skin_padrao",
