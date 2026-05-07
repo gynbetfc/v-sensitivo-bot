@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT - COMPLETO v5.0.0 ⚡
+# ⚡ TESLA 369 BOT - COMPLETO v5.0.1 ⚡
 # 8 ESTRATÉGIAS | LOJA DE SKINS | MERCADO PAGO | RENDER READY
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -688,7 +688,7 @@ HTML = r'''
 <div class="container">
     <div class="header">
         {{HEADER_EXTRA}}
-        <h1>⚡ TESLA 369 BOT v5.0.0 ⚡</h1>
+        <h1>⚡ TESLA 369 BOT v5.0.1 ⚡</h1>
         <p>🔮 8 ESTRATÉGIAS | GALE 2 | STOP GAIN 1 WIN | LOJA DE SKINS</p>
         <p>⚡ O BOT QUE SENTE A VELA ⚡</p>
     </div>
@@ -729,7 +729,7 @@ HTML = r'''
         <div class="terminal" id="terminal">📡 Aguardando...</div>
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
-            <span>⚡ TESLA 369 v5.0.0</span>
+            <span>⚡ TESLA 369 v5.0.1</span>
             <span>GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
@@ -1041,6 +1041,10 @@ function atualizar(){
 window.onload=function(){
     renderEstrategias();
     fetch('/status').then(r=>r.json()).then(d=>{
+        // Auto-aplicar skin ao carregar
+        if(d.skin_id && d.skin_id !== 'skin_padrao'){
+            fetch('/ativar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:d.skin_id})}).then(()=>location.reload());
+        }
         if(d.estrategia){estrategiaSel=d.estrategia;renderEstrategias();}
         if(d.estrategia_nome)document.getElementById('estrategiaAtiva').textContent=d.estrategia_nome;
         if(d.conectado&&d.email){
@@ -1055,6 +1059,37 @@ window.onload=function(){
         }
     });
 }
+
+// Matrix Rain Effect - COMPLETO
+(function(){
+    setTimeout(function(){
+        var canvas = document.getElementById('matrixCanvas');
+        if(!canvas) return;
+        var ctx = canvas.getContext('2d');
+        function resize(){ canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
+        resize();
+        window.addEventListener('resize', resize);
+        var chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789'.split('');
+        var fontSize = 12;
+        var columns = Math.floor(canvas.width / fontSize);
+        var drops = [];
+        for(var i = 0; i < columns; i++) drops[i] = Math.floor(Math.random() * canvas.height / fontSize) * -1;
+        function draw(){
+            ctx.fillStyle = 'rgba(0, 10, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00ff41';
+            ctx.font = fontSize + 'px monospace';
+            for(var i = 0; i < drops.length; i++){
+                var text = chars[Math.floor(Math.random() * chars.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if(drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(draw, 50);
+    }, 500);
+})();
+
 </script>
 </body>
 </html>
@@ -1220,7 +1255,7 @@ def resetar():
 
 if __name__ == '__main__':
     print("=" * 50)
-    print("⚡ TESLA 369 BOT v5.0.0 ⚡")
+    print("⚡ TESLA 369 BOT v5.0.1 ⚡")
     print("=" * 50)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
