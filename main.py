@@ -25,8 +25,21 @@ DRIVE_PATH = "vsens_users"
 os.makedirs(DRIVE_PATH, exist_ok=True)
 
 # ⭐⭐⭐ CONFIGURAÇÃO DO MERCADO PAGO ⭐⭐⭐
-MERCADO_PAGO_ACCESS_TOKEN = "APP_USR-4548266140377032-050311-6589fc22b166e4cb2cfad0379b28dcdf-1059299796"
-MERCADO_PAGO_PUBLIC_KEY = "APP_USR-39e1950e-420d-479a-8125-902009ca3445"
+# Carregar configurações do Mercado Pago
+try:
+    config_url = f"https://api.github.com/repos/{USER}/{REPO}/contents/config.json"
+    r_config = requests.get(config_url, headers={"Authorization": f"Bearer {os.environ.get('GITHUB_TOKEN', '')}", "Accept": "application/vnd.github.v3+json"})
+    if r_config.status_code == 200:
+        config_data = json.loads(base64.b64decode(r_config.json()["content"]).decode())
+        MERCADO_PAGO_ACCESS_TOKEN = config_data.get("MERCADO_PAGO_ACCESS_TOKEN", "")
+        MERCADO_PAGO_PUBLIC_KEY = config_data.get("MERCADO_PAGO_PUBLIC_KEY", "")
+        MODO_SIMULACAO = config_data.get("MODO_SIMULACAO", False)
+    else:
+        MERCADO_PAGO_ACCESS_TOKEN = os.environ.get("MERCADO_PAGO_ACCESS_TOKEN", "")
+        MERCADO_PAGO_PUBLIC_KEY = os.environ.get("MERCADO_PAGO_PUBLIC_KEY", "")
+except:
+    MERCADO_PAGO_ACCESS_TOKEN = os.environ.get("MERCADO_PAGO_ACCESS_TOKEN", "")
+    MERCADO_PAGO_PUBLIC_KEY = os.environ.get("MERCADO_PAGO_PUBLIC_KEY", "")
 MODO_SIMULACAO = False
 
 # ⭐ PLANOS DE MOEDAS ⭐
