@@ -95,7 +95,8 @@ ESTRATEGIAS = {
         'timeframe': 60,
         'pares': ['EURUSD-OTC', 'EURUSD'],
         'preco_moedas': 0,
-        'gratis': True
+        'gratis': True,
+        'fixa': True
     },
     'v_sensitivo': {
         'nome': '🔮 v_SENSITIVO',
@@ -105,7 +106,7 @@ ESTRATEGIAS = {
         'preco_moedas': 6,
         'gratis': False
     },
-    'tesla_369': {
+    'terceira_igual_primeira': {
         'nome': '3️⃣ 3ª = 1ª',
         'desc': 'Opera a cada 5min, seg 55+',
         'timeframe': 60,
@@ -467,7 +468,7 @@ def sinal_m5():
 MAPA_SINAIS = {
     'v_sensitivo': sinal_v_sensitivo,
     'tesla_369': sinal_tesla_369,
-    'tesla_369': sinal_terceira_igual_primeira
+    'terceira_igual_primeira': sinal_terceira_igual_primeira
 }
 
 # ═══════════════════════════════════════════════════════
@@ -983,6 +984,10 @@ function pararBot(){
 function renderEstrategias(){
     fetch('/status').then(r=>r.json()).then(d=>{
         var estrategiasCompradas = d.estrategias_compradas || ['tesla_369'];
+        // Garantir que tesla_369 sempre aparece
+        if (!estrategiasCompradas.includes('tesla_369')) {
+            estrategiasCompradas.push('tesla_369');
+        }
         var grid=document.getElementById('estrategiaGrid');
         var html='';
         for(var key in estrategias){
@@ -1071,21 +1076,29 @@ function renderLojaEstrategias(){
         if (!grid) return;
         var html = '';
         var estrategiasCompradas = d.estrategias_compradas || ['tesla_369'];
+        // Garantir que tesla_369 sempre aparece
+        if (!estrategiasCompradas.includes('tesla_369')) {
+            estrategiasCompradas.push('tesla_369');
+        }
         var estrategiasDisponiveis = d.estrategias_disponiveis || {};
         
         // Se não houver estrategias_disponiveis, usar o objeto global estrategias
         if (Object.keys(estrategiasDisponiveis).length === 0 && typeof estrategias !== 'undefined') {
             for (var key in estrategias) {
+                // Pular tesla_369 no fallback
+                if (key === 'tesla_369') continue;
                 estrategiasDisponiveis[key] = {
                     'nome': estrategias[key].nome,
                     'desc': estrategias[key].desc || '',
                     'preco_moedas': 5,
-                    'gratis': (key === 'tesla_369')
+                    'gratis': false
                 };
             }
         }
         
         for (var key in estrategiasDisponiveis) {
+            // Pular estratégias fixas (não mostrar na loja)
+            if (estrategiasDisponiveis[key].fixa === true || key === 'tesla_369') continue;
             var est = estrategiasDisponiveis[key];
             var comprado = estrategiasCompradas.includes(key);
             var btnHtml = '';
