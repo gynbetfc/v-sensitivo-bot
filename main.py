@@ -167,7 +167,7 @@ def criar_usuario(email):
         'dias_ativos': {},
         'skin_atual': 'skin_padrao',
         'skins_compradas': ['skin_padrao'],
-        'estrategias_compradas': ['tesla_369', 'terceira_igual_primeira', 'v_sensitivo']
+        'estrategias_compradas': ['tesla_369']
     }
     salvar_usuario(email, dados)
     return dados
@@ -663,7 +663,13 @@ def comprar_estrategia():
     estrategia = ESTRATEGIAS[estrategia_id]
     
     if estrategia.get('gratis', False):
-        return jsonify({'ok': False, 'erro': 'Esta estratégia já é gratuita!'})
+        # Se for grátis, apenas adiciona à lista de compradas
+        if 'estrategias_compradas' not in u:
+            u['estrategias_compradas'] = ['tesla_369']
+        if estrategia_id not in u['estrategias_compradas']:
+            u['estrategias_compradas'].append(estrategia_id)
+            salvar_usuario(email_usuario_atual, u)
+        return jsonify({'ok': True, 'msg': f'Estratégia {estrategia["nome"]} ativada gratuitamente!', 'moedas': u['moedas']})
     
     u = carregar_usuario(email_usuario_atual)
     if not u:
@@ -678,7 +684,7 @@ def comprar_estrategia():
     
     u['moedas'] -= preco
     if 'estrategias_compradas' not in u:
-        u['estrategias_compradas'] = ['terceira_igual_primeira']
+        u['estrategias_compradas'] = ['tesla_369']
     u['estrategias_compradas'].append(estrategia_id)
     salvar_usuario(email_usuario_atual, u)
     
@@ -1333,7 +1339,7 @@ def status():
     for skin in SKINS:
         skins_status.append({'id': skin['id'], 'nome': skin['nome'], 'desc': skin['desc'], 'preco_moedas': skin['preco_moedas'], 'comprado': skin['id'] in skins_compradas, 'ativo': skin['id'] == skin_atual})
     # NOVO: Calcular estrategias_disponiveis e estrategias_compradas
-    estrategias_compradas = u.get('estrategias_compradas', ['terceira_igual_primeira']) if u else ['terceira_igual_primeira']
+    estrategias_compradas = u.get('estrategias_compradas', ['tesla_369']) if u else ['tesla_369']
     estrategias_disponiveis = {}
     for key, est in ESTRATEGIAS.items():
         estrategias_disponiveis[key] = {
@@ -1373,7 +1379,15 @@ def comecar_operar():
     try:
         if not conectado_iq: return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
         usuario = carregar_usuario(email_usuario_atual)
-        if not usuario or usuario.get('moedas', 0) < 1: return jsonify({'ok': False, 'erro': 'Sem moedas!'})
+        if not usuario: return jsonify({'ok': False, 'erro': 'Usuário não encontrado!'})
+        
+        # Verificar se a estratégia atual foi comprada
+        estrategias_compradas = usuario.get('estrategias_compradas', ['tesla_369'])
+        if estrategia_atual not in estrategias_compradas:
+            preco = ESTRATEGIAS.get(estrategia_atual, {}).get('preco_moedas', 0)
+            return jsonify({'ok': False, 'erro': f'Estratégia não comprada! Compre na loja por {preco} 🪙'})
+        
+        if usuario.get('moedas', 0) < 1: return jsonify({'ok': False, 'erro': 'Sem moedas!'})
         usuario['moedas'] -= 1; usuario['total_ciclos'] += 1; salvar_usuario(email_usuario_atual, usuario)
         lucro = 0.0; NumDeOperacoes = 0
         if not bot_rodando: bot_rodando = True; bot_thread = threading.Thread(target=bot_loop, daemon=True); bot_thread.start()
