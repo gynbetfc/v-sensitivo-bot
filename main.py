@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT v4.8.0 ⚡
+# ⚡ TESLA 369 BOT v4.9.0 ⚡
 # TESLA-369 GRÁTIS | v_SENSITIVO 6⚡ | 3=1 3⚡ | LOJA ESTRATÉGIAS | SKINS | MERCADO PAGO
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -745,7 +745,7 @@ HTML = r'''
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ TESLA 369 BOT v4.8.0</title>
+    <title>⚡ TESLA 369 BOT v4.9.0</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:{{COR_FUNDO}};color:{{COR_TEXTO}};font-family:'Courier New',monospace;padding:10px}
@@ -862,6 +862,52 @@ HTML = r'''
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
         @keyframes brilho{0%,100%{box-shadow:0 0 5px {{COR_DESTAQUE}}}50%{box-shadow:0 0 20px {{COR_DESTAQUE}},0 0 40px {{COR_TAB_ATIVA}}}}
 
+    
+        /* ═══════════════ LOJA PREMIUM V5 ═══════════════ */
+        .planos-grid,.skins-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;padding:8px}
+        
+        .plano-card,.skin-card{background:linear-gradient(180deg,#111122 0%,#0a0a15 100%);padding:18px 14px;border-radius:18px;border:2px solid #1a1a2e;text-align:center;cursor:pointer;transition:all .35s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden}
+        .plano-card::before,.skin-card::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,215,0,.03),transparent);transition:left .6s ease}
+        .plano-card:hover::before,.skin-card:hover::before{left:100%}
+        .plano-card:hover,.skin-card:hover{transform:translateY(-8px);border-color:{{COR_DESTAQUE}};box-shadow:0 15px 35px rgba(0,0,0,.5),0 0 50px rgba(255,215,0,.08)}
+        .plano-card.selecionado,.skin-card.selecionado{border-color:#ffd700!important;box-shadow:0 0 35px rgba(255,215,0,.4),inset 0 0 25px rgba(255,215,0,.03);background:linear-gradient(180deg,#1a1a0a 0%,#0d0d05 100%)}
+        .skin-card.ativo{border-color:#00ff88!important;box-shadow:0 0 30px rgba(0,255,136,.35),inset 0 0 20px rgba(0,255,136,.03);background:linear-gradient(180deg,#0a1a0a 0%,#050d05 100%)}
+        .plano-card.selecionado::after{content:'✨';position:absolute;top:8px;right:12px;font-size:14px;animation:float 1.5s ease-in-out infinite}
+        @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+        
+        .plano-icone,.skin-icone{font-size:35px;margin-bottom:8px;display:block;filter:drop-shadow(0 0 12px {{COR_DESTAQUE}})}
+        .plano-nome,.skin-nome{color:{{COR_DESTAQUE}};font-weight:bold;font-size:13px;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px}
+        .plano-moedas{font-size:32px;font-weight:900;background:linear-gradient(180deg,#ffd700,#ff8c00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:8px 0}
+        .plano-preco{font-size:17px;color:#00ff88;font-weight:bold;margin:4px 0}
+        .plano-desc,.skin-desc{color:#666;font-size:9px;margin:6px 0;line-height:1.4}
+        .plano-tag{background:rgba(255,215,0,.1);color:{{COR_DESTAQUE}};font-size:8px;padding:3px 10px;border-radius:10px;display:inline-block;margin:4px 0}
+        .plano-desconto{background:linear-gradient(135deg,#ff4444,#ff6600);color:#fff;font-size:8px;padding:3px 8px;border-radius:10px;display:inline-block;margin-left:4px;animation:pulse 2s infinite}
+        
+        .badge-gratis{background:rgba(0,255,136,.1);color:#00ff88;border:1px solid rgba(0,255,136,.3);padding:5px 12px;border-radius:12px;font-size:9px;font-weight:bold;display:inline-block}
+        .badge-pago{background:rgba(255,215,0,.1);color:#ffd700;border:1px solid rgba(255,215,0,.3);padding:5px 12px;border-radius:12px;font-size:9px;font-weight:bold;display:inline-block}
+        
+        .btn-loja{padding:12px 18px;border:none;border-radius:12px;font-weight:bold;cursor:pointer;font-size:11px;width:100%;margin-top:10px;transition:all .25s ease;text-transform:uppercase;letter-spacing:1.5px;position:relative;overflow:hidden}
+        .btn-loja::after{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);transition:left .5s ease}
+        .btn-loja:hover::after{left:100%}
+        .btn-comprar-volts{background:linear-gradient(135deg,#ff8c00,#ffd700);color:#000;box-shadow:0 5px 20px rgba(255,215,0,.25)}
+        .btn-comprar-volts:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(255,215,0,.45)}
+        .btn-comprar-skin{background:linear-gradient(135deg,#6a0dad,#9933ff);color:#fff;box-shadow:0 5px 20px rgba(153,51,255,.25)}
+        .btn-comprar-skin:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(153,51,255,.45)}
+        .btn-comprar-est{background:linear-gradient(135deg,#006644,#00aa55);color:#fff;box-shadow:0 5px 20px rgba(0,170,85,.25)}
+        .btn-comprar-est:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,170,85,.45)}
+        .btn-comprado{background:linear-gradient(135deg,#1a1a2e,#0d0d1a);color:#00ff88;border:1px solid #00ff8844;cursor:default;box-shadow:0 0 12px rgba(0,255,136,.08)}
+        .btn-usar{background:linear-gradient(135deg,#006699,#3399cc);color:#fff;box-shadow:0 5px 20px rgba(51,153,204,.25)}
+        .btn-usar:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(51,153,204,.45)}
+        
+        .sub-tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+        .sub-tab{padding:10px 18px;background:#111;border:2px solid #222;border-radius:12px 12px 0 0;cursor:pointer;color:#666;font-size:11px;font-weight:bold;transition:all .3s ease}
+        .sub-tab:hover{background:#1a1a2e;color:#ccc;border-color:#333}
+        .sub-tab.active{background:linear-gradient(135deg,#1a1a0a,#0d0d05);color:{{COR_DESTAQUE}};border-color:{{COR_DESTAQUE}};box-shadow:0 -3px 15px rgba(255,215,0,.1)}
+        .sub-panel{display:none;animation:fadeIn .4s ease}
+        .sub-panel.active{display:block}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
     </style>
 </head>
 <body>
@@ -911,7 +957,7 @@ HTML = r'''
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
             <span>⚡ TESLA 369</span>
-            <span>v4.8.0 | GALE 2 | SG: 1 WIN</span>
+            <span>v4.9.0 | GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
     
@@ -1111,12 +1157,12 @@ function renderLoja(){
             var ativa=skin.ativo?' ativo':'';
             var btnHtml='';
             if(skin.ativo){
-                btnHtml='<button class="btn btn-info" style="width:100%;margin-top:8px;cursor:default">✅ EM USO</button>';
+                btnHtml='<button class="btn-loja btn-comprado" style="width:100%;cursor:default">✅ EM USO</button>';
             }else if(skin.comprado){
-                btnHtml='<button class="btn btn-skin" style="width:100%;margin-top:8px" onclick="ativarSkin(\''+skin.id+'\')">🎨 USAR SKIN</button>';
+                btnHtml='<button class="btn-loja btn-usar" style="width:100%" onclick="ativarSkin(\''+skin.id+'\')">🎨 USAR SKIN</button>';
             }else{
                 if(skin.preco_moedas==0){
-                    btnHtml='<button class="btn btn-skin" style="width:100%;margin-top:8px" onclick="ativarSkin(\''+skin.id+'\')">🆓 ATIVAR GRÁTIS</button>';
+                    btnHtml='<button class="btn-loja btn-usar" style="width:100%" onclick="ativarSkin(\''+skin.id+'\')">🆓 ATIVAR GRÁTIS</button>';
                 }else{
                     btnHtml='<button class="btn-loja btn-comprar-skin" style="width:100%;margin-top:8px" onclick="comprarSkin(\''+skin.id+'\')">🛒 COMPRAR ('+skin.preco_moedas+' ⚡VOLTS)</button>';
                 }
