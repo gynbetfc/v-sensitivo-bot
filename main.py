@@ -783,50 +783,26 @@ HTML = r'''
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
         
         /* ═══════════ LOJA PREMIUM ═══════════ */
-        .planos-grid,.skins-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
-        .plano-card,.skin-card{background:linear-gradient(180deg,#111122 0%,#0a0a15 100%);padding:15px;border-radius:15px;border:1px solid #1a1a2e;text-align:center;cursor:pointer;transition:all .3s ease}
-        .plano-card:hover,.skin-card:hover{border-color:{{COR_DESTAQUE}};transform:translateY(-5px);box-shadow:0 10px 30px rgba(0,0,0,.5),0 0 40px rgba(255,215,0,.05)}
-        .plano-card.selecionado,.skin-card.selecionado{border-color:#ffd700!important;box-shadow:0 0 25px rgba(255,215,0,.3)}
-        .skin-card.ativo{border-color:#00ff88!important;box-shadow:0 0 25px rgba(0,255,136,.3)}
-        .plano-moedas,.skin-nome{font-size:22px;color:{{COR_DESTAQUE}};font-weight:bold}
-        .plano-preco{font-size:16px;color:#00ff88;margin:5px 0}
-        .plano-desc,.skin-desc{font-size:9px;color:#888;margin-top:4px}
-        .plano-tag{background:rgba(255,215,0,.1);color:{{COR_DESTAQUE}};font-size:9px;padding:2px 8px;border-radius:10px;display:inline-block;margin-top:4px}
-        .plano-desconto{background:#ff4444;color:#fff;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block;margin-left:4px}
-        .badge-gratis{background:rgba(0,255,136,.1);color:#00ff88;font-size:9px;padding:2px 8px;border-radius:10px;display:inline-block}
-        .badge-pago{background:rgba(255,215,0,.1);color:#ffd700;font-size:9px;padding:2px 8px;border-radius:10px;display:inline-block}
+                .planos-grid,.skins-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;padding:5px}
+        .plano-card,.skin-card{background:linear-gradient(160deg,#111122 0%,#0a0a18 100%);padding:18px 14px;border-radius:16px;border:1px solid #1a1a30;text-align:center;cursor:pointer;transition:all .3s ease}
+        .plano-card:hover,.skin-card:hover{border-color:rgba(255,215,0,.4);transform:translateY(-4px);box-shadow:0 12px 28px rgba(0,0,0,.4)}
+        .plano-card.selecionado,.skin-card.selecionado{border-color:#ffd700!important;box-shadow:0 0 25px rgba(255,215,0,.25);background:linear-gradient(160deg,#1a1a10 0%,#0d0d08 100%)}
+        .skin-card.ativo{border-color:#00ff88!important;box-shadow:0 0 25px rgba(0,255,136,.25)}
+        .plano-moedas,.skin-nome{font-size:22px;color:{{COR_DESTAQUE}};font-weight:bold;margin:6px 0}
+        .plano-preco{font-size:15px;color:#00ff88;font-weight:bold;margin:4px 0}
+        .plano-desc,.skin-desc{font-size:10px;color:#777;margin:6px 0}
+        .plano-tag{background:rgba(255,215,0,.08);color:{{COR_DESTAQUE}};font-size:9px;padding:3px 10px;border-radius:12px;display:inline-block;margin:4px 0}
+        .plano-desconto{background:rgba(255,68,68,.15);color:#ff5555;font-size:9px;padding:3px 8px;border-radius:12px;display:inline-block;margin-left:4px}
+        .badge-gratis{background:rgba(0,255,136,.08);color:#00ff88;font-size:10px;padding:4px 12px;border-radius:12px;display:inline-block;border:1px solid rgba(0,255,136,.2);font-weight:bold}
+        .badge-pago{background:rgba(255,215,0,.08);color:#ffd700;font-size:10px;padding:4px 12px;border-radius:12px;display:inline-block;border:1px solid rgba(255,215,0,.2);font-weight:bold}
+        .btn-loja{padding:11px 16px;border:none;border-radius:12px;font-weight:bold;cursor:pointer;font-size:11px;width:100%;margin-top:10px;transition:all .25s ease}
+        .btn-comprar-volts{background:linear-gradient(135deg,#e07b00,#ffd700);color:#000}
+        .btn-comprar-skin{background:linear-gradient(135deg,#5a0da0,#8833ee);color:#fff}
+        .btn-comprar-est{background:linear-gradient(135deg,#005533,#00aa55);color:#fff}
+        .btn-comprado{background:rgba(255,255,255,.03);color:#00ff88;border:1px solid rgba(0,255,136,.2);cursor:default}
+        .btn-usar{background:linear-gradient(135deg,#005588,#2288bb);color:#fff}
         
-        .btn-loja{padding:10px;border:none;border-radius:10px;font-weight:bold;cursor:pointer;font-size:11px;width:100%;margin-top:8px;transition:all .2s ease}
-        .btn-comprar-volts{background:linear-gradient(135deg,#ff8c00,#ffd700);color:#000}
-        .btn-comprar-volts:hover{transform:scale(1.03)}
-        .btn-comprar-skin{background:linear-gradient(135deg,#6a0dad,#9933ff);color:#fff}
-        .btn-comprar-skin:hover{transform:scale(1.03)}
-        .btn-comprar-est{background:linear-gradient(135deg,#006644,#00cc66);color:#fff}
-        .btn-comprar-est:hover{transform:scale(1.03)}
-        .btn-comprado{background:#1a1a2e;color:#00ff88;border:1px solid #00ff8844;cursor:default}
-        .btn-usar{background:linear-gradient(135deg,#006699,#3399cc);color:#fff}
-        .btn-usar:hover{transform:scale(1.03)}
-        
-        .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:1000;justify-content:center;align-items:center}
-        .modal-overlay.active{display:flex}
-        .modal-pagamento{background:{{COR_PANEL}};border:2px solid {{COR_DESTAQUE}};border-radius:15px;padding:25px;max-width:400px;width:90%;text-align:center}
-        .modal-pagamento h3{color:{{COR_DESTAQUE}};margin-bottom:15px}
-        .pix-qrcode{background:#fff;padding:15px;border-radius:10px;display:inline-block;margin:10px 0}
-        .pix-qrcode img{max-width:200px}
-        .pix-copiavel{background:#000;color:#00ff88;padding:10px;border-radius:8px;font-size:9px;word-break:break-all;margin:10px 0;max-height:60px;overflow-y:auto;cursor:pointer}
-        .btn-fechar{background:#444;color:#fff;padding:8px 20px;border-radius:8px;cursor:pointer;margin-top:10px;border:none;font-family:'Courier New',monospace}
-        .btn-confirmar{background:{{COR_DESTAQUE}};color:#000;padding:8px 20px;border-radius:8px;cursor:pointer;margin-top:10px;font-weight:bold;border:none;font-family:'Courier New',monospace}
-        .relatorio-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:6px}
-        .relatorio-card{background:#111;padding:8px;border-radius:8px;border:1px solid #222;text-align:center}
-        .relatorio-card .rlabel{color:#666;font-size:9px}.relatorio-card .rvalue{color:{{COR_DESTAQUE}};font-size:14px;font-weight:bold}
-        .historico-table{width:100%;font-size:9px;border-collapse:collapse;margin-top:10px}
-        .historico-table th{background:{{COR_TAB_ATIVA}};color:#000;padding:4px}.historico-table td{padding:3px;border-bottom:1px solid #222;text-align:center}
-        .estrategia-card{background:#111;padding:12px;border-radius:10px;border:2px solid #222;cursor:pointer;transition:all 0.3s ease;text-align:center}
-        .estrategia-card:hover{border-color:{{COR_DESTAQUE}}}
-        .estrategia-card.ativa{border-color:#00ff88;box-shadow:0 0 15px rgba(0,255,136,0.3);background:#0a1a0a}
-        .estrategia-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
-        
-        .sub-tabs{display:flex;gap:5px;margin-bottom:15px;flex-wrap:wrap}
+.sub-tabs{display:flex;gap:5px;margin-bottom:15px;flex-wrap:wrap}
         .sub-tab{padding:8px 16px;background:#111;border:1px solid #333;border-radius:8px 8px 0 0;cursor:pointer;color:#888;font-size:11px;transition:all .2s ease}
         .sub-tab:hover{background:#1a1a2e;color:#fff}
         .sub-tab.active{background:linear-gradient(135deg,#cc8800,#ffd700);color:#000;font-weight:bold;border-color:#ffd700}
