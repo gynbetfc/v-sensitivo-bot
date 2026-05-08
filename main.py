@@ -1038,12 +1038,46 @@ function renderLoja(){
     });
 }
 
+function comprarEstrategia(estrategiaId) {
+    if (!emailLogado) { alert('Conecte primeiro!'); return; }
+    if (!confirm('Comprar esta estratégia?')) return;
+    
+    fetch('/comprar_estrategia', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({estrategia_id: estrategiaId})
+    })
+    .then(r => r.json()).then(d => {
+        if (d.ok) {
+            alert(d.msg || 'Estratégia comprada!');
+            document.getElementById('moedasSaldo').textContent = d.moedas;
+            renderLojaEstrategias();
+            renderEstrategias();
+        } else {
+            alert('ERRO: ' + d.erro);
+        }
+    });
+}
+
 function renderLojaEstrategias(){
     fetch('/status').then(r=>r.json()).then(d=>{
         var grid = document.getElementById('estrategiasLojaGrid');
+        if (!grid) return;
         var html = '';
         var estrategiasCompradas = d.estrategias_compradas || ['terceira_igual_primeira'];
         var estrategiasDisponiveis = d.estrategias_disponiveis || {};
+        
+        // Se não houver estrategias_disponiveis, usar o objeto global estrategias
+        if (Object.keys(estrategiasDisponiveis).length === 0 && typeof estrategias !== 'undefined') {
+            for (var key in estrategias) {
+                estrategiasDisponiveis[key] = {
+                    'nome': estrategias[key].nome,
+                    'desc': estrategias[key].desc || '',
+                    'preco_moedas': 5,
+                    'gratis': (key === 'terceira_igual_primeira')
+                };
+            }
+        }
         
         for (var key in estrategiasDisponiveis) {
             var est = estrategiasDisponiveis[key];
@@ -1073,7 +1107,15 @@ function renderLojaEstrategias(){
             html += btnHtml;
             html += '</div>';
         }
+        
+        if (html === '') {
+            html = '<p style="color:#ffd700;text-align:center">Carregando estratégias...</p>';
+        }
+        
         grid.innerHTML = html;
+    }).catch(function(err) {
+        var grid = document.getElementById('estrategiasLojaGrid');
+        if (grid) grid.innerHTML = '<p style="color:#ff4444;text-align:center">Erro ao carregar. Tente novamente.</p>';
     });
 }
 
@@ -1290,7 +1332,18 @@ def status():
     skin_atual = u.get('skin_atual', 'skin_padrao') if u else 'skin_padrao'
     for skin in SKINS:
         skins_status.append({'id': skin['id'], 'nome': skin['nome'], 'desc': skin['desc'], 'preco_moedas': skin['preco_moedas'], 'comprado': skin['id'] in skins_compradas, 'ativo': skin['id'] == skin_atual})
-    return jsonify({'conectado': conectado_iq, 'rodando': bot_rodando, 'email': email_usuario_atual, 'banca': API.get_balance() if API else 0, 'lucro': lucro, 'ops': NumDeOperacoes, 'sinal': ultimo_sinal, 'analise': ultima_analise, 'logs': get_logs_html(40), 'moedas': u.get('moedas', 0) if u else 0, 'estrategia': estrategia_atual, 'estrategia_nome': ESTRATEGIAS.get(estrategia_atual, {}).get('nome', '--'), 'skin_id': skin_atual, 'skins_status': skins_status})
+    # NOVO: Calcular estrategias_disponiveis e estrategias_compradas
+    estrategias_compradas = u.get('estrategias_compradas', ['terceira_igual_primeira']) if u else ['terceira_igual_primeira']
+    estrategias_disponiveis = {}
+    for key, est in ESTRATEGIAS.items():
+        estrategias_disponiveis[key] = {
+            'nome': est['nome'],
+            'desc': est['desc'],
+            'preco_moedas': est.get('preco_moedas', 0),
+            'gratis': est.get('gratis', False)
+        }
+    
+    return jsonify({'conectado': conectado_iq, 'rodando': bot_rodando, 'email': email_usuario_atual, 'banca': API.get_balance() if API else 0, 'lucro': lucro, 'ops': NumDeOperacoes, 'sinal': ultimo_sinal, 'analise': ultima_analise, 'logs': get_logs_html(40), 'moedas': u.get('moedas', 0) if u else 0, 'estrategia': estrategia_atual, 'estrategia_nome': ESTRATEGIAS.get(estrategia_atual, {}).get('nome', '--'), 'skin_id': skin_atual, 'skins_status': skins_status, 'estrategias_compradas': estrategias_compradas, 'estrategias_disponiveis': estrategias_disponiveis})
 
 @app.route('/conectar', methods=['POST'])
 def conectar():
