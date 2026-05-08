@@ -5,8 +5,8 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT - COMPLETO v4.2.1 ⚡
-# 3 ESTRATÉGIAS (1 GRÁTIS + 2 PAGAS 5🪙) | LOJA ESTRATÉGIAS | SKINS | MERCADO PAGO
+# ⚡ TESLA 369 BOT v4.3.0 ⚡
+# TESLA-369 GRÁTIS | v_SENSITIVO 6🪙 | 3=1 3🪙 | LOJA ESTRATÉGIAS | SKINS | MERCADO PAGO
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
 
@@ -89,20 +89,20 @@ SKINS = [
 
 # ⭐ ESTRATÉGIAS (2 - COM PREÇOS) ⭐
 ESTRATEGIAS = {
-    'v_sensitivo': {
-        'nome': '🔮 v_SENSITIVO',
-        'desc': 'RSI + MM + Bollinger + MACD + Estocástico + Fase da Vela',
-        'timeframe': 60,
-        'pares': ['EURUSD-OTC', 'EURUSD'],
-        'preco_moedas': 5,
-        'gratis': False
-    },
     'tesla_369': {
         'nome': '⚡ TESLA-369',
         'desc': '6 velas: padrão g-g-g-r-r → CALL / r-r-r-g-g → PUT',
         'timeframe': 60,
         'pares': ['EURUSD-OTC', 'EURUSD'],
-        'preco_moedas': 5,
+        'preco_moedas': 0,
+        'gratis': True
+    },
+    'v_sensitivo': {
+        'nome': '🔮 v_SENSITIVO',
+        'desc': 'RSI + MM + Bollinger + MACD + Estocástico + Fase da Vela',
+        'timeframe': 60,
+        'pares': ['EURUSD-OTC', 'EURUSD'],
+        'preco_moedas': 6,
         'gratis': False
     },
     'terceira_igual_primeira': {
@@ -110,8 +110,8 @@ ESTRATEGIAS = {
         'desc': 'Opera a cada 5min, seg 55+',
         'timeframe': 60,
         'pares': ['EURUSD-OTC', 'EURUSD'],
-        'preco_moedas': 0,
-        'gratis': True
+        'preco_moedas': 3,
+        'gratis': False
     }
 }
 
@@ -167,14 +167,14 @@ def criar_usuario(email):
         'dias_ativos': {},
         'skin_atual': 'skin_padrao',
         'skins_compradas': ['skin_padrao'],
-        'estrategias_compradas': ['terceira_igual_primeira']
+        'estrategias_compradas': ['tesla_369', 'terceira_igual_primeira', 'v_sensitivo']
     }
     salvar_usuario(email, dados)
     return dados
 
 # ============= VARIÁVEIS GLOBAIS =============
 API, par = None, "EURUSD-OTC"
-estrategia_atual = 'v_sensitivo'
+estrategia_atual = 'tesla_369'
 timeframe_atual = 60
 lucro, NumDeOperacoes = 0.0, 0
 BANCA_INICIAL_DO_BOT, STOP_GAIN_ATINGIDO = 0, False
@@ -693,7 +693,7 @@ HTML = r'''
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ TESLA 369 BOT</title>
+    <title>⚡ TESLA 369 BOT v4.3.0</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:{{COR_FUNDO}};color:{{COR_TEXTO}};font-family:'Courier New',monospace;padding:10px}
@@ -774,9 +774,9 @@ HTML = r'''
 <div class="container">
     <div class="header">
         {{HEADER_EXTRA}}
-        <h1>⚡ TESLA 369 BOT v4.2.1 ⚡</h1>
-        <p>🔮 1 ESTRATÉGIA GRÁTIS + 2 PREMIUM (5 🪙 cada) | GALE 2 | STOP GAIN 1 WIN</p>
-        <p>⚡ O BOT QUE SENTE A VELA ⚡</p>
+        <h1>⚡ TESLA 369 BOT ⚡</h1>
+        
+        
     </div>
     <div class="mantra">🌀 O DINHEIRO VEM ATÉ MIM DE TODOS OS LADOS 🌀</div>
     <div class="tabs">
@@ -816,8 +816,8 @@ HTML = r'''
         <div class="terminal" id="terminal">📡 Aguardando...</div>
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
-            <span>⚡ TESLA 369 v4.2.1</span>
-            <span>GALE 2 | SG: 1 WIN</span>
+            <span>⚡ TESLA 369</span>
+            <span>v4.3.0 | GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
     
@@ -872,7 +872,7 @@ function mostrarSubAba(aba){
 }
 
 var intervalo=null,botAtivo=false,conectadoIQ=false,emailLogado='',planoSelecionado=0,pixAtual=null;
-var estrategiaSel='v_sensitivo';
+var estrategiaSel='tesla_369';
 var estrategias = ''' + json.dumps({k: {'nome': v['nome'], 'desc': v['desc']} for k, v in ESTRATEGIAS.items()}) + r''';
 
 function openTab(tab){
@@ -976,7 +976,7 @@ function pararBot(){
 
 function renderEstrategias(){
     fetch('/status').then(r=>r.json()).then(d=>{
-        var estrategiasCompradas = d.estrategias_compradas || ['terceira_igual_primeira'];
+        var estrategiasCompradas = d.estrategias_compradas || ['tesla_369'];
         var grid=document.getElementById('estrategiaGrid');
         var html='';
         for(var key in estrategias){
@@ -1064,7 +1064,7 @@ function renderLojaEstrategias(){
         var grid = document.getElementById('estrategiasLojaGrid');
         if (!grid) return;
         var html = '';
-        var estrategiasCompradas = d.estrategias_compradas || ['terceira_igual_primeira'];
+        var estrategiasCompradas = d.estrategias_compradas || ['tesla_369'];
         var estrategiasDisponiveis = d.estrategias_disponiveis || {};
         
         // Se não houver estrategias_disponiveis, usar o objeto global estrategias
