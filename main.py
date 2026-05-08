@@ -27,7 +27,7 @@ os.makedirs(DRIVE_PATH, exist_ok=True)
 # ⭐⭐⭐ CONFIGURAÇÃO DO MERCADO PAGO ⭐⭐⭐
 # Carregar configurações do Mercado Pago
 try:
-    config_url = f"https://api.github.com/repos/{USER}/{REPO}/contents/config.json"
+    config_url = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/config.json"
     r_config = requests.get(config_url, headers={"Authorization": f"Bearer {os.environ.get('GITHUB_TOKEN', '')}", "Accept": "application/vnd.github.v3+json"})
     if r_config.status_code == 200:
         config_data = json.loads(base64.b64decode(r_config.json()["content"]).decode())
