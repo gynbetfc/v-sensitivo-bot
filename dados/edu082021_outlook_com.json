@@ -1,6 +1,6 @@
 {
   "email": "edu082021@outlook.com",
-  "moedas": 5,
+  "moedas": 2,
   "moedas_ganhas_hoje": "2026-05-08",
   "total_ciclos": 1,
   "total_wins": 0,
@@ -16,5 +16,7 @@
   "skins_compradas": [
     "skin_padrao"
   ],
-  "estrategias_compradas": []
+  "estrategias_compradas": [
+    "terceira_igual_primeira"
+  ]
 }
