@@ -1092,11 +1092,21 @@ function renderLojaEstrategias(){
             for (var key in estrategias) {
                 // Pular tesla_369 no fallback
                 if (key === 'tesla_369') continue;
+                // Preços fixos para cada estratégia
+                var precos = {
+                    'v_sensitivo': 6,
+                    'terceira_igual_primeira': 3,
+                    'mhi_filtrado': 9,
+                    'quadrante_de_7': 6,
+                    'fluxo_de_velas': 3,
+                    'reversao': 3,
+                    'm5': 6
+                };
                 estrategiasDisponiveis[key] = {
                     'nome': estrategias[key].nome,
                     'desc': estrategias[key].desc || '',
-                    'preco_moedas': 5,
-                    'gratis': false
+                    'preco_moedas': precos[key] || 5,
+                    'gratis': (key === 'tesla_369')
                 };
             }
         }
