@@ -5,8 +5,8 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT - COMPLETO v4.1.1.10 ⚡
-# 8 ESTRATÉGIAS | LOJA DE SKINS | MERCADO PAGO | RENDER READY
+# ⚡ TESLA 369 BOT - COMPLETO v4.2.0 ⚡
+# 2 ESTRATÉGIAS (1 GRÁTIS + 1 PAGA) | LOJA DE ESTRATÉGIAS | SKINS | MERCADO PAGO
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
 
@@ -87,10 +87,24 @@ SKINS = [
     }
 ]
 
-# ⭐ ESTRATÉGIAS (8 - SEM 9:30) ⭐
+# ⭐ ESTRATÉGIAS (2 - COM PREÇOS) ⭐
 ESTRATEGIAS = {
-    'v_sensitivo': {'nome': '🔮 v_SENSITIVO', 'desc': 'RSI + MM + Bollinger + MACD + Estocástico + Fase da Vela', 'timeframe': 60, 'pares': ['EURUSD-OTC', 'EURUSD']},
-    'terceira_igual_primeira': {'nome': '3️⃣ 3ª = 1ª', 'desc': 'Opera a cada 5min, seg 55+', 'timeframe': 60, 'pares': ['EURUSD-OTC', 'EURUSD']}
+    'v_sensitivo': {
+        'nome': '🔮 v_SENSITIVO',
+        'desc': 'RSI + MM + Bollinger + MACD + Estocástico + Fase da Vela',
+        'timeframe': 60,
+        'pares': ['EURUSD-OTC', 'EURUSD'],
+        'preco_moedas': 3,
+        'gratis': False
+    },
+    'terceira_igual_primeira': {
+        'nome': '3️⃣ 3ª = 1ª',
+        'desc': 'Opera a cada 5min, seg 55+',
+        'timeframe': 60,
+        'pares': ['EURUSD-OTC', 'EURUSD'],
+        'preco_moedas': 0,
+        'gratis': True
+    }
 }
 
 # ============= BANCO DE DADOS VIA GITHUB API =============
@@ -129,7 +143,24 @@ def carregar_usuario(email):
     return None
 
 def criar_usuario(email):
-    dados = {'email': email, 'moedas': 1, 'moedas_ganhas_hoje': str(datetime.now())[:10], 'total_ciclos': 0, 'total_wins': 0, 'total_losses': 0, 'total_gasto': 0.0, 'total_ganho': 0.0, 'lucro_total': 0.0, 'banca_atual': 0.0, 'data_cadastro': str(datetime.now())[:19], 'historico_operacoes': [], 'dias_ativos': {}, 'skin_atual': 'skin_padrao', 'skins_compradas': ['skin_padrao']}
+    dados = {
+        'email': email,
+        'moedas': 1,
+        'moedas_ganhas_hoje': str(datetime.now())[:10],
+        'total_ciclos': 0,
+        'total_wins': 0,
+        'total_losses': 0,
+        'total_gasto': 0.0,
+        'total_ganho': 0.0,
+        'lucro_total': 0.0,
+        'banca_atual': 0.0,
+        'data_cadastro': str(datetime.now())[:19],
+        'historico_operacoes': [],
+        'dias_ativos': {},
+        'skin_atual': 'skin_padrao',
+        'skins_compradas': ['skin_padrao'],
+        'estrategias_compradas': ['terceira_igual_primeira']
+    }
     salvar_usuario(email, dados)
     return dados
 
@@ -604,6 +635,46 @@ def verificador_automatico_pix():
 
 threading.Thread(target=verificador_automatico_pix, daemon=True).start()
 
+
+# ═══════════════════════════════════════════════════════
+# ROTA PARA COMPRAR ESTRATÉGIA
+# ═══════════════════════════════════════════════════════
+@app.route('/comprar_estrategia', methods=['POST'])
+def comprar_estrategia():
+    data = request.json
+    estrategia_id = data.get('estrategia_id', '')
+    
+    if not email_usuario_atual:
+        return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+    
+    if estrategia_id not in ESTRATEGIAS:
+        return jsonify({'ok': False, 'erro': 'Estratégia inválida!'})
+    
+    estrategia = ESTRATEGIAS[estrategia_id]
+    
+    if estrategia.get('gratis', False):
+        return jsonify({'ok': False, 'erro': 'Esta estratégia já é gratuita!'})
+    
+    u = carregar_usuario(email_usuario_atual)
+    if not u:
+        u = criar_usuario(email_usuario_atual)
+    
+    if estrategia_id in u.get('estrategias_compradas', []):
+        return jsonify({'ok': False, 'erro': 'Estratégia já comprada!'})
+    
+    preco = estrategia.get('preco_moedas', 3)
+    if u['moedas'] < preco:
+        return jsonify({'ok': False, 'erro': f'Moedas insuficientes! Precisa de {preco} 🪙'})
+    
+    u['moedas'] -= preco
+    if 'estrategias_compradas' not in u:
+        u['estrategias_compradas'] = ['terceira_igual_primeira']
+    u['estrategias_compradas'].append(estrategia_id)
+    salvar_usuario(email_usuario_atual, u)
+    
+    return jsonify({'ok': True, 'msg': f'Estratégia {estrategia["nome"]} comprada!', 'moedas': u['moedas']})
+
+
 # ═══════════════════════════════════════════════════════
 # HTML COMPLETO
 # ═══════════════════════════════════════════════════════
@@ -693,8 +764,8 @@ HTML = r'''
 <div class="container">
     <div class="header">
         {{HEADER_EXTRA}}
-        <h1>⚡ TESLA 369 BOT v4.1.1.10 ⚡</h1>
-        <p>🔮 8 ESTRATÉGIAS | GALE 2 | STOP GAIN 1 WIN | LOJA DE SKINS</p>
+        <h1>⚡ TESLA 369 BOT v4.2.0 ⚡</h1>
+        <p>🔮 1 ESTRATÉGIA GRÁTIS + 1 PREMIUM | GALE 2 | STOP GAIN 1 WIN</p>
         <p>⚡ O BOT QUE SENTE A VELA ⚡</p>
     </div>
     <div class="mantra">🌀 O DINHEIRO VEM ATÉ MIM DE TODOS OS LADOS 🌀</div>
@@ -735,13 +806,13 @@ HTML = r'''
         <div class="terminal" id="terminal">📡 Aguardando...</div>
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
-            <span>⚡ TESLA 369 v4.1.1.10</span>
+            <span>⚡ TESLA 369 v4.2.0</span>
             <span>GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
     
     <div class="panel" id="panel-estrategias">
-        <div class="config-section"><h3>📊 SELECIONAR ESTRATÉGIA (8 DISPONÍVEIS)</h3><p style="color:#888;font-size:10px">Escolha antes de clicar em COMEÇAR OPERAR</p></div>
+        <div class="config-section"><h3>📊 SELECIONAR ESTRATÉGIA</h3><p style="color:#888;font-size:10px">Escolha antes de clicar em COMEÇAR OPERAR</p></div>
         <div class="estrategia-grid" id="estrategiaGrid"></div>
     </div>
     
@@ -749,6 +820,7 @@ HTML = r'''
         <div class="sub-tabs">
             <div class="sub-tab active" id="sub-tab-moedas" onclick="mostrarSubAba('moedas')">COMPRAR MOEDAS</div>
             <div class="sub-tab" id="sub-tab-skins" onclick="mostrarSubAba('skins')">LOJA DE SKINS</div>
+            <div class="sub-tab" id="sub-tab-estrategias" onclick="mostrarSubAba('estrategias')">LOJA DE ESTRATÉGIAS</div>
         </div>
         <div class="sub-panel active" id="sub-panel-moedas">
             <div class="config-section"><h3>💳 COMPRAR MOEDAS COM PIX</h3><p style="color:#888;font-size:10px">📧 <input type="email" id="emailCompra" placeholder="Seu email" style="width:220px;padding:6px;background:#111;border:1px solid #333;color:#fff;border-radius:5px"></p><p style="color:#ffd700;font-size:10px;margin-top:5px">🪙 1 moeda = 1 ciclo | +1 moeda grátis/dia</p><p style="color:#888;font-size:9px;margin-top:3px">⭐ Selecione o plano e pague com PIX</p></div>
@@ -757,6 +829,10 @@ HTML = r'''
         <div class="sub-panel" id="sub-panel-skins">
             <div class="config-section"><h3>SKINS DISPONIVEIS</h3><p style="color:#888;font-size:10px">Personalize a aparencia do seu bot! Skins compradas ficam salvas.</p></div>
             <div class="skins-grid" id="skinsGrid"></div>
+        </div>
+        <div class="sub-panel" id="sub-panel-estrategias">
+            <div class="config-section"><h3>📊 ESTRATÉGIAS PREMIUM</h3><p style="color:#888;font-size:10px">Compre estratégias avançadas com suas moedas! 🪙</p></div>
+            <div class="skins-grid" id="estrategiasLojaGrid"></div>
         </div>
     </div>
     
@@ -782,6 +858,7 @@ function mostrarSubAba(aba){
     document.getElementById('sub-tab-'+aba).classList.add('active');
     document.getElementById('sub-panel-'+aba).classList.add('active');
     if(aba==='skins') renderLoja();
+    if(aba==='estrategias') renderLojaEstrategias();
 }
 
 var intervalo=null,botAtivo=false,conectadoIQ=false,emailLogado='',planoSelecionado=0,pixAtual=null;
@@ -819,6 +896,8 @@ function conectarIQ(){
             if(intervalo)clearInterval(intervalo);
             intervalo=setInterval(atualizar,2000);
             atualizar();
+            // Recarregar página após 1 segundo para aplicar skin
+            setTimeout(function(){ location.reload(); }, 1000);
         }else{
             alert('ERRO: '+d.erro);
             document.getElementById('btnConectar').disabled=false;
@@ -886,18 +965,25 @@ function pararBot(){
 }
 
 function renderEstrategias(){
-    var grid=document.getElementById('estrategiaGrid');
-    var html='';
-    for(var key in estrategias){
-        var e=estrategias[key];
-        var ativa=key==estrategiaSel?' ativa':'';
-        html+='<div class="estrategia-card'+ativa+'" onclick="selecionarEstrategia(\''+key+'\')" id="est_'+key+'">';
-        html+='<div style="font-size:14px;font-weight:bold">'+e.nome+'</div>';
-        html+='<div style="font-size:9px;color:#888;margin-top:5px">'+e.desc+'</div>';
-        html+='</div>';
-    }
-    grid.innerHTML=html;
-    document.getElementById('estrategiaAtiva').textContent=estrategias[estrategiaSel].nome;
+    fetch('/status').then(r=>r.json()).then(d=>{
+        var estrategiasCompradas = d.estrategias_compradas || ['terceira_igual_primeira'];
+        var grid=document.getElementById('estrategiaGrid');
+        var html='';
+        for(var key in estrategias){
+            if (estrategiasCompradas.includes(key)) {
+                var e=estrategias[key];
+                var ativa=key==estrategiaSel?' ativa':'';
+                html+='<div class="estrategia-card'+ativa+'" onclick="selecionarEstrategia(\''+key+'\')" id="est_'+key+'">';
+                html+='<div style="font-size:14px;font-weight:bold">'+e.nome+'</div>';
+                html+='<div style="font-size:9px;color:#888;margin-top:5px">'+e.desc+'</div>';
+                html+='</div>';
+            }
+        }
+        grid.innerHTML=html || '<p style="color:#888;text-align:center">Nenhuma estratégia comprada</p>';
+        if (estrategias[estrategiaSel]) {
+            document.getElementById('estrategiaAtiva').textContent=estrategias[estrategiaSel].nome;
+        }
+    });
 }
 
 function selecionarEstrategia(key){
@@ -939,6 +1025,66 @@ function renderLoja(){
             html+='</div>';
         });
         grid.innerHTML=html;
+    });
+}
+
+function renderLojaEstrategias(){
+    fetch('/status').then(r=>r.json()).then(d=>{
+        var grid = document.getElementById('estrategiasLojaGrid');
+        var html = '';
+        var estrategiasCompradas = d.estrategias_compradas || ['terceira_igual_primeira'];
+        var estrategiasDisponiveis = d.estrategias_disponiveis || {};
+        
+        for (var key in estrategiasDisponiveis) {
+            var est = estrategiasDisponiveis[key];
+            var comprado = estrategiasCompradas.includes(key);
+            var btnHtml = '';
+            
+            if (comprado) {
+                btnHtml = '<button class="btn btn-info" style="width:100%;margin-top:8px;cursor:default">✅ COMPRADO</button>';
+            } else if (est.preco_moedas == 0 || est.gratis) {
+                btnHtml = '<button class="btn btn-skin" style="width:100%;margin-top:8px;cursor:default">🆓 GRÁTIS</button>';
+            } else {
+                btnHtml = '<button class="btn btn-buy" style="width:100%;margin-top:8px;padding:8px" onclick="comprarEstrategia(\''+key+'\')">🛒 COMPRAR ('+est.preco_moedas+' 🪙)</button>';
+            }
+            
+            html += '<div class="skin-card'+(comprado?' ativo':'')+'">';
+            html += '<div class="skin-nome">'+est.nome+'</div>';
+            html += '<div class="skin-desc">'+est.desc+'</div>';
+            html += '<div style="margin-top:5px">';
+            if (est.preco_moedas == 0 || est.gratis) {
+                html += '<span class="badge-gratis">GRÁTIS</span>';
+            } else if (comprado) {
+                html += '<span class="badge-gratis">✅ COMPRADO</span>';
+            } else {
+                html += '<span class="badge-pago">🪙 '+est.preco_moedas+' moedas</span>';
+            }
+            html += '</div>';
+            html += btnHtml;
+            html += '</div>';
+        }
+        grid.innerHTML = html;
+    });
+}
+
+function comprarEstrategia(estrategiaId) {
+    if (!emailLogado) { alert('Conecte primeiro!'); return; }
+    if (!confirm('Comprar esta estratégia?')) return;
+    
+    fetch('/comprar_estrategia', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({estrategia_id: estrategiaId})
+    })
+    .then(r => r.json()).then(d => {
+        if (d.ok) {
+            alert(d.msg || 'Estratégia comprada!');
+            document.getElementById('moedasSaldo').textContent = d.moedas;
+            renderLojaEstrategias();
+            renderEstrategias();
+        } else {
+            alert('ERRO: ' + d.erro);
+        }
     });
 }
 
