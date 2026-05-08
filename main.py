@@ -105,7 +105,7 @@ ESTRATEGIAS = {
         'preco_moedas': 6,
         'gratis': False
     },
-    'terceira_igual_primeira': {
+    'tesla_369': {
         'nome': '3️⃣ 3ª = 1ª',
         'desc': 'Opera a cada 5min, seg 55+',
         'timeframe': 60,
@@ -467,7 +467,7 @@ def sinal_m5():
 MAPA_SINAIS = {
     'v_sensitivo': sinal_v_sensitivo,
     'tesla_369': sinal_tesla_369,
-    'terceira_igual_primeira': sinal_terceira_igual_primeira
+    'tesla_369': sinal_terceira_igual_primeira
 }
 
 # ═══════════════════════════════════════════════════════
@@ -1080,7 +1080,7 @@ function renderLojaEstrategias(){
                     'nome': estrategias[key].nome,
                     'desc': estrategias[key].desc || '',
                     'preco_moedas': 5,
-                    'gratis': (key === 'terceira_igual_primeira')
+                    'gratis': (key === 'tesla_369')
                 };
             }
         }
@@ -1364,6 +1364,12 @@ def conectar():
             usuario['moedas'] = usuario.get('moedas', 0) + 1; usuario['moedas_ganhas_hoje'] = hoje
             salvar_usuario(email, usuario)
         skin_atual_global = usuario.get('skin_atual', 'skin_padrao')
+        # Garantir que tesla_369 está nas estratégias compradas
+        if 'estrategias_compradas' not in usuario:
+            usuario['estrategias_compradas'] = ['tesla_369']
+        elif 'tesla_369' not in usuario['estrategias_compradas']:
+            usuario['estrategias_compradas'].append('tesla_369')
+        salvar_usuario(email, usuario)
         par = ESTRATEGIAS[estrategia_atual]['pares'][0]; timeframe_atual = ESTRATEGIAS[estrategia_atual]['timeframe']
         add_log('🔌 Conectando na IQ Option...', 'info')
         API = IQ_Option(email, senha); status_conn, reason = API.connect()
