@@ -5,8 +5,8 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT - COMPLETO v4.2.0 ⚡
-# 2 ESTRATÉGIAS (1 GRÁTIS + 1 PAGA) | LOJA DE ESTRATÉGIAS | SKINS | MERCADO PAGO
+# ⚡ TESLA 369 BOT - COMPLETO v4.2.1 ⚡
+# 3 ESTRATÉGIAS (1 GRÁTIS + 2 PAGAS 5🪙) | LOJA ESTRATÉGIAS | SKINS | MERCADO PAGO
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
 
@@ -94,7 +94,15 @@ ESTRATEGIAS = {
         'desc': 'RSI + MM + Bollinger + MACD + Estocástico + Fase da Vela',
         'timeframe': 60,
         'pares': ['EURUSD-OTC', 'EURUSD'],
-        'preco_moedas': 3,
+        'preco_moedas': 5,
+        'gratis': False
+    },
+    'tesla_369': {
+        'nome': '⚡ TESLA-369',
+        'desc': '6 velas: padrão g-g-g-r-r → CALL / r-r-r-g-g → PUT',
+        'timeframe': 60,
+        'pares': ['EURUSD-OTC', 'EURUSD'],
+        'preco_moedas': 5,
         'gratis': False
     },
     'terceira_igual_primeira': {
@@ -348,6 +356,29 @@ def sinal_mhi_filtrado():
         ultimo_sinal = "⏳..."; return None
     except Exception as e: add_log(f"Erro: {e}", 'error'); return None
 
+def sinal_tesla_369():
+    global ultimo_sinal, ultima_analise
+    try:
+        agora = datetime.now()
+        if not ((agora.minute >= 1.55 and agora.minute <= 2) or (agora.minute >= 6.55 and agora.minute <= 7)):
+            ultimo_sinal = f"⏳ Min: {agora.minute}:{agora.second:02d}"; return None
+        v = API.get_candles(par, timeframe_atual, 6, time.time())
+        if len(v) < 6: return None
+        velas = []
+        for vela in v:
+            if vela['open'] < vela['close']: velas.append('g')
+            elif vela['open'] > vela['close']: velas.append('r')
+            else: velas.append('d')
+        cores = ''.join(velas); pc = v[-1]['close']
+        ultima_analise = {'preco': pc, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': None, 'stoch': None, 'fase': 'TESLA-369'}
+        add_log(f"⚡ TESLA-369 | Velas: {cores}", 'indicator'); ultimo_sinal = f"⚡ 369: {cores}"
+        if velas[0] == 'g' and velas[3] == 'g' and velas[4] == 'r' and velas[5] == 'r' and 'd' not in cores:
+            add_log("TESLA-369: CALL!", 'sensitive'); return 'call'
+        if velas[0] == 'r' and velas[3] == 'r' and velas[4] == 'g' and velas[5] == 'g' and 'd' not in cores:
+            add_log("TESLA-369: PUT!", 'sensitive'); return 'put'
+        ultimo_sinal = "⏳..."; return None
+    except Exception as e: add_log(f"Erro: {e}", 'error'); return None
+
 def sinal_terceira_igual_primeira():
     global ultimo_sinal, ultima_analise
     try:
@@ -457,6 +488,7 @@ def sinal_m5():
 
 MAPA_SINAIS = {
     'v_sensitivo': sinal_v_sensitivo,
+    'tesla_369': sinal_tesla_369,
     'terceira_igual_primeira': sinal_terceira_igual_primeira
 }
 
@@ -764,8 +796,8 @@ HTML = r'''
 <div class="container">
     <div class="header">
         {{HEADER_EXTRA}}
-        <h1>⚡ TESLA 369 BOT v4.2.0 ⚡</h1>
-        <p>🔮 1 ESTRATÉGIA GRÁTIS + 1 PREMIUM | GALE 2 | STOP GAIN 1 WIN</p>
+        <h1>⚡ TESLA 369 BOT v4.2.1 ⚡</h1>
+        <p>🔮 1 ESTRATÉGIA GRÁTIS + 2 PREMIUM (5 🪙 cada) | GALE 2 | STOP GAIN 1 WIN</p>
         <p>⚡ O BOT QUE SENTE A VELA ⚡</p>
     </div>
     <div class="mantra">🌀 O DINHEIRO VEM ATÉ MIM DE TODOS OS LADOS 🌀</div>
@@ -806,7 +838,7 @@ HTML = r'''
         <div class="terminal" id="terminal">📡 Aguardando...</div>
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
-            <span>⚡ TESLA 369 v4.2.0</span>
+            <span>⚡ TESLA 369 v4.2.1</span>
             <span>GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
