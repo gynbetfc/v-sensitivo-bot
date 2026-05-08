@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT v4.9.1 ⚡
+# ⚡ TESLA 369 BOT v5.0.0 ⚡
 # TESLA-369 GRÁTIS | v_SENSITIVO 6⚡ | 3=1 3⚡ | LOJA ESTRATÉGIAS | SKINS | MERCADO PAGO
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -745,7 +745,7 @@ HTML = r'''
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ TESLA 369 BOT v4.9.1</title>
+    <title>⚡ TESLA 369 BOT v5.0.0</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:{{COR_FUNDO}};color:{{COR_TEXTO}};font-family:'Courier New',monospace;padding:10px}
@@ -911,6 +911,57 @@ HTML = r'''
     }
         
 
+    
+        /* ═══════════════ CYBERPUNK PREMIUM LOJA ═══════════════ */
+        .planos-grid,.skins-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:15px;padding:10px}
+        
+        .plano-card,.skin-card{background:rgba(10,10,26,0.8);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.05);border-radius:20px;padding:20px 15px;text-align:center;cursor:pointer;transition:all 0.4s cubic-bezier(0.175,0.885,0.32,1.275);position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.3)}
+        .plano-card::before,.skin-card::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;border-radius:20px;padding:1px;background:linear-gradient(135deg,rgba(255,215,0,0),rgba(255,215,0,0.1),rgba(255,215,0,0));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:0;transition:opacity 0.4s}
+        .plano-card:hover::before,.skin-card:hover::before{opacity:1}
+        .plano-card:hover,.skin-card:hover{transform:translateY(-10px) scale(1.03);border-color:rgba(255,215,0,0.3);box-shadow:0 20px 60px rgba(0,0,0,0.5),0 0 80px rgba(255,215,0,0.05)}
+        .plano-card.selecionado{background:rgba(20,20,0,0.9);border-color:#ffd700!important;box-shadow:0 0 40px rgba(255,215,0,0.3),inset 0 0 30px rgba(255,215,0,0.05)}
+        .skin-card.ativo{background:rgba(0,20,0,0.9);border-color:#00ff88!important;box-shadow:0 0 40px rgba(0,255,136,0.3)}
+        
+        .plano-card .card-glow,.skin-card .card-glow{position:absolute;top:50%;left:50%;width:150px;height:150px;background:radial-gradient(circle,rgba(255,215,0,0.08) 0%,transparent 70%);border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;opacity:0;transition:opacity 0.4s}
+        .plano-card:hover .card-glow,.skin-card:hover .card-glow{opacity:1}
+        
+        .plano-icon,.skin-icon{font-size:40px;margin-bottom:10px;display:block;animation:iconFloat 3s ease-in-out infinite;filter:drop-shadow(0 0 15px {{COR_DESTAQUE}})}
+        .plano-card:nth-child(2) .plano-icon{animation-delay:0.5s}
+        .plano-card:nth-child(3) .plano-icon{animation-delay:1s}
+        @keyframes iconFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+        
+        .plano-nome,.skin-nome{color:{{COR_DESTAQUE}};font-weight:bold;font-size:13px;margin-bottom:6px;text-transform:uppercase;letter-spacing:2px;text-shadow:0 0 10px rgba(255,215,0,0.3)}
+        .plano-moedas{font-size:36px;font-weight:900;background:linear-gradient(180deg,#ffd700,#ff8c00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:10px 0}
+        .plano-preco{font-size:18px;color:#00ff88;font-weight:bold;margin:6px 0}
+        .plano-desc,.skin-desc{color:rgba(255,255,255,0.5);font-size:9px;margin:8px 0;line-height:1.4}
+        .plano-tag{background:rgba(255,215,0,0.1);color:{{COR_DESTAQUE}};border:1px solid rgba(255,215,0,0.2);font-size:8px;padding:4px 12px;border-radius:20px;display:inline-block;margin:4px 0}
+        .plano-desconto{background:rgba(255,68,68,0.2);color:#ff6666;border:1px solid rgba(255,68,68,0.3);font-size:8px;padding:4px 10px;border-radius:20px;display:inline-block;margin-left:4px;animation:badgePulse 2s infinite}
+        @keyframes badgePulse{0%,100%{box-shadow:0 0 5px rgba(255,68,68,0.3)}50%{box-shadow:0 0 20px rgba(255,68,68,0.6)}}
+        
+        .badge-gratis{background:rgba(0,255,136,0.1);color:#00ff88;border:1px solid rgba(0,255,136,0.3);padding:6px 14px;border-radius:20px;font-size:9px;font-weight:bold;display:inline-block}
+        .badge-pago{background:rgba(255,215,0,0.1);color:#ffd700;border:1px solid rgba(255,215,0,0.3);padding:6px 14px;border-radius:20px;font-size:9px;font-weight:bold;display:inline-block}
+        
+        .btn-loja{padding:12px 20px;border:none;border-radius:25px;font-weight:bold;cursor:pointer;font-size:10px;width:100%;margin-top:12px;transition:all 0.3s ease;text-transform:uppercase;letter-spacing:2px;position:relative;overflow:hidden}
+        .btn-loja::after{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);transition:left 0.6s ease}
+        .btn-loja:hover::after{left:100%}
+        .btn-comprar-volts{background:linear-gradient(135deg,#ff8c00,#ffd700);color:#000;box-shadow:0 5px 20px rgba(255,215,0,0.3)}
+        .btn-comprar-volts:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(255,215,0,0.5)}
+        .btn-comprar-skin{background:linear-gradient(135deg,#6a0dad,#9933ff);color:#fff;box-shadow:0 5px 20px rgba(153,51,255,0.3)}
+        .btn-comprar-skin:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(153,51,255,0.5)}
+        .btn-comprar-est{background:linear-gradient(135deg,#006644,#00cc66);color:#fff;box-shadow:0 5px 20px rgba(0,204,102,0.3)}
+        .btn-comprar-est:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(0,204,102,0.5)}
+        .btn-comprado{background:rgba(255,255,255,0.05);color:#00ff88;border:1px solid rgba(0,255,136,0.2);cursor:default}
+        .btn-usar{background:linear-gradient(135deg,#006699,#3399cc);color:#fff;box-shadow:0 5px 20px rgba(51,153,204,0.3)}
+        .btn-usar:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(51,153,204,0.5)}
+        
+        .sub-tabs{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+        .sub-tab{padding:10px 20px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:25px;cursor:pointer;color:rgba(255,255,255,0.4);font-size:11px;font-weight:bold;transition:all 0.3s ease;backdrop-filter:blur(5px)}
+        .sub-tab:hover{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.8);border-color:rgba(255,255,255,0.1)}
+        .sub-tab.active{background:rgba(255,215,0,0.1);color:#ffd700;border-color:rgba(255,215,0,0.3);box-shadow:0 0 20px rgba(255,215,0,0.1)}
+        .sub-panel{display:none}
+        .sub-panel.active{display:block;animation:panelSlideIn 0.5s ease}
+        @keyframes panelSlideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
     </style>
 </head>
 <body>
@@ -960,7 +1011,7 @@ HTML = r'''
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
             <span>⚡ TESLA 369</span>
-            <span>v4.9.1 | GALE 2 | SG: 1 WIN</span>
+            <span>v5.0.0 | GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
     
