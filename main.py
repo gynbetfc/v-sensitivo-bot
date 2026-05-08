@@ -782,10 +782,10 @@ HTML = r'''
         .status-dot.active{background:#00ff88;animation:pulse 1s infinite}.status-dot.inactive{background:#888}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
         
-        /* ═══════════ LOJA PREMIUM ═══════════ */
-                .planos-grid,.skins-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;padding:5px}
+                /* ═══════════ LOJA PREMIUM ═══════════ */
+        .planos-grid,.skins-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;padding:5px}
         .plano-card,.skin-card{background:linear-gradient(160deg,#111122 0%,#0a0a18 100%);padding:18px 14px;border-radius:16px;border:1px solid #1a1a30;text-align:center;cursor:pointer;transition:all .3s ease}
-        .plano-card:hover,.skin-card:hover{border-color:rgba(255,215,0,.4);transform:translateY(-4px);box-shadow:0 12px 28px rgba(0,0,0,.4)}
+        .plano-card:hover,.skin-card:hover{border-color:{{COR_DESTAQUE}};transform:translateY(-4px);box-shadow:0 12px 28px rgba(0,0,0,.4),0 0 30px rgba(255,215,0,.05)}
         .plano-card.selecionado,.skin-card.selecionado{border-color:#ffd700!important;box-shadow:0 0 25px rgba(255,215,0,.25);background:linear-gradient(160deg,#1a1a10 0%,#0d0d08 100%)}
         .skin-card.ativo{border-color:#00ff88!important;box-shadow:0 0 25px rgba(0,255,136,.25)}
         .plano-moedas,.skin-nome{font-size:22px;color:{{COR_DESTAQUE}};font-weight:bold;margin:6px 0}
@@ -795,12 +795,16 @@ HTML = r'''
         .plano-desconto{background:rgba(255,68,68,.15);color:#ff5555;font-size:9px;padding:3px 8px;border-radius:12px;display:inline-block;margin-left:4px}
         .badge-gratis{background:rgba(0,255,136,.08);color:#00ff88;font-size:10px;padding:4px 12px;border-radius:12px;display:inline-block;border:1px solid rgba(0,255,136,.2);font-weight:bold}
         .badge-pago{background:rgba(255,215,0,.08);color:#ffd700;font-size:10px;padding:4px 12px;border-radius:12px;display:inline-block;border:1px solid rgba(255,215,0,.2);font-weight:bold}
-        .btn-loja{padding:11px 16px;border:none;border-radius:12px;font-weight:bold;cursor:pointer;font-size:11px;width:100%;margin-top:10px;transition:all .25s ease}
-        .btn-comprar-volts{background:linear-gradient(135deg,#e07b00,#ffd700);color:#000}
-        .btn-comprar-skin{background:linear-gradient(135deg,#5a0da0,#8833ee);color:#fff}
-        .btn-comprar-est{background:linear-gradient(135deg,#005533,#00aa55);color:#fff}
-        .btn-comprado{background:rgba(255,255,255,.03);color:#00ff88;border:1px solid rgba(0,255,136,.2);cursor:default}
-        .btn-usar{background:linear-gradient(135deg,#005588,#2288bb);color:#fff}
+        .btn-loja,.btn-buy,.btn-skin,.btn-info{padding:11px 16px;border:none;border-radius:12px;font-weight:bold;cursor:pointer;font-size:11px;width:100%;margin-top:10px;transition:all .25s ease;font-family:'Courier New',monospace}
+        .btn-comprar-volts,.btn-buy{background:linear-gradient(135deg,#e07b00,#ffd700);color:#000!important}
+        .btn-comprar-volts:hover,.btn-buy:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(255,215,0,.35)}
+        .btn-comprar-skin{background:linear-gradient(135deg,#5a0da0,#8833ee);color:#fff!important}
+        .btn-comprar-skin:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(136,51,238,.35)}
+        .btn-comprar-est{background:linear-gradient(135deg,#005533,#00aa55);color:#fff!important}
+        .btn-comprar-est:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,170,85,.35)}
+        .btn-comprado,.btn-info,.btn-skin{background:rgba(255,255,255,.03);color:#00ff88!important;border:1px solid rgba(0,255,136,.2);cursor:default}
+        .btn-usar{background:linear-gradient(135deg,#005588,#2288bb);color:#fff!important}
+        .btn-usar:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(34,136,187,.35)}
         
 .sub-tabs{display:flex;gap:5px;margin-bottom:15px;flex-wrap:wrap}
         .sub-tab{padding:8px 16px;background:#111;border:1px solid #333;border-radius:8px 8px 0 0;cursor:pointer;color:#888;font-size:11px;transition:all .2s ease}
