@@ -769,9 +769,7 @@ HTML = r'''
         .btn-start{background:{{COR_BOTAO}};color:#000;font-weight:bold}
         .btn-stop{background:linear-gradient(135deg,#cc0000,#ff4444);color:#fff}
         .btn-info{background:linear-gradient(135deg,#0066cc,#3399ff);color:#fff;font-size:11px;padding:8px 14px}
-        .btn-buy{background:linear-gradient(135deg,#00aa44,#00cc55);color:#fff;width:100%;padding:12px;font-size:13px}
         .btn-reset{background:linear-gradient(135deg,#cc0000,#ff6600);color:#fff;font-size:11px;padding:8px 14px}
-        .btn-skin{background:linear-gradient(135deg,#9933ff,#cc66ff);color:#fff;font-size:11px;padding:8px 12px}
         .dashboard{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:8px;margin-bottom:10px}
         .card{background:{{COR_PANEL}};padding:10px;border-radius:10px;border:1px solid #333;text-align:center}
         .card .label{color:#888;font-size:9px}.card .value{color:{{COR_DESTAQUE}};font-size:14px;font-weight:bold;margin-top:4px}
@@ -783,16 +781,32 @@ HTML = r'''
         .status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
         .status-dot.active{background:#00ff88;animation:pulse 1s infinite}.status-dot.inactive{background:#888}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
-        .planos-grid,.skins-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
-        .plano-card,.skin-card{background:#111;padding:12px;border-radius:10px;border:2px solid #222;text-align:center;cursor:pointer;transition:all 0.3s ease}
-        .plano-card:hover,.skin-card:hover{border-color:{{COR_DESTAQUE}};background:#1a1a2e}
-        .plano-card.selecionado,.skin-card.selecionado{border-color:{{COR_DESTAQUE}};box-shadow:0 0 20px rgba(255,215,0,0.4)}
-        .skin-card.ativo{border-color:#00ff88;box-shadow:0 0 15px rgba(0,255,136,0.3)}
-        .plano-moedas,.skin-nome{font-size:20px;color:{{COR_DESTAQUE}};font-weight:bold}
-        .plano-preco{font-size:14px;color:#00ff88;margin:5px 0}
+        
+        /* ═══════════ LOJA PREMIUM ═══════════ */
+        .planos-grid,.skins-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+        .plano-card,.skin-card{background:linear-gradient(180deg,#111122 0%,#0a0a15 100%);padding:15px;border-radius:15px;border:1px solid #1a1a2e;text-align:center;cursor:pointer;transition:all .3s ease}
+        .plano-card:hover,.skin-card:hover{border-color:{{COR_DESTAQUE}};transform:translateY(-5px);box-shadow:0 10px 30px rgba(0,0,0,.5),0 0 40px rgba(255,215,0,.05)}
+        .plano-card.selecionado,.skin-card.selecionado{border-color:#ffd700!important;box-shadow:0 0 25px rgba(255,215,0,.3)}
+        .skin-card.ativo{border-color:#00ff88!important;box-shadow:0 0 25px rgba(0,255,136,.3)}
+        .plano-moedas,.skin-nome{font-size:22px;color:{{COR_DESTAQUE}};font-weight:bold}
+        .plano-preco{font-size:16px;color:#00ff88;margin:5px 0}
         .plano-desc,.skin-desc{font-size:9px;color:#888;margin-top:4px}
-        .plano-tag{background:{{COR_DESTAQUE}}22;color:{{COR_DESTAQUE}};font-size:9px;padding:2px 8px;border-radius:10px;display:inline-block;margin-top:4px}
+        .plano-tag{background:rgba(255,215,0,.1);color:{{COR_DESTAQUE}};font-size:9px;padding:2px 8px;border-radius:10px;display:inline-block;margin-top:4px}
         .plano-desconto{background:#ff4444;color:#fff;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block;margin-left:4px}
+        .badge-gratis{background:rgba(0,255,136,.1);color:#00ff88;font-size:9px;padding:2px 8px;border-radius:10px;display:inline-block}
+        .badge-pago{background:rgba(255,215,0,.1);color:#ffd700;font-size:9px;padding:2px 8px;border-radius:10px;display:inline-block}
+        
+        .btn-loja{padding:10px;border:none;border-radius:10px;font-weight:bold;cursor:pointer;font-size:11px;width:100%;margin-top:8px;transition:all .2s ease}
+        .btn-comprar-volts{background:linear-gradient(135deg,#ff8c00,#ffd700);color:#000}
+        .btn-comprar-volts:hover{transform:scale(1.03)}
+        .btn-comprar-skin{background:linear-gradient(135deg,#6a0dad,#9933ff);color:#fff}
+        .btn-comprar-skin:hover{transform:scale(1.03)}
+        .btn-comprar-est{background:linear-gradient(135deg,#006644,#00cc66);color:#fff}
+        .btn-comprar-est:hover{transform:scale(1.03)}
+        .btn-comprado{background:#1a1a2e;color:#00ff88;border:1px solid #00ff8844;cursor:default}
+        .btn-usar{background:linear-gradient(135deg,#006699,#3399cc);color:#fff}
+        .btn-usar:hover{transform:scale(1.03)}
+        
         .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:1000;justify-content:center;align-items:center}
         .modal-overlay.active{display:flex}
         .modal-pagamento{background:{{COR_PANEL}};border:2px solid {{COR_DESTAQUE}};border-radius:15px;padding:25px;max-width:400px;width:90%;text-align:center}
@@ -811,157 +825,13 @@ HTML = r'''
         .estrategia-card:hover{border-color:{{COR_DESTAQUE}}}
         .estrategia-card.ativa{border-color:#00ff88;box-shadow:0 0 15px rgba(0,255,136,0.3);background:#0a1a0a}
         .estrategia-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
-        .badge-gratis{background:#00ff88;color:#000;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block}
-        .badge-pago{background:#ffd700;color:#000;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block}
-    
-.sub-tabs{display:flex;gap:5px;margin-bottom:15px}
-.sub-tab{padding:8px 16px;background:#111;border:1px solid #333;border-radius:8px 8px 0 0;cursor:pointer;color:#888;font-size:11px}
-.sub-tab.active{background:linear-gradient(135deg,#cc8800,#ffd700);color:#000;font-weight:bold;border-color:#ffd700}
-.sub-tab:hover{background:#1a1a2e;color:#fff}
-.sub-panel{display:none}
-.sub-panel.active{display:block}
-
-        /* 🎨 LOJA PREMIUM - NOVO DESIGN */
-        .loja-container{padding:10px 0}
-        .loja-titulo{text-align:center;color:{{COR_DESTAQUE}};font-size:16px;margin-bottom:15px;text-shadow:0 0 20px {{COR_TAB_ATIVA}};letter-spacing:2px}
-        .planos-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;padding:5px}
-        .plano-card{background:linear-gradient(180deg,#1a1a2e 0%,#0d0d1a 100%);padding:15px 10px;border-radius:16px;border:1px solid #333;text-align:center;cursor:pointer;transition:all .3s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden;animation:fadeInUp .5s ease backwards}
-        .plano-card:nth-child(1){animation-delay:.1s}
-        .plano-card:nth-child(2){animation-delay:.2s}
-        .plano-card:nth-child(3){animation-delay:.3s}
-        .plano-card:nth-child(4){animation-delay:.4s}
-        .plano-card:nth-child(5){animation-delay:.5s}
-        .plano-card:hover{transform:translateY(-6px);border-color:{{COR_DESTAQUE}};box-shadow:0 12px 30px rgba(255,215,0,.2),0 0 60px rgba(255,215,0,.05)}
-        .plano-card.selecionado{border-color:#ffd700!important;box-shadow:0 0 30px rgba(255,215,0,.5),inset 0 0 30px rgba(255,215,0,.05);background:linear-gradient(180deg,#2a2a1e 0%,#1a1a0d 100%)}
-        .plano-card.selecionado::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle,rgba(255,215,0,.1) 0%,transparent 70%);animation:rotate 4s linear infinite}
-        .plano-icone{font-size:28px;margin-bottom:6px;filter:drop-shadow(0 0 8px {{COR_DESTAQUE}})}
-        .plano-nome{color:{{COR_DESTAQUE}};font-weight:bold;font-size:12px;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px}
-        .plano-moedas{font-size:28px;font-weight:bold;background:linear-gradient(180deg,#ffd700,#ff8c00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:5px 0}
-        .plano-preco{font-size:16px;color:#00ff88;font-weight:bold}
-        .plano-badge{position:absolute;top:10px;right:10px;background:linear-gradient(135deg,#ff4444,#ff6600);color:#fff;font-size:8px;padding:3px 8px;border-radius:12px;font-weight:bold;animation:pulse 2s infinite}
-        .skin-card{background:linear-gradient(180deg,#1a102a 0%,#0d0a1a 100%);padding:15px 10px;border-radius:16px;border:1px solid #333;text-align:center;cursor:pointer;transition:all .3s ease;position:relative;overflow:hidden;animation:fadeInUp .4s ease backwards}
-        .skin-card:hover{transform:translateY(-5px);border-color:#9933ff;box-shadow:0 10px 25px rgba(153,51,255,.2)}
-        .skin-card.ativo{border-color:#00ff88!important;box-shadow:0 0 25px rgba(0,255,136,.3),inset 0 0 20px rgba(0,255,136,.03)}
-        .skin-icone{font-size:30px;margin-bottom:5px}
-        .skin-nome{color:#cc66ff;font-weight:bold;font-size:13px;margin-bottom:4px}
-        .skin-desc{color:#888;font-size:9px;margin-bottom:8px;line-height:1.3}
-        .btn-loja{padding:10px 16px;border:none;border-radius:10px;font-weight:bold;cursor:pointer;font-size:11px;width:100%;transition:all .2s ease;text-transform:uppercase;letter-spacing:1px}
-        .btn-comprar-volts{background:linear-gradient(135deg,#ff8c00,#ffd700);color:#000;box-shadow:0 4px 15px rgba(255,215,0,.3)}
-        .btn-comprar-volts:hover{transform:scale(1.03);box-shadow:0 6px 20px rgba(255,215,0,.5)}
-        .btn-comprar-skin{background:linear-gradient(135deg,#6600cc,#9933ff);color:#fff;box-shadow:0 4px 15px rgba(153,51,255,.3)}
-        .btn-comprar-skin:hover{transform:scale(1.03);box-shadow:0 6px 20px rgba(153,51,255,.5)}
-        .btn-comprar-est{background:linear-gradient(135deg,#006644,#00aa55);color:#fff;box-shadow:0 4px 15px rgba(0,170,85,.3)}
-        .btn-comprar-est:hover{transform:scale(1.03);box-shadow:0 6px 20px rgba(0,170,85,.5)}
-        .btn-comprado{background:linear-gradient(135deg,#222,#333);color:#00ff88;border:1px solid #00ff88;cursor:default;box-shadow:0 0 10px rgba(0,255,136,.1)}
-        .badge-preco{display:inline-block;padding:4px 10px;border-radius:10px;font-size:9px;font-weight:bold;margin:5px 0}
-        .badge-gratis{background:#00ff8822;color:#00ff88;border:1px solid #00ff8844}
-        .badge-pago{background:#ffd70022;color:#ffd700;border:1px solid #ffd70044}
-        .badge-destaque{position:absolute;top:8px;left:8px;background:linear-gradient(135deg,#ffd700,#ff8c00);color:#000;font-size:7px;padding:3px 8px;border-radius:8px;font-weight:bold}
-        @keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes rotate{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
-        @keyframes brilho{0%,100%{box-shadow:0 0 5px {{COR_DESTAQUE}}}50%{box-shadow:0 0 20px {{COR_DESTAQUE}},0 0 40px {{COR_TAB_ATIVA}}}}
-
-    
-        /* ═══════════════ LOJA PREMIUM V5 ═══════════════ */
-        .planos-grid,.skins-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;padding:8px}
         
-        .plano-card,.skin-card{background:linear-gradient(180deg,#111122 0%,#0a0a15 100%);padding:18px 14px;border-radius:18px;border:2px solid #1a1a2e;text-align:center;cursor:pointer;transition:all .35s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden}
-        .plano-card::before,.skin-card::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,215,0,.03),transparent);transition:left .6s ease}
-        .plano-card:hover::before,.skin-card:hover::before{left:100%}
-        .plano-card:hover,.skin-card:hover{transform:translateY(-8px);border-color:{{COR_DESTAQUE}};box-shadow:0 15px 35px rgba(0,0,0,.5),0 0 50px rgba(255,215,0,.08)}
-        .plano-card.selecionado,.skin-card.selecionado{border-color:#ffd700!important;box-shadow:0 0 35px rgba(255,215,0,.4),inset 0 0 25px rgba(255,215,0,.03);background:linear-gradient(180deg,#1a1a0a 0%,#0d0d05 100%)}
-        .skin-card.ativo{border-color:#00ff88!important;box-shadow:0 0 30px rgba(0,255,136,.35),inset 0 0 20px rgba(0,255,136,.03);background:linear-gradient(180deg,#0a1a0a 0%,#050d05 100%)}
-        .plano-card.selecionado::after{content:'✨';position:absolute;top:8px;right:12px;font-size:14px;animation:float 1.5s ease-in-out infinite}
-        @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
-        
-        .plano-icone,.skin-icone{font-size:35px;margin-bottom:8px;display:block;filter:drop-shadow(0 0 12px {{COR_DESTAQUE}})}
-        .plano-nome,.skin-nome{color:{{COR_DESTAQUE}};font-weight:bold;font-size:13px;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px}
-        .plano-moedas{font-size:32px;font-weight:900;background:linear-gradient(180deg,#ffd700,#ff8c00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:8px 0}
-        .plano-preco{font-size:17px;color:#00ff88;font-weight:bold;margin:4px 0}
-        .plano-desc,.skin-desc{color:#666;font-size:9px;margin:6px 0;line-height:1.4}
-        .plano-tag{background:rgba(255,215,0,.1);color:{{COR_DESTAQUE}};font-size:8px;padding:3px 10px;border-radius:10px;display:inline-block;margin:4px 0}
-        .plano-desconto{background:linear-gradient(135deg,#ff4444,#ff6600);color:#fff;font-size:8px;padding:3px 8px;border-radius:10px;display:inline-block;margin-left:4px;animation:pulse 2s infinite}
-        
-        .badge-gratis{background:rgba(0,255,136,.1);color:#00ff88;border:1px solid rgba(0,255,136,.3);padding:5px 12px;border-radius:12px;font-size:9px;font-weight:bold;display:inline-block}
-        .badge-pago{background:rgba(255,215,0,.1);color:#ffd700;border:1px solid rgba(255,215,0,.3);padding:5px 12px;border-radius:12px;font-size:9px;font-weight:bold;display:inline-block}
-        
-        .btn-loja{padding:12px 18px;border:none;border-radius:12px;font-weight:bold;cursor:pointer;font-size:11px;width:100%;margin-top:10px;transition:all .25s ease;text-transform:uppercase;letter-spacing:1.5px;position:relative;overflow:hidden}
-        .btn-loja::after{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);transition:left .5s ease}
-        .btn-loja:hover::after{left:100%}
-        .btn-comprar-volts{background:linear-gradient(135deg,#ff8c00,#ffd700);color:#000;box-shadow:0 5px 20px rgba(255,215,0,.25)}
-        .btn-comprar-volts:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(255,215,0,.45)}
-        .btn-comprar-skin{background:linear-gradient(135deg,#6a0dad,#9933ff);color:#fff;box-shadow:0 5px 20px rgba(153,51,255,.25)}
-        .btn-comprar-skin:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(153,51,255,.45)}
-        .btn-comprar-est{background:linear-gradient(135deg,#006644,#00aa55);color:#fff;box-shadow:0 5px 20px rgba(0,170,85,.25)}
-        .btn-comprar-est:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,170,85,.45)}
-        .btn-comprado{background:linear-gradient(135deg,#1a1a2e,#0d0d1a);color:#00ff88;border:1px solid #00ff8844;cursor:default;box-shadow:0 0 12px rgba(0,255,136,.08)}
-        .btn-usar{background:linear-gradient(135deg,#006699,#3399cc);color:#fff;box-shadow:0 5px 20px rgba(51,153,204,.25)}
-        .btn-usar:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(51,153,204,.45)}
-        
-        .sub-tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
-        .sub-tab{padding:10px 18px;background:#111;border:2px solid #222;border-radius:12px 12px 0 0;cursor:pointer;color:#666;font-size:11px;font-weight:bold;transition:all .3s ease}
-        .sub-tab:hover{background:#1a1a2e;color:#ccc;border-color:#333}
-        .sub-tab.active{background:linear-gradient(135deg,#1a1a0a,#0d0d05);color:{{COR_DESTAQUE}};border-color:{{COR_DESTAQUE}};box-shadow:0 -3px 15px rgba(255,215,0,.1)}
-        .sub-panel{display:none;animation:fadeIn .4s ease}
-        .sub-panel.active{display:block}
-        @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
-
-    }
-        
-
-    
-        /* ═══════════════ CYBERPUNK PREMIUM LOJA ═══════════════ */
-        .planos-grid,.skins-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:15px;padding:10px}
-        
-        .plano-card,.skin-card{background:rgba(10,10,26,0.8);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.05);border-radius:20px;padding:20px 15px;text-align:center;cursor:pointer;transition:all 0.4s cubic-bezier(0.175,0.885,0.32,1.275);position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.3)}
-        .plano-card::before,.skin-card::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;border-radius:20px;padding:1px;background:linear-gradient(135deg,rgba(255,215,0,0),rgba(255,215,0,0.1),rgba(255,215,0,0));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:0;transition:opacity 0.4s}
-        .plano-card:hover::before,.skin-card:hover::before{opacity:1}
-        .plano-card:hover,.skin-card:hover{transform:translateY(-10px) scale(1.03);border-color:rgba(255,215,0,0.3);box-shadow:0 20px 60px rgba(0,0,0,0.5),0 0 80px rgba(255,215,0,0.05)}
-        .plano-card.selecionado{background:rgba(20,20,0,0.9);border-color:#ffd700!important;box-shadow:0 0 40px rgba(255,215,0,0.3),inset 0 0 30px rgba(255,215,0,0.05)}
-        .skin-card.ativo{background:rgba(0,20,0,0.9);border-color:#00ff88!important;box-shadow:0 0 40px rgba(0,255,136,0.3)}
-        
-        .plano-card .card-glow,.skin-card .card-glow{position:absolute;top:50%;left:50%;width:150px;height:150px;background:radial-gradient(circle,rgba(255,215,0,0.08) 0%,transparent 70%);border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;opacity:0;transition:opacity 0.4s}
-        .plano-card:hover .card-glow,.skin-card:hover .card-glow{opacity:1}
-        
-        .plano-icon,.skin-icon{font-size:40px;margin-bottom:10px;display:block;animation:iconFloat 3s ease-in-out infinite;filter:drop-shadow(0 0 15px {{COR_DESTAQUE}})}
-        .plano-card:nth-child(2) .plano-icon{animation-delay:0.5s}
-        .plano-card:nth-child(3) .plano-icon{animation-delay:1s}
-        @keyframes iconFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-        
-        .plano-nome,.skin-nome{color:{{COR_DESTAQUE}};font-weight:bold;font-size:13px;margin-bottom:6px;text-transform:uppercase;letter-spacing:2px;text-shadow:0 0 10px rgba(255,215,0,0.3)}
-        .plano-moedas{font-size:36px;font-weight:900;background:linear-gradient(180deg,#ffd700,#ff8c00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:10px 0}
-        .plano-preco{font-size:18px;color:#00ff88;font-weight:bold;margin:6px 0}
-        .plano-desc,.skin-desc{color:rgba(255,255,255,0.5);font-size:9px;margin:8px 0;line-height:1.4}
-        .plano-tag{background:rgba(255,215,0,0.1);color:{{COR_DESTAQUE}};border:1px solid rgba(255,215,0,0.2);font-size:8px;padding:4px 12px;border-radius:20px;display:inline-block;margin:4px 0}
-        .plano-desconto{background:rgba(255,68,68,0.2);color:#ff6666;border:1px solid rgba(255,68,68,0.3);font-size:8px;padding:4px 10px;border-radius:20px;display:inline-block;margin-left:4px;animation:badgePulse 2s infinite}
-        @keyframes badgePulse{0%,100%{box-shadow:0 0 5px rgba(255,68,68,0.3)}50%{box-shadow:0 0 20px rgba(255,68,68,0.6)}}
-        
-        .badge-gratis{background:rgba(0,255,136,0.1);color:#00ff88;border:1px solid rgba(0,255,136,0.3);padding:6px 14px;border-radius:20px;font-size:9px;font-weight:bold;display:inline-block}
-        .badge-pago{background:rgba(255,215,0,0.1);color:#ffd700;border:1px solid rgba(255,215,0,0.3);padding:6px 14px;border-radius:20px;font-size:9px;font-weight:bold;display:inline-block}
-        
-        .btn-loja{padding:12px 20px;border:none;border-radius:25px;font-weight:bold;cursor:pointer;font-size:10px;width:100%;margin-top:12px;transition:all 0.3s ease;text-transform:uppercase;letter-spacing:2px;position:relative;overflow:hidden}
-        .btn-loja::after{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);transition:left 0.6s ease}
-        .btn-loja:hover::after{left:100%}
-        .btn-comprar-volts{background:linear-gradient(135deg,#ff8c00,#ffd700);color:#000;box-shadow:0 5px 20px rgba(255,215,0,0.3)}
-        .btn-comprar-volts:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(255,215,0,0.5)}
-        .btn-comprar-skin{background:linear-gradient(135deg,#6a0dad,#9933ff);color:#fff;box-shadow:0 5px 20px rgba(153,51,255,0.3)}
-        .btn-comprar-skin:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(153,51,255,0.5)}
-        .btn-comprar-est{background:linear-gradient(135deg,#006644,#00cc66);color:#fff;box-shadow:0 5px 20px rgba(0,204,102,0.3)}
-        .btn-comprar-est:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(0,204,102,0.5)}
-        .btn-comprado{background:rgba(255,255,255,0.05);color:#00ff88;border:1px solid rgba(0,255,136,0.2);cursor:default}
-        .btn-usar{background:linear-gradient(135deg,#006699,#3399cc);color:#fff;box-shadow:0 5px 20px rgba(51,153,204,0.3)}
-        .btn-usar:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(51,153,204,0.5)}
-        
-        .sub-tabs{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
-        .sub-tab{padding:10px 20px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:25px;cursor:pointer;color:rgba(255,255,255,0.4);font-size:11px;font-weight:bold;transition:all 0.3s ease;backdrop-filter:blur(5px)}
-        .sub-tab:hover{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.8);border-color:rgba(255,255,255,0.1)}
-        .sub-tab.active{background:rgba(255,215,0,0.1);color:#ffd700;border-color:rgba(255,215,0,0.3);box-shadow:0 0 20px rgba(255,215,0,0.1)}
+        .sub-tabs{display:flex;gap:5px;margin-bottom:15px;flex-wrap:wrap}
+        .sub-tab{padding:8px 16px;background:#111;border:1px solid #333;border-radius:8px 8px 0 0;cursor:pointer;color:#888;font-size:11px;transition:all .2s ease}
+        .sub-tab:hover{background:#1a1a2e;color:#fff}
+        .sub-tab.active{background:linear-gradient(135deg,#cc8800,#ffd700);color:#000;font-weight:bold;border-color:#ffd700}
         .sub-panel{display:none}
-        .sub-panel.active{display:block;animation:panelSlideIn 0.5s ease}
-        @keyframes panelSlideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
-
+        .sub-panel.active{display:block}
     </style>
 </head>
 <body>
