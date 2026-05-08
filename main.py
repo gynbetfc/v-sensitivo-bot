@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT v4.5.0 ⚡
+# ⚡ TESLA 369 BOT v4.6.0 ⚡
 # TESLA-369 GRÁTIS | v_SENSITIVO 6⚡ | 3=1 3⚡ | LOJA ESTRATÉGIAS | SKINS | MERCADO PAGO
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -93,7 +93,7 @@ ESTRATEGIAS = {
         'nome': '⚡ TESLA-369',
         'desc': '6 velas: padrão g-g-g-r-r → CALL / r-r-r-g-g → PUT',
         'timeframe': 60,
-        'pares': ['EURUSD-OTC'],
+        'pares': ['EURUSD-OTC', 'EURUSD'],
         'preco_moedas': 0,
         'gratis': True,
         'fixa': True
@@ -102,7 +102,7 @@ ESTRATEGIAS = {
         'nome': '🔮 v_SENSITIVO',
         'desc': 'RSI + MM + Bollinger + MACD + Estocástico + Fase da Vela',
         'timeframe': 60,
-        'pares': ['EURUSD-OTC'],
+        'pares': ['EURUSD-OTC', 'EURUSD'],
         'preco_moedas': 6,
         'gratis': False
     },
@@ -110,48 +110,8 @@ ESTRATEGIAS = {
         'nome': '3️⃣ 3ª = 1ª',
         'desc': 'Opera a cada 5min, seg 55+',
         'timeframe': 60,
-        'pares': ['EURUSD-OTC'],
+        'pares': ['EURUSD-OTC', 'EURUSD'],
         'preco_moedas': 3,
-        'gratis': False
-    },
-    'mhi_filtrado': {
-        'nome': '📊 MHI-FILTRADO',
-        'desc': '5 velas + Média Móvel + filtro de cor dominante',
-        'timeframe': 60,
-        'pares': ['EURUSD-OTC'],
-        'preco_moedas': 9,
-        'gratis': False
-    },
-    'quadrante_de_7': {
-        'nome': '7️⃣ QUADRANTE DE 7',
-        'desc': '7 velas + MM, conta cores',
-        'timeframe': 60,
-        'pares': ['EURUSD-OTC'],
-        'preco_moedas': 6,
-        'gratis': False
-    },
-    'fluxo_de_velas': {
-        'nome': '🌊 FLUXO-DE-VELAS',
-        'desc': '5 velas mesma cor + MM',
-        'timeframe': 60,
-        'pares': ['EURUSD-OTC'],
-        'preco_moedas': 3,
-        'gratis': False
-    },
-    'reversao': {
-        'nome': '🔄 REVERSÃO',
-        'desc': 'Padrão alternado g-r-g-r-g ou r-g-r-g-r',
-        'timeframe': 60,
-        'pares': ['EURUSD-OTC'],
-        'preco_moedas': 3,
-        'gratis': False
-    },
-    'm5': {
-        'nome': '⏰ M5',
-        'desc': 'Quadrante de velas de 5min',
-        'timeframe': 300,
-        'pares': ['EURUSD-OTC'],
-        'preco_moedas': 6,
         'gratis': False
     }
 }
@@ -655,7 +615,7 @@ def gerar_pix_mercadopago(email, plano):
     try:
         url = "https://api.mercadopago.com/v1/payments"
         headers = {"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}", "Content-Type": "application/json", "X-Idempotency-Key": str(uuid.uuid4())}
-        payment_data = {"transaction_amount": float(plano['preco']), "description": f"TESLA369 - {plano['nome']} - {plano['moedas']} VOLTS", "payment_method_id": "pix", "payer": {"email": email, "first_name": "Cliente", "last_name": "Tesla369"}}
+        payment_data = {"transaction_amount": float(plano['preco']), "description": f"TESLA369 - {plano['nome']} - {plano['moedas']} moedas", "payment_method_id": "pix", "payer": {"email": email, "first_name": "Cliente", "last_name": "Tesla369"}}
         response = requests.post(url, json=payment_data, headers=headers)
         data = response.json()
         if response.status_code in [200, 201]:
@@ -682,11 +642,11 @@ def verificador_automatico_pix():
             for pix_id, dados in list(pendentes.items()):
                 if verificar_pagamento_mp(pix_id):
                     pagamentos_pendentes[pix_id]['pago'] = True
-                    email = dados['email']; VOLTS = dados['moedas']
+                    email = dados['email']; moedas = dados['moedas']
                     usuario = carregar_usuario(email) or criar_usuario(email)
-                    usuario['moedas'] = usuario.get('moedas', 0) + VOLTS
+                    usuario['moedas'] = usuario.get('moedas', 0) + moedas
                     salvar_usuario(email, usuario)
-                    add_log(f"✅ PIX {pix_id[:8]}... pago! +{moedas} VOLTS para {email}", "win")
+                    add_log(f"✅ PIX {pix_id[:8]}... pago! +{moedas} moedas para {email}", "win")
         except: pass
 
 threading.Thread(target=verificador_automatico_pix, daemon=True).start()
@@ -745,7 +705,7 @@ HTML = r'''
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ TESLA 369 BOT v4.5.0</title>
+    <title>⚡ TESLA 369 BOT v4.6.0</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:{{COR_FUNDO}};color:{{COR_TEXTO}};font-family:'Courier New',monospace;padding:10px}
@@ -788,7 +748,7 @@ HTML = r'''
         .plano-card:hover,.skin-card:hover{border-color:{{COR_DESTAQUE}};background:#1a1a2e}
         .plano-card.selecionado,.skin-card.selecionado{border-color:{{COR_DESTAQUE}};box-shadow:0 0 20px rgba(255,215,0,0.4)}
         .skin-card.ativo{border-color:#00ff88;box-shadow:0 0 15px rgba(0,255,136,0.3)}
-        .plano-VOLTS,.skin-nome{font-size:20px;color:{{COR_DESTAQUE}};font-weight:bold}
+        .plano-moedas,.skin-nome{font-size:20px;color:{{COR_DESTAQUE}};font-weight:bold}
         .plano-preco{font-size:14px;color:#00ff88;margin:5px 0}
         .plano-desc,.skin-desc{font-size:9px;color:#888;margin-top:4px}
         .plano-tag{background:{{COR_DESTAQUE}}22;color:{{COR_DESTAQUE}};font-size:9px;padding:2px 8px;border-radius:10px;display:inline-block;margin-top:4px}
@@ -869,7 +829,7 @@ HTML = r'''
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
             <span>⚡ TESLA 369</span>
-            <span>v4.5.0 | GALE 2 | SG: 1 WIN</span>
+            <span>v4.6.0 | GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
     
@@ -880,20 +840,20 @@ HTML = r'''
     
     <div class="panel" id="panel-loja">
         <div class="sub-tabs">
-            <div class="sub-tab active" id="sub-tab-VOLTS" onclick="mostrarSubAba('moedas')">COMPRAR VOLTS</div>
+            <div class="sub-tab active" id="sub-tab-moedas" onclick="mostrarSubAba('moedas')">COMPRAR VOLTS</div>
             <div class="sub-tab" id="sub-tab-skins" onclick="mostrarSubAba('skins')">LOJA DE SKINS</div>
             <div class="sub-tab" id="sub-tab-estrategias" onclick="mostrarSubAba('estrategias')">LOJA DE ESTRATÉGIAS</div>
         </div>
-        <div class="sub-panel active" id="sub-panel-VOLTS">
+        <div class="sub-panel active" id="sub-panel-moedas">
             <div class="config-section"><h3>💳 COMPRAR VOLTS COM PIX</h3><p style="color:#888;font-size:10px">📧 <input type="email" id="emailCompra" placeholder="Seu email" style="width:220px;padding:6px;background:#111;border:1px solid #333;color:#fff;border-radius:5px"></p><p style="color:#ffd700;font-size:10px;margin-top:5px">⚡ 1 moeda = 1 ciclo | +1 moeda grátis/dia</p><p style="color:#888;font-size:9px;margin-top:3px">⭐ Selecione o plano e pague com PIX</p></div>
-        <div class="planos-grid">''' + ''.join([f'<div class="plano-card" id="plano{p["id"]}" onclick="selecionarPlano({p["id"]})"><div style="color:#ffd700;font-size:11px">{p["nome"]}</div><div class="plano-VOLTS">⚡ {p["VOLTS"]}</div><div class="plano-preco">R$ {p["preco"]:.2f}</div><div class="plano-desc">{p.get("desc","")}</div>{f"<div><span class=\"plano-desconto\">{p['desconto']}</span></div>" if p.get("desconto") else ""}{f"<div class=\"plano-tag\">{p['tag']}</div>" if p.get("tag") else ""}<button class="btn btn-buy" style="display:none;margin-top:8px;padding:8px" id="btnPlano{p['id']}" onclick="event.stopPropagation();pagarComPix({p['id']})">💳 PAGAR COM PIX</button></div>' for p in PLANOS]) + r'''</div>
+        <div class="planos-grid">''' + ''.join([f'<div class="plano-card" id="plano{p["id"]}" onclick="selecionarPlano({p["id"]})"><div style="color:#ffd700;font-size:11px">{p["nome"]}</div><div class="plano-moedas">⚡ {p["moedas"]}</div><div class="plano-preco">R$ {p["preco"]:.2f}</div><div class="plano-desc">{p.get("desc","")}</div>{f"<div><span class=\"plano-desconto\">{p['desconto']}</span></div>" if p.get("desconto") else ""}{f"<div class=\"plano-tag\">{p['tag']}</div>" if p.get("tag") else ""}<button class="btn btn-buy" style="display:none;margin-top:8px;padding:8px" id="btnPlano{p['id']}" onclick="event.stopPropagation();pagarComPix({p['id']})">💳 PAGAR COM PIX</button></div>' for p in PLANOS]) + r'''</div>
         </div>
         <div class="sub-panel" id="sub-panel-skins">
             <div class="config-section"><h3>SKINS DISPONIVEIS</h3><p style="color:#888;font-size:10px">Personalize a aparencia do seu bot! Skins compradas ficam salvas.</p></div>
             <div class="skins-grid" id="skinsGrid"></div>
         </div>
         <div class="sub-panel" id="sub-panel-estrategias">
-            <div class="config-section"><h3>📊 ESTRATÉGIAS PREMIUM</h3><p style="color:#888;font-size:10px">Compre estratégias avançadas com suas VOLTS! ⚡</p></div>
+            <div class="config-section"><h3>📊 ESTRATÉGIAS PREMIUM</h3><p style="color:#888;font-size:10px">Compre estratégias avançadas com suas moedas! ⚡</p></div>
             <div class="skins-grid" id="estrategiasLojaGrid"></div>
         </div>
     </div>
@@ -1073,19 +1033,19 @@ function renderLoja(){
             }else if(skin.comprado){
                 btnHtml='<button class="btn btn-skin" style="width:100%;margin-top:8px" onclick="ativarSkin(\''+skin.id+'\')">🎨 USAR SKIN</button>';
             }else{
-                if(skin.preco_VOLTS==0){
+                if(skin.preco_moedas==0){
                     btnHtml='<button class="btn btn-skin" style="width:100%;margin-top:8px" onclick="ativarSkin(\''+skin.id+'\')">🆓 ATIVAR GRÁTIS</button>';
                 }else{
-                    btnHtml='<button class="btn btn-buy" style="width:100%;margin-top:8px;padding:8px" onclick="comprarSkin(\''+skin.id+'\')">🛒 COMPRAR ('+skin.preco_VOLTS+' ⚡)</button>';
+                    btnHtml='<button class="btn btn-buy" style="width:100%;margin-top:8px;padding:8px" onclick="comprarSkin(\''+skin.id+'\')">🛒 COMPRAR ('+skin.preco_moedas+' ⚡)</button>';
                 }
             }
             html+='<div class="skin-card'+ativa+'">';
             html+='<div class="skin-nome">'+skin.nome+'</div>';
             html+='<div class="skin-desc">'+skin.desc+'</div>';
             html+='<div style="margin-top:5px">';
-            if(skin.preco_VOLTS==0){html+='<span class="badge-gratis">GRÁTIS</span>';}
+            if(skin.preco_moedas==0){html+='<span class="badge-gratis">GRÁTIS</span>';}
             else if(skin.comprado){html+='<span class="badge-gratis">✅ COMPRADO</span>';}
-            else{html+='<span class="badge-pago">⚡ '+skin.preco_VOLTS+' VOLTS</span>';}
+            else{html+='<span class="badge-pago">⚡ '+skin.preco_moedas+' moedas</span>';}
             html+='</div>';
             html+=btnHtml;
             html+='</div>';
@@ -1150,22 +1110,22 @@ function renderLojaEstrategias(){
             
             if (comprado) {
                 btnHtml = '<button class="btn btn-info" style="width:100%;margin-top:8px;cursor:default">✅ COMPRADO</button>';
-            } else if (est.preco_VOLTS == 0 || est.gratis) {
+            } else if (est.preco_moedas == 0 || est.gratis) {
                 btnHtml = '<button class="btn btn-skin" style="width:100%;margin-top:8px;cursor:default">🆓 GRÁTIS</button>';
             } else {
-                btnHtml = '<button class="btn btn-buy" style="width:100%;margin-top:8px;padding:8px" onclick="comprarEstrategia(\''+key+'\')">🛒 COMPRAR ('+est.preco_VOLTS+' ⚡)</button>';
+                btnHtml = '<button class="btn btn-buy" style="width:100%;margin-top:8px;padding:8px" onclick="comprarEstrategia(\''+key+'\')">🛒 COMPRAR ('+est.preco_moedas+' ⚡)</button>';
             }
             
             html += '<div class="skin-card'+(comprado?' ativo':'')+'">';
             html += '<div class="skin-nome">'+est.nome+'</div>';
             html += '<div class="skin-desc">'+est.desc+'</div>';
             html += '<div style="margin-top:5px">';
-            if (est.preco_VOLTS == 0 || est.gratis) {
+            if (est.preco_moedas == 0 || est.gratis) {
                 html += '<span class="badge-gratis">GRÁTIS</span>';
             } else if (comprado) {
                 html += '<span class="badge-gratis">✅ COMPRADO</span>';
             } else {
-                html += '<span class="badge-pago">⚡ '+est.preco_VOLTS+' VOLTS</span>';
+                html += '<span class="badge-pago">⚡ '+est.preco_moedas+' moedas</span>';
             }
             html += '</div>';
             html += btnHtml;
@@ -1240,7 +1200,7 @@ function pagarComPix(planoId){
         if(d.sucesso){
             pixAtual=d;
             var html='<p style="font-size:18px;color:#ffd700">R$ '+d.valor.toFixed(2)+'</p>';
-            html+='<p style="color:#00ff88">⚡ '+d.moedas+' VOLTS</p>';
+            html+='<p style="color:#00ff88">⚡ '+d.moedas+' moedas</p>';
             if(d.qr_code_base64)html+='<div class="pix-qrcode"><img src="data:image/png;base64,'+d.qr_code_base64+'" alt="QR Code PIX"></div>';
             if(d.qr_code){html+='<p style="color:#888;font-size:10px;margin-top:8px">📋 Copie o código:</p><div class="pix-copiavel" onclick="copiarPix()">'+d.qr_code+'</div>';}
             html+='<button class="btn-confirmar" onclick="verificarPagamento(\''+d.pix_id+'\')">🔄 VERIFICAR PAGAMENTO</button>';
@@ -1253,7 +1213,7 @@ function copiarPix(){navigator.clipboard.writeText(pixAtual.qr_code).then(()=>al
 function verificarPagamento(pixId){
     fetch('/verificar_pix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pix_id:pixId})})
     .then(r=>r.json()).then(d=>{
-        if(d.pago){alert('PAGO! +'+d.moedas+' VOLTS!');document.getElementById('moedasSaldo').textContent=d.saldo;fecharModal();}
+        if(d.pago){alert('PAGO! +'+d.moedas+' moedas!');document.getElementById('moedasSaldo').textContent=d.saldo;fecharModal();}
         else{alert('Ainda não confirmado.');}
     });
 }
@@ -1433,7 +1393,7 @@ def conectar():
         API = IQ_Option(email, senha); status_conn, reason = API.connect()
         if not status_conn: return jsonify({'ok': False, 'erro': str(reason)[:100]})
         API.change_balance(tipo); conectado_iq = True
-        add_log(f'✅ Conectado! ${API.get_balance():.2f} | ⚡ {usuario.get("VOLTS", 0)} VOLTS', 'win')
+        add_log(f'✅ Conectado! ${API.get_balance():.2f} | ⚡ {usuario.get("moedas", 0)} moedas', 'win')
         return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0)})
     except Exception as e: return jsonify({'ok': False, 'erro': str(e)[:100]})
 
@@ -1451,7 +1411,7 @@ def comecar_operar():
             preco = ESTRATEGIAS.get(estrategia_atual, {}).get('preco_moedas', 0)
             return jsonify({'ok': False, 'erro': f'Estratégia não comprada! Compre na loja por {preco} ⚡'})
         
-        if usuario.get('moedas', 0) < 1: return jsonify({'ok': False, 'erro': 'Sem VOLTS!'})
+        if usuario.get('moedas', 0) < 1: return jsonify({'ok': False, 'erro': 'Sem moedas!'})
         usuario['moedas'] -= 1; usuario['total_ciclos'] += 1; salvar_usuario(email_usuario_atual, usuario)
         lucro = 0.0; NumDeOperacoes = 0
         if not bot_rodando: bot_rodando = True; bot_thread = threading.Thread(target=bot_loop, daemon=True); bot_thread.start()
@@ -1490,7 +1450,7 @@ def comprar_skin():
     if skin_id in usuario['skins_compradas']:
         usuario['skin_atual'] = skin_id; salvar_usuario(email_usuario_atual, usuario); skin_atual_global = skin_id
         return jsonify({'ok': True, 'moedas': usuario['moedas'], 'msg': 'Skin já comprada! Ativada.'})
-    if usuario.get('moedas', 0) < skin['preco_moedas']: return jsonify({'ok': False, 'erro': f'VOLTS insuficientes! Precisa de {skin["preco_VOLTS"]} ⚡'})
+    if usuario.get('moedas', 0) < skin['preco_moedas']: return jsonify({'ok': False, 'erro': f'VOLTS insuficientes! Precisa de {skin["preco_moedas"]} ⚡'})
     usuario['moedas'] -= skin['preco_moedas']; usuario['skins_compradas'].append(skin_id); usuario['skin_atual'] = skin_id
     salvar_usuario(email_usuario_atual, usuario); skin_atual_global = skin_id
     return jsonify({'ok': True, 'moedas': usuario['moedas'], 'msg': f'Skin {skin["nome"]} comprada e ativada!'})
@@ -1525,10 +1485,10 @@ def verificar_pix():
     if verificar_pagamento_mp(pix_id):
         if pix_id in pagamentos_pendentes and not pagamentos_pendentes[pix_id]['pago']:
             pagamentos_pendentes[pix_id]['pago'] = True
-            email = pagamentos_pendentes[pix_id]['email']; VOLTS = pagamentos_pendentes[pix_id]['moedas']
+            email = pagamentos_pendentes[pix_id]['email']; moedas = pagamentos_pendentes[pix_id]['moedas']
             usuario = carregar_usuario(email) or criar_usuario(email)
-            usuario['moedas'] = usuario.get('moedas', 0) + VOLTS; salvar_usuario(email, usuario)
-            return jsonify({'pago': True, 'moedas': VOLTS, 'saldo': usuario['moedas']})
+            usuario['moedas'] = usuario.get('moedas', 0) + moedas; salvar_usuario(email, usuario)
+            return jsonify({'pago': True, 'moedas': moedas, 'saldo': usuario['moedas']})
         return jsonify({'pago': True})
     return jsonify({'pago': False})
 
@@ -1545,8 +1505,8 @@ def resetar():
     if not email: return jsonify({'ok': False, 'msg': 'Email obrigatório'})
     usuario = carregar_usuario(email)
     if not usuario: return jsonify({'ok': False, 'msg': 'Usuário não encontrado'})
-    # Mantém VOLTS, skins e data de cadastro
-    VOLTS = usuario.get('moedas', 0)
+    # Mantém moedas, skins e data de cadastro
+    moedas = usuario.get('moedas', 0)
     skins_compradas = usuario.get('skins_compradas', ['skin_padrao'])
     skin_atual = usuario.get('skin_atual', 'skin_padrao')
     data_cadastro = usuario.get('data_cadastro', str(datetime.now())[:19])
@@ -1560,8 +1520,8 @@ def resetar():
     usuario['historico_operacoes'] = []
     usuario['dias_ativos'] = {}
     usuario['banca_atual'] = 0.0
-    # Mantém VOLTS e skins
-    usuario['moedas'] = VOLTS
+    # Mantém moedas e skins
+    usuario['moedas'] = moedas
     usuario['skins_compradas'] = skins_compradas
     usuario['skin_atual'] = skin_atual
     usuario['data_cadastro'] = data_cadastro
