@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT v4.9.0 ⚡
+# ⚡ TESLA 369 BOT v5.0.0 ⚡
 # TESLA-369 GRÁTIS | v_SENSITIVO 6⚡ | 3=1 3⚡ | LOJA ESTRATÉGIAS | SKINS | MERCADO PAGO
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -745,7 +745,7 @@ HTML = r'''
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ TESLA 369 BOT v4.9.0</title>
+    <title>⚡ TESLA 369 BOT v5.0.0</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:{{COR_FUNDO}};color:{{COR_TEXTO}};font-family:'Courier New',monospace;padding:10px}
@@ -908,6 +908,57 @@ HTML = r'''
         @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 
+    
+        /* 🎠 CARROSSEL HORIZONTAL - ESTILO LOL */
+        .carrossel-container{position:relative;margin:15px 0;overflow:hidden}
+        .carrossel-track{display:flex;gap:15px;overflow-x:auto;scroll-behavior:smooth;scroll-snap-type:x mandatory;padding:15px 5px 25px;-ms-overflow-style:none;scrollbar-width:none;cursor:grab}
+        .carrossel-track:active{cursor:grabbing}
+        .carrossel-track::-webkit-scrollbar{display:none}
+        .carrossel-card{min-width:200px;max-width:200px;flex-shrink:0;background:linear-gradient(180deg,#111122 0%,#0a0a15 100%);border:2px solid #1a1a2e;border-radius:18px;padding:20px 15px;text-align:center;transition:all .35s ease;scroll-snap-align:center;position:relative;overflow:hidden}
+        .carrossel-card:hover{transform:translateY(-8px) scale(1.02);border-color:{{COR_DESTAQUE}};box-shadow:0 15px 35px rgba(0,0,0,.5),0 0 50px rgba(255,215,0,.08);z-index:10}
+        .carrossel-card.selecionado{border-color:#ffd700!important;box-shadow:0 0 35px rgba(255,215,0,.4),inset 0 0 25px rgba(255,215,0,.03);background:linear-gradient(180deg,#1a1a0a 0%,#0d0d05 100%)}
+        .carrossel-card.ativo{border-color:#00ff88!important;box-shadow:0 0 30px rgba(0,255,136,.35)}
+        .carrossel-card::after{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,215,0,.03),transparent);transition:left .6s ease}
+        .carrossel-card:hover::after{left:100%}
+        
+        .carrossel-icon{font-size:40px;margin-bottom:10px;display:block;filter:drop-shadow(0 0 15px {{COR_DESTAQUE}})}
+        .carrossel-nome{color:{{COR_DESTAQUE}};font-weight:bold;font-size:14px;margin-bottom:5px;text-transform:uppercase;letter-spacing:1px}
+        .carrossel-desc{color:#666;font-size:9px;margin:6px 0;line-height:1.3;height:36px;overflow:hidden}
+        .carrossel-preco{font-size:20px;font-weight:900;margin:8px 0}
+        .carrossel-preco.gratis{color:#00ff88}
+        .carrossel-preco.pago{background:linear-gradient(180deg,#ffd700,#ff8c00);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        
+        .carrossel-seta{position:absolute;top:50%;transform:translateY(-50%);width:40px;height:40px;background:rgba(0,0,0,.7);border:2px solid #333;border-radius:50%;color:#fff;font-size:18px;cursor:pointer;z-index:20;display:flex;align-items:center;justify-content:center;transition:all .3s ease}
+        .carrossel-seta:hover{background:rgba(0,0,0,.9);border-color:{{COR_DESTAQUE}};box-shadow:0 0 20px rgba(255,215,0,.3)}
+        .carrossel-seta.esq{left:0}
+        .carrossel-seta.dir{right:0}
+        .carrossel-seta:active{transform:translateY(-50%) scale(.9)}
+        
+        .carrossel-indicadores{display:flex;justify-content:center;gap:8px;margin-top:-5px;padding-bottom:10px}
+        .carrossel-dot{width:8px;height:8px;border-radius:50%;background:#333;transition:all .3s ease;cursor:pointer}
+        .carrossel-dot.active{background:{{COR_DESTAQUE}};width:20px;border-radius:10px;box-shadow:0 0 10px {{COR_DESTAQUE}}}
+        
+        .btn-loja{padding:12px 18px;border:none;border-radius:12px;font-weight:bold;cursor:pointer;font-size:10px;width:100%;margin-top:12px;transition:all .25s ease;text-transform:uppercase;letter-spacing:1.5px;position:relative;overflow:hidden}
+        .btn-loja::after{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);transition:left .5s ease}
+        .btn-loja:hover::after{left:100%}
+        .btn-comprar-volts{background:linear-gradient(135deg,#ff8c00,#ffd700);color:#000;box-shadow:0 5px 20px rgba(255,215,0,.25)}
+        .btn-comprar-volts:hover{transform:translateY(-2px)}
+        .btn-comprar-skin{background:linear-gradient(135deg,#6a0dad,#9933ff);color:#fff;box-shadow:0 5px 20px rgba(153,51,255,.25)}
+        .btn-comprar-skin:hover{transform:translateY(-2px)}
+        .btn-comprar-est{background:linear-gradient(135deg,#006644,#00aa55);color:#fff;box-shadow:0 5px 20px rgba(0,170,85,.25)}
+        .btn-comprar-est:hover{transform:translateY(-2px)}
+        .btn-comprado{background:linear-gradient(135deg,#1a1a2e,#0d0d1a);color:#00ff88;border:1px solid #00ff8844;cursor:default}
+        .btn-usar{background:linear-gradient(135deg,#006699,#3399cc);color:#fff;box-shadow:0 5px 20px rgba(51,153,204,.25)}
+        .btn-usar:hover{transform:translateY(-2px)}
+        
+        .sub-tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+        .sub-tab{padding:10px 18px;background:#111;border:2px solid #222;border-radius:12px 12px 0 0;cursor:pointer;color:#666;font-size:11px;font-weight:bold;transition:all .3s ease}
+        .sub-tab:hover{background:#1a1a2e;color:#ccc;border-color:#333}
+        .sub-tab.active{background:linear-gradient(135deg,#1a1a0a,#0d0d05);color:{{COR_DESTAQUE}};border-color:{{COR_DESTAQUE}}}
+        .sub-panel{display:none;animation:fadeIn .4s ease}
+        .sub-panel.active{display:block}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
     </style>
 </head>
 <body>
@@ -957,7 +1008,7 @@ HTML = r'''
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
             <span>⚡ TESLA 369</span>
-            <span>v4.9.0 | GALE 2 | SG: 1 WIN</span>
+            <span>v5.0.0 | GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
     
@@ -1457,6 +1508,104 @@ window.onload=function(){
         }
     });
 }
+
+function initCarrossel(containerId) {
+    var container = document.getElementById(containerId);
+    if (!container) return;
+    
+    // Criar estrutura do carrossel
+    var grid = container.querySelector('.planos-grid, .skins-grid, .estrategia-grid');
+    if (!grid) return;
+    
+    // Criar track
+    var track = document.createElement('div');
+    track.className = 'carrossel-track';
+    track.id = containerId + '-track';
+    
+    // Mover cards para o track
+    var cards = grid.querySelectorAll('.plano-card, .skin-card, .estrategia-card');
+    cards.forEach(function(card) {
+        card.classList.add('carrossel-card');
+        track.appendChild(card);
+    });
+    
+    // Limpar grid e adicionar track
+    grid.innerHTML = '';
+    grid.appendChild(track);
+    
+    // Criar setas
+    var setaEsq = document.createElement('div');
+    setaEsq.className = 'carrossel-seta esq';
+    setaEsq.innerHTML = '◀';
+    setaEsq.onclick = function() { track.scrollBy({left: -220, behavior: 'smooth'}); };
+    
+    var setaDir = document.createElement('div');
+    setaDir.className = 'carrossel-seta dir';
+    setaDir.innerHTML = '▶';
+    setaDir.onclick = function() { track.scrollBy({left: 220, behavior: 'smooth'}); };
+    
+    // Criar container
+    var carrosselContainer = document.createElement('div');
+    carrosselContainer.className = 'carrossel-container';
+    carrosselContainer.appendChild(setaEsq);
+    carrosselContainer.appendChild(track);
+    carrosselContainer.appendChild(setaDir);
+    
+    // Criar indicadores
+    var indicadores = document.createElement('div');
+    indicadores.className = 'carrossel-indicadores';
+    indicadores.id = containerId + '-indicadores';
+    
+    cards.forEach(function(_, i) {
+        var dot = document.createElement('div');
+        dot.className = 'carrossel-dot';
+        dot.onclick = function() {
+            track.scrollTo({left: i * 220, behavior: 'smooth'});
+        };
+        indicadores.appendChild(dot);
+    });
+    
+    // Atualizar indicadores ao scroll
+    track.addEventListener('scroll', function() {
+        var index = Math.round(track.scrollLeft / 220);
+        var dots = indicadores.querySelectorAll('.carrossel-dot');
+        dots.forEach(function(d, i) {
+            d.classList.toggle('active', i === index);
+        });
+    });
+    
+    // Inserir na página
+    var parent = grid.parentNode;
+    parent.insertBefore(carrosselContainer, grid);
+    parent.insertBefore(indicadores, grid.nextSibling);
+    grid.style.display = 'none';
+    
+    // Ativar primeiro dot
+    indicadores.querySelector('.carrossel-dot').classList.add('active');
+}
+
+// Inicializar carrosséis quando abrir a loja
+var originalRenderLoja = renderLoja;
+renderLoja = function() {
+    originalRenderLoja();
+    setTimeout(function() { initCarrossel('sub-panel-skins'); }, 300);
+};
+
+var originalRenderLojaEstrategias = renderLojaEstrategias;
+renderLojaEstrategias = function() {
+    originalRenderLojaEstrategias();
+    setTimeout(function() { initCarrossel('sub-panel-estrategias'); }, 300);
+};
+
+// Inicializar carrossel de VOLTS
+var originalOpenTab = openTab;
+openTab = function(tab) {
+    originalOpenTab(tab);
+    if (tab === 'loja') {
+        setTimeout(function() { initCarrossel('sub-panel-moedas'); }, 500);
+    }
+};
+
 </script>
 </body>
 </html>
