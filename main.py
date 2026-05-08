@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT v4.6.0 ⚡
+# ⚡ TESLA 369 BOT v4.7.0 ⚡
 # TESLA-369 GRÁTIS | v_SENSITIVO 6⚡ | 3=1 3⚡ | LOJA ESTRATÉGIAS | SKINS | MERCADO PAGO
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -93,7 +93,7 @@ ESTRATEGIAS = {
         'nome': '⚡ TESLA-369',
         'desc': '6 velas: padrão g-g-g-r-r → CALL / r-r-r-g-g → PUT',
         'timeframe': 60,
-        'pares': ['EURUSD-OTC', 'EURUSD'],
+        'pares': ['EURUSD-OTC'],
         'preco_moedas': 0,
         'gratis': True,
         'fixa': True
@@ -102,7 +102,7 @@ ESTRATEGIAS = {
         'nome': '🔮 v_SENSITIVO',
         'desc': 'RSI + MM + Bollinger + MACD + Estocástico + Fase da Vela',
         'timeframe': 60,
-        'pares': ['EURUSD-OTC', 'EURUSD'],
+        'pares': ['EURUSD-OTC'],
         'preco_moedas': 6,
         'gratis': False
     },
@@ -110,8 +110,48 @@ ESTRATEGIAS = {
         'nome': '3️⃣ 3ª = 1ª',
         'desc': 'Opera a cada 5min, seg 55+',
         'timeframe': 60,
-        'pares': ['EURUSD-OTC', 'EURUSD'],
+        'pares': ['EURUSD-OTC'],
         'preco_moedas': 3,
+        'gratis': False
+    },
+    'mhi_filtrado': {
+        'nome': '📊 MHI-FILTRADO',
+        'desc': '5 velas + Média Móvel + filtro de cor dominante',
+        'timeframe': 60,
+        'pares': ['EURUSD-OTC'],
+        'preco_moedas': 9,
+        'gratis': False
+    },
+    'quadrante_de_7': {
+        'nome': '7️⃣ QUADRANTE DE 7',
+        'desc': '7 velas + MM, conta cores',
+        'timeframe': 60,
+        'pares': ['EURUSD-OTC'],
+        'preco_moedas': 6,
+        'gratis': False
+    },
+    'fluxo_de_velas': {
+        'nome': '🌊 FLUXO-DE-VELAS',
+        'desc': '5 velas mesma cor + MM',
+        'timeframe': 60,
+        'pares': ['EURUSD-OTC'],
+        'preco_moedas': 3,
+        'gratis': False
+    },
+    'reversao': {
+        'nome': '🔄 REVERSÃO',
+        'desc': 'Padrão alternado g-r-g-r-g ou r-g-r-g-r',
+        'timeframe': 60,
+        'pares': ['EURUSD-OTC'],
+        'preco_moedas': 3,
+        'gratis': False
+    },
+    'm5': {
+        'nome': '⏰ M5',
+        'desc': 'Quadrante de velas de 5min',
+        'timeframe': 300,
+        'pares': ['EURUSD-OTC'],
+        'preco_moedas': 6,
         'gratis': False
     }
 }
@@ -705,7 +745,7 @@ HTML = r'''
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ TESLA 369 BOT v4.6.0</title>
+    <title>⚡ TESLA 369 BOT v4.7.0</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:{{COR_FUNDO}};color:{{COR_TEXTO}};font-family:'Courier New',monospace;padding:10px}
@@ -829,7 +869,7 @@ HTML = r'''
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
             <span>⚡ TESLA 369</span>
-            <span>v4.6.0 | GALE 2 | SG: 1 WIN</span>
+            <span>v4.7.0 | GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
     
