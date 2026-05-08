@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT v4.7.1 ⚡
+# ⚡ TESLA 369 BOT v4.8.0 ⚡
 # TESLA-369 GRÁTIS | v_SENSITIVO 6⚡ | 3=1 3⚡ | LOJA ESTRATÉGIAS | SKINS | MERCADO PAGO
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -745,7 +745,7 @@ HTML = r'''
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ TESLA 369 BOT v4.7.1</title>
+    <title>⚡ TESLA 369 BOT v4.8.0</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:{{COR_FUNDO}};color:{{COR_TEXTO}};font-family:'Courier New',monospace;padding:10px}
@@ -820,7 +820,49 @@ HTML = r'''
 .sub-tab:hover{background:#1a1a2e;color:#fff}
 .sub-panel{display:none}
 .sub-panel.active{display:block}
-</style>
+
+        /* 🎨 LOJA PREMIUM - NOVO DESIGN */
+        .loja-container{padding:10px 0}
+        .loja-titulo{text-align:center;color:{{COR_DESTAQUE}};font-size:16px;margin-bottom:15px;text-shadow:0 0 20px {{COR_TAB_ATIVA}};letter-spacing:2px}
+        .planos-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;padding:5px}
+        .plano-card{background:linear-gradient(180deg,#1a1a2e 0%,#0d0d1a 100%);padding:15px 10px;border-radius:16px;border:1px solid #333;text-align:center;cursor:pointer;transition:all .3s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden;animation:fadeInUp .5s ease backwards}
+        .plano-card:nth-child(1){animation-delay:.1s}
+        .plano-card:nth-child(2){animation-delay:.2s}
+        .plano-card:nth-child(3){animation-delay:.3s}
+        .plano-card:nth-child(4){animation-delay:.4s}
+        .plano-card:nth-child(5){animation-delay:.5s}
+        .plano-card:hover{transform:translateY(-6px);border-color:{{COR_DESTAQUE}};box-shadow:0 12px 30px rgba(255,215,0,.2),0 0 60px rgba(255,215,0,.05)}
+        .plano-card.selecionado{border-color:#ffd700!important;box-shadow:0 0 30px rgba(255,215,0,.5),inset 0 0 30px rgba(255,215,0,.05);background:linear-gradient(180deg,#2a2a1e 0%,#1a1a0d 100%)}
+        .plano-card.selecionado::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle,rgba(255,215,0,.1) 0%,transparent 70%);animation:rotate 4s linear infinite}
+        .plano-icone{font-size:28px;margin-bottom:6px;filter:drop-shadow(0 0 8px {{COR_DESTAQUE}})}
+        .plano-nome{color:{{COR_DESTAQUE}};font-weight:bold;font-size:12px;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px}
+        .plano-moedas{font-size:28px;font-weight:bold;background:linear-gradient(180deg,#ffd700,#ff8c00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:5px 0}
+        .plano-preco{font-size:16px;color:#00ff88;font-weight:bold}
+        .plano-badge{position:absolute;top:10px;right:10px;background:linear-gradient(135deg,#ff4444,#ff6600);color:#fff;font-size:8px;padding:3px 8px;border-radius:12px;font-weight:bold;animation:pulse 2s infinite}
+        .skin-card{background:linear-gradient(180deg,#1a102a 0%,#0d0a1a 100%);padding:15px 10px;border-radius:16px;border:1px solid #333;text-align:center;cursor:pointer;transition:all .3s ease;position:relative;overflow:hidden;animation:fadeInUp .4s ease backwards}
+        .skin-card:hover{transform:translateY(-5px);border-color:#9933ff;box-shadow:0 10px 25px rgba(153,51,255,.2)}
+        .skin-card.ativo{border-color:#00ff88!important;box-shadow:0 0 25px rgba(0,255,136,.3),inset 0 0 20px rgba(0,255,136,.03)}
+        .skin-icone{font-size:30px;margin-bottom:5px}
+        .skin-nome{color:#cc66ff;font-weight:bold;font-size:13px;margin-bottom:4px}
+        .skin-desc{color:#888;font-size:9px;margin-bottom:8px;line-height:1.3}
+        .btn-loja{padding:10px 16px;border:none;border-radius:10px;font-weight:bold;cursor:pointer;font-size:11px;width:100%;transition:all .2s ease;text-transform:uppercase;letter-spacing:1px}
+        .btn-comprar-volts{background:linear-gradient(135deg,#ff8c00,#ffd700);color:#000;box-shadow:0 4px 15px rgba(255,215,0,.3)}
+        .btn-comprar-volts:hover{transform:scale(1.03);box-shadow:0 6px 20px rgba(255,215,0,.5)}
+        .btn-comprar-skin{background:linear-gradient(135deg,#6600cc,#9933ff);color:#fff;box-shadow:0 4px 15px rgba(153,51,255,.3)}
+        .btn-comprar-skin:hover{transform:scale(1.03);box-shadow:0 6px 20px rgba(153,51,255,.5)}
+        .btn-comprar-est{background:linear-gradient(135deg,#006644,#00aa55);color:#fff;box-shadow:0 4px 15px rgba(0,170,85,.3)}
+        .btn-comprar-est:hover{transform:scale(1.03);box-shadow:0 6px 20px rgba(0,170,85,.5)}
+        .btn-comprado{background:linear-gradient(135deg,#222,#333);color:#00ff88;border:1px solid #00ff88;cursor:default;box-shadow:0 0 10px rgba(0,255,136,.1)}
+        .badge-preco{display:inline-block;padding:4px 10px;border-radius:10px;font-size:9px;font-weight:bold;margin:5px 0}
+        .badge-gratis{background:#00ff8822;color:#00ff88;border:1px solid #00ff8844}
+        .badge-pago{background:#ffd70022;color:#ffd700;border:1px solid #ffd70044}
+        .badge-destaque{position:absolute;top:8px;left:8px;background:linear-gradient(135deg,#ffd700,#ff8c00);color:#000;font-size:7px;padding:3px 8px;border-radius:8px;font-weight:bold}
+        @keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes rotate{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+        @keyframes brilho{0%,100%{box-shadow:0 0 5px {{COR_DESTAQUE}}}50%{box-shadow:0 0 20px {{COR_DESTAQUE}},0 0 40px {{COR_TAB_ATIVA}}}}
+
+    </style>
 </head>
 <body>
 <div class="container">
@@ -869,7 +911,7 @@ HTML = r'''
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
             <span>⚡ TESLA 369</span>
-            <span>v4.7.1 | GALE 2 | SG: 1 WIN</span>
+            <span>v4.8.0 | GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
     
@@ -886,7 +928,7 @@ HTML = r'''
         </div>
         <div class="sub-panel active" id="sub-panel-moedas">
             <div class="config-section"><h3>💳 COMPRAR VOLTS COM PIX</h3><p style="color:#888;font-size:10px">📧 <input type="email" id="emailCompra" placeholder="Seu email" style="width:220px;padding:6px;background:#111;border:1px solid #333;color:#fff;border-radius:5px"></p><p style="color:#ffd700;font-size:10px;margin-top:5px">⚡ 1 VOLT = 1 ciclo | +1 VOLT grátis/dia</p><p style="color:#888;font-size:9px;margin-top:3px">⭐ Selecione o plano e pague com PIX</p></div>
-        <div class="planos-grid">''' + ''.join([f'<div class="plano-card" id="plano{p["id"]}" onclick="selecionarPlano({p["id"]})"><div style="color:#ffd700;font-size:11px">{p["nome"]}</div><div class="plano-moedas">⚡ {p["moedas"]}</div><div class="plano-preco">R$ {p["preco"]:.2f}</div><div class="plano-desc">{p.get("desc","")}</div>{f"<div><span class=\"plano-desconto\">{p['desconto']}</span></div>" if p.get("desconto") else ""}{f"<div class=\"plano-tag\">{p['tag']}</div>" if p.get("tag") else ""}<button class="btn btn-buy" style="display:none;margin-top:8px;padding:8px" id="btnPlano{p['id']}" onclick="event.stopPropagation();pagarComPix({p['id']})">💳 PAGAR COM PIX</button></div>' for p in PLANOS]) + r'''</div>
+        <div class="planos-grid">''' + ''.join([f'<div class="plano-card" id="plano{p["id"]}" onclick="selecionarPlano({p["id"]})"><div style="color:#ffd700;font-size:11px">{p["nome"]}</div><div class="plano-moedas">⚡ {p["moedas"]}</div><div class="plano-preco">R$ {p["preco"]:.2f}</div><div class="plano-desc">{p.get("desc","")}</div>{f"<div><span class=\"plano-desconto\">{p['desconto']}</span></div>" if p.get("desconto") else ""}{f"<div class=\"plano-tag\">{p['tag']}</div>" if p.get("tag") else ""}<button class="btn-loja btn-comprar-volts" style="display:none;margin-top:10px" id="btnPlano{p['id']}" onclick="event.stopPropagation();pagarComPix({p['id']})">💳 PAGAR COM PIX</button></div>' for p in PLANOS]) + r'''</div>
         </div>
         <div class="sub-panel" id="sub-panel-skins">
             <div class="config-section"><h3>SKINS DISPONIVEIS</h3><p style="color:#888;font-size:10px">Personalize a aparencia do seu bot! Skins compradas ficam salvas.</p></div>
@@ -1076,7 +1118,7 @@ function renderLoja(){
                 if(skin.preco_moedas==0){
                     btnHtml='<button class="btn btn-skin" style="width:100%;margin-top:8px" onclick="ativarSkin(\''+skin.id+'\')">🆓 ATIVAR GRÁTIS</button>';
                 }else{
-                    btnHtml='<button class="btn btn-buy" style="width:100%;margin-top:8px;padding:8px" onclick="comprarSkin(\''+skin.id+'\')">🛒 COMPRAR ('+skin.preco_moedas+' ⚡VOLTS)</button>';
+                    btnHtml='<button class="btn-loja btn-comprar-skin" style="width:100%;margin-top:8px" onclick="comprarSkin(\''+skin.id+'\')">🛒 COMPRAR ('+skin.preco_moedas+' ⚡VOLTS)</button>';
                 }
             }
             html+='<div class="skin-card'+ativa+'">';
@@ -1159,11 +1201,11 @@ function renderLojaEstrategias(){
             var btnHtml = '';
             
             if (comprado) {
-                btnHtml = '<button class="btn btn-info" style="width:100%;margin-top:8px;cursor:default">✅ COMPRADO</button>';
+                btnHtml = '<button class="btn-loja btn-comprado" style="width:100%;margin-top:8px;cursor:default">✅ COMPRADO</button>';
             } else if (est.preco_moedas == 0 || est.gratis) {
-                btnHtml = '<button class="btn btn-skin" style="width:100%;margin-top:8px;cursor:default">🆓 GRÁTIS</button>';
+                btnHtml = '<button class="btn-loja btn-comprado" style="width:100%;margin-top:8px;cursor:default">🆓 GRÁTIS</button>';
             } else {
-                btnHtml = '<button class="btn btn-buy" style="width:100%;margin-top:8px;padding:8px" onclick="comprarEstrategia(\''+key+'\')">🛒 COMPRAR ('+est.preco_moedas+' ⚡VOLTS)</button>';
+                btnHtml = '<button class="btn-loja btn-comprar-est" style="width:100%;margin-top:8px" onclick="comprarEstrategia(\''+key+'\')">🛒 COMPRAR ('+est.preco_moedas+' ⚡VOLTS)</button>';
             }
             
             html += '<div class="skin-card'+(comprado?' ativo':'')+'">';
