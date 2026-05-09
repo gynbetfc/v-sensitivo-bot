@@ -1199,6 +1199,7 @@ function calcularMinimo() {
     }
 }
 
+// ========== FUNÇÕES DOS BOTÕES ==========
 function conectarIQ(){
     var email=document.getElementById('email').value.trim();
     var senha=document.getElementById('senha').value.trim();
@@ -1220,8 +1221,6 @@ function conectarIQ(){
             if(intervalo)clearInterval(intervalo);
             intervalo=setInterval(atualizar,2000);
             atualizar();
-            // Recarregar página após 1 segundo para aplicar skin
-            setTimeout(function(){ location.reload(); }, 1000);
         }else{
             alert('ERRO: '+d.erro);
             document.getElementById('btnConectar').disabled=false;
@@ -1240,6 +1239,7 @@ function comecarOperar(){
             botAtivo=true;
             document.getElementById('btnOperar').style.display='none';
             document.getElementById('btnParar').style.display='inline-block';
+            document.getElementById('btnDesconectar').style.display='none';
             document.getElementById('statusTexto').textContent='🤖 Operando';
             document.getElementById('moedasSaldo').textContent=d.moedas;
         }else{
@@ -1250,43 +1250,36 @@ function comecarOperar(){
     });
 }
 
-
-function desconectarIQ(){
-    if(botAtivo){
-        alert('⚠️ Pare o bot primeiro antes de desconectar!');
-        return;
-    }
-    if(confirm('Desconectar da IQ Option?')){
-        fetch('/parar',{method:'POST'}).then(r=>r.json()).then(d=>{
-            conectadoIQ=false;
-            botAtivo=false;
-            document.getElementById('btnConectar').style.display='inline-block';
-            document.getElementById('btnOperar').style.display='none';
-            document.getElementById('btnParar').style.display='none';
-            document.getElementById('btnDesconectar').style.display='none';
-            document.getElementById('statusTexto').textContent='⏸️ Desconectado';
-            document.getElementById('statusDot').className='status-dot inactive';
-            if(intervalo)clearInterval(intervalo);
-        });
-    }
-}
-
 function pararBot(){
-    if(!confirm('Parar?'))return;
+    if(!confirm('Parar o bot?'))return;
     fetch('/parar',{method:'POST'}).then(r=>r.json()).then(d=>{
         botAtivo=false;
-        document.getElementById('btnConectar').style.display='inline-block';
-        document.getElementById('btnOperar').style.display='none';
-        document.getElementById('btnParar').style.display='none';
-        document.getElementById('btnConectar').disabled=false;
-        document.getElementById('btnConectar').textContent='🔌 CONECTAR';
+        document.getElementById('btnOperar').style.display='inline-block';
         document.getElementById('btnOperar').disabled=false;
         document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
-        document.getElementById('statusTexto').textContent='⏸️ Desconectado';
-        document.getElementById('statusDot').className='status-dot inactive';
+        document.getElementById('btnParar').style.display='none';
+        document.getElementById('btnDesconectar').style.display='inline-block';
+        document.getElementById('statusTexto').textContent='🟢 Conectado';
+        document.getElementById('statusDot').className='status-dot active';
         if(intervalo)clearInterval(intervalo);
         setTimeout(function(){ location.reload(); }, 500);
     });
+}
+
+function desconectarIQ(){
+    if(botAtivo){alert('⚠️ Pare o bot primeiro!');return;}
+    if(confirm('Desconectar da IQ Option?')){
+        conectadoIQ=false;botAtivo=false;
+        document.getElementById('btnConectar').style.display='inline-block';
+        document.getElementById('btnConectar').disabled=false;
+        document.getElementById('btnConectar').textContent='🔌 CONECTAR';
+        document.getElementById('btnOperar').style.display='none';
+        document.getElementById('btnParar').style.display='none';
+        document.getElementById('btnDesconectar').style.display='none';
+        document.getElementById('statusTexto').textContent='⏸️ Desconectado';
+        document.getElementById('statusDot').className='status-dot inactive';
+        if(intervalo)clearInterval(intervalo);
+    }
 }
 
 function renderEstrategias(){
@@ -1574,6 +1567,8 @@ function atualizar(){
         if(!d.conectado&&conectadoIQ){
             conectadoIQ=false;botAtivo=false;
             document.getElementById('btnConectar').style.display='inline-block';
+            document.getElementById('btnConectar').disabled=false;
+            document.getElementById('btnConectar').textContent='🔌 CONECTAR';
             document.getElementById('btnOperar').style.display='none';
             document.getElementById('btnParar').style.display='none';
             document.getElementById('btnDesconectar').style.display='none';
