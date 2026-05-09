@@ -1269,16 +1269,18 @@ function pararBot(){
 function desconectarIQ(){
     if(botAtivo){alert('⚠️ Pare o bot primeiro!');return;}
     if(confirm('Desconectar da IQ Option?')){
-        conectadoIQ=false;botAtivo=false;
-        document.getElementById('btnConectar').style.display='inline-block';
-        document.getElementById('btnConectar').disabled=false;
-        document.getElementById('btnConectar').textContent='🔌 CONECTAR';
-        document.getElementById('btnOperar').style.display='none';
-        document.getElementById('btnParar').style.display='none';
-        document.getElementById('btnDesconectar').style.display='none';
-        document.getElementById('statusTexto').textContent='⏸️ Desconectado';
-        document.getElementById('statusDot').className='status-dot inactive';
-        if(intervalo)clearInterval(intervalo);
+        fetch('/parar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({desconectar:true})}).then(r=>r.json()).then(d=>{
+            conectadoIQ=false;botAtivo=false;
+            document.getElementById('btnConectar').style.display='inline-block';
+            document.getElementById('btnConectar').disabled=false;
+            document.getElementById('btnConectar').textContent='🔌 CONECTAR';
+            document.getElementById('btnOperar').style.display='none';
+            document.getElementById('btnParar').style.display='none';
+            document.getElementById('btnDesconectar').style.display='none';
+            document.getElementById('statusTexto').textContent='⏸️ Desconectado';
+            document.getElementById('statusDot').className='status-dot inactive';
+            if(intervalo)clearInterval(intervalo);
+        });
     }
 }
 
@@ -1797,8 +1799,11 @@ def comecar_operar():
 
 @app.route('/parar', methods=['POST'])
 def parar():
-    global bot_rodando
+    global bot_rodando, conectado_iq
+    data = request.json or {}
     bot_rodando = False
+    if data.get('desconectar'):
+        conectado_iq = False
     return jsonify({'ok': True})
 
 @app.route('/selecionar_estrategia', methods=['POST'])
