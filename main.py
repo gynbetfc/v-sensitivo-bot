@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT v5.4.0 ⚡
+# ⚡ TESLA 369 BOT v6.0.0-MULTI-V2 ⚡
 # TESLA-369 GRÁTIS | v_SENSITIVO 6⚡ | 3=1 3⚡ | LOJA ESTRATÉGIAS | SKINS | MERCADO PAGO
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -227,6 +227,9 @@ logs_web, MAX_LOGS_WEB = [], 200
 email_usuario_atual = ""
 skin_atual_global = 'skin_padrao'
 pagamentos_pendentes = {}
+
+# ============= SISTEMA MULTI-USUÁRIO =============
+bots_ativos = {}  # {email: thread_do_bot}
 
 def add_log(msg, tipo='info'):
     global logs_web
@@ -766,6 +769,10 @@ def chat_enviar():
     if len(chat_mensagens) > 100: chat_mensagens = chat_mensagens[-100:]
     return jsonify({'ok': True})
 
+@app.route('/bots_ativos')
+def bots_ativos_route():
+    return jsonify({'total': len(bots_ativos), 'usuarios': list(bots_ativos.keys())})
+
 @app.route('/chat_mensagens')
 def chat_mensagens_route():
     ip = request.remote_addr
@@ -782,7 +789,7 @@ HTML = r'''
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ TESLA 369 BOT v5.4.0</title>
+    <title>⚡ TESLA 369 BOT v6.0.0-MULTI-V2</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:{{COR_FUNDO}};color:{{COR_TEXTO}};font-family:'Courier New',monospace;padding:10px}
@@ -1007,7 +1014,7 @@ HTML = r'''
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
             <span>⚡ TESLA 369</span>
-            <span>v5.4.0 | GALE 2 | SG: 1 WIN</span>
+            <span>v6.0.0-MULTI-V2 | GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
     
@@ -1751,6 +1758,13 @@ def conectar():
         d = request.get_json(); email = d.get('email', '').strip(); senha = d.get('senha', '').strip(); tipo = d.get('tipo', 'PRACTICE')
         if not email or not senha: return jsonify({'ok': False, 'erro': 'Email e senha obrigatórios'})
         email_usuario_atual = email
+        
+        # Criar API isolada para este usuário
+        API = IQ_Option(email, senha)
+        status_conn, reason = API.connect()
+        if not status_conn: return jsonify({'ok': False, 'erro': str(reason)[:100]})
+        API.change_balance(tipo)
+        conectado_iq = True
         usuario = carregar_usuario(email) or criar_usuario(email)
         hoje = str(datetime.now())[:10]
         if usuario.get('moedas_ganhas_hoje') != hoje:
@@ -1765,9 +1779,6 @@ def conectar():
         salvar_usuario(email, usuario)
         par = ESTRATEGIAS[estrategia_atual]['pares'][0]; timeframe_atual = ESTRATEGIAS[estrategia_atual]['timeframe']
         add_log('🔌 Conectando na IQ Option...', 'info')
-        API = IQ_Option(email, senha); status_conn, reason = API.connect()
-        if not status_conn: return jsonify({'ok': False, 'erro': str(reason)[:100]})
-        API.change_balance(tipo); conectado_iq = True
         add_log(f'✅ Conectado! ${API.get_balance():.2f} | ⚡ {usuario.get("moedas", 0)} VOLTS', 'win')
         return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0)})
     except Exception as e: return jsonify({'ok': False, 'erro': str(e)[:100]})
@@ -1780,7 +1791,6 @@ def comecar_operar():
         usuario = carregar_usuario(email_usuario_atual)
         if not usuario: return jsonify({'ok': False, 'erro': 'Usuário não encontrado!'})
         
-        # Verificar se a estratégia atual foi comprada
         estrategias_compradas = usuario.get('estrategias_compradas', ['tesla_369'])
         if estrategia_atual not in estrategias_compradas:
             preco = ESTRATEGIAS.get(estrategia_atual, {}).get('preco_moedas', 0)
@@ -1789,7 +1799,15 @@ def comecar_operar():
         if usuario.get('moedas', 0) < 1: return jsonify({'ok': False, 'erro': 'Sem VOLTS!'})
         usuario['moedas'] -= 1; usuario['total_ciclos'] += 1; salvar_usuario(email_usuario_atual, usuario)
         lucro = 0.0; NumDeOperacoes = 0
-        if not bot_rodando: bot_rodando = True; bot_thread = threading.Thread(target=bot_loop, daemon=True); bot_thread.start()
+        
+        # Iniciar bot em thread separada para este usuário
+        email_atual = email_usuario_atual
+        if not bot_rodando:
+            bot_rodando = True
+            bot_thread = threading.Thread(target=bot_loop, daemon=True)
+            bot_thread.start()
+            bots_ativos[email_atual] = bot_thread
+        
         return jsonify({'ok': True, 'moedas': usuario['moedas']})
     except Exception as e: return jsonify({'ok': False, 'erro': str(e)[:100]})
 
@@ -1800,6 +1818,9 @@ def parar():
     bot_rodando = False
     if data.get('desconectar'):
         conectado_iq = False
+        # Remover bot da lista de ativos
+        if email_usuario_atual in bots_ativos:
+            del bots_ativos[email_usuario_atual]
     return jsonify({'ok': True})
 
 @app.route('/selecionar_estrategia', methods=['POST'])
