@@ -1186,6 +1186,7 @@ function conectarIQ(){
             document.getElementById('btnOperar').style.display='inline-block';
             document.getElementById('btnDesconectar').style.display='inline-block';
             document.getElementById('statusTexto').textContent='🟢 Conectado';
+        setTimeout(function(){ location.reload(); }, 500);
             document.getElementById('statusDot').className='status-dot active';
             document.getElementById('moedasSaldo').textContent=d.moedas||0;
             if(intervalo)clearInterval(intervalo);
@@ -1236,6 +1237,7 @@ function desconectarIQ(){
             document.getElementById('btnParar').style.display='none';
             document.getElementById('btnDesconectar').style.display='none';
             document.getElementById('statusTexto').textContent='🟢 Conectado';
+        setTimeout(function(){ location.reload(); }, 500);
             document.getElementById('statusDot').className='status-dot inactive';
             if(intervalo)clearInterval(intervalo);
         });
@@ -1251,6 +1253,7 @@ function pararBot(){
         document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
         document.getElementById('btnParar').style.display='none';
         document.getElementById('statusTexto').textContent='🟢 Conectado';
+        setTimeout(function(){ location.reload(); }, 500);
         document.getElementById('btnOperar').style.display='none';
         document.getElementById('btnParar').style.display='none';
         document.getElementById('btnConectar').disabled=false;
@@ -1258,6 +1261,7 @@ function pararBot(){
         document.getElementById('btnOperar').disabled=false;
         document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
         document.getElementById('statusTexto').textContent='🟢 Conectado';
+        setTimeout(function(){ location.reload(); }, 500);
         document.getElementById('statusDot').className='status-dot inactive';
         if(intervalo)clearInterval(intervalo);
     });
@@ -1556,6 +1560,7 @@ function atualizar(){
             document.getElementById('btnOperar').disabled=false;
             document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
             document.getElementById('statusTexto').textContent='🟢 Conectado';
+        setTimeout(function(){ location.reload(); }, 500);
             document.getElementById('statusDot').className='status-dot inactive';
             if(intervalo)clearInterval(intervalo);
         }
@@ -1567,6 +1572,7 @@ function atualizar(){
             document.getElementById('btnOperar').disabled=false;
             document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
             document.getElementById('statusTexto').textContent='🟢 Conectado';
+        setTimeout(function(){ location.reload(); }, 500);
         }
         if(d.banca)document.getElementById('banca').textContent='$'+d.banca.toFixed(2);
         if(d.lucro!==undefined){var el=document.getElementById('lucro');el.textContent='$'+d.lucro.toFixed(2);el.style.color=d.lucro>=0?'#00ff88':'#ff4444';}
@@ -1599,7 +1605,8 @@ window.onload=function(){
             document.getElementById('btnConectar').style.display='none';
             if(d.rodando){botAtivo=true;document.getElementById('btnOperar').style.display='none';document.getElementById('btnParar').style.display='inline-block';document.getElementById('statusTexto').textContent='🤖 Operando';}
             else{document.getElementById('btnOperar').style.display='inline-block';
-            document.getElementById('btnDesconectar').style.display='inline-block';document.getElementById('statusTexto').textContent='🟢 Conectado';}
+            document.getElementById('btnDesconectar').style.display='inline-block';document.getElementById('statusTexto').textContent='🟢 Conectado';
+        setTimeout(function(){ location.reload(); }, 500);}
             document.getElementById('statusDot').className='status-dot active';
             if(intervalo)clearInterval(intervalo);
             intervalo=setInterval(atualizar,2000);atualizar();
