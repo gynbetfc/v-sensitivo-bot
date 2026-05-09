@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT v4.9.1 ⚡
+# ⚡ TESLA 369 BOT v4.10.0 ⚡
 # TESLA-369 GRÁTIS | v_SENSITIVO 6⚡ | 3=1 3⚡ | LOJA ESTRATÉGIAS | SKINS | MERCADO PAGO
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -745,7 +745,7 @@ HTML = r'''
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ TESLA 369 BOT v4.9.1</title>
+    <title>⚡ TESLA 369 BOT v4.10.0</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:{{COR_FUNDO}};color:{{COR_TEXTO}};font-family:'Courier New',monospace;padding:10px}
@@ -926,6 +926,7 @@ HTML = r'''
         <div class="tab active" onclick="openTab('bot')">🤖 BOT</div>
         <div class="tab" onclick="openTab('estrategias')">📊 ESTRATÉGIAS</div>
         <div class="tab" onclick="openTab('loja')">🛍️ LOJA</div>
+        <div class="tab" onclick="openTab('leia-me')">⚠️ LEIA-ME</div>
         <div class="tab" onclick="openTab('relatorio')">📊 RELATÓRIO</div>
     </div>
     
@@ -960,7 +961,7 @@ HTML = r'''
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
             <span>⚡ TESLA 369</span>
-            <span>v4.9.1 | GALE 2 | SG: 1 WIN</span>
+            <span>v4.10.0 | GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
     
@@ -986,6 +987,43 @@ HTML = r'''
         <div class="sub-panel" id="sub-panel-estrategias">
             <div class="config-section"><h3>📊 ESTRATÉGIAS PREMIUM</h3><p style="color:#888;font-size:10px">Compre estratégias avançadas com suas VOLTS! ⚡</p></div>
             <div class="skins-grid" id="estrategiasLojaGrid"></div>
+        </div>
+    </div>
+    
+    <div class="panel" id="panel-leia-me">
+        <div class="config-section">
+            <h3>⚠️ LEIA ATENTAMENTE ANTES DE OPERAR</h3>
+        </div>
+        <div style="background:#1a0000;border:2px solid #ff4444;border-radius:15px;padding:20px;margin:10px 0">
+            <p style="color:#ff4444;font-size:16px;text-align:center;font-weight:bold;margin-bottom:15px">⚡ ATENÇÃO: RISCOS REAIS ⚡</p>
+            <p style="color:#ff8888;font-size:12px;line-height:1.8;text-align:justify">
+                Nossas estratégias prometem <span style="color:#ffd700;font-weight:bold">10% de retorno em cada entrada bem-sucedida</span>. 
+                Isso é <span style="color:#ff4444;font-weight:bold">PERIGOSO</span> - mas o que não é perigoso nesse mundo?
+            </p>
+        </div>
+        <div style="background:#0a0a1a;border:1px solid #ffd700;border-radius:15px;padding:20px;margin:10px 0">
+            <p style="color:#ffd700;font-size:14px;font-weight:bold;margin-bottom:10px">🤖 ROBÔ vs HUMANO</p>
+            <p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify">
+                Quaisquer estratégias em opções binárias - seja executada por um <span style="color:#ffd700">ser humano</span> ou por uma <span style="color:#00ff88">máquina</span> - 
+                estão sujeitas a <span style="color:#ff4444">GANHAR</span> e a <span style="color:#ff4444">PERDER</span>. Porém, os 2 entram pra <span style="color:#00ff88;font-weight:bold">GANHAR</span>.
+            </p>
+            <p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify;margin-top:10px">
+                A grande vantagem do robô é que ele <span style="color:#00ff88;font-weight:bold">opera sem emoções</span>. 
+                Ele não tem medo, não tem ganância, não se desespera após uma perda. 
+                Isso é o que coloca a máquina <span style="color:#ffd700;font-weight:bold">acima dos humanos</span>.
+            </p>
+        </div>
+        <div style="background:#0a1a0a;border:1px solid #00ff88;border-radius:15px;padding:20px;margin:10px 0">
+            <p style="color:#00ff88;font-size:14px;font-weight:bold;margin-bottom:10px">✅ SUA RESPONSABILIDADE</p>
+            <p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify">
+                Você deve entender tudo que pode acontecer. Deve <span style="color:#ffd700;font-weight:bold">confiar no robô</span> 
+                e na sua <span style="color:#ffd700;font-weight:bold">própria intuição</span> em ligar o robô na hora certa, 
+                com a <span style="color:#00ff88;font-weight:bold">estratégia certa</span>.
+            </p>
+        </div>
+        <div style="text-align:center;margin-top:15px">
+            <p style="color:#ffd700;font-size:14px;font-weight:bold">🌀 O MERCADO TIRA DOS IMPACIENTES PARA DAR AOS PACIENTES 🌀</p>
+            <p style="color:#888;font-size:10px;margin-top:5px">Versão 4.9.1 - Tesla 369 Bot</p>
         </div>
     </div>
     
