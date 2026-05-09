@@ -22,6 +22,7 @@ app = Flask(__name__)
 MARTINGALE = 2
 PAYOUT_PADRAO = 0.85
 PERCENTUAL_BANCA = 10
+PERCENTUAL_BANCA = 10
 DRIVE_PATH = "vsens_users"
 os.makedirs(DRIVE_PATH, exist_ok=True)
 
@@ -525,6 +526,14 @@ def set_percentual():
     PERCENTUAL_BANCA = data.get('percentual', 10)
     return jsonify({'ok': True})
 
+
+@app.route('/set_percentual', methods=['POST'])
+def set_percentual():
+    global PERCENTUAL_BANCA
+    data = request.json
+    PERCENTUAL_BANCA = data.get('percentual', 10)
+    return jsonify({'ok': True})
+
 # ═══════════════════════════════════════════════════════
 # CÁLCULO DE ENTRADAS
 # ═══════════════════════════════════════════════════════
@@ -774,6 +783,33 @@ def chat_mensagens_route():
     online = sum(1 for t in chat_ultimo_acesso.values() if agora - t < 30)
     return jsonify({'mensagens': chat_mensagens[-50:], 'online': max(1, online)})
 
+
+# ═══════════════════════════════════════════════════════
+# ROTAS DO CHAT
+# ═══════════════════════════════════════════════════════
+chat_mensagens = []
+chat_ultimo_acesso = {}
+
+@app.route('/chat_enviar', methods=['POST'])
+def chat_enviar():
+    global chat_mensagens
+    data = request.json
+    nome = data.get('nome', 'Anônimo')[:15]
+    msg = data.get('msg', '')[:200]
+    sistema = data.get('sistema', False)
+    if not msg: return jsonify({'ok': False})
+    chat_mensagens.append({'nome': nome, 'msg': msg, 'hora': datetime.now().strftime('%H:%M'), 'sistema': sistema})
+    if len(chat_mensagens) > 100: chat_mensagens = chat_mensagens[-100:]
+    return jsonify({'ok': True})
+
+@app.route('/chat_mensagens')
+def chat_mensagens_route():
+    ip = request.remote_addr
+    chat_ultimo_acesso[ip] = time.time()
+    agora = time.time()
+    online = sum(1 for t in chat_ultimo_acesso.values() if agora - t < 30)
+    return jsonify({'mensagens': chat_mensagens[-50:], 'online': max(1, online)})
+
 # ═══════════════════════════════════════════════════════
 # HTML COMPLETO
 # ═══════════════════════════════════════════════════════
@@ -981,6 +1017,14 @@ HTML = r'''
             <span style="color:#ffd700;font-size:9px" id="valorEstimado">($0.00)</span>
             <span style="color:#ff4444;font-size:8px" id="avisoMinimo"></span>
         </div>
+            <div style="margin-top:5px;display:flex;gap:8px;align-items:center">
+            <label style="color:#888;font-size:9px">% Banca:</label>
+            <select id="percentualBanca" onchange="atualizarPercentual()" style="padding:5px;background:#111;border:1px solid #333;border-radius:5px;color:#fff;font-size:10px;width:70px">
+                <option value="10">10%</option><option value="20">20%</option><option value="30">30%</option><option value="50">50%</option><option value="100">100%</option>
+            </select>
+            <span style="color:#ffd700;font-size:9px" id="valorEstimado">($0.00)</span>
+            <span style="color:#ff4444;font-size:8px" id="avisoMinimo"></span>
+        </div>
             <button class="btn btn-info" id="btnConectar" onclick="conectarIQ()">🔌 CONECTAR</button>
             <button class="btn btn-start" id="btnOperar" onclick="comecarOperar()" style="display:none">🚀 COMEÇAR OPERAR</button>
             <button class="btn btn-stop" id="btnParar" onclick="pararBot()" style="display:none">⏹️ PARAR</button>
@@ -1036,6 +1080,23 @@ HTML = r'''
         </div>
     </div>
     
+    
+    <div class="panel" id="panel-chat">
+        <div class="config-section">
+            <h3>💬 CHAT DOS TRADERS</h3>
+            <p style="color:#888;font-size:9px" id="chatInfo">Conecte na IQ Option para entrar</p>
+        </div>
+        <div id="chatMensagens" style="background:#000;border:1px solid #333;border-radius:10px;height:300px;overflow-y:auto;padding:10px;margin-bottom:10px;font-size:10px">
+            <p style="color:#888;text-align:center">💬 Envie uma mensagem para começar</p>
+        </div>
+        <div style="display:flex;gap:8px">
+            <input type="text" id="chatMsg" placeholder="Digite sua mensagem..." style="flex:1;padding:10px;background:#111;border:1px solid #333;border-radius:8px;color:#fff;font-size:11px;font-family:'Courier New',monospace" onkeypress="if(event.key==='Enter')enviarChatMsg()">
+            <button onclick="enviarChatMsg()" class="btn btn-info" style="padding:10px 20px">ENVIAR</button>
+        </div>
+        <div style="text-align:center;margin-top:5px">
+            <span style="color:#888;font-size:9px" id="chatOnline">0 online</span>
+        </div>
+    </div>
     
     <div class="panel" id="panel-chat">
         <div class="config-section">
@@ -1127,6 +1188,34 @@ function openTab(tab){
     if(tab=='relatorio'&&emailLogado){document.getElementById('emailRelatorio').value=emailLogado;verRelatorio()}
     if(tab=='loja'){renderLoja();mostrarSubAba('moedas');}
     if(tab=='estrategias')renderEstrategias();
+}
+
+
+function atualizarPercentual() {
+    var perc = document.getElementById('percentualBanca').value;
+    fetch('/set_percentual', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({percentual: parseInt(perc)})
+    });
+    calcularMinimo();
+}
+
+function calcularMinimo() {
+    var bancaTexto = document.getElementById('banca').textContent;
+    var banca = parseFloat(bancaTexto.replace('$','')) || 0;
+    var perc = parseInt(document.getElementById('percentualBanca').value);
+    var valor = (banca * perc / 100).toFixed(2);
+    document.getElementById('valorEstimado').textContent = '($' + valor + ')';
+    
+    // Calcular mínimo para cobrir gale 2
+    var payout = 0.85;
+    var minimo = (valor / (1 + (1/payout) + (1/payout)*(1/payout))).toFixed(2);
+    if (banca < parseFloat(minimo) * 3) {
+        document.getElementById('avisoMinimo').textContent = '⚠️ Min: $' + (parseFloat(minimo)*3).toFixed(2);
+    } else {
+        document.getElementById('avisoMinimo').textContent = '';
+    }
 }
 
 
@@ -1662,6 +1751,77 @@ function atualizarChat() {
     });
 }
 
+
+// ============= CHAT AUTO-CONECTA =============
+var chatIntervalo = null;
+
+function iniciarChat() {
+    var nome = emailLogado || localStorage.getItem('chatNome') || '';
+    if (!nome) return;
+    
+    localStorage.setItem('chatNome', nome);
+    document.getElementById('chatInfo').textContent = '✅ Chat ativo como: ' + nome;
+    document.getElementById('chatInfo').style.color = '#00ff88';
+    
+    if (chatIntervalo) clearInterval(chatIntervalo);
+    chatIntervalo = setInterval(atualizarChat, 3000);
+    atualizarChat();
+}
+
+// Auto-conectar quando logar
+var conectarIQOriginal = conectarIQ;
+conectarIQ = function() {
+    conectarIQOriginal();
+    setTimeout(function() {
+        if (conectadoIQ && emailLogado) iniciarChat();
+    }, 2000);
+};
+
+// Auto-conectar ao carregar página
+setTimeout(function() {
+    if (conectadoIQ && emailLogado) iniciarChat();
+}, 2000);
+
+function enviarChatMsg() {
+    var nome = emailLogado || localStorage.getItem('chatNome') || 'Anônimo';
+    var msg = document.getElementById('chatMsg').value.trim();
+    if (!msg) return;
+    
+    fetch('/chat_enviar', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({nome: nome, msg: msg})
+    }).then(function() {
+        document.getElementById('chatMsg').value = '';
+        atualizarChat();
+    });
+}
+
+function atualizarChat() {
+    fetch('/chat_mensagens').then(r => r.json()).then(d => {
+        if (!d.mensagens) return;
+        var html = '';
+        d.mensagens.forEach(function(m) {
+            if (m.sistema) {
+                html += '<div style="text-align:center;color:#555;font-size:9px;margin:5px 0">' + m.nome + ' ' + m.msg + ' <span style="color:#555;font-size:8px">' + m.hora + '</span></div>';
+            } else {
+                var avatar = m.nome.charAt(0).toUpperCase();
+                html += '<div style="display:flex;margin-bottom:8px">';
+                html += '<div style="width:28px;height:28px;border-radius:50%;background:#1a1a2e;display:flex;align-items:center;justify-content:center;font-size:12px;margin-right:8px;border:1px solid #333">' + avatar + '</div>';
+                html += '<div style="flex:1">';
+                html += '<div style="color:#ffd700;font-size:9px;font-weight:bold;margin-bottom:2px">' + m.nome + '<span style="color:#555;font-size:8px;margin-left:5px">' + m.hora + '</span></div>';
+                html += '<div style="color:#ccc;font-size:11px">' + m.msg + '</div>';
+                html += '</div></div>';
+            }
+        });
+        document.getElementById('chatMensagens').innerHTML = html || '<p style="color:#888;text-align:center">Nenhuma mensagem</p>';
+        document.getElementById('chatMensagens').scrollTop = document.getElementById('chatMensagens').scrollHeight;
+        document.getElementById('chatOnline').textContent = '🟢 ' + (d.online || 1) + ' online';
+    }).catch(function() {
+        document.getElementById('chatOnline').textContent = '⏳ Reconectando...';
+    });
+}
+
 </script>
 </body>
 </html>
@@ -1755,6 +1915,14 @@ def comecar_operar():
             return jsonify({'ok': False, 'erro': f'Estratégia não comprada! Compre na loja por {preco} ⚡'})
         
         if usuario.get('moedas', 0) < 1: return jsonify({'ok': False, 'erro': 'Sem VOLTS!'})
+        
+        # Verificar banca mínima
+        bi = API.get_balance()
+        payout = Payout(par)
+        valor_entrada = bi * PERCENTUAL_BANCA / 100
+        minimo = valor_entrada / (1 + (1/payout) + (1/payout)*(1/payout))
+        if bi < minimo * 3:
+            return jsonify({'ok': False, 'erro': f'Banca insuficiente! Mínimo: ${minimo*3:.2f} para cobrir Gale 2'})
         
         # Verificar banca mínima
         bi = API.get_balance()
