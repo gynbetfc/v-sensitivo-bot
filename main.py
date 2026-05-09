@@ -1186,14 +1186,19 @@ function conectarIQ(){
             document.getElementById('btnOperar').style.display='inline-block';
             document.getElementById('btnDesconectar').style.display='inline-block';
             document.getElementById('statusTexto').textContent='🟢 Conectado';
-        setTimeout(function(){ location.reload(); }, 500);
+        // Recarregar apenas uma vez
+        if (!window._parouBot) {
+            window._parouBot = true;
+            setTimeout(function(){ window._parouBot = false; location.reload(); }, 800);
+        }
+        // refresh removido para evitar loop
             document.getElementById('statusDot').className='status-dot active';
             document.getElementById('moedasSaldo').textContent=d.moedas||0;
             if(intervalo)clearInterval(intervalo);
             intervalo=setInterval(atualizar,2000);
             atualizar();
             // Recarregar página após 1 segundo para aplicar skin
-            setTimeout(function(){ location.reload(); }, 1000);
+            // refresh removido para evitar loop
         }else{
             alert('ERRO: '+d.erro);
             document.getElementById('btnConectar').disabled=false;
@@ -1237,7 +1242,12 @@ function desconectarIQ(){
             document.getElementById('btnParar').style.display='none';
             document.getElementById('btnDesconectar').style.display='none';
             document.getElementById('statusTexto').textContent='🟢 Conectado';
-        setTimeout(function(){ location.reload(); }, 500);
+        // Recarregar apenas uma vez
+        if (!window._parouBot) {
+            window._parouBot = true;
+            setTimeout(function(){ window._parouBot = false; location.reload(); }, 800);
+        }
+        // refresh removido para evitar loop
             document.getElementById('statusDot').className='status-dot inactive';
             if(intervalo)clearInterval(intervalo);
         });
@@ -1253,7 +1263,12 @@ function pararBot(){
         document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
         document.getElementById('btnParar').style.display='none';
         document.getElementById('statusTexto').textContent='🟢 Conectado';
-        setTimeout(function(){ location.reload(); }, 500);
+        // Recarregar apenas uma vez
+        if (!window._parouBot) {
+            window._parouBot = true;
+            setTimeout(function(){ window._parouBot = false; location.reload(); }, 800);
+        }
+        // refresh removido para evitar loop
         document.getElementById('btnOperar').style.display='none';
         document.getElementById('btnParar').style.display='none';
         document.getElementById('btnConectar').disabled=false;
@@ -1261,7 +1276,12 @@ function pararBot(){
         document.getElementById('btnOperar').disabled=false;
         document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
         document.getElementById('statusTexto').textContent='🟢 Conectado';
-        setTimeout(function(){ location.reload(); }, 500);
+        // Recarregar apenas uma vez
+        if (!window._parouBot) {
+            window._parouBot = true;
+            setTimeout(function(){ window._parouBot = false; location.reload(); }, 800);
+        }
+        // refresh removido para evitar loop
         document.getElementById('statusDot').className='status-dot inactive';
         if(intervalo)clearInterval(intervalo);
     });
@@ -1560,7 +1580,12 @@ function atualizar(){
             document.getElementById('btnOperar').disabled=false;
             document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
             document.getElementById('statusTexto').textContent='🟢 Conectado';
-        setTimeout(function(){ location.reload(); }, 500);
+        // Recarregar apenas uma vez
+        if (!window._parouBot) {
+            window._parouBot = true;
+            setTimeout(function(){ window._parouBot = false; location.reload(); }, 800);
+        }
+        // refresh removido para evitar loop
             document.getElementById('statusDot').className='status-dot inactive';
             if(intervalo)clearInterval(intervalo);
         }
@@ -1572,7 +1597,12 @@ function atualizar(){
             document.getElementById('btnOperar').disabled=false;
             document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
             document.getElementById('statusTexto').textContent='🟢 Conectado';
-        setTimeout(function(){ location.reload(); }, 500);
+        // Recarregar apenas uma vez
+        if (!window._parouBot) {
+            window._parouBot = true;
+            setTimeout(function(){ window._parouBot = false; location.reload(); }, 800);
+        }
+        // refresh removido para evitar loop
         }
         if(d.banca)document.getElementById('banca').textContent='$'+d.banca.toFixed(2);
         if(d.lucro!==undefined){var el=document.getElementById('lucro');el.textContent='$'+d.lucro.toFixed(2);el.style.color=d.lucro>=0?'#00ff88':'#ff4444';}
@@ -1606,7 +1636,12 @@ window.onload=function(){
             if(d.rodando){botAtivo=true;document.getElementById('btnOperar').style.display='none';document.getElementById('btnParar').style.display='inline-block';document.getElementById('statusTexto').textContent='🤖 Operando';}
             else{document.getElementById('btnOperar').style.display='inline-block';
             document.getElementById('btnDesconectar').style.display='inline-block';document.getElementById('statusTexto').textContent='🟢 Conectado';
-        setTimeout(function(){ location.reload(); }, 500);}
+        // Recarregar apenas uma vez
+        if (!window._parouBot) {
+            window._parouBot = true;
+            setTimeout(function(){ window._parouBot = false; location.reload(); }, 800);
+        }
+        // refresh removido para evitar loop}
             document.getElementById('statusDot').className='status-dot active';
             if(intervalo)clearInterval(intervalo);
             intervalo=setInterval(atualizar,2000);atualizar();
