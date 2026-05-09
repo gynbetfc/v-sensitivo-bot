@@ -2,68 +2,16 @@
   "email": "edu082021@outlook.com",
   "moedas": 2943,
   "moedas_ganhas_hoje": "2026-05-09",
-  "total_ciclos": 17,
-  "total_wins": 6,
-  "total_losses": 1,
-  "total_gasto": 1.8,
-  "total_ganho": 28.490000000000002,
-  "lucro_total": 26.69,
-  "banca_atual": 126.69,
+  "total_ciclos": 0,
+  "total_wins": 0,
+  "total_losses": 0,
+  "total_gasto": 0.0,
+  "total_ganho": 0.0,
+  "lucro_total": 0.0,
+  "banca_atual": 0.0,
   "data_cadastro": "2026-05-08 13:44:11",
-  "historico_operacoes": [
-    {
-      "data": "2026-05-09 11:53:03",
-      "resultado": "WIN",
-      "valor": 1.17,
-      "lucro": 1.01,
-      "estrategia": "terceira_igual_primeira"
-    },
-    {
-      "data": "2026-05-09 13:36:03",
-      "resultado": "WIN",
-      "valor": 1.77,
-      "lucro": 1.52,
-      "estrategia": "v_sensitivo"
-    },
-    {
-      "data": "2026-05-09 13:39:03",
-      "resultado": "LOSS",
-      "valor": 1.8,
-      "lucro": -1.8,
-      "estrategia": "v_sensitivo"
-    },
-    {
-      "data": "2026-05-09 13:40:03",
-      "resultado": "WIN",
-      "valor": 4.23,
-      "lucro": 3.64,
-      "estrategia": "v_sensitivo"
-    },
-    {
-      "data": "2026-05-09 13:42:03",
-      "resultado": "WIN",
-      "valor": 6.1,
-      "lucro": 5.25,
-      "estrategia": "v_sensitivo"
-    },
-    {
-      "data": "2026-05-09 13:46:03",
-      "resultado": "WIN",
-      "valor": 6.4,
-      "lucro": 5.5,
-      "estrategia": "v_sensitivo"
-    },
-    {
-      "data": "2026-05-09 14:01:03",
-      "resultado": "WIN",
-      "valor": 13.45,
-      "lucro": 11.57,
-      "estrategia": "v_sensitivo"
-    }
-  ],
-  "dias_ativos": {
-    "2026-05-09": 7
-  },
+  "historico_operacoes": [],
+  "dias_ativos": {},
   "skin_atual": "skin_padrao",
   "skins_compradas": [
     "skin_padrao",
