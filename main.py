@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT v5.0.0 ⚡
+# ⚡ TESLA 369 BOT v5.0.1 ⚡
 # TESLA-369 GRÁTIS | v_SENSITIVO 6⚡ | 3=1 3⚡ | LOJA ESTRATÉGIAS | SKINS | MERCADO PAGO
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -788,7 +788,7 @@ HTML = r'''
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ TESLA 369 BOT v5.0.0</title>
+    <title>⚡ TESLA 369 BOT v5.0.1</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:{{COR_FUNDO}};color:{{COR_TEXTO}};font-family:'Courier New',monospace;padding:10px}
@@ -976,11 +976,11 @@ HTML = r'''
     <div class="mantra">🌀 O DINHEIRO VEM ATÉ MIM DE TODOS OS LADOS 🌀</div>
     <div class="tabs">
         <div class="tab active" onclick="openTab('bot')">🤖 BOT</div>
+        <div class="tab" onclick="openTab('relatorio')">📊 RELATÓRIO</div>
         <div class="tab" onclick="openTab('estrategias')">📊 ESTRATÉGIAS</div>
         <div class="tab" onclick="openTab('loja')">🛍️ LOJA</div>
         <div class="tab" onclick="openTab('chat')">💬 CHAT</div>
         <div class="tab" onclick="openTab('leia-me')">⚠️ LEIA-ME</div>
-        <div class="tab" onclick="openTab('relatorio')">📊 RELATÓRIO</div>
     </div>
     
     <div class="panel active" id="panel-bot">
@@ -1014,7 +1014,7 @@ HTML = r'''
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
             <span>⚡ TESLA 369</span>
-            <span>v5.0.0 | GALE 2 | SG: 1 WIN</span>
+            <span>v5.0.1 | GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
     
@@ -1046,14 +1046,14 @@ HTML = r'''
     <div class="panel" id="panel-chat">
         <div class="config-section">
             <h3>💬 CHAT DOS TRADERS</h3>
-            <p style="color:#888;font-size:9px" id="chatInfo">Conecte na IQ Option para entrar no chat</p>
+            <p style="color:#888;font-size:9px" id="chatInfo">Aguardando conexão...</p>
         </div>
         <div id="chatMensagens" style="background:#000;border:1px solid #333;border-radius:10px;height:300px;overflow-y:auto;padding:10px;margin-bottom:10px;font-size:10px">
-            <p style="color:#888;text-align:center">⚡ Conecte-se para começar a conversar</p>
+            <p style="color:#888;text-align:center">⚡ Faça login na IQ Option para entrar</p>
         </div>
         <div style="display:flex;gap:8px">
-            <input type="text" id="chatMsg" placeholder="Digite sua mensagem..." style="flex:1;padding:10px;background:#111;border:1px solid #333;border-radius:8px;color:#fff;font-size:11px;font-family:'Courier New',monospace" disabled onkeypress="if(event.key==='Enter')enviarMensagem()">
-            <button onclick="enviarMensagem()" class="btn-notificacao" style="padding:10px 20px" disabled id="btnChatEnviar">ENVIAR</button>
+            <input type="text" id="chatMsg" placeholder="Digite sua mensagem..." style="flex:1;padding:10px;background:#111;border:1px solid #333;border-radius:8px;color:#fff;font-size:11px;font-family:'Courier New',monospace" onkeypress="if(event.key==='Enter')enviarChatMsg()">
+            <button onclick="enviarChatMsg()" class="btn-notificacao" style="padding:10px 20px">ENVIAR</button>
         </div>
         <div style="text-align:center;margin-top:5px">
             <span style="color:#888;font-size:9px" id="chatOnline">0 online</span>
@@ -1571,65 +1571,39 @@ window.onload=function(){
 
 
 
-// ============= CHAT AUTO-CONECTA =============
+// ============= CHAT SIMPLES E FUNCIONAL =============
 var chatIntervalo = null;
 
-function iniciarChat(nome) {
+function iniciarChat() {
+    var nome = emailLogado || localStorage.getItem('chatNome') || '';
     if (!nome) return;
     
-    // Salvar nome
     localStorage.setItem('chatNome', nome);
-    
-    // Habilitar chat
-    document.getElementById('chatMsg').disabled = false;
-    document.getElementById('btnChatEnviar').disabled = false;
-    document.getElementById('chatInfo').textContent = '✅ Conectado como: ' + nome;
+    document.getElementById('chatInfo').textContent = '✅ Chat ativo como: ' + nome;
     document.getElementById('chatInfo').style.color = '#00ff88';
     
-    // Enviar mensagem de entrada
-    fetch('/chat_enviar', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({nome: nome, msg: '⚡ entrou no chat!', sistema: true})
-    });
-    
-    // Iniciar atualização
     if (chatIntervalo) clearInterval(chatIntervalo);
     chatIntervalo = setInterval(atualizarChat, 3000);
     atualizarChat();
 }
 
-// Auto-conectar ao logar na IQ
-var conectarIQOriginal = conectarIQ;
+// Auto-conectar quando logar
+var conectarIQOriginal2 = conectarIQ;
 conectarIQ = function() {
-    var email = document.getElementById('email').value.trim();
-    if (email) {
-        localStorage.setItem('chatNome', email);
-    }
-    conectarIQOriginal();
-    
-    // Iniciar chat após 2 segundos (depois do login)
+    conectarIQOriginal2();
     setTimeout(function() {
-        if (conectadoIQ && emailLogado) {
-            iniciarChat(emailLogado);
-        }
+        if (conectadoIQ && emailLogado) iniciarChat();
     }, 2000);
 };
 
-// Reconectar ao carregar página
-window.addEventListener('load', function() {
-    var nomeSalvo = localStorage.getItem('chatNome');
-    if (nomeSalvo && conectadoIQ) {
-        setTimeout(function() {
-            iniciarChat(nomeSalvo);
-        }, 1500);
-    }
-});
+// Auto-conectar ao carregar página
+setTimeout(function() {
+    if (conectadoIQ && emailLogado) iniciarChat();
+}, 2000);
 
-function enviarMensagem() {
-    var nome = localStorage.getItem('chatNome') || emailLogado || 'Anônimo';
+function enviarChatMsg() {
+    var nome = emailLogado || localStorage.getItem('chatNome') || 'Anônimo';
     var msg = document.getElementById('chatMsg').value.trim();
-    
     if (!msg) return;
     
     fetch('/chat_enviar', {
@@ -1644,29 +1618,28 @@ function enviarMensagem() {
 
 function atualizarChat() {
     fetch('/chat_mensagens').then(r => r.json()).then(d => {
-        if (!d.mensagens || d.mensagens.length === 0) return;
-        
+        if (!d.mensagens) return;
         var html = '';
         d.mensagens.forEach(function(m) {
             if (m.sistema) {
-                html += '<div class="chat-msg sistema">' + m.nome + ' ' + m.msg + ' <span class="chat-msg-hora">' + m.hora + '</span></div>';
+                html += '<div style="text-align:center;color:#555;font-size:9px;margin:5px 0">' + m.nome + ' ' + m.msg + ' <span style="color:#555;font-size:8px">' + m.hora + '</span></div>';
             } else {
                 var avatar = m.nome.charAt(0).toUpperCase();
-                html += '<div class="chat-msg">';
-                html += '<div class="chat-msg-avatar">' + avatar + '</div>';
-                html += '<div class="chat-msg-content">';
-                html += '<div class="chat-msg-nome">' + m.nome + '<span class="chat-msg-hora">' + m.hora + '</span></div>';
-                html += '<div class="chat-msg-texto">' + m.msg + '</div>';
+                html += '<div style="display:flex;margin-bottom:8px">';
+                html += '<div style="width:28px;height:28px;border-radius:50%;background:#1a1a2e;display:flex;align-items:center;justify-content:center;font-size:12px;margin-right:8px;border:1px solid #333">' + avatar + '</div>';
+                html += '<div style="flex:1">';
+                html += '<div style="color:#ffd700;font-size:9px;font-weight:bold;margin-bottom:2px">' + m.nome + '<span style="color:#555;font-size:8px;margin-left:5px">' + m.hora + '</span></div>';
+                html += '<div style="color:#ccc;font-size:11px">' + m.msg + '</div>';
                 html += '</div></div>';
             }
         });
-        
-        document.getElementById('chatMensagens').innerHTML = html;
+        document.getElementById('chatMensagens').innerHTML = html || '<p style="color:#888;text-align:center">Nenhuma mensagem ainda</p>';
         document.getElementById('chatMensagens').scrollTop = document.getElementById('chatMensagens').scrollHeight;
         document.getElementById('chatOnline').textContent = '🟢 ' + (d.online || 1) + ' online';
+    }).catch(function() {
+        document.getElementById('chatOnline').textContent = '⏳ Reconectando...';
     });
 }
-
 </script>
 </body>
 </html>
