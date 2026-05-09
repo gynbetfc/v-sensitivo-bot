@@ -1245,8 +1245,12 @@ function desconectarIQ(){
 function pararBot(){
     if(!confirm('Parar?'))return;
     fetch('/parar',{method:'POST'}).then(r=>r.json()).then(d=>{
-        botAtivo=false;conectadoIQ=false;
-        document.getElementById('btnConectar').style.display='inline-block';
+        botAtivo=false;
+        document.getElementById('btnOperar').style.display='inline-block';
+        document.getElementById('btnOperar').disabled=false;
+        document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
+        document.getElementById('btnParar').style.display='none';
+        document.getElementById('statusTexto').textContent='🟢 Conectado';
         document.getElementById('btnOperar').style.display='none';
         document.getElementById('btnParar').style.display='none';
         document.getElementById('btnConectar').disabled=false;
@@ -1776,8 +1780,9 @@ def comecar_operar():
 
 @app.route('/parar', methods=['POST'])
 def parar():
-    global bot_rodando, conectado_iq
-    bot_rodando = False; conectado_iq = False; return jsonify({'ok': True})
+    global bot_rodando
+    bot_rodando = False
+    return jsonify({'ok': True})
 
 @app.route('/selecionar_estrategia', methods=['POST'])
 def selecionar_estrategia():
