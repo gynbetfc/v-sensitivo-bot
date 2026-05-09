@@ -1285,6 +1285,7 @@ function pararBot(){
         document.getElementById('statusTexto').textContent='⏸️ Desconectado';
         document.getElementById('statusDot').className='status-dot inactive';
         if(intervalo)clearInterval(intervalo);
+        setTimeout(function(){ location.reload(); }, 500);
     });
 }
 
