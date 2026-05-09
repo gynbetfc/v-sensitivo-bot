@@ -1,6 +1,6 @@
 {
   "email": "edu082021@outlook.com",
-  "moedas": 2968,
+  "moedas": 2965,
   "moedas_ganhas_hoje": "2026-05-09",
   "total_ciclos": 0,
   "total_wins": 1,
@@ -34,7 +34,8 @@
     "v_sensitivo",
     "m5",
     "mhi_filtrado",
-    "quadrante_de_7"
+    "quadrante_de_7",
+    "reversao"
   ],
   "VOLTS": 1,
   "VOLTS_ganhas_hoje": "2026-05-08"
