@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT v4.12.1- ⚡
+# ⚡ TESLA 369 BOT v4.12.2 ⚡
 # TESLA-369 GRÁTIS | v_SENSITIVO 6⚡ | 3=1 3⚡ | LOJA ESTRATÉGIAS | SKINS | MERCADO PAGO
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -793,7 +793,7 @@ HTML = r'''
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ TESLA 369 BOT v4.12.1-</title>
+    <title>⚡ TESLA 369 BOT v4.12.2</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:{{COR_FUNDO}};color:{{COR_TEXTO}};font-family:'Courier New',monospace;padding:10px}
@@ -1020,7 +1020,7 @@ HTML = r'''
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
             <span>⚡ TESLA 369</span>
-            <span>v4.12.1- | GALE 2 | SG: 1 WIN</span>
+            <span>v4.12.2 | GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
     
@@ -1226,6 +1226,7 @@ function pararBot(){
         document.getElementById('btnConectar').style.display='inline-block';
         document.getElementById('btnOperar').style.display='none';
         document.getElementById('btnParar').style.display='none';
+        document.getElementById('btnDesconectar').style.display='none';
         document.getElementById('btnConectar').disabled=false;
         document.getElementById('btnConectar').textContent='🔌 CONECTAR';
         document.getElementById('btnOperar').disabled=false;
@@ -1263,6 +1264,7 @@ function renderEstrategias(){
 }
 
 function selecionarEstrategia(key){
+    if (botAtivo) { alert('⚠️ Pare o bot antes de trocar de estratégia!'); return; }
     estrategiaSel=key;
     document.getElementById('estrategiaAtiva').textContent=estrategias[key].nome;
     document.querySelectorAll('.estrategia-card').forEach(c=>c.classList.remove('ativa'));
@@ -1588,11 +1590,17 @@ window.onload=function(){
 var chatConectado = false;
 var chatIntervalo = null;
 
-// Recuperar nome do localStorage ao carregar
+// Recuperar nome do localStorage ao carregar E auto-reconectar
 window.addEventListener('load', function() {
     var nomeSalvo = localStorage.getItem('chatNome');
     if (nomeSalvo) {
         document.getElementById('chatNome').value = nomeSalvo;
+        // Auto-reconectar após 1 segundo
+        setTimeout(function() {
+            if (document.getElementById('chatNome').value.trim()) {
+                conectarChat();
+            }
+        }, 1000);
     }
 });
 
