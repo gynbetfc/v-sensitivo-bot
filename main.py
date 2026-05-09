@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT v6.1.0 ⚡
+# ⚡ TESLA 369 BOT v6.2.0 ⚡
 # TESLA-369 GRÁTIS | v_SENSITIVO 6⚡ | 3=1 3⚡ | LOJA ESTRATÉGIAS | SKINS | MERCADO PAGO
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -79,7 +79,31 @@ SKINS = [
     }
 ,
     {
-        'id': 'skin_princesa', 'nome': '👸 PRINCESA', 'desc': 'Tema rosa com brilhos', 'preco_moedas': 2,
+        'id': 'skin_dark', 'nome': '🌑 TESLA DARK', 'desc': 'Tema preto com raios roxos', 'preco_moedas': 3,
+        'cor_fundo': '#000000', 'cor_panel': '#0a0a0a', 'cor_destaque': '#9933ff', 'cor_texto': '#ccc',
+        'cor_botao': 'linear-gradient(135deg,#4400aa,#9933ff)', 'cor_tab_ativa': '#9933ff',
+        'cor_header_bg': 'linear-gradient(135deg,#000000,#110022,#220044,#110022,#000000)', 'cor_header_borda': '#9933ff',
+        'header_extra': '<div class="lightning"></div>',
+        'css_extra': '.lightning{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:150px;height:150px;background:radial-gradient(circle at 30% 30%,rgba(153,51,255,0.3) 0%,rgba(100,0,200,0.15) 30%,transparent 100%);border-radius:50%;z-index:0;animation:glow 3s ease-in-out infinite;pointer-events:none}@keyframes glow{0%,100%{box-shadow:0 0 30px rgba(153,51,255,0.3)}50%{box-shadow:0 0 50px rgba(200,100,255,0.5)}}.lightning::after{content:"⚡";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:50px;animation:float 2s ease-in-out infinite;color:#9933ff}@keyframes float{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-60%) scale(1.1)}}'
+    },
+    {
+        'id': 'skin_fire', 'nome': '🔥 TESLA FIRE', 'desc': 'Tema vermelho flamejante', 'preco_moedas': 6,
+        'cor_fundo': '#1a0000', 'cor_panel': '#2a0a0a', 'cor_destaque': '#ff4400', 'cor_texto': '#ffccaa',
+        'cor_botao': 'linear-gradient(135deg,#cc2200,#ff6600)', 'cor_tab_ativa': '#ff4400',
+        'cor_header_bg': 'linear-gradient(135deg,#1a0000,#330000,#551100,#330000,#1a0000)', 'cor_header_borda': '#ff4400',
+        'header_extra': '<div class="lightning"></div>',
+        'css_extra': '.lightning{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:150px;height:150px;background:radial-gradient(circle at 30% 30%,rgba(255,100,0,0.3) 0%,rgba(200,50,0,0.15) 30%,transparent 100%);border-radius:50%;z-index:0;animation:glow 3s ease-in-out infinite;pointer-events:none}@keyframes glow{0%,100%{box-shadow:0 0 30px rgba(255,68,0,0.3)}50%{box-shadow:0 0 50px rgba(255,100,0,0.5)}}'
+    },
+    {
+        'id': 'skin_ice', 'nome': '❄️ TESLA ICE', 'desc': 'Tema azul gelado', 'preco_moedas': 9,
+        'cor_fundo': '#000a1a', 'cor_panel': '#0a102a', 'cor_destaque': '#3399ff', 'cor_texto': '#aaccff',
+        'cor_botao': 'linear-gradient(135deg,#0044aa,#3399ff)', 'cor_tab_ativa': '#3399ff',
+        'cor_header_bg': 'linear-gradient(135deg,#000a1a,#001133,#002255,#001133,#000a1a)', 'cor_header_borda': '#3399ff',
+        'header_extra': '<div class="lightning"></div>',
+        'css_extra': '.lightning{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:150px;height:150px;background:radial-gradient(circle at 30% 30%,rgba(51,153,255,0.3) 0%,rgba(0,100,200,0.15) 30%,transparent 100%);border-radius:50%;z-index:0;animation:glow 3s ease-in-out infinite;pointer-events:none}@keyframes glow{0%,100%{box-shadow:0 0 30px rgba(51,153,255,0.3)}50%{box-shadow:0 0 50px rgba(100,180,255,0.5)}}'
+    },
+    {
+        'id': 'skin_princesa', 'nome': '👸 PRINCESA', 'desc': 'Tema rosa com brilhos', 'preco_moedas': 9,
         'cor_fundo': '#1a0010', 'cor_panel': '#2a0a20', 'cor_destaque': '#ff69b4', 'cor_texto': '#ffe0f0',
         'cor_botao': 'linear-gradient(135deg,#cc3388,#ff69b4)', 'cor_tab_ativa': '#ff69b4',
         'cor_header_bg': 'linear-gradient(135deg,#1a0010,#2a0a20,#3a1530,#2a0a20,#1a0010)', 'cor_header_borda': '#ff69b4',
@@ -104,7 +128,7 @@ ESTRATEGIAS = {
         'desc': 'RSI + MM + Bollinger + MACD + Estocástico + Fase da Vela',
         'timeframe': 60,
         'pares': ['EURUSD-OTC'],
-        'preco_moedas': 6,
+        'preco_moedas': 9,
         'gratis': False
     },
     'terceira_igual_primeira': {
@@ -112,7 +136,7 @@ ESTRATEGIAS = {
         'desc': 'Opera a cada 5min, seg 55+',
         'timeframe': 60,
         'pares': ['EURUSD-OTC'],
-        'preco_moedas': 3,
+        'preco_moedas': 6,
         'gratis': False
     },
     'mhi_filtrado': {
@@ -128,7 +152,7 @@ ESTRATEGIAS = {
         'desc': '7 velas + MM, conta cores',
         'timeframe': 60,
         'pares': ['EURUSD-OTC'],
-        'preco_moedas': 6,
+        'preco_moedas': 9,
         'gratis': False
     },
     'fluxo_de_velas': {
@@ -136,7 +160,7 @@ ESTRATEGIAS = {
         'desc': '5 velas mesma cor + MM',
         'timeframe': 60,
         'pares': ['EURUSD-OTC'],
-        'preco_moedas': 3,
+        'preco_moedas': 6,
         'gratis': False
     },
     'reversao': {
@@ -152,7 +176,7 @@ ESTRATEGIAS = {
         'desc': 'Quadrante de velas de 5min',
         'timeframe': 300,
         'pares': ['EURUSD-OTC'],
-        'preco_moedas': 6,
+        'preco_moedas': 9,
         'gratis': False
     }
 }
@@ -789,7 +813,7 @@ HTML = r'''
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ TESLA 369 BOT v6.1.0</title>
+    <title>⚡ TESLA 369 BOT v6.2.0</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:{{COR_FUNDO}};color:{{COR_TEXTO}};font-family:'Courier New',monospace;padding:10px}
@@ -1014,7 +1038,7 @@ HTML = r'''
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
             <span>⚡ TESLA 369</span>
-            <span>v6.1.0 | GALE 2 | SG: 1 WIN</span>
+            <span>v6.2.0 | GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
     
@@ -1080,17 +1104,7 @@ HTML = r'''
                 <span style="color:#00ff88">6.</span> O bot opera automaticamente - <span style="color:#ff4444">não feche o navegador!</span>
             </p>
             
-            <p style="color:#ffd700;font-size:13px;font-weight:bold;margin-bottom:10px;margin-top:15px">⚙️ ESTRATÉGIAS DISPONÍVEIS</p>
-            <p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify">
-                <span style="color:#ffd700">⚡ TESLA-369 (GRÁTIS):</span> Timeframe <span style="color:#00ff88">1 minuto</span> - Opera nos minutos 1:55-2:00 e 6:55-7:00.<br>
-                <span style="color:#ffd700">🔮 v_SENSITIVO (6 VOLTS):</span> Timeframe <span style="color:#00ff88">1 minuto</span> - Usa RSI, Bollinger, MACD, Médias Móveis.<br>
-                <span style="color:#ffd700">3️⃣ 3ª = 1ª (3 VOLTS):</span> Timeframe <span style="color:#00ff88">1 minuto</span> - Opera a cada 5 minutos no fechamento da vela.<br>
-                <span style="color:#ffd700">📊 MHI-FILTRADO (9 VOLTS):</span> Timeframe <span style="color:#00ff88">1 minuto</span> - Minutos 4:55 e 9:55 com filtro de tendência.<br>
-                <span style="color:#ffd700">7️⃣ QUADRANTE DE 7 (6 VOLTS):</span> Timeframe <span style="color:#00ff88">1 minuto</span> - 7 velas, conta maioria com média móvel.<br>
-                <span style="color:#ffd700">🌊 FLUXO-DE-VELAS (3 VOLTS):</span> Timeframe <span style="color:#00ff88">1 minuto</span> - 5 velas da mesma cor + MM.<br>
-                <span style="color:#ffd700">🔄 REVERSÃO (3 VOLTS):</span> Timeframe <span style="color:#00ff88">1 minuto</span> - Padrão alternado g-r-g-r-g ou r-g-r-g-r.<br>
-                <span style="color:#ffd700">⏰ M5 (6 VOLTS):</span> Timeframe <span style="color:#00ff88">5 minutos</span> - Quadrante de velas a cada 15 minutos.
-            </p>
+            
         </div>
         
         <!-- ABA INTERNA: AVISOS -->
@@ -1400,13 +1414,13 @@ function renderLojaEstrategias(){
                 if (key === 'tesla_369') continue;
                 // Preços fixos para cada estratégia
                 var precos = {
-                    'v_sensitivo': 6,
-                    'terceira_igual_primeira': 3,
+                    'v_sensitivo': 9,
+                    'terceira_igual_primeira': 6,
                     'mhi_filtrado': 9,
-                    'quadrante_de_7': 6,
-                    'fluxo_de_velas': 3,
+                    'quadrante_de_7': 9,
+                    'fluxo_de_velas': 6,
                     'reversao': 3,
-                    'm5': 6
+                    'm5': 9
                 };
                 estrategiasDisponiveis[key] = {
                     'nome': estrategias[key].nome,
