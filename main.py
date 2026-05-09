@@ -1235,7 +1235,7 @@ function desconectarIQ(){
             document.getElementById('btnOperar').style.display='none';
             document.getElementById('btnParar').style.display='none';
             document.getElementById('btnDesconectar').style.display='none';
-            document.getElementById('statusTexto').textContent='⏸️ Desconectado';
+            document.getElementById('statusTexto').textContent='🟢 Conectado';
             document.getElementById('statusDot').className='status-dot inactive';
             if(intervalo)clearInterval(intervalo);
         });
@@ -1257,7 +1257,7 @@ function pararBot(){
         document.getElementById('btnConectar').textContent='🔌 CONECTAR';
         document.getElementById('btnOperar').disabled=false;
         document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
-        document.getElementById('statusTexto').textContent='⏸️ Desconectado';
+        document.getElementById('statusTexto').textContent='🟢 Conectado';
         document.getElementById('statusDot').className='status-dot inactive';
         if(intervalo)clearInterval(intervalo);
     });
@@ -1555,7 +1555,7 @@ function atualizar(){
             document.getElementById('btnConectar').textContent='🔌 CONECTAR';
             document.getElementById('btnOperar').disabled=false;
             document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
-            document.getElementById('statusTexto').textContent='⏸️ Desconectado';
+            document.getElementById('statusTexto').textContent='🟢 Conectado';
             document.getElementById('statusDot').className='status-dot inactive';
             if(intervalo)clearInterval(intervalo);
         }
