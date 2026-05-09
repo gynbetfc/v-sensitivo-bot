@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT v5.1.0 ⚡
+# ⚡ TESLA 369 BOT v4.10.0 ⚡
 # TESLA-369 GRÁTIS | v_SENSITIVO 6⚡ | 3=1 3⚡ | LOJA ESTRATÉGIAS | SKINS | MERCADO PAGO
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -21,7 +21,6 @@ app = Flask(__name__)
 # ============= CONFIGURAÇÕES FIXAS =============
 MARTINGALE = 2
 PAYOUT_PADRAO = 0.85
-PERCENTUAL_BANCA = 10
 DRIVE_PATH = "vsens_users"
 os.makedirs(DRIVE_PATH, exist_ok=True)
 
@@ -517,20 +516,11 @@ MAPA_SINAIS = {
     'm5': sinal_m5
 }
 
-
-@app.route('/set_percentual', methods=['POST'])
-def set_percentual():
-    global PERCENTUAL_BANCA
-    data = request.json
-    PERCENTUAL_BANCA = data.get('percentual', 10)
-    return jsonify({'ok': True, 'percentual': PERCENTUAL_BANCA})
-
 # ═══════════════════════════════════════════════════════
 # CÁLCULO DE ENTRADAS
 # ═══════════════════════════════════════════════════════
 def calcular_entradas(b, p, g):
-    global PERCENTUAL_BANCA
-    bs = b * (PERCENTUAL_BANCA / 100); e0 = bs / sum((1/p)**i for i in range(g+1))
+    bs = b * 0.99; e0 = bs / sum((1/p)**i for i in range(g+1))
     entradas = [e0]
     for i in range(1, g+1): entradas.append((sum(entradas)+e0)/p)
     ajuste = bs / sum(entradas); entradas = [round(e*ajuste, 2) for e in entradas]
@@ -747,49 +737,6 @@ def comprar_estrategia():
     return jsonify({'ok': True, 'msg': f'Estratégia {estrategia["nome"]} comprada!', 'moedas': u['moedas']})
 
 
-
-# ═══════════════════════════════════════════════════════
-# ROTAS DO CHAT
-# ═══════════════════════════════════════════════════════
-chat_mensagens = []
-chat_ultimo_acesso = {}
-
-@app.route('/chat_enviar', methods=['POST'])
-def chat_enviar():
-    global chat_mensagens
-    data = request.json
-    nome = data.get('nome', 'Anônimo')[:15]
-    msg = data.get('msg', '')[:200]
-    sistema = data.get('sistema', False)
-    
-    if not msg:
-        return jsonify({'ok': False})
-    
-    chat_mensagens.append({
-        'nome': nome,
-        'msg': msg,
-        'hora': datetime.now().strftime('%H:%M'),
-        'sistema': sistema
-    })
-    
-    if len(chat_mensagens) > 100:
-        chat_mensagens = chat_mensagens[-100:]
-    
-    return jsonify({'ok': True})
-
-@app.route('/chat_mensagens')
-def chat_mensagens_route():
-    ip = request.remote_addr
-    chat_ultimo_acesso[ip] = time.time()
-    
-    agora = time.time()
-    online = sum(1 for t in chat_ultimo_acesso.values() if agora - t < 30)
-    
-    return jsonify({
-        'mensagens': chat_mensagens[-50:],
-        'online': max(1, online)
-    })
-
 # ═══════════════════════════════════════════════════════
 # HTML COMPLETO
 # ═══════════════════════════════════════════════════════
@@ -798,7 +745,7 @@ HTML = r'''
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ TESLA 369 BOT v5.1.0</title>
+    <title>⚡ TESLA 369 BOT v4.10.0</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:{{COR_FUNDO}};color:{{COR_TEXTO}};font-family:'Courier New',monospace;padding:10px}
@@ -964,15 +911,6 @@ HTML = r'''
     }
         
 
-    
-        .chat-msg{display:flex;margin-bottom:8px;animation:fadeIn .3s ease}
-        .chat-msg-avatar{width:28px;height:28px;border-radius:50%;background:#1a1a2e;display:flex;align-items:center;justify-content:center;font-size:12px;margin-right:8px;flex-shrink:0;border:1px solid #333}
-        .chat-msg-content{flex:1}
-        .chat-msg-nome{color:#ffd700;font-size:9px;font-weight:bold;margin-bottom:2px}
-        .chat-msg-texto{color:#ccc;font-size:11px;word-break:break-word}
-        .chat-msg-hora{color:#555;font-size:8px;margin-left:5px}
-        .chat-msg.sistema{text-align:center;color:#555;font-size:9px;margin:5px 0}
-
     </style>
 </head>
 <body>
@@ -986,24 +924,17 @@ HTML = r'''
     <div class="mantra">🌀 O DINHEIRO VEM ATÉ MIM DE TODOS OS LADOS 🌀</div>
     <div class="tabs">
         <div class="tab active" onclick="openTab('bot')">🤖 BOT</div>
-        <div class="tab" onclick="openTab('relatorio')">📊 RELATÓRIO</div>
         <div class="tab" onclick="openTab('estrategias')">📊 ESTRATÉGIAS</div>
         <div class="tab" onclick="openTab('loja')">🛍️ LOJA</div>
-        <div class="tab" onclick="openTab('chat')">💬 CHAT</div>
         <div class="tab" onclick="openTab('leia-me')">⚠️ LEIA-ME</div>
+        <div class="tab" onclick="openTab('relatorio')">📊 RELATÓRIO</div>
     </div>
     
     <div class="panel active" id="panel-bot">
         <div class="config-section"><h3>🔐 IQ OPTION</h3><div class="config-row">
             <input type="email" id="email" placeholder="📧 Email IQ Option" style="flex:2">
             <input type="password" id="senha" placeholder="🔒 Senha" style="flex:1">
-            <select id="tipo"><option value="PRACTICE">🧪</option><option value="REAL">💰</option></select><div class="config-row" style="margin-top:8px">
-            <label style="color:#888;font-size:11px">% da Banca:</label>
-            <select id="percentualBanca" onchange="atualizarPercentual()" style="padding:8px;background:#111;border:1px solid #333;border-radius:8px;color:#fff;font-size:11px;font-family:'Courier New',monospace;width:80px">
-                <option value="10">10%</option><option value="20">20%</option><option value="30">30%</option><option value="40">40%</option><option value="50">50%</option><option value="60">60%</option><option value="70">70%</option><option value="80">80%</option><option value="90">90%</option><option value="100">100%</option>
-            </select>
-            <span style="color:#ffd700;font-size:10px" id="valorEstimado">($0.00)</span>
-        </div>
+            <select id="tipo"><option value="PRACTICE">🧪</option><option value="REAL">💰</option></select>
             <button class="btn btn-info" id="btnConectar" onclick="conectarIQ()">🔌 CONECTAR</button>
             <button class="btn btn-start" id="btnOperar" onclick="comecarOperar()" style="display:none">🚀 COMEÇAR OPERAR</button>
             <button class="btn btn-stop" id="btnParar" onclick="pararBot()" style="display:none">⏹️ PARAR</button>
@@ -1030,7 +961,7 @@ HTML = r'''
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
             <span>⚡ TESLA 369</span>
-            <span>v5.1.0 | GALE 2 | SG: 1 WIN</span>
+            <span>v4.10.0 | GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
     
@@ -1056,23 +987,6 @@ HTML = r'''
         <div class="sub-panel" id="sub-panel-estrategias">
             <div class="config-section"><h3>📊 ESTRATÉGIAS PREMIUM</h3><p style="color:#888;font-size:10px">Compre estratégias avançadas com suas VOLTS! ⚡</p></div>
             <div class="skins-grid" id="estrategiasLojaGrid"></div>
-        </div>
-    </div>
-    
-    <div class="panel" id="panel-chat">
-        <div class="config-section">
-            <h3>💬 CHAT DOS TRADERS</h3>
-            <p style="color:#888;font-size:9px" id="chatInfo">Envie uma mensagem para entrar no chat...</p>
-        </div>
-        <div id="chatMensagens" style="background:#000;border:1px solid #333;border-radius:10px;height:300px;overflow-y:auto;padding:10px;margin-bottom:10px;font-size:10px">
-            <p style="color:#888;text-align:center">💬 Envie uma mensagem para começar</p>
-        </div>
-        <div style="display:flex;gap:8px">
-            <input type="text" id="chatMsg" placeholder="Digite sua mensagem..." style="flex:1;padding:10px;background:#111;border:1px solid #333;border-radius:8px;color:#fff;font-size:11px;font-family:'Courier New',monospace" onkeypress="if(event.key==='Enter')enviarChatMsg()">
-            <button onclick="enviarChatMsg()" class="btn-notificacao" style="padding:10px 20px">ENVIAR</button>
-        </div>
-        <div style="text-align:center;margin-top:5px">
-            <span style="color:#888;font-size:9px" id="chatOnline">0 online</span>
         </div>
     </div>
     
@@ -1149,25 +1063,7 @@ function openTab(tab){
     document.getElementById('panel-'+tab).classList.add('active');
     if(tab=='relatorio'&&emailLogado){document.getElementById('emailRelatorio').value=emailLogado;verRelatorio()}
     if(tab=='loja'){renderLoja();mostrarSubAba('moedas');}
-    if(tab=='estrategias'){
-            if(botAtivo){alert('⚠️ Pare o bot antes de acessar as estratégias!');openTab('bot');return;}
-            renderEstrategias();
-        }
-}
-
-
-function atualizarPercentual() {
-    var perc = document.getElementById('percentualBanca').value;
-    fetch('/set_percentual', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({percentual: parseInt(perc)})
-    });
-    // Atualizar valor estimado
-    var bancaTexto = document.getElementById('banca').textContent;
-    var banca = parseFloat(bancaTexto.replace('$','')) || 0;
-    var valor = (banca * perc / 100).toFixed(2);
-    document.getElementById('valorEstimado').textContent = '($' + valor + ')';
+    if(tab=='estrategias')renderEstrategias();
 }
 
 function conectarIQ(){
@@ -1186,7 +1082,6 @@ function conectarIQ(){
             document.getElementById('btnOperar').style.display='inline-block';
             document.getElementById('btnDesconectar').style.display='inline-block';
             document.getElementById('statusTexto').textContent='🟢 Conectado';
-        setTimeout(function(){ location.reload(); }, 1000);
             document.getElementById('statusDot').className='status-dot active';
             document.getElementById('moedasSaldo').textContent=d.moedas||0;
             if(intervalo)clearInterval(intervalo);
@@ -1236,8 +1131,7 @@ function desconectarIQ(){
             document.getElementById('btnOperar').style.display='none';
             document.getElementById('btnParar').style.display='none';
             document.getElementById('btnDesconectar').style.display='none';
-            document.getElementById('statusTexto').textContent='🟢 Conectado';
-        setTimeout(function(){ location.reload(); }, 1000);
+            document.getElementById('statusTexto').textContent='⏸️ Desconectado';
             document.getElementById('statusDot').className='status-dot inactive';
             if(intervalo)clearInterval(intervalo);
         });
@@ -1247,21 +1141,15 @@ function desconectarIQ(){
 function pararBot(){
     if(!confirm('Parar?'))return;
     fetch('/parar',{method:'POST'}).then(r=>r.json()).then(d=>{
-        botAtivo=false;
-        document.getElementById('btnOperar').style.display='inline-block';
-        document.getElementById('btnOperar').disabled=false;
-        document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
-        document.getElementById('btnParar').style.display='none';
-        document.getElementById('statusTexto').textContent='🟢 Conectado';
-        setTimeout(function(){ location.reload(); }, 1000);
+        botAtivo=false;conectadoIQ=false;
+        document.getElementById('btnConectar').style.display='inline-block';
         document.getElementById('btnOperar').style.display='none';
         document.getElementById('btnParar').style.display='none';
         document.getElementById('btnConectar').disabled=false;
         document.getElementById('btnConectar').textContent='🔌 CONECTAR';
         document.getElementById('btnOperar').disabled=false;
         document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
-        document.getElementById('statusTexto').textContent='🟢 Conectado';
-        setTimeout(function(){ location.reload(); }, 1000);
+        document.getElementById('statusTexto').textContent='⏸️ Desconectado';
         document.getElementById('statusDot').className='status-dot inactive';
         if(intervalo)clearInterval(intervalo);
     });
@@ -1559,8 +1447,7 @@ function atualizar(){
             document.getElementById('btnConectar').textContent='🔌 CONECTAR';
             document.getElementById('btnOperar').disabled=false;
             document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
-            document.getElementById('statusTexto').textContent='🟢 Conectado';
-        setTimeout(function(){ location.reload(); }, 1000);
+            document.getElementById('statusTexto').textContent='⏸️ Desconectado';
             document.getElementById('statusDot').className='status-dot inactive';
             if(intervalo)clearInterval(intervalo);
         }
@@ -1572,7 +1459,6 @@ function atualizar(){
             document.getElementById('btnOperar').disabled=false;
             document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
             document.getElementById('statusTexto').textContent='🟢 Conectado';
-        setTimeout(function(){ location.reload(); }, 1000);
         }
         if(d.banca)document.getElementById('banca').textContent='$'+d.banca.toFixed(2);
         if(d.lucro!==undefined){var el=document.getElementById('lucro');el.textContent='$'+d.lucro.toFixed(2);el.style.color=d.lucro>=0?'#00ff88':'#ff4444';}
@@ -1605,8 +1491,7 @@ window.onload=function(){
             document.getElementById('btnConectar').style.display='none';
             if(d.rodando){botAtivo=true;document.getElementById('btnOperar').style.display='none';document.getElementById('btnParar').style.display='inline-block';document.getElementById('statusTexto').textContent='🤖 Operando';}
             else{document.getElementById('btnOperar').style.display='inline-block';
-            document.getElementById('btnDesconectar').style.display='inline-block';document.getElementById('statusTexto').textContent='🟢 Conectado';
-        setTimeout(function(){ location.reload(); }, 1000);}
+            document.getElementById('btnDesconectar').style.display='inline-block';document.getElementById('statusTexto').textContent='🟢 Conectado';}
             document.getElementById('statusDot').className='status-dot active';
             if(intervalo)clearInterval(intervalo);
             intervalo=setInterval(atualizar,2000);atualizar();
@@ -1615,76 +1500,6 @@ window.onload=function(){
 }
 
 
-
-// ============= CHAT SIMPLES E FUNCIONAL =============
-var chatIntervalo = null;
-
-function iniciarChat() {
-    var nome = emailLogado || localStorage.getItem('chatNome') || '';
-    if (!nome) return;
-    
-    localStorage.setItem('chatNome', nome);
-    document.getElementById('chatInfo').textContent = '✅ Chat ativo como: ' + nome;
-    document.getElementById('chatInfo').style.color = '#00ff88';
-    
-    if (chatIntervalo) clearInterval(chatIntervalo);
-    chatIntervalo = setInterval(atualizarChat, 3000);
-    atualizarChat();
-}
-
-// Auto-conectar quando logar
-var conectarIQOriginal2 = conectarIQ;
-conectarIQ = function() {
-    conectarIQOriginal2();
-    setTimeout(function() {
-        if (conectadoIQ && emailLogado) iniciarChat();
-    }, 2000);
-};
-
-// Auto-conectar ao carregar página
-setTimeout(function() {
-    if (conectadoIQ && emailLogado) iniciarChat();
-}, 2000);
-
-function enviarChatMsg() {
-    var nome = emailLogado || localStorage.getItem('chatNome') || 'Anônimo';
-    var msg = document.getElementById('chatMsg').value.trim();
-    if (!msg) return;
-    
-    fetch('/chat_enviar', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({nome: nome, msg: msg})
-    }).then(function() {
-        document.getElementById('chatMsg').value = '';
-        atualizarChat();
-    });
-}
-
-function atualizarChat() {
-    fetch('/chat_mensagens').then(r => r.json()).then(d => {
-        if (!d.mensagens) return;
-        var html = '';
-        d.mensagens.forEach(function(m) {
-            if (m.sistema) {
-                html += '<div style="text-align:center;color:#555;font-size:9px;margin:5px 0">' + m.nome + ' ' + m.msg + ' <span style="color:#555;font-size:8px">' + m.hora + '</span></div>';
-            } else {
-                var avatar = m.nome.charAt(0).toUpperCase();
-                html += '<div style="display:flex;margin-bottom:8px">';
-                html += '<div style="width:28px;height:28px;border-radius:50%;background:#1a1a2e;display:flex;align-items:center;justify-content:center;font-size:12px;margin-right:8px;border:1px solid #333">' + avatar + '</div>';
-                html += '<div style="flex:1">';
-                html += '<div style="color:#ffd700;font-size:9px;font-weight:bold;margin-bottom:2px">' + m.nome + '<span style="color:#555;font-size:8px;margin-left:5px">' + m.hora + '</span></div>';
-                html += '<div style="color:#ccc;font-size:11px">' + m.msg + '</div>';
-                html += '</div></div>';
-            }
-        });
-        document.getElementById('chatMensagens').innerHTML = html || '<p style="color:#888;text-align:center">Nenhuma mensagem ainda</p>';
-        document.getElementById('chatMensagens').scrollTop = document.getElementById('chatMensagens').scrollHeight;
-        document.getElementById('chatOnline').textContent = '🟢 ' + (d.online || 1) + ' online';
-    }).catch(function() {
-        document.getElementById('chatOnline').textContent = '⏳ Reconectando...';
-    });
-}
 </script>
 </body>
 </html>
@@ -1733,8 +1548,7 @@ def status():
             'gratis': est.get('gratis', False)
         }
     
-    return jsonify({'conectado': conectado_iq, 'rodando': bot_rodando, 'email': email_usuario_atual, 'banca': API.get_balance() if API else 0, 'lucro': lucro, 'ops': NumDeOperacoes, 'sinal': ultimo_sinal, 'analise': ultima_analise, 'logs': get_logs_html(40), 'moedas': u.get('moedas', 0) if u else 0, 'percentual_banca': PERCENTUAL_BANCA,
-        'estrategia': estrategia_atual, 'estrategia_nome': ESTRATEGIAS.get(estrategia_atual, {}).get('nome', '--'), 'skin_id': skin_atual, 'skins_status': skins_status, 'estrategias_compradas': estrategias_compradas, 'estrategias_disponiveis': estrategias_disponiveis})
+    return jsonify({'conectado': conectado_iq, 'rodando': bot_rodando, 'email': email_usuario_atual, 'banca': API.get_balance() if API else 0, 'lucro': lucro, 'ops': NumDeOperacoes, 'sinal': ultimo_sinal, 'analise': ultima_analise, 'logs': get_logs_html(40), 'moedas': u.get('moedas', 0) if u else 0, 'estrategia': estrategia_atual, 'estrategia_nome': ESTRATEGIAS.get(estrategia_atual, {}).get('nome', '--'), 'skin_id': skin_atual, 'skins_status': skins_status, 'estrategias_compradas': estrategias_compradas, 'estrategias_disponiveis': estrategias_disponiveis})
 
 @app.route('/conectar', methods=['POST'])
 def conectar():
@@ -1787,9 +1601,8 @@ def comecar_operar():
 
 @app.route('/parar', methods=['POST'])
 def parar():
-    global bot_rodando
-    bot_rodando = False
-    return jsonify({'ok': True})
+    global bot_rodando, conectado_iq
+    bot_rodando = False; conectado_iq = False; return jsonify({'ok': True})
 
 @app.route('/selecionar_estrategia', methods=['POST'])
 def selecionar_estrategia():
