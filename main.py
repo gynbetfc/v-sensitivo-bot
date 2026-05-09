@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT v4.12.0 ⚡
+# ⚡ TESLA 369 BOT v4.12.1- ⚡
 # TESLA-369 GRÁTIS | v_SENSITIVO 6⚡ | 3=1 3⚡ | LOJA ESTRATÉGIAS | SKINS | MERCADO PAGO
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -793,7 +793,7 @@ HTML = r'''
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ TESLA 369 BOT v4.12.0</title>
+    <title>⚡ TESLA 369 BOT v4.12.1-</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:{{COR_FUNDO}};color:{{COR_TEXTO}};font-family:'Courier New',monospace;padding:10px}
@@ -982,11 +982,11 @@ HTML = r'''
     <div class="mantra">🌀 O DINHEIRO VEM ATÉ MIM DE TODOS OS LADOS 🌀</div>
     <div class="tabs">
         <div class="tab active" onclick="openTab('bot')">🤖 BOT</div>
+        <div class="tab" onclick="openTab('relatorio')">📊 RELATÓRIO</div>
         <div class="tab" onclick="openTab('estrategias')">📊 ESTRATÉGIAS</div>
         <div class="tab" onclick="openTab('loja')">🛍️ LOJA</div>
         <div class="tab" onclick="openTab('chat')">💬 CHAT</div>
         <div class="tab" onclick="openTab('leia-me')">⚠️ LEIA-ME</div>
-        <div class="tab" onclick="openTab('relatorio')">📊 RELATÓRIO</div>
     </div>
     
     <div class="panel active" id="panel-bot">
@@ -1020,7 +1020,7 @@ HTML = r'''
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
             <span>⚡ TESLA 369</span>
-            <span>v4.12.0 | GALE 2 | SG: 1 WIN</span>
+            <span>v4.12.1- | GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
     
@@ -1582,7 +1582,88 @@ window.onload=function(){
 
 
 
+
+
 // ============= CHAT EM TEMPO REAL =============
+var chatConectado = false;
+var chatIntervalo = null;
+
+// Recuperar nome do localStorage ao carregar
+window.addEventListener('load', function() {
+    var nomeSalvo = localStorage.getItem('chatNome');
+    if (nomeSalvo) {
+        document.getElementById('chatNome').value = nomeSalvo;
+    }
+});
+
+function conectarChat() {
+    var nome = document.getElementById('chatNome').value.trim();
+    if (!nome) { alert('Digite seu nome!'); return; }
+    
+    // Salvar nome no localStorage
+    localStorage.setItem('chatNome', nome);
+    
+    chatConectado = true;
+    document.getElementById('chatNome').disabled = true;
+    document.getElementById('btnChatConectar').textContent = '✅ CONECTADO';
+    document.getElementById('btnChatConectar').style.background = 'linear-gradient(135deg,#00aa44,#00cc55)';
+    document.getElementById('chatMsg').disabled = false;
+    document.getElementById('btnChatEnviar').disabled = false;
+    document.getElementById('chatMensagens').innerHTML = '<p style="color:#00ff88;text-align:center">🟢 Conectado ao chat!</p>';
+    
+    fetch('/chat_enviar', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({nome: nome, msg: '👋 entrou no chat!', sistema: true})
+    });
+    
+    if (chatIntervalo) clearInterval(chatIntervalo);
+    chatIntervalo = setInterval(atualizarChat, 3000);
+    atualizarChat();
+}
+
+function enviarMensagem() {
+    var nome = document.getElementById('chatNome').value.trim();
+    var msg = document.getElementById('chatMsg').value.trim();
+    
+    if (!msg || !chatConectado) return;
+    
+    fetch('/chat_enviar', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({nome: nome, msg: msg})
+    }).then(function() {
+        document.getElementById('chatMsg').value = '';
+        atualizarChat();
+        if (audioWin) audioWin();
+    });
+}
+
+function atualizarChat() {
+    fetch('/chat_mensagens').then(r => r.json()).then(d => {
+        if (!d.mensagens || d.mensagens.length === 0) return;
+        
+        var html = '';
+        d.mensagens.forEach(function(m) {
+            if (m.sistema) {
+                html += '<div class="chat-msg sistema">' + m.nome + ' ' + m.msg + ' <span class="chat-msg-hora">' + m.hora + '</span></div>';
+            } else {
+                var avatar = m.nome.charAt(0).toUpperCase();
+                html += '<div class="chat-msg">';
+                html += '<div class="chat-msg-avatar">' + avatar + '</div>';
+                html += '<div class="chat-msg-content">';
+                html += '<div class="chat-msg-nome">' + m.nome + '<span class="chat-msg-hora">' + m.hora + '</span></div>';
+                html += '<div class="chat-msg-texto">' + m.msg + '</div>';
+                html += '</div></div>';
+            }
+        });
+        
+        document.getElementById('chatMensagens').innerHTML = html;
+        document.getElementById('chatMensagens').scrollTop = document.getElementById('chatMensagens').scrollHeight;
+        document.getElementById('chatOnline').textContent = '🟢 ' + (d.online || 1) + ' online';
+    });
+}
+
 var chatConectado = false;
 var chatIntervalo = null;
 var chatUltimaMsg = '';
