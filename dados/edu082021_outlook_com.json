@@ -4,11 +4,11 @@
   "moedas_ganhas_hoje": "2026-05-09",
   "total_ciclos": 5,
   "total_wins": 3,
-  "total_losses": 1,
-  "total_gasto": 31.62,
+  "total_losses": 2,
+  "total_gasto": 66.84,
   "total_ganho": 108.69,
-  "lucro_total": 77.07,
-  "banca_atual": 301.5,
+  "lucro_total": 41.849999999999994,
+  "banca_atual": 266.28,
   "data_cadastro": "2026-05-08 13:44:11",
   "historico_operacoes": [
     {
@@ -38,11 +38,18 @@
       "valor": 74.39,
       "lucro": 62.49,
       "estrategia": "v_sensitivo"
+    },
+    {
+      "data": "2026-05-09 02:22:02",
+      "resultado": "LOSS",
+      "valor": 35.22,
+      "lucro": -35.22,
+      "estrategia": "v_sensitivo"
     }
   ],
   "dias_ativos": {
     "2026-05-08": 2,
-    "2026-05-09": 2
+    "2026-05-09": 3
   },
   "skin_atual": "skin_magos",
   "skins_compradas": [
