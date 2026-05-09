@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT v6.2.0 ⚡
+# ⚡ TESLA 369 BOT v6.2.1 ⚡
 # TESLA-369 GRÁTIS | v_SENSITIVO 6⚡ | 3=1 3⚡ | LOJA ESTRATÉGIAS | SKINS | MERCADO PAGO
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -79,28 +79,28 @@ SKINS = [
     }
 ,
     {
-        'id': 'skin_dark', 'nome': '🌑 TESLA DARK', 'desc': 'Tema preto com raios roxos', 'preco_moedas': 3,
+        'id': 'skin_dark', 'nome': '🌑 TESLA DARK', 'desc': 'Tema preto com raios roxos e partículas', 'preco_moedas': 3,
         'cor_fundo': '#000000', 'cor_panel': '#0a0a0a', 'cor_destaque': '#9933ff', 'cor_texto': '#ccc',
         'cor_botao': 'linear-gradient(135deg,#4400aa,#9933ff)', 'cor_tab_ativa': '#9933ff',
         'cor_header_bg': 'linear-gradient(135deg,#000000,#110022,#220044,#110022,#000000)', 'cor_header_borda': '#9933ff',
-        'header_extra': '<div class="lightning"></div>',
-        'css_extra': '.lightning{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:150px;height:150px;background:radial-gradient(circle at 30% 30%,rgba(153,51,255,0.3) 0%,rgba(100,0,200,0.15) 30%,transparent 100%);border-radius:50%;z-index:0;animation:glow 3s ease-in-out infinite;pointer-events:none}@keyframes glow{0%,100%{box-shadow:0 0 30px rgba(153,51,255,0.3)}50%{box-shadow:0 0 50px rgba(200,100,255,0.5)}}.lightning::after{content:"⚡";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:50px;animation:float 2s ease-in-out infinite;color:#9933ff}@keyframes float{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-60%) scale(1.1)}}'
+        'header_extra': '<div class="particulas-dark"></div><div class="lightning-dark"></div>',
+        'css_extra': '.particulas-dark{position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden;z-index:0}.particulas-dark::before,.particulas-dark::after{content:"";position:absolute;width:4px;height:4px;background:#9933ff;border-radius:50%;animation:particulaDark 3s linear infinite;box-shadow:0 0 6px #9933ff}.particulas-dark::before{top:20%;left:10%;animation-delay:0s}.particulas-dark::after{top:60%;left:80%;animation-delay:1.5s}@keyframes particulaDark{0%{transform:translateY(0) scale(1);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateY(-100px) scale(0);opacity:0}}.lightning-dark{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:150px;height:150px;background:radial-gradient(circle at 30% 30%,rgba(153,51,255,0.4) 0%,rgba(100,0,200,0.2) 30%,transparent 70%);border-radius:50%;z-index:0;animation:glowDark 2s ease-in-out infinite;pointer-events:none}@keyframes glowDark{0%,100%{box-shadow:0 0 40px rgba(153,51,255,0.4),0 0 80px rgba(100,0,200,0.2)}50%{box-shadow:0 0 60px rgba(200,100,255,0.6),0 0 100px rgba(153,51,255,0.4)}}body{background:linear-gradient(180deg,#000000 0%,#0a0015 50%,#000000 100%)!important}.header{border-color:#9933ff!important;box-shadow:0 0 30px rgba(153,51,255,0.3),inset 0 0 30px rgba(153,51,255,0.05)}.terminal{border-color:#9933ff22!important;box-shadow:0 0 20px rgba(153,51,255,0.1)}'
     },
     {
-        'id': 'skin_fire', 'nome': '🔥 TESLA FIRE', 'desc': 'Tema vermelho flamejante', 'preco_moedas': 6,
+        'id': 'skin_fire', 'nome': '🔥 TESLA FIRE', 'desc': 'Tema com chamas e faíscas', 'preco_moedas': 6,
         'cor_fundo': '#1a0000', 'cor_panel': '#2a0a0a', 'cor_destaque': '#ff4400', 'cor_texto': '#ffccaa',
         'cor_botao': 'linear-gradient(135deg,#cc2200,#ff6600)', 'cor_tab_ativa': '#ff4400',
         'cor_header_bg': 'linear-gradient(135deg,#1a0000,#330000,#551100,#330000,#1a0000)', 'cor_header_borda': '#ff4400',
-        'header_extra': '<div class="lightning"></div>',
-        'css_extra': '.lightning{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:150px;height:150px;background:radial-gradient(circle at 30% 30%,rgba(255,100,0,0.3) 0%,rgba(200,50,0,0.15) 30%,transparent 100%);border-radius:50%;z-index:0;animation:glow 3s ease-in-out infinite;pointer-events:none}@keyframes glow{0%,100%{box-shadow:0 0 30px rgba(255,68,0,0.3)}50%{box-shadow:0 0 50px rgba(255,100,0,0.5)}}'
+        'header_extra': '<div class="chamas"></div><div class="faiscas"></div>',
+        'css_extra': '.chamas{position:absolute;bottom:0;left:0;width:100%;height:60px;background:linear-gradient(0deg,rgba(255,68,0,0.4) 0%,rgba(255,100,0,0.2) 50%,transparent 100%);animation:chama 1.5s ease-in-out infinite;z-index:0}.faiscas{position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden;z-index:0}.faiscas::before{content:"✨";position:absolute;top:15%;left:15%;font-size:12px;animation:faisca 2s linear infinite;opacity:0.8}.faiscas::after{content:"💥";position:absolute;top:25%;right:20%;font-size:14px;animation:faisca 2.5s linear infinite;animation-delay:1s;opacity:0.6}@keyframes chama{0%,100%{height:40px;opacity:0.6}50%{height:60px;opacity:0.8}}@keyframes faisca{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(-80px) rotate(180deg);opacity:0}}body{background:radial-gradient(ellipse at bottom,#1a0000 0%,#0a0000 50%,#000000 100%)!important}.header{border-color:#ff4400!important;box-shadow:0 0 30px rgba(255,68,0,0.4),inset 0 0 30px rgba(255,68,0,0.05);animation:fireGlow 1.5s ease-in-out infinite}@keyframes fireGlow{0%,100%{box-shadow:0 0 30px rgba(255,68,0,0.4)}50%{box-shadow:0 0 50px rgba(255,100,0,0.6)}}.terminal{border-color:#ff440022!important;box-shadow:0 0 20px rgba(255,68,0,0.15)}'
     },
     {
-        'id': 'skin_ice', 'nome': '❄️ TESLA ICE', 'desc': 'Tema azul gelado', 'preco_moedas': 9,
+        'id': 'skin_ice', 'nome': '❄️ TESLA ICE', 'desc': 'Tema com cristais de gelo e neve', 'preco_moedas': 9,
         'cor_fundo': '#000a1a', 'cor_panel': '#0a102a', 'cor_destaque': '#3399ff', 'cor_texto': '#aaccff',
         'cor_botao': 'linear-gradient(135deg,#0044aa,#3399ff)', 'cor_tab_ativa': '#3399ff',
         'cor_header_bg': 'linear-gradient(135deg,#000a1a,#001133,#002255,#001133,#000a1a)', 'cor_header_borda': '#3399ff',
-        'header_extra': '<div class="lightning"></div>',
-        'css_extra': '.lightning{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:150px;height:150px;background:radial-gradient(circle at 30% 30%,rgba(51,153,255,0.3) 0%,rgba(0,100,200,0.15) 30%,transparent 100%);border-radius:50%;z-index:0;animation:glow 3s ease-in-out infinite;pointer-events:none}@keyframes glow{0%,100%{box-shadow:0 0 30px rgba(51,153,255,0.3)}50%{box-shadow:0 0 50px rgba(100,180,255,0.5)}}'
+        'header_extra': '<div class="neve"></div><div class="cristais"></div>',
+        'css_extra': '.neve{position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden;z-index:0}.neve::before,.neve::after{content:"❄";position:absolute;font-size:14px;color:rgba(255,255,255,0.6);animation:nevar 4s linear infinite}.neve::before{top:10%;left:10%;animation-delay:0s}.neve::after{top:5%;right:15%;font-size:10px;animation-delay:2s}.cristais{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:120px;height:120px;background:radial-gradient(circle at 30% 30%,rgba(100,180,255,0.3) 0%,rgba(51,153,255,0.15) 30%,transparent 70%);border-radius:50%;z-index:0;animation:cristal 3s ease-in-out infinite;pointer-events:none;border:1px solid rgba(100,180,255,0.2)}@keyframes nevar{0%{transform:translateY(0) rotate(0deg);opacity:0.8}100%{transform:translateY(100px) rotate(360deg);opacity:0}}@keyframes cristal{0%,100%{box-shadow:0 0 30px rgba(51,153,255,0.3),0 0 60px rgba(0,100,200,0.15);transform:translate(-50%,-50%) scale(1)}50%{box-shadow:0 0 50px rgba(100,180,255,0.5),0 0 80px rgba(51,153,255,0.3);transform:translate(-50%,-50%) scale(1.1)}}body{background:linear-gradient(180deg,#000a1a 0%,#001030 50%,#000a1a 100%)!important}.header{border-color:#3399ff!important;box-shadow:0 0 30px rgba(51,153,255,0.3),inset 0 0 30px rgba(51,153,255,0.05)}.terminal{border-color:#3399ff22!important;box-shadow:0 0 20px rgba(51,153,255,0.1)}'
     },
     {
         'id': 'skin_princesa', 'nome': '👸 PRINCESA', 'desc': 'Tema rosa com brilhos', 'preco_moedas': 9,
@@ -813,7 +813,7 @@ HTML = r'''
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ TESLA 369 BOT v6.2.0</title>
+    <title>⚡ TESLA 369 BOT v6.2.1</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:{{COR_FUNDO}};color:{{COR_TEXTO}};font-family:'Courier New',monospace;padding:10px}
@@ -1038,7 +1038,7 @@ HTML = r'''
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
             <span>⚡ TESLA 369</span>
-            <span>v6.2.0 | GALE 2 | SG: 1 WIN</span>
+            <span>v6.2.1 | GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
     
