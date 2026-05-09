@@ -1,5 +1,9 @@
+config.json
+*.env
+credentials.json
+dados/
+vsens_users/
 __pycache__/
 *.pyc
-.env
-local_database/
-vsens_users/
+.vscode/
+.idea/
