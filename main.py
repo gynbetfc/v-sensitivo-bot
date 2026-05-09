@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT v5.2.0 ⚡
+# ⚡ TESLA 369 BOT v5.3.0 ⚡
 # TESLA-369 GRÁTIS | v_SENSITIVO 6⚡ | 3=1 3⚡ | LOJA ESTRATÉGIAS | SKINS | MERCADO PAGO
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -782,7 +782,7 @@ HTML = r'''
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ TESLA 369 BOT v5.2.0</title>
+    <title>⚡ TESLA 369 BOT v5.3.0</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:{{COR_FUNDO}};color:{{COR_TEXTO}};font-family:'Courier New',monospace;padding:10px}
@@ -983,9 +983,9 @@ HTML = r'''
             <span style="color:#ff4444;font-size:8px" id="avisoMinimo"></span>
         </div>
             <button class="btn btn-info" id="btnConectar" onclick="conectarIQ()">🔌 CONECTAR</button>
+            <button class="btn btn-stop" id="btnDesconectar" onclick="desconectarIQ()" style="display:none">🔌 DESCONECTAR</button>
             <button class="btn btn-start" id="btnOperar" onclick="comecarOperar()" style="display:none">🚀 COMEÇAR OPERAR</button>
             <button class="btn btn-stop" id="btnParar" onclick="pararBot()" style="display:none">⏹️ PARAR</button>
-            <button class="btn btn-stop" id="btnDesconectar" onclick="desconectarIQ()" style="display:none">🔌 DESCONECTAR</button>
         </div></div>
         <div class="dashboard">
             <div class="card"><div class="label">💰 BANCA</div><div class="value" id="banca" style="color:#00ff88">--</div></div>
@@ -1008,7 +1008,7 @@ HTML = r'''
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
             <span>⚡ TESLA 369</span>
-            <span>v5.2.0 | GALE 2 | SG: 1 WIN</span>
+            <span>v5.3.0 | GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
     
@@ -1200,6 +1200,7 @@ function calcularMinimo() {
 }
 
 // ========== FUNÇÕES DOS BOTÕES ==========
+// ========== BOTÃO 1: CONECTAR / DESCONECTAR ==========
 function conectarIQ(){
     var email=document.getElementById('email').value.trim();
     var senha=document.getElementById('senha').value.trim();
@@ -1213,8 +1214,9 @@ function conectarIQ(){
         if(d.ok){
             conectadoIQ=true;
             document.getElementById('btnConectar').style.display='none';
-            document.getElementById('btnOperar').style.display='inline-block';
             document.getElementById('btnDesconectar').style.display='inline-block';
+            document.getElementById('btnOperar').style.display='inline-block';
+            document.getElementById('btnParar').style.display='none';
             document.getElementById('statusTexto').textContent='🟢 Conectado';
             document.getElementById('statusDot').className='status-dot active';
             document.getElementById('moedasSaldo').textContent=d.moedas||0;
@@ -1229,6 +1231,26 @@ function conectarIQ(){
     });
 }
 
+function desconectarIQ(){
+    if(botAtivo){alert('⚠️ Pare o bot primeiro!');return;}
+    if(confirm('Desconectar da IQ Option?')){
+        fetch('/parar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({desconectar:true})})
+        .then(r=>r.json()).then(d=>{
+            conectadoIQ=false;
+            document.getElementById('btnConectar').style.display='inline-block';
+            document.getElementById('btnConectar').disabled=false;
+            document.getElementById('btnConectar').textContent='🔌 CONECTAR';
+            document.getElementById('btnDesconectar').style.display='none';
+            document.getElementById('btnOperar').style.display='none';
+            document.getElementById('btnParar').style.display='none';
+            document.getElementById('statusTexto').textContent='⏸️ Desconectado';
+            document.getElementById('statusDot').className='status-dot inactive';
+            if(intervalo)clearInterval(intervalo);
+        });
+    }
+}
+
+// ========== BOTÃO 2: COMEÇAR OPERAR / PARAR ==========
 function comecarOperar(){
     if(!conectadoIQ){alert('Conecte primeiro!');return}
     document.getElementById('btnOperar').disabled=true;
@@ -1239,7 +1261,6 @@ function comecarOperar(){
             botAtivo=true;
             document.getElementById('btnOperar').style.display='none';
             document.getElementById('btnParar').style.display='inline-block';
-            document.getElementById('btnDesconectar').style.display='none';
             document.getElementById('statusTexto').textContent='🤖 Operando';
             document.getElementById('moedasSaldo').textContent=d.moedas;
         }else{
@@ -1252,36 +1273,18 @@ function comecarOperar(){
 
 function pararBot(){
     if(!confirm('Parar o bot?'))return;
-    fetch('/parar',{method:'POST'}).then(r=>r.json()).then(d=>{
+    fetch('/parar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})})
+    .then(r=>r.json()).then(d=>{
         botAtivo=false;
         document.getElementById('btnOperar').style.display='inline-block';
         document.getElementById('btnOperar').disabled=false;
         document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
         document.getElementById('btnParar').style.display='none';
-        document.getElementById('btnDesconectar').style.display='inline-block';
         document.getElementById('statusTexto').textContent='🟢 Conectado';
         document.getElementById('statusDot').className='status-dot active';
         if(intervalo)clearInterval(intervalo);
         setTimeout(function(){ location.reload(); }, 500);
     });
-}
-
-function desconectarIQ(){
-    if(botAtivo){alert('⚠️ Pare o bot primeiro!');return;}
-    if(confirm('Desconectar da IQ Option?')){
-        fetch('/parar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({desconectar:true})}).then(r=>r.json()).then(d=>{
-            conectadoIQ=false;botAtivo=false;
-            document.getElementById('btnConectar').style.display='inline-block';
-            document.getElementById('btnConectar').disabled=false;
-            document.getElementById('btnConectar').textContent='🔌 CONECTAR';
-            document.getElementById('btnOperar').style.display='none';
-            document.getElementById('btnParar').style.display='none';
-            document.getElementById('btnDesconectar').style.display='none';
-            document.getElementById('statusTexto').textContent='⏸️ Desconectado';
-            document.getElementById('statusDot').className='status-dot inactive';
-            if(intervalo)clearInterval(intervalo);
-        });
-    }
 }
 
 function renderEstrategias(){
@@ -1585,10 +1588,9 @@ function atualizar(){
         if(!d.rodando&&botAtivo){
             botAtivo=false;
             document.getElementById('btnOperar').style.display='inline-block';
-            document.getElementById('btnDesconectar').style.display='inline-block';
-            document.getElementById('btnParar').style.display='none';
             document.getElementById('btnOperar').disabled=false;
             document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
+            document.getElementById('btnParar').style.display='none';
             document.getElementById('statusTexto').textContent='🟢 Conectado';
         }
         if(d.banca)document.getElementById('banca').textContent='$'+d.banca.toFixed(2);
