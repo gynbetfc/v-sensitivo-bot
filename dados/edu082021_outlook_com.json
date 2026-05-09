@@ -1,6 +1,6 @@
 {
   "email": "edu082021@outlook.com",
-  "moedas": 2989,
+  "moedas": 2983,
   "moedas_ganhas_hoje": "2026-05-09",
   "total_ciclos": 0,
   "total_wins": 1,
@@ -31,7 +31,8 @@
   "estrategias_compradas": [
     "terceira_igual_primeira",
     "tesla_369",
-    "v_sensitivo"
+    "v_sensitivo",
+    "m5"
   ],
   "VOLTS": 1,
   "VOLTS_ganhas_hoje": "2026-05-08"
