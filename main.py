@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT v6.0.0-MULTI-V2 ⚡
+# ⚡ TESLA 369 BOT v6.1.0 ⚡
 # TESLA-369 GRÁTIS | v_SENSITIVO 6⚡ | 3=1 3⚡ | LOJA ESTRATÉGIAS | SKINS | MERCADO PAGO
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -789,7 +789,7 @@ HTML = r'''
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ TESLA 369 BOT v6.0.0-MULTI-V2</title>
+    <title>⚡ TESLA 369 BOT v6.1.0</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:{{COR_FUNDO}};color:{{COR_TEXTO}};font-family:'Courier New',monospace;padding:10px}
@@ -1014,7 +1014,7 @@ HTML = r'''
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
             <span>⚡ TESLA 369</span>
-            <span>v6.0.0-MULTI-V2 | GALE 2 | SG: 1 WIN</span>
+            <span>v6.1.0 | GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
     
@@ -1135,7 +1135,8 @@ HTML = r'''
     </div>
     
     <div class="panel" id="panel-relatorio">
-        <div class="config-section"><h3>📊 RELATÓRIO</h3><div class="config-row"><input type="email" id="emailRelatorio" placeholder="Email" style="flex:2"><button class="btn btn-info" onclick="verRelatorio()">🔍 BUSCAR</button><button class="btn btn-reset" onclick="resetarRelatorio()">🔄 RESETAR</button></div></div>
+        <div class="config-section"><h3>📊 RELATÓRIO</h3><div class="config-row"><input type="email" id="emailRelatorio" placeholder="Email" style="flex:2"><button class="btn btn-info" onclick="verRelatorio()">🔍 BUSCAR</button><button class="btn btn-reset" onclick="resetarRelatorio()">🔄 RESETAR</button>
+            <button class="btn btn-info" onclick="verRanking()" style="background:linear-gradient(135deg,#ff8c00,#ffd700);color:#000">🏆 RANKING</button></div></div>
         <div id="relatorioContent"></div>
     </div>
 </div>
@@ -1170,7 +1171,10 @@ function openTab(tab){
     document.getElementById('panel-'+tab).classList.add('active');
     if(tab=='relatorio'&&emailLogado){document.getElementById('emailRelatorio').value=emailLogado;verRelatorio()}
     if(tab=='loja'){renderLoja();mostrarSubAba('moedas');}
-    if(tab=='estrategias')renderEstrategias();
+    if(tab=='estrategias'){
+            if(botAtivo){alert('⚠️ Pare o bot antes de trocar de estratégia!');openTab('bot');return;}
+            renderEstrategias();
+        }
 }
 
 
@@ -1560,6 +1564,50 @@ function verRelatorio(){
     });
 }
 
+
+function verRanking() {
+    document.getElementById('relatorioContent').innerHTML = '<p style="color:#ffd700;text-align:center">🏆 Carregando ranking...</p>';
+    
+    fetch('/ranking').then(r => r.json()).then(d => {
+        var h = '';
+        
+        // Estatísticas globais
+        h += '<div style="background:#1a1a0a;border:2px solid #ffd700;border-radius:15px;padding:15px;margin-bottom:15px">';
+        h += '<p style="color:#ffd700;font-size:14px;font-weight:bold;text-align:center;margin-bottom:10px">📊 ESTATÍSTICAS GLOBAIS</p>';
+        h += '<div class="relatorio-grid">';
+        h += '<div class="relatorio-card"><div class="rlabel">👥 USUÁRIOS</div><div class="rvalue" style="color:#ffd700">' + d.stats.total_usuarios + '</div></div>';
+        h += '<div class="relatorio-card"><div class="rlabel">🔄 TOTAL OPS</div><div class="rvalue" style="color:#ffd700">' + d.stats.total_ops + '</div></div>';
+        h += '<div class="relatorio-card"><div class="rlabel">✅ WINS</div><div class="rvalue" style="color:#00ff88">' + d.stats.total_wins + '</div></div>';
+        h += '<div class="relatorio-card"><div class="rlabel">🎯 TAXA GLOBAL</div><div class="rvalue" style="color:#ffd700">' + d.stats.taxa_global + '%</div></div>';
+        h += '</div></div>';
+        
+        // Ranking
+        h += '<p style="color:#ffd700;font-size:14px;font-weight:bold;text-align:center;margin-bottom:10px">🏆 TOP TRADERS</p>';
+        h += '<div style="background:#000;border:1px solid #333;border-radius:10px;overflow:hidden">';
+        h += '<table class="historico-table">';
+        h += '<tr><th>#</th><th>EMAIL</th><th>LUCRO</th><th>WINS</th><th>LOSS</th><th>TAXA</th><th>BANCA</th></tr>';
+        
+        d.ranking.forEach(function(u, i) {
+            var cor = i === 0 ? '#ffd700' : (i === 1 ? '#c0c0c0' : (i === 2 ? '#cd7f32' : '#fff'));
+            var medalha = i === 0 ? '🥇' : (i === 1 ? '🥈' : (i === 2 ? '🥉' : (i + 1)));
+            h += '<tr>';
+            h += '<td style="color:' + cor + ';font-weight:bold">' + medalha + '</td>';
+            h += '<td style="color:#ccc;font-size:8px">' + u.email + '</td>';
+            h += '<td style="color:' + (u.lucro_total >= 0 ? '#00ff88' : '#ff4444') + '">$' + u.lucro_total.toFixed(2) + '</td>';
+            h += '<td style="color:#00ff88">' + u.total_wins + '</td>';
+            h += '<td style="color:#ff4444">' + u.total_losses + '</td>';
+            h += '<td style="color:#ffd700">' + u.taxa + '%</td>';
+            h += '<td style="color:#00ff88">$' + u.banca_atual.toFixed(2) + '</td>';
+            h += '</tr>';
+        });
+        
+        h += '</table></div>';
+        document.getElementById('relatorioContent').innerHTML = h;
+    }).catch(function() {
+        document.getElementById('relatorioContent').innerHTML = '<p style="color:#ff4444;text-align:center">Erro ao carregar ranking</p>';
+    });
+}
+
 function resetarRelatorio(){
     var email=document.getElementById('emailRelatorio').value.trim();
     if(!email){alert('Digite o email!');return}
@@ -1891,6 +1939,55 @@ def verificar_pix():
             return jsonify({'pago': True, 'moedas': moedas, 'saldo': usuario['moedas']})
         return jsonify({'pago': True})
     return jsonify({'pago': False})
+
+
+@app.route('/ranking')
+def ranking():
+    # Coletar dados de todos os usuários
+    ranking_list = []
+    try:
+        token = os.environ.get("GITHUB_TOKEN", "")
+        if token:
+            url = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/dados"
+            h = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github.v3+json"}
+            r = requests.get(url, headers=h)
+            if r.status_code == 200:
+                arquivos = r.json()
+                for arquivo in arquivos:
+                    try:
+                        r_user = requests.get(arquivo['url'], headers=h)
+                        user_data = json.loads(base64.b64decode(r_user.json()['content']).decode())
+                        ranking_list.append({
+                            'email': user_data.get('email', 'N/A')[:20] + '...',
+                            'lucro_total': round(user_data.get('lucro_total', 0), 2),
+                            'total_wins': user_data.get('total_wins', 0),
+                            'total_losses': user_data.get('total_losses', 0),
+                            'total_ciclos': user_data.get('total_ciclos', 0),
+                            'taxa': round((user_data.get('total_wins', 0) / max(user_data.get('total_ciclos', 1), 1)) * 100, 1),
+                            'banca_atual': round(user_data.get('banca_atual', 0), 2)
+                        })
+                    except:
+                        pass
+    except:
+        pass
+    
+    # Ordenar por lucro total (maior primeiro)
+    ranking_list.sort(key=lambda x: x['lucro_total'], reverse=True)
+    
+    # Estatísticas globais
+    total_ops = sum(u['total_ciclos'] for u in ranking_list)
+    total_wins = sum(u['total_wins'] for u in ranking_list)
+    taxa_global = round((total_wins / max(total_ops, 1)) * 100, 1) if total_ops > 0 else 0
+    
+    return jsonify({
+        'ranking': ranking_list[:20],
+        'stats': {
+            'total_usuarios': len(ranking_list),
+            'total_ops': total_ops,
+            'total_wins': total_wins,
+            'taxa_global': taxa_global
+        }
+    })
 
 @app.route('/relatorio')
 def relatorio():
