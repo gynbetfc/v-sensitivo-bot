@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT v4.10.0 ⚡
+# ⚡ TESLA 369 BOT v5.0.0 ⚡
 # TESLA-369 GRÁTIS | v_SENSITIVO 6⚡ | 3=1 3⚡ | LOJA ESTRATÉGIAS | SKINS | MERCADO PAGO
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -737,6 +737,49 @@ def comprar_estrategia():
     return jsonify({'ok': True, 'msg': f'Estratégia {estrategia["nome"]} comprada!', 'moedas': u['moedas']})
 
 
+
+# ═══════════════════════════════════════════════════════
+# ROTAS DO CHAT
+# ═══════════════════════════════════════════════════════
+chat_mensagens = []
+chat_ultimo_acesso = {}
+
+@app.route('/chat_enviar', methods=['POST'])
+def chat_enviar():
+    global chat_mensagens
+    data = request.json
+    nome = data.get('nome', 'Anônimo')[:15]
+    msg = data.get('msg', '')[:200]
+    sistema = data.get('sistema', False)
+    
+    if not msg:
+        return jsonify({'ok': False})
+    
+    chat_mensagens.append({
+        'nome': nome,
+        'msg': msg,
+        'hora': datetime.now().strftime('%H:%M'),
+        'sistema': sistema
+    })
+    
+    if len(chat_mensagens) > 100:
+        chat_mensagens = chat_mensagens[-100:]
+    
+    return jsonify({'ok': True})
+
+@app.route('/chat_mensagens')
+def chat_mensagens_route():
+    ip = request.remote_addr
+    chat_ultimo_acesso[ip] = time.time()
+    
+    agora = time.time()
+    online = sum(1 for t in chat_ultimo_acesso.values() if agora - t < 30)
+    
+    return jsonify({
+        'mensagens': chat_mensagens[-50:],
+        'online': max(1, online)
+    })
+
 # ═══════════════════════════════════════════════════════
 # HTML COMPLETO
 # ═══════════════════════════════════════════════════════
@@ -745,7 +788,7 @@ HTML = r'''
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ TESLA 369 BOT v4.10.0</title>
+    <title>⚡ TESLA 369 BOT v5.0.0</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:{{COR_FUNDO}};color:{{COR_TEXTO}};font-family:'Courier New',monospace;padding:10px}
@@ -911,6 +954,15 @@ HTML = r'''
     }
         
 
+    
+        .chat-msg{display:flex;margin-bottom:8px;animation:fadeIn .3s ease}
+        .chat-msg-avatar{width:28px;height:28px;border-radius:50%;background:#1a1a2e;display:flex;align-items:center;justify-content:center;font-size:12px;margin-right:8px;flex-shrink:0;border:1px solid #333}
+        .chat-msg-content{flex:1}
+        .chat-msg-nome{color:#ffd700;font-size:9px;font-weight:bold;margin-bottom:2px}
+        .chat-msg-texto{color:#ccc;font-size:11px;word-break:break-word}
+        .chat-msg-hora{color:#555;font-size:8px;margin-left:5px}
+        .chat-msg.sistema{text-align:center;color:#555;font-size:9px;margin:5px 0}
+
     </style>
 </head>
 <body>
@@ -926,6 +978,7 @@ HTML = r'''
         <div class="tab active" onclick="openTab('bot')">🤖 BOT</div>
         <div class="tab" onclick="openTab('estrategias')">📊 ESTRATÉGIAS</div>
         <div class="tab" onclick="openTab('loja')">🛍️ LOJA</div>
+        <div class="tab" onclick="openTab('chat')">💬 CHAT</div>
         <div class="tab" onclick="openTab('leia-me')">⚠️ LEIA-ME</div>
         <div class="tab" onclick="openTab('relatorio')">📊 RELATÓRIO</div>
     </div>
@@ -961,7 +1014,7 @@ HTML = r'''
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
             <span>⚡ TESLA 369</span>
-            <span>v4.10.0 | GALE 2 | SG: 1 WIN</span>
+            <span>v5.0.0 | GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
     
@@ -987,6 +1040,23 @@ HTML = r'''
         <div class="sub-panel" id="sub-panel-estrategias">
             <div class="config-section"><h3>📊 ESTRATÉGIAS PREMIUM</h3><p style="color:#888;font-size:10px">Compre estratégias avançadas com suas VOLTS! ⚡</p></div>
             <div class="skins-grid" id="estrategiasLojaGrid"></div>
+        </div>
+    </div>
+    
+    <div class="panel" id="panel-chat">
+        <div class="config-section">
+            <h3>💬 CHAT DOS TRADERS</h3>
+            <p style="color:#888;font-size:9px" id="chatInfo">Conecte na IQ Option para entrar no chat</p>
+        </div>
+        <div id="chatMensagens" style="background:#000;border:1px solid #333;border-radius:10px;height:300px;overflow-y:auto;padding:10px;margin-bottom:10px;font-size:10px">
+            <p style="color:#888;text-align:center">⚡ Conecte-se para começar a conversar</p>
+        </div>
+        <div style="display:flex;gap:8px">
+            <input type="text" id="chatMsg" placeholder="Digite sua mensagem..." style="flex:1;padding:10px;background:#111;border:1px solid #333;border-radius:8px;color:#fff;font-size:11px;font-family:'Courier New',monospace" disabled onkeypress="if(event.key==='Enter')enviarMensagem()">
+            <button onclick="enviarMensagem()" class="btn-notificacao" style="padding:10px 20px" disabled id="btnChatEnviar">ENVIAR</button>
+        </div>
+        <div style="text-align:center;margin-top:5px">
+            <span style="color:#888;font-size:9px" id="chatOnline">0 online</span>
         </div>
     </div>
     
@@ -1499,6 +1569,103 @@ window.onload=function(){
     });
 }
 
+
+
+// ============= CHAT AUTO-CONECTA =============
+var chatIntervalo = null;
+
+function iniciarChat(nome) {
+    if (!nome) return;
+    
+    // Salvar nome
+    localStorage.setItem('chatNome', nome);
+    
+    // Habilitar chat
+    document.getElementById('chatMsg').disabled = false;
+    document.getElementById('btnChatEnviar').disabled = false;
+    document.getElementById('chatInfo').textContent = '✅ Conectado como: ' + nome;
+    document.getElementById('chatInfo').style.color = '#00ff88';
+    
+    // Enviar mensagem de entrada
+    fetch('/chat_enviar', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({nome: nome, msg: '⚡ entrou no chat!', sistema: true})
+    });
+    
+    // Iniciar atualização
+    if (chatIntervalo) clearInterval(chatIntervalo);
+    chatIntervalo = setInterval(atualizarChat, 3000);
+    atualizarChat();
+}
+
+// Auto-conectar ao logar na IQ
+var conectarIQOriginal = conectarIQ;
+conectarIQ = function() {
+    var email = document.getElementById('email').value.trim();
+    if (email) {
+        localStorage.setItem('chatNome', email);
+    }
+    conectarIQOriginal();
+    
+    // Iniciar chat após 2 segundos (depois do login)
+    setTimeout(function() {
+        if (conectadoIQ && emailLogado) {
+            iniciarChat(emailLogado);
+        }
+    }, 2000);
+};
+
+// Reconectar ao carregar página
+window.addEventListener('load', function() {
+    var nomeSalvo = localStorage.getItem('chatNome');
+    if (nomeSalvo && conectadoIQ) {
+        setTimeout(function() {
+            iniciarChat(nomeSalvo);
+        }, 1500);
+    }
+});
+
+function enviarMensagem() {
+    var nome = localStorage.getItem('chatNome') || emailLogado || 'Anônimo';
+    var msg = document.getElementById('chatMsg').value.trim();
+    
+    if (!msg) return;
+    
+    fetch('/chat_enviar', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({nome: nome, msg: msg})
+    }).then(function() {
+        document.getElementById('chatMsg').value = '';
+        atualizarChat();
+    });
+}
+
+function atualizarChat() {
+    fetch('/chat_mensagens').then(r => r.json()).then(d => {
+        if (!d.mensagens || d.mensagens.length === 0) return;
+        
+        var html = '';
+        d.mensagens.forEach(function(m) {
+            if (m.sistema) {
+                html += '<div class="chat-msg sistema">' + m.nome + ' ' + m.msg + ' <span class="chat-msg-hora">' + m.hora + '</span></div>';
+            } else {
+                var avatar = m.nome.charAt(0).toUpperCase();
+                html += '<div class="chat-msg">';
+                html += '<div class="chat-msg-avatar">' + avatar + '</div>';
+                html += '<div class="chat-msg-content">';
+                html += '<div class="chat-msg-nome">' + m.nome + '<span class="chat-msg-hora">' + m.hora + '</span></div>';
+                html += '<div class="chat-msg-texto">' + m.msg + '</div>';
+                html += '</div></div>';
+            }
+        });
+        
+        document.getElementById('chatMensagens').innerHTML = html;
+        document.getElementById('chatMensagens').scrollTop = document.getElementById('chatMensagens').scrollHeight;
+        document.getElementById('chatOnline').textContent = '🟢 ' + (d.online || 1) + ' online';
+    });
+}
 
 </script>
 </body>
