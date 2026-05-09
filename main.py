@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT v5.3.0 ⚡
+# ⚡ TESLA 369 BOT v5.4.0 ⚡
 # TESLA-369 GRÁTIS | v_SENSITIVO 6⚡ | 3=1 3⚡ | LOJA ESTRATÉGIAS | SKINS | MERCADO PAGO
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -782,7 +782,7 @@ HTML = r'''
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ TESLA 369 BOT v5.3.0</title>
+    <title>⚡ TESLA 369 BOT v5.4.0</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:{{COR_FUNDO}};color:{{COR_TEXTO}};font-family:'Courier New',monospace;padding:10px}
@@ -965,8 +965,7 @@ HTML = r'''
         <div class="tab" onclick="openTab('estrategias')">📊 ESTRATÉGIAS</div>
         <div class="tab" onclick="openTab('loja')">🛍️ LOJA</div>
         <div class="tab" onclick="openTab('chat')">💬 CHAT</div>
-        <div class="tab" onclick="openTab('tutorial')">📖 TUTORIAL</div>
-        <div class="tab" onclick="openTab('leia-me')">⚠️ LEIA-ME</div>
+        <div class="tab" onclick="openTab('leia-me')">📖 TUTORIAL & LEIA-ME</div>
     </div>
     
     <div class="panel active" id="panel-bot">
@@ -1008,7 +1007,7 @@ HTML = r'''
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
             <span>⚡ TESLA 369</span>
-            <span>v5.3.0 | GALE 2 | SG: 1 WIN</span>
+            <span>v5.4.0 | GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
     
@@ -1055,68 +1054,60 @@ HTML = r'''
         </div>
     </div>
     
-    <div class="panel" id="panel-tutorial">
-        <div class="config-section">
-            <h3>📖 COMO USAR O TESLA 369 BOT</h3>
-        </div>
-        <div style="background:#0a0a1a;border:1px solid #ffd700;border-radius:15px;padding:20px;margin:10px 0">
-            <p style="color:#ffd700;font-size:14px;font-weight:bold;margin-bottom:10px">🔰 PASSO A PASSO</p>
-            <p style="color:#ccc;font-size:11px;line-height:2.0;text-align:justify">
-                <span style="color:#00ff88">1.</span> Acesse <span style="color:#ffd700">iqoption.com</span> e crie sua conta (PRACTICE para testes).<br>
-                <span style="color:#00ff88">2.</span> No bot, digite seu <span style="color:#ffd700">email e senha</span> da IQ Option.<br>
-                <span style="color:#00ff88">3.</span> Selecione <span style="color:#ffd700">PRACTICE</span> (conta demo) para testar sem riscos.<br>
-                <span style="color:#00ff88">4.</span> Escolha a <span style="color:#ffd700">% da banca</span> que quer usar (mínimo 15%).<br>
-                <span style="color:#00ff88">5.</span> Clique em <span style="color:#00ff88;font-weight:bold">CONECTAR</span> e aguarde a conexão.<br>
-                <span style="color:#00ff88">6.</span> Vá na aba <span style="color:#ffd700">ESTRATÉGIAS</span> e escolha uma (TESLA-369 é grátis).<br>
-                <span style="color:#00ff88">7.</span> Clique em <span style="color:#00ff88;font-weight:bold">COMEÇAR OPERAR</span> e aguarde o sinal.<br>
-                <span style="color:#00ff88">8.</span> O robô opera automaticamente - não feche o navegador!
-            </p>
-        </div>
-        <div style="background:#0a1a0a;border:1px solid #00ff88;border-radius:15px;padding:20px;margin:10px 0">
-            <p style="color:#00ff88;font-size:14px;font-weight:bold;margin-bottom:10px">⚙️ FUNCIONAMENTO DO ROBÔ</p>
-            <p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify">
-                <span style="color:#ffd700">Estratégia:</span> O robô analisa velas de 1 minuto do par <span style="color:#ffd700">EURUSD-OTC</span>.<br>
-                <span style="color:#ffd700">Entrada:</span> Quando encontra um padrão, ele compra CALL (sobe) ou PUT (desce).<br>
-                <span style="color:#ffd700">Gale (Martingale):</span> Se perder, dobra o valor na próxima vela (até 2x).<br>
-                <span style="color:#ffd700">Stop Gain:</span> 1 WIN = bot para automaticamente.<br>
-                <span style="color:#ffd700">Ciclo:</span> Cada operação consome 1 VOLT do seu saldo.<br>
-                <span style="color:#ffd700">VOLTS:</span> Compre na LOJA para continuar operando (1 VOLT grátis/dia).
-            </p>
-        </div>
-        <div style="background:#1a0000;border:1px solid #ff4444;border-radius:15px;padding:20px;margin:10px 0">
-            <p style="color:#ff4444;font-size:14px;font-weight:bold;margin-bottom:10px">⚠️ DICAS IMPORTANTES</p>
-            <p style="color:#ff8888;font-size:11px;line-height:1.8;text-align:justify">
-                • Sempre teste na conta <span style="color:#ffd700">PRACTICE</span> antes de usar dinheiro real.<br>
-                • O robô <span style="color:#ffd700">NÃO</span> garante lucro - é uma ferramenta de análise.<br>
-                • <span style="color:#ff4444">Nunca opere com dinheiro que você precisa para viver.</span><br>
-                • O bot para automaticamente após 1 WIN - você precisa clicar novamente.<br>
-                • Se perder 3x seguidas (Gale 2), o bot para e você assume o prejuízo.<br>
-                • Use a aba <span style="color:#ffd700">RELATÓRIO</span> para acompanhar seu histórico.
-            </p>
-        </div>
-    </div>
-    
     <div class="panel" id="panel-leia-me">
         <div class="config-section">
-            <h3>⚠️ A VERDADE QUE VOCÊ PRECISA SABER</h3>
+            <h3>📖 TUTORIAL & ⚠️ AVISOS IMPORTANTES</h3>
         </div>
+        
+        <!-- ABA INTERNA: TUTORIAL -->
+        <div style="background:#0a0a1a;border:1px solid #00ff88;border-radius:15px;padding:20px;margin:10px 0">
+            <p style="color:#00ff88;font-size:16px;font-weight:bold;margin-bottom:15px;text-align:center">📖 COMO USAR O TESLA 369</p>
+            
+            <p style="color:#ffd700;font-size:13px;font-weight:bold;margin-bottom:10px">🔰 PRIMEIROS PASSOS</p>
+            <p style="color:#ccc;font-size:11px;line-height:2.0;text-align:justify">
+                <span style="color:#00ff88">1.</span> Crie uma conta na <span style="color:#ffd700">IQ Option</span> (use conta PRACTICE para testes).<br>
+                <span style="color:#00ff88">2.</span> Digite seu <span style="color:#ffd700">email e senha</span> no bot e clique em <span style="color:#00ff88">CONECTAR</span>.<br>
+                <span style="color:#00ff88">3.</span> Selecione a <span style="color:#ffd700">% da banca</span> que deseja usar (mínimo 15%).<br>
+                <span style="color:#00ff88">4.</span> Vá na aba <span style="color:#ffd700">ESTRATÉGIAS</span> e escolha uma estratégia.<br>
+                <span style="color:#00ff88">5.</span> Clique em <span style="color:#00ff88;font-weight:bold">COMEÇAR OPERAR</span> e aguarde o sinal.<br>
+                <span style="color:#00ff88">6.</span> O bot opera automaticamente - <span style="color:#ff4444">não feche o navegador!</span>
+            </p>
+            
+            <p style="color:#ffd700;font-size:13px;font-weight:bold;margin-bottom:10px;margin-top:15px">⚙️ ESTRATÉGIAS DISPONÍVEIS</p>
+            <p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify">
+                <span style="color:#ffd700">⚡ TESLA-369 (GRÁTIS):</span> Timeframe <span style="color:#00ff88">1 minuto</span> - Opera nos minutos 1:55-2:00 e 6:55-7:00.<br>
+                <span style="color:#ffd700">🔮 v_SENSITIVO (6 VOLTS):</span> Timeframe <span style="color:#00ff88">1 minuto</span> - Usa RSI, Bollinger, MACD, Médias Móveis.<br>
+                <span style="color:#ffd700">3️⃣ 3ª = 1ª (3 VOLTS):</span> Timeframe <span style="color:#00ff88">1 minuto</span> - Opera a cada 5 minutos no fechamento da vela.<br>
+                <span style="color:#ffd700">📊 MHI-FILTRADO (9 VOLTS):</span> Timeframe <span style="color:#00ff88">1 minuto</span> - Minutos 4:55 e 9:55 com filtro de tendência.<br>
+                <span style="color:#ffd700">7️⃣ QUADRANTE DE 7 (6 VOLTS):</span> Timeframe <span style="color:#00ff88">1 minuto</span> - 7 velas, conta maioria com média móvel.<br>
+                <span style="color:#ffd700">🌊 FLUXO-DE-VELAS (3 VOLTS):</span> Timeframe <span style="color:#00ff88">1 minuto</span> - 5 velas da mesma cor + MM.<br>
+                <span style="color:#ffd700">🔄 REVERSÃO (3 VOLTS):</span> Timeframe <span style="color:#00ff88">1 minuto</span> - Padrão alternado g-r-g-r-g ou r-g-r-g-r.<br>
+                <span style="color:#ffd700">⏰ M5 (6 VOLTS):</span> Timeframe <span style="color:#00ff88">5 minutos</span> - Quadrante de velas a cada 15 minutos.
+            </p>
+        </div>
+        
+        <!-- ABA INTERNA: AVISOS -->
         <div style="background:#1a0000;border:2px solid #ff4444;border-radius:15px;padding:20px;margin:10px 0">
-            <p style="color:#ff4444;font-size:16px;text-align:center;font-weight:bold;margin-bottom:15px">⚠️ IQ OPTION = CASA DE APOSTAS</p>
+            <p style="color:#ff4444;font-size:16px;text-align:center;font-weight:bold;margin-bottom:15px">⚠️ A VERDADE SOBRE A IQ OPTION</p>
             <p style="color:#ff8888;font-size:12px;line-height:1.8;text-align:justify">
                 A <span style="color:#ffd700;font-weight:bold">IQ Option</span> <span style="color:#ff4444;font-weight:bold">NÃO É</span> o mercado financeiro real. 
                 Ela é uma <span style="color:#ffd700;font-weight:bold">corretora de opções binárias</span> - um modelo onde você aposta se o preço vai subir ou descer.
                 Não há compra real de ativos. É uma <span style="color:#ff4444;font-weight:bold">aposta</span> contra a própria corretora.
             </p>
         </div>
+        
         <div style="background:#0a0a1a;border:1px solid #ffd700;border-radius:15px;padding:20px;margin:10px 0">
             <p style="color:#ffd700;font-size:14px;font-weight:bold;margin-bottom:10px">🤖 COMO O ROBÔ FUNCIONA</p>
             <p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify">
-                O Tesla 369 analisa <span style="color:#00ff88">padrões de velas</span> em tempo real usando indicadores técnicos (RSI, Médias Móveis, Bollinger, MACD). 
+                O Tesla 369 analisa <span style="color:#00ff88">padrões de velas</span> em tempo real usando indicadores técnicos. 
+                Cada estratégia tem seu próprio <span style="color:#ffd700">timeframe e gatilho</span> de entrada.
                 Quando encontra um padrão com alta probabilidade, ele <span style="color:#ffd700">abre uma ordem automaticamente</span>.
-                O robô promete buscar <span style="color:#ffd700;font-weight:bold">+10% de retorno</span> sobre o valor que você definir como entrada.
-                Se perder, ele aplica <span style="color:#ff4444">Martingale (Gale)</span> dobrando o valor na próxima vela.
+                O robô busca <span style="color:#ffd700;font-weight:bold">+10% de retorno</span> sobre o valor que você definir como entrada.
+                Se perder, ele aplica <span style="color:#ff4444">Martingale (Gale 2)</span> dobrando o valor por até 2 vezes.
+                <span style="color:#00ff88;font-weight:bold">Stop Gain:</span> 1 WIN = bot para automaticamente (você precisa clicar novamente).
             </p>
         </div>
+        
         <div style="background:#0a1a0a;border:1px solid #00ff88;border-radius:15px;padding:20px;margin:10px 0">
             <p style="color:#00ff88;font-size:14px;font-weight:bold;margin-bottom:10px">💰 RISCOS REAIS</p>
             <p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify">
@@ -1125,14 +1116,17 @@ HTML = r'''
                 • A IQ Option pode recusar pagamentos ou encerrar contas.<br>
                 • O Martingale é perigoso: 3 perdas seguidas consomem 7x o valor inicial.<br>
                 • <span style="color:#ffd700">NUNCA invista dinheiro que você não pode perder.</span><br>
-                • Resultados passados não garantem resultados futuros.
+                • Resultados passados não garantem resultados futuros.<br>
+                • O robô é uma ferramenta de <span style="color:#ffd700">análise automatizada</span>, não uma garantia de lucro.
             </p>
         </div>
+        
         <div style="text-align:center;margin-top:15px">
             <p style="color:#ffd700;font-size:12px;font-weight:bold">🎯 A INTENÇÃO É GANHAR DINHEIRO - MAS COM CONSCIÊNCIA</p>
-            <p style="color:#888;font-size:10px;margin-top:5px">Use com responsabilidade. Conheça os riscos.</p>
+            <p style="color:#888;font-size:10px;margin-top:5px">Use com responsabilidade. Conheça os riscos. Comece pela conta PRACTICE.</p>
         </div>
     </div>
+    
     <div class="panel" id="panel-relatorio">
         <div class="config-section"><h3>📊 RELATÓRIO</h3><div class="config-row"><input type="email" id="emailRelatorio" placeholder="Email" style="flex:2"><button class="btn btn-info" onclick="verRelatorio()">🔍 BUSCAR</button><button class="btn btn-reset" onclick="resetarRelatorio()">🔄 RESETAR</button></div></div>
         <div id="relatorioContent"></div>
