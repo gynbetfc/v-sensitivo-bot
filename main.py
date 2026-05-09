@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT v5.4.0 ⚡
+# ⚡ TESLA 369 BOT v6.0.0-beta ⚡
 # TESLA-369 GRÁTIS | v_SENSITIVO 6⚡ | 3=1 3⚡ | LOJA ESTRATÉGIAS | SKINS | MERCADO PAGO
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -214,19 +214,36 @@ def criar_usuario(email):
     salvar_usuario(email, dados)
     return dados
 
-# ============= VARIÁVEIS GLOBAIS =============
-API, par = None, "EURUSD-OTC"
-estrategia_atual = 'tesla_369'
-timeframe_atual = 60
-lucro, NumDeOperacoes = 0.0, 0
-BANCA_INICIAL_DO_BOT, STOP_GAIN_ATINGIDO = 0, False
-bot_rodando, bot_thread = False, None
-conectado_iq = False
-ultimo_sinal, ultima_analise = "Aguardando...", {}
-logs_web, MAX_LOGS_WEB = [], 200
-email_usuario_atual = ""
-skin_atual_global = 'skin_padrao'
+# ============= VARIÁVEIS GLOBAIS (MULTI-USUÁRIO) =============
+sessoes = {}
+
+def get_sessao(email=''):
+    if not email:
+        try:
+            email = request.cookies.get('user_email', '')
+        except:
+            email = ''
+    if email not in sessoes:
+        sessoes[email] = {
+            'API': None, 'par': "EURUSD-OTC", 'estrategia_atual': 'tesla_369',
+            'timeframe_atual': 60, 'lucro': 0.0, 'NumDeOperacoes': 0,
+            'BANCA_INICIAL_DO_BOT': 0, 'STOP_GAIN_ATINGIDO': False,
+            'bot_rodando': False, 'bot_thread': None, 'conectado_iq': False,
+            'ultimo_sinal': "Aguardando...", 'ultima_analise': {},
+            'logs_web': [], 'skin_atual_global': 'skin_padrao',
+            'email_usuario_atual': email
+        }
+    return sessoes[email]
+
+# Compatibilidade: propriedades que retornam valores da sessão atual
+def _email():
+    try: return request.cookies.get('user_email', '')
+    except: return ''
+
+def _s(): return get_sessao(_email())
+
 pagamentos_pendentes = {}
+MAX_LOGS_WEB = 200
 
 def add_log(msg, tipo='info'):
     global logs_web
@@ -782,7 +799,7 @@ HTML = r'''
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ TESLA 369 BOT v5.4.0</title>
+    <title>⚡ TESLA 369 BOT v6.0.0-beta</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:{{COR_FUNDO}};color:{{COR_TEXTO}};font-family:'Courier New',monospace;padding:10px}
@@ -1007,7 +1024,7 @@ HTML = r'''
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
             <span>⚡ TESLA 369</span>
-            <span>v5.4.0 | GALE 2 | SG: 1 WIN</span>
+            <span>v6.0.0-beta | GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
     
@@ -1769,7 +1786,9 @@ def conectar():
         if not status_conn: return jsonify({'ok': False, 'erro': str(reason)[:100]})
         API.change_balance(tipo); conectado_iq = True
         add_log(f'✅ Conectado! ${API.get_balance():.2f} | ⚡ {usuario.get("moedas", 0)} VOLTS', 'win')
-        return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0)})
+        resp = jsonify({'ok': True, 'moedas': usuario.get('moedas', 0), 'email': email})
+        resp.set_cookie('user_email', email, max_age=86400)
+        return resp
     except Exception as e: return jsonify({'ok': False, 'erro': str(e)[:100]})
 
 @app.route('/comecar_operar', methods=['POST'])
