@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT v4.11.0 ⚡
+# ⚡ TESLA 369 BOT v4.10.0 ⚡
 # TESLA-369 GRÁTIS | v_SENSITIVO 6⚡ | 3=1 3⚡ | LOJA ESTRATÉGIAS | SKINS | MERCADO PAGO
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -745,7 +745,7 @@ HTML = r'''
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ TESLA 369 BOT v4.11.0</title>
+    <title>⚡ TESLA 369 BOT v4.10.0</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:{{COR_FUNDO}};color:{{COR_TEXTO}};font-family:'Courier New',monospace;padding:10px}
@@ -911,18 +911,6 @@ HTML = r'''
     }
         
 
-    
-        .notificacao-toast{position:fixed;top:20px;right:20px;background:#1a1a2e;border:2px solid #ffd700;border-radius:15px;padding:15px 20px;z-index:9999;display:none;animation:slideIn .5s ease;max-width:300px;box-shadow:0 10px 30px rgba(0,0,0,.8)}
-        .notificacao-toast.show{display:block}
-        .notificacao-toast.win{border-color:#00ff88;background:#0a1a0a}
-        .notificacao-toast.loss{border-color:#ff4444;background:#1a0000}
-        .notificacao-toast .nt-title{font-size:14px;font-weight:bold;margin-bottom:5px}
-        .notificacao-toast .nt-msg{font-size:11px;color:#ccc}
-        .notificacao-toast .nt-close{position:absolute;top:5px;right:10px;cursor:pointer;color:#888;font-size:16px}
-        @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
-        .btn-notificacao{padding:8px 14px;background:linear-gradient(135deg,#0066cc,#3399ff);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:10px;font-family:'Courier New',monospace}
-        .btn-notificacao.ativo{background:linear-gradient(135deg,#00aa44,#00cc55)}
-
     </style>
 </head>
 <body>
@@ -951,10 +939,6 @@ HTML = r'''
             <button class="btn btn-start" id="btnOperar" onclick="comecarOperar()" style="display:none">🚀 COMEÇAR OPERAR</button>
             <button class="btn btn-stop" id="btnParar" onclick="pararBot()" style="display:none">⏹️ PARAR</button>
             <button class="btn btn-stop" id="btnDesconectar" onclick="desconectarIQ()" style="display:none">🔌 DESCONECTAR</button>
-            <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
-                <button class="btn-notificacao" id="btnNotificacao" onclick="ativarNotificacoes()">🔔 ATIVAR ALERTAS</button>
-                <span style="color:#888;font-size:9px" id="statusNotificacao">Toque para ativar</span>
-            </div>
         </div></div>
         <div class="dashboard">
             <div class="card"><div class="label">💰 BANCA</div><div class="value" id="banca" style="color:#00ff88">--</div></div>
@@ -977,7 +961,7 @@ HTML = r'''
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
             <span>⚡ TESLA 369</span>
-            <span>v4.11.0 | GALE 2 | SG: 1 WIN</span>
+            <span>v4.10.0 | GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
     
@@ -1049,12 +1033,7 @@ HTML = r'''
     </div>
 </div>
 
-<div class="notificacao-toast" id="notificacaoToast">
-        <span class="nt-close" onclick="document.getElementById('notificacaoToast').classList.remove('show')">✕</span>
-        <div class="nt-title" id="ntTitle"></div>
-        <div class="nt-msg" id="ntMsg"></div>
-    </div>
-    <div class="modal-overlay" id="modalPix">
+<div class="modal-overlay" id="modalPix">
     <div class="modal-pagamento">
         <h3>💳 Pagamento PIX</h3>
         <div id="pixContent"><p style="color:#888">Carregando QR Code...</p></div>
@@ -1520,148 +1499,6 @@ window.onload=function(){
     });
 }
 
-
-
-// ============= SISTEMA DE NOTIFICAÇÕES E SONS =============
-var notificacoesAtivas = false;
-var audioWin = null;
-var audioLoss = null;
-
-// Criar sons usando Web Audio API (funciona em qualquer navegador)
-function criarSons() {
-    try {
-        var AudioContext = window.AudioContext || window.webkitAudioContext;
-        var ctx = new AudioContext();
-        
-        // Som de WIN (tom ascendente)
-        audioWin = function() {
-            var osc = ctx.createOscillator();
-            var gain = ctx.createGain();
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.type = 'sine';
-            gain.gain.setValueAtTime(0.3, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-            osc.frequency.setValueAtTime(523, ctx.currentTime);
-            osc.frequency.setValueAtTime(659, ctx.currentTime + 0.1);
-            osc.frequency.setValueAtTime(784, ctx.currentTime + 0.2);
-            osc.start(ctx.currentTime);
-            osc.stop(ctx.currentTime + 0.5);
-        };
-        
-        // Som de LOSS (tom grave)
-        audioLoss = function() {
-            var osc = ctx.createOscillator();
-            var gain = ctx.createGain();
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.type = 'sawtooth';
-            gain.gain.setValueAtTime(0.2, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-            osc.frequency.setValueAtTime(200, ctx.currentTime);
-            osc.frequency.setValueAtTime(150, ctx.currentTime + 0.1);
-            osc.frequency.setValueAtTime(100, ctx.currentTime + 0.2);
-            osc.start(ctx.currentTime);
-            osc.stop(ctx.currentTime + 0.4);
-        };
-    } catch(e) {
-        console.log('Web Audio API não suportada');
-    }
-}
-
-// Inicializar sons quando o usuário interagir
-document.addEventListener('click', function() {
-    if (!audioWin) criarSons();
-}, {once: true});
-
-function ativarNotificacoes() {
-    if (!('Notification' in window)) {
-        alert('Seu navegador não suporta notificações!');
-        return;
-    }
-    
-    Notification.requestPermission().then(function(permission) {
-        if (permission === 'granted') {
-            notificacoesAtivas = true;
-            document.getElementById('btnNotificacao').textContent = '🔔 ALERTAS ATIVOS';
-            document.getElementById('btnNotificacao').classList.add('ativo');
-            document.getElementById('statusNotificacao').textContent = '✅ Ativo!';
-            
-            // Notificação de teste
-            new Notification('⚡ TESLA 369 BOT', {
-                body: 'Alertas ativados! Você receberá notificações de WIN/LOSS.',
-                icon: '⚡'
-            });
-            
-            // Tocar som de teste
-            if (audioWin) audioWin();
-            
-            setTimeout(function() {
-                document.getElementById('notificacaoToast').classList.remove('show');
-            }, 3000);
-        } else {
-            alert('Permissão de notificação negada!');
-        }
-    });
-}
-
-function mostrarNotificacao(titulo, msg, tipo) {
-    // Mostrar toast na tela
-    var toast = document.getElementById('notificacaoToast');
-    document.getElementById('ntTitle').textContent = titulo;
-    document.getElementById('ntMsg').textContent = msg;
-    toast.className = 'notificacao-toast ' + tipo + ' show';
-    
-    // Tocar som
-    if (tipo === 'win' && audioWin) audioWin();
-    if (tipo === 'loss' && audioLoss) audioLoss();
-    
-    // Enviar notificação nativa se ativa
-    if (notificacoesAtivas) {
-        new Notification(titulo, {
-            body: msg,
-            icon: tipo === 'win' ? '🌟' : '💀'
-        });
-    }
-    
-    // Esconder toast após 5 segundos
-    setTimeout(function() {
-        toast.classList.remove('show');
-    }, 5000);
-}
-
-// Modificar função atualizar para detectar WIN/LOSS e disparar notificações
-var ultimoLogNotificado = '';
-var atualizarOriginal = atualizar;
-atualizar = function() {
-    atualizarOriginal();
-    
-    // Verificar logs para detectar WIN/LOSS
-    fetch('/status').then(r => r.json()).then(d => {
-        if (d.logs) {
-            var linhas = d.logs.split('\n');
-            var ultimaLinha = linhas[linhas.length - 2] || '';
-            
-            if (ultimaLinha !== ultimoLogNotificado) {
-                ultimoLogNotificado = ultimaLinha;
-                
-                if (ultimaLinha.includes('🌟 WIN!')) {
-                    var valor = ultimaLinha.match(/\+\$([\d.]+)/);
-                    var msg = valor ? 'Lucro de $' + valor[1] : 'Operação vencedora!';
-                    mostrarNotificacao('🌟 WIN!', msg + ' | ' + (d.estrategia_nome || 'Bot'), 'win');
-                } else if (ultimaLinha.includes('💀 LOSS!')) {
-                    var valor = ultimaLinha.match(/\-\$([\d.]+)/);
-                    var msg = valor ? 'Perda de $' + valor[1] : 'Operação perdida!';
-                    mostrarNotificacao('💀 LOSS!', msg + ' | ' + (d.estrategia_nome || 'Bot'), 'loss');
-                } else if (ultimaLinha.includes('STOP GAIN')) {
-                    mostrarNotificacao('🎯 STOP GAIN!', 'Meta de lucro atingida! Bot parado.', 'win');
-                } else if (ultimaLinha.includes('CICLO COMPLETO PERDIDO')) {
-                    mostrarNotificacao('💀 CICLO PERDIDO!', 'Martingale completo. Bot parado.', 'loss');
-                }
-            }
-        }
-    });
-};
 
 </script>
 </body>
