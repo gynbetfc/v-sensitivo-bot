@@ -257,8 +257,8 @@ class UsuarioInstancia:
         self.bot_rodando = False
         self.bot_thread = None
         self.conectado = False
-        self.ultimo_sinal = "Aguardando..."
-        self.api.user.ultima_analise = {}
+        self.user.ultimo_sinal = "Aguardando..."
+        self.user.ultima_analise = {}
         self.logs = []
         self.MAX_LOGS = 200
         self.skin_atual = "skin_padrao"
@@ -282,7 +282,7 @@ lucro, NumDeOperacoes = 0.0, 0
 BANCA_INICIAL_DO_BOT, STOP_GAIN_ATINGIDO = 0, False
 bot_rodando, bot_thread = False, None
 conectado_iq = False
-ultimo_sinal, ultima_analise = "Aguardando...", {}
+
 logs_web, MAX_LOGS_WEB = [], 200
 email_usuario_atual = ""
 skin_atual_global = 'skin_padrao'
@@ -442,7 +442,7 @@ def sinal_v_sensitivo(user=None):
             user.user.ultimo_sinal = f"🔮 CALL ({sc}x{sp})"; add_log(f"CALL!", 'sensitive'); return 'call'
         if sp > sc and dif >= 15:
             user.user.ultimo_sinal = f"🔮 PUT ({sp}x{sc})"; add_log(f"PUT!", 'sensitive'); return 'put'
-        ultimo_sinal = "⏳..."; return None
+        user.ultimo_sinal = "⏳..."; return None
     except Exception as e: add_log(f"Erro: {e}", 'error'); return None
 
 def sinal_tesla_369(user=None):
@@ -471,11 +471,17 @@ def sinal_tesla_369(user=None):
             add_log("TESLA-369: CALL!", 'sensitive'); return 'call'
         if velas[0] == 'r' and velas[3] == 'r' and velas[4] == 'g' and velas[5] == 'g' and 'd' not in cores:
             add_log("TESLA-369: PUT!", 'sensitive'); return 'put'
-        ultimo_sinal = "⏳..."; return None
+        user.ultimo_sinal = "⏳..."; return None
     except Exception as e: add_log(f"Erro: {e}", 'error'); return None
 
-def sinal_mhi_filtrado():
-    global ultimo_sinal, ultima_analise
+def sinal_mhi_filtrado(user=None):
+    if user is None:
+        for u in usuarios.values():
+            if u.conectado:
+                user = u
+                break
+    if user is None:
+        return None
     try:
         agora = datetime.now()
         if not ((agora.minute >= 4.55 and agora.minute <= 5) or (agora.minute >= 9.55 and agora.minute <= 10)):
@@ -491,15 +497,21 @@ def sinal_mhi_filtrado():
         user.user.ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': 'MHI-FILTRADO'}
         add_log(f"📊 MHI | Velas: {cores} | MM: {mm:.5f}", 'indicator')
         if preco_atual > mm and cores.count('r') > cores.count('g') and 'd' not in cores and velas[4] == 'r':
-            ultimo_sinal = "📊 CALL (MHI)"; add_log("MHI: CALL!", 'sensitive'); return 'call'
+            user.ultimo_sinal = "📊 CALL (MHI)"; add_log("MHI: CALL!", 'sensitive'); return 'call'
         if preco_atual < mm and cores.count('r') < cores.count('g') and 'd' not in cores and velas[4] == 'g':
-            ultimo_sinal = "📊 PUT (MHI)"; add_log("MHI: PUT!", 'sensitive'); return 'put'
-        ultimo_sinal = "⏳..."; return None
+            user.ultimo_sinal = "📊 PUT (MHI)"; add_log("MHI: PUT!", 'sensitive'); return 'put'
+        user.ultimo_sinal = "⏳..."; return None
     except Exception as e: add_log(f"Erro: {e}", 'error'); return None
 
 
-def sinal_terceira_igual_primeira():
-    global ultimo_sinal, ultima_analise
+def sinal_terceira_igual_primeira(user=None):
+    if user is None:
+        for u in usuarios.values():
+            if u.conectado:
+                user = u
+                break
+    if user is None:
+        return None
     try:
         agora = datetime.now()
         if agora.minute % 5 != 0: user.user.ultimo_sinal = f"⏳ Min: {agora.minute} (5/10/15...)"; return None
@@ -511,13 +523,19 @@ def sinal_terceira_igual_primeira():
         preco_atual = v[-1]['close']; mm = sum(c['close'] for c in v[:-1]) / 21
         user.user.ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': '3ª=1ª'}
         add_log(f"3️⃣ 3=1 | Vela: {vela_atual} | MM: {mm:.5f}", 'indicator')
-        if preco_atual > mm and vela_atual == 'g': ultimo_sinal = "3️⃣ CALL (3=1)"; add_log("3ª=1ª: CALL!", 'sensitive'); return 'call'
-        if preco_atual < mm and vela_atual == 'r': ultimo_sinal = "3️⃣ PUT (3=1)"; add_log("3ª=1ª: PUT!", 'sensitive'); return 'put'
-        ultimo_sinal = "⏳..."; return None
+        if preco_atual > mm and vela_atual == 'g': user.ultimo_sinal = "3️⃣ CALL (3=1)"; add_log("3ª=1ª: CALL!", 'sensitive'); return 'call'
+        if preco_atual < mm and vela_atual == 'r': user.ultimo_sinal = "3️⃣ PUT (3=1)"; add_log("3ª=1ª: PUT!", 'sensitive'); return 'put'
+        user.ultimo_sinal = "⏳..."; return None
     except Exception as e: add_log(f"Erro: {e}", 'error'); return None
 
-def sinal_quadrante_de_7():
-    global ultimo_sinal, ultima_analise
+def sinal_quadrante_de_7(user=None):
+    if user is None:
+        for u in usuarios.values():
+            if u.conectado:
+                user = u
+                break
+    if user is None:
+        return None
     try:
         agora = datetime.now()
         if not ((agora.minute >= 1.55 and agora.minute <= 2) or (agora.minute >= 6.55 and agora.minute <= 7)):
@@ -533,14 +551,20 @@ def sinal_quadrante_de_7():
         user.user.ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': 'QUADRANTE-7'}
         add_log(f"7️⃣ Q7 | Velas: {cores}", 'indicator')
         if preco_atual > mm and cores.count('g') < cores.count('r') and 'd' not in cores:
-            ultimo_sinal = "7️⃣ CALL (Q7)"; add_log("Q7: CALL!", 'sensitive'); return 'call'
+            user.ultimo_sinal = "7️⃣ CALL (Q7)"; add_log("Q7: CALL!", 'sensitive'); return 'call'
         if preco_atual < mm and cores.count('g') > cores.count('r') and 'd' not in cores:
-            ultimo_sinal = "7️⃣ PUT (Q7)"; add_log("Q7: PUT!", 'sensitive'); return 'put'
-        ultimo_sinal = "⏳..."; return None
+            user.ultimo_sinal = "7️⃣ PUT (Q7)"; add_log("Q7: PUT!", 'sensitive'); return 'put'
+        user.ultimo_sinal = "⏳..."; return None
     except Exception as e: add_log(f"Erro: {e}", 'error'); return None
 
-def sinal_fluxo_de_velas():
-    global ultimo_sinal, ultima_analise
+def sinal_fluxo_de_velas(user=None):
+    if user is None:
+        for u in usuarios.values():
+            if u.conectado:
+                user = u
+                break
+    if user is None:
+        return None
     try:
         agora = datetime.now()
         if agora.second % 55 != 0: return None
@@ -555,14 +579,20 @@ def sinal_fluxo_de_velas():
         user.user.ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': 'FLUXO'}
         add_log(f"🌊 FLUXO | Velas: {cores}", 'indicator')
         if preco_atual > mm and cores == 'ggggg' and 'd' not in cores:
-            ultimo_sinal = "🌊 CALL (FLUXO)"; add_log("FLUXO: CALL!", 'sensitive'); return 'call'
+            user.ultimo_sinal = "🌊 CALL (FLUXO)"; add_log("FLUXO: CALL!", 'sensitive'); return 'call'
         if preco_atual < mm and cores == 'rrrrr' and 'd' not in cores:
-            ultimo_sinal = "🌊 PUT (FLUXO)"; add_log("FLUXO: PUT!", 'sensitive'); return 'put'
-        ultimo_sinal = "⏳..."; return None
+            user.ultimo_sinal = "🌊 PUT (FLUXO)"; add_log("FLUXO: PUT!", 'sensitive'); return 'put'
+        user.ultimo_sinal = "⏳..."; return None
     except Exception as e: add_log(f"Erro: {e}", 'error'); return None
 
-def sinal_reversao():
-    global ultimo_sinal, ultima_analise
+def sinal_reversao(user=None):
+    if user is None:
+        for u in usuarios.values():
+            if u.conectado:
+                user = u
+                break
+    if user is None:
+        return None
     try:
         agora = datetime.now()
         if agora.second % 55 != 0: return None
@@ -577,14 +607,20 @@ def sinal_reversao():
         user.user.ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': 'REVERSÃO'}
         add_log(f"🔄 REV | Velas: {cores}", 'indicator')
         if preco_atual > mm and cores == 'grgrg':
-            ultimo_sinal = "🔄 CALL (REV)"; add_log("REVERSÃO: CALL!", 'sensitive'); return 'call'
+            user.ultimo_sinal = "🔄 CALL (REV)"; add_log("REVERSÃO: CALL!", 'sensitive'); return 'call'
         if preco_atual < mm and cores == 'rgrgr':
-            ultimo_sinal = "🔄 PUT (REV)"; add_log("REVERSÃO: PUT!", 'sensitive'); return 'put'
-        ultimo_sinal = "⏳..."; return None
+            user.ultimo_sinal = "🔄 PUT (REV)"; add_log("REVERSÃO: PUT!", 'sensitive'); return 'put'
+        user.ultimo_sinal = "⏳..."; return None
     except Exception as e: add_log(f"Erro: {e}", 'error'); return None
 
-def sinal_m5():
-    global ultimo_sinal, ultima_analise
+def sinal_m5(user=None):
+    if user is None:
+        for u in usuarios.values():
+            if u.conectado:
+                user = u
+                break
+    if user is None:
+        return None
     try:
         agora = datetime.now()
         if agora.minute % 15 != 0: user.user.ultimo_sinal = f"⏳ M5: min {agora.minute} (15/30/45/0)"; return None
@@ -600,9 +636,9 @@ def sinal_m5():
         user.user.ultima_analise = {'preco': pc, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': None, 'stoch': None, 'fase': 'M5'}
         add_log(f"⏰ M5 | Velas: {''.join(velas)}", 'indicator')
         if velas[0] == velas[1] and velas[1] == velas[2] and velas[3] == velas[4] and velas[4] == velas[5]:
-            if velas[6] == 'g' and 'd' not in velas: ultimo_sinal = "⏰ PUT (M5)"; add_log("M5: PUT!", 'sensitive'); return 'put'
-            if velas[6] == 'r' and 'd' not in velas: ultimo_sinal = "⏰ CALL (M5)"; add_log("M5: CALL!", 'sensitive'); return 'call'
-        ultimo_sinal = "⏳ Sem sinal M5"; return None
+            if velas[6] == 'g' and 'd' not in velas: user.ultimo_sinal = "⏰ PUT (M5)"; add_log("M5: PUT!", 'sensitive'); return 'put'
+            if velas[6] == 'r' and 'd' not in velas: user.ultimo_sinal = "⏰ CALL (M5)"; add_log("M5: CALL!", 'sensitive'); return 'call'
+        user.ultimo_sinal = "⏳ Sem sinal M5"; return None
     except Exception as e: add_log(f"Erro: {e}", 'error'); return None
 
 MAPA_SINAIS = {
@@ -844,7 +880,7 @@ def bot_loop_usuario(u):
     
     while u.bot_rodando and not u.STOP_GAIN_ATINGIDO:
         try:
-            direcao = funcao_sinal(u)
+            direcao = funcao_sinal(u) if funcao_sinal.__code__.co_argcount > 0 else funcao_sinal()
             if direcao:
                 executar_ciclo_usuario(u, direcao)
                 break
