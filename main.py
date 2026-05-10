@@ -1123,24 +1123,7 @@ HTML = r'''
                 <span style="color:#00ff88">6.</span> O bot opera automaticamente - <span style="color:#ff4444">não feche o navegador!</span>
             </p>
             
-            <p style="color:#ffd700;font-size:13px;font-weight:bold;margin-bottom:10px;margin-top:15px">⚙️ ESTRATÉGIAS DISPONÍVEIS</p>
-            <p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify">
-                <span style="color:#ffd700">⚡ TESLA-369 (GRÁTIS):</span> Timeframe <span style="color:#00ff88">1 minuto</span> - Opera nos minutos 1:55-2:00 e 6:55-7:00.<br>
-                <span style="color:#ffd700">🔮 v_SENSITIVO (6 VOLTS):</span> Timeframe <span style="color:#00ff88">1 minuto</span> - Usa RSI, Bollinger, MACD, Médias Móveis.<br>
-                <span style="color:#ffd700">3️⃣ 3ª = 1ª (3 VOLTS):</span> Timeframe <span style="color:#00ff88">1 minuto</span> - Opera a cada 5 minutos no fechamento da vela.<br>
-                <span style="color:#ffd700">📊 MHI-FILTRADO (9 VOLTS):</span> Timeframe <span style="color:#00ff88">1 minuto</span> - Minutos 4:55 e 9:55 com filtro de tendência.<br>
-                <span style="color:#ffd700">7️⃣ QUADRANTE DE 7 (6 VOLTS):</span> Timeframe <span style="color:#00ff88">1 minuto</span> - 7 velas, conta maioria com média móvel.<br>
-                <span style="color:#ffd700">🌊 FLUXO-DE-VELAS (3 VOLTS):</span> Timeframe <span style="color:#00ff88">1 minuto</span> - 5 velas da mesma cor + MM.<br>
-                <span style="color:#ffd700">🔄 REVERSÃO (3 VOLTS):</span> Timeframe <span style="color:#00ff88">1 minuto</span> - Padrão alternado g-r-g-r-g ou r-g-r-g-r.<br>
-                <span style="color:#ffd700">⏰ M5 (6 VOLTS):</span> Timeframe <span style="color:#00ff88">5 minutos</span> - Quadrante de velas a cada 15 minutos.
-            </p>
-        </div>
-        
-        <!-- ABA INTERNA: AVISOS -->
-        
-        
-        <div style="background:#0a0a1a;border:1px solid #ffd700;border-radius:15px;padding:20px;margin:10px 0">
-            <p style="color:#ffd700;font-size:14px;font-weight:bold;margin-bottom:10px">🤖 COMO O ROBÔ FUNCIONA</p>
+            <p style="color:#ffd700;font-size:13px;font-weight:bold;margin-bottom:10px;margin-top:15px">🤖 COMO O ROBÔ FUNCIONA</p>
             <p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify">
                 O Tesla 369 analisa <span style="color:#00ff88">padrões de velas</span> em tempo real usando indicadores técnicos. 
                 Cada estratégia tem seu próprio <span style="color:#ffd700">timeframe e gatilho</span> de entrada.
