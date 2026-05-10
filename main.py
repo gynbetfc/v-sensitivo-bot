@@ -849,7 +849,7 @@ HTML = r'''
         .indicators{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px;margin-bottom:10px}
         .ind-card{background:#111;padding:6px;border-radius:8px;border:1px solid #222;text-align:center;font-size:10px}
         .ind-card .ind-label{color:#666;font-size:9px}.ind-card .ind-value{color:{{COR_DESTAQUE}};font-size:11px}
-        .terminal{background:#000;color:#00ff88;padding:12px;border-radius:10px;height:200px;overflow-y:auto;font-size:10px;line-height:1.4;white-space:pre-wrap;border:1px solid #333}
+        .terminal{background:#000;color:#00ff88;padding:12px;border-radius:10px;height:200px;overflow-y:auto;font-size:10px;line-height:1.4;white-space:pre-wrap;border:1px solid #333;position:relative}.terminal span{position:relative;z-index:1}
         .barra-status{display:flex;justify-content:space-between;padding:8px;background:{{COR_PANEL}};border-radius:10px;margin-top:10px;font-size:10px;flex-wrap:wrap;gap:5px}
         .status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
         .status-dot.active{background:#00ff88;animation:pulse 1s infinite}.status-dot.inactive{background:#888}
@@ -2076,12 +2076,26 @@ function initSkinEffects() {
         drawSunset();
     }
 
-    // 🌑 TESLA DARK - Partículas roxas flutuantes
+    // 🌑 TESLA DARK - Header + Terminal
     var darkCanvas = document.getElementById('darkCanvas');
     if (darkCanvas) {
         var dctx = darkCanvas.getContext('2d');
         darkCanvas.width = darkCanvas.parentElement.offsetWidth;
         darkCanvas.height = darkCanvas.parentElement.offsetHeight;
+        // Criar canvas no terminal também
+        var terminalDark = document.getElementById('terminal');
+        if (terminalDark) {
+            terminalDark.style.position = 'relative'; terminalDark.style.overflow = 'hidden';
+            var darkCanvasT = document.createElement('canvas');
+            darkCanvasT.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.5';
+            terminalDark.insertBefore(darkCanvasT, terminalDark.firstChild);
+            var dctxT = darkCanvasT.getContext('2d');
+            darkCanvasT.width = terminalDark.offsetWidth;
+            darkCanvasT.height = terminalDark.offsetHeight;
+            var particlesT = [];
+            for (var i = 0; i < 20; i++) particlesT.push({x:Math.random()*darkCanvasT.width,y:Math.random()*darkCanvasT.height,r:Math.random()*3+1,vx:(Math.random()-0.5)*0.3,vy:-Math.random()*0.5-0.1,alpha:Math.random()*0.5+0.2});
+            function drawDarkT(){dctxT.clearRect(0,0,darkCanvasT.width,darkCanvasT.height);particlesT.forEach(function(p){dctxT.beginPath();dctxT.arc(p.x,p.y,p.r,0,Math.PI*2);dctxT.fillStyle='rgba(153,51,255,'+p.alpha+')';dctxT.fill();p.x+=p.vx;p.y+=p.vy;if(p.y<-10){p.y=darkCanvasT.height+10;p.x=Math.random()*darkCanvasT.width}});requestAnimationFrame(drawDarkT)}drawDarkT();
+        }
         var particles = [];
         for (var i = 0; i < 25; i++) {
             particles.push({
@@ -2115,12 +2129,25 @@ function initSkinEffects() {
         drawDark();
     }
     
-    // 🔥 TESLA FIRE - Chamas realistas
+    // 🔥 TESLA FIRE - Header + Terminal
     var fireCanvas = document.getElementById('fireCanvas');
     if (fireCanvas) {
         var fctx = fireCanvas.getContext('2d');
         fireCanvas.width = fireCanvas.parentElement.offsetWidth;
         fireCanvas.height = 80;
+        // Terminal
+        var terminalFire = document.getElementById('terminal');
+        if (terminalFire) {
+            terminalFire.style.position = 'relative'; terminalFire.style.overflow = 'hidden';
+            var fireCanvasT = document.createElement('canvas');
+            fireCanvasT.style.cssText = 'position:absolute;bottom:0;left:0;width:100%;height:60px;z-index:0;pointer-events:none;opacity:0.5';
+            terminalFire.insertBefore(fireCanvasT, terminalFire.firstChild);
+            var fctxT = fireCanvasT.getContext('2d');
+            fireCanvasT.width = terminalFire.offsetWidth; fireCanvasT.height = 60;
+            var firePT = [];
+            for (var i = 0; i < 30; i++) firePT.push({x:Math.random()*fireCanvasT.width,y:fireCanvasT.height-Math.random()*20,vx:(Math.random()-0.5)*0.8,vy:-Math.random()*2-1,life:Math.random()*40+20,maxLife:60,size:Math.random()*4+2});
+            function drawFireT(){fctxT.clearRect(0,0,fireCanvasT.width,fireCanvasT.height);firePT.forEach(function(p,i){var prog=p.life/p.maxLife;var grad=fctxT.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*prog);grad.addColorStop(0,'rgba(255,255,100,'+prog+')');grad.addColorStop(0.4,'rgba(255,150,0,'+prog*0.8+')');grad.addColorStop(1,'rgba(255,0,0,0)');fctxT.beginPath();fctxT.arc(p.x,p.y,p.size*prog,0,Math.PI*2);fctxT.fillStyle=grad;fctxT.fill();p.x+=p.vx;p.y+=p.vy;p.life--;if(p.life<=0){firePT[i]={x:Math.random()*fireCanvasT.width,y:fireCanvasT.height-Math.random()*10,vx:(Math.random()-0.5)*0.8,vy:-Math.random()*2-1,life:Math.random()*40+20,maxLife:60,size:Math.random()*4+2}}});requestAnimationFrame(drawFireT)}drawFireT();
+        }
         var fireParticles = [];
         for (var i = 0; i < 50; i++) {
             fireParticles.push({
@@ -2165,9 +2192,22 @@ function initSkinEffects() {
         drawFire();
     }
     
-    // ❄️ TESLA ICE - Neve caindo
+    // ❄️ TESLA ICE - Header + Terminal
     var snowCanvas = document.getElementById('snowCanvas');
     if (snowCanvas) {
+        // Terminal
+        var terminalSnow = document.getElementById('terminal');
+        if (terminalSnow) {
+            terminalSnow.style.position = 'relative'; terminalSnow.style.overflow = 'hidden';
+            var snowCanvasT = document.createElement('canvas');
+            snowCanvasT.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.5';
+            terminalSnow.insertBefore(snowCanvasT, terminalSnow.firstChild);
+            var sctxT = snowCanvasT.getContext('2d');
+            snowCanvasT.width = terminalSnow.offsetWidth; snowCanvasT.height = terminalSnow.offsetHeight;
+            var sfT = [];
+            for (var i = 0; i < 25; i++) sfT.push({x:Math.random()*snowCanvasT.width,y:Math.random()*snowCanvasT.height,r:Math.random()*3+1,speed:Math.random()*0.8+0.2,wind:(Math.random()-0.5)*0.3,opacity:Math.random()*0.6+0.4});
+            function drawSnowT(){sctxT.clearRect(0,0,snowCanvasT.width,snowCanvasT.height);sfT.forEach(function(f){sctxT.beginPath();sctxT.arc(f.x,f.y,f.r,0,Math.PI*2);sctxT.fillStyle='rgba(255,255,255,'+f.opacity+')';sctxT.fill();f.y+=f.speed;f.x+=f.wind;if(f.y>snowCanvasT.height+10){f.y=-10;f.x=Math.random()*snowCanvasT.width}});requestAnimationFrame(drawSnowT)}drawSnowT();
+        }
         var sctx = snowCanvas.getContext('2d');
         snowCanvas.width = snowCanvas.parentElement.offsetWidth;
         snowCanvas.height = snowCanvas.parentElement.offsetHeight;
