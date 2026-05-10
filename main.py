@@ -241,40 +241,7 @@ def criar_usuario(email):
     salvar_usuario(email, dados)
     return dados
 
-# ============= SISTEMA MULTI-USUARIO =============
-class UsuarioInstancia:
-    """Cada usuario tem sua propria instancia isolada"""
-    def __init__(self, email):
-        self.email = email
-        self.api = None
-        self.par = "EURUSD-OTC"
-        self.estrategia_atual = "tesla_369"
-        self.timeframe_atual = 60
-        self.lucro = 0.0
-        self.NumDeOperacoes = 0
-        self.BANCA_INICIAL_DO_BOT = 0
-        self.STOP_GAIN_ATINGIDO = False
-        self.bot_rodando = False
-        self.bot_thread = None
-        self.conectado = False
-        self.ultimo_sinal = "Aguardando..."
-        self.ultima_analise = {}
-        self.logs = []
-        self.MAX_LOGS = 200
-        self.skin_atual = "skin_padrao"
-
-# Dicionario de usuarios ativos
-usuarios = {}
-
-def get_usuario(email):
-    """Obtem ou cria instancia do usuario"""
-    if email not in usuarios:
-        usuarios[email] = UsuarioInstancia(email)
-    return usuarios[email]
-
-# ============= VARIÁVEIS GLOBAIS (LEGADO) =============
-# Mantidas para compatibilidade enquanto migramos
-
+# ============= VARIÁVEIS GLOBAIS =============
 API, par = None, "EURUSD-OTC"
 estrategia_atual = 'tesla_369'
 timeframe_atual = 60
@@ -282,7 +249,7 @@ lucro, NumDeOperacoes = 0.0, 0
 BANCA_INICIAL_DO_BOT, STOP_GAIN_ATINGIDO = 0, False
 bot_rodando, bot_thread = False, None
 conectado_iq = False
-
+ultimo_sinal, ultima_analise = "Aguardando...", {}
 logs_web, MAX_LOGS_WEB = [], 200
 email_usuario_atual = ""
 skin_atual_global = 'skin_padrao'
@@ -291,43 +258,19 @@ pagamentos_pendentes = {}
 # ============= SISTEMA MULTI-USUÁRIO =============
 bots_ativos = {}  # {email: thread_do_bot}
 
-def add_log(msg, tipo='info', user=None):
-    # Se nenhum usuario especificado, tenta usar o primeiro conectado
-    if user is None:
-        for u in usuarios.values():
-            if u.conectado:
-                user = u
-                break
-    
-    if user:
-        t = datetime.now().strftime('%H:%M:%S')
-        user.logs.append({'time': t, 'msg': msg, 'tipo': tipo})
-        if len(user.logs) > user.MAX_LOGS:
-            user.logs = user.logs[-user.MAX_LOGS:]
-        print(f"[{user.email[:20]}] {t} - {msg}")
-    else:
-        # Fallback: log do sistema (sem usuario)
-        t = datetime.now().strftime('%H:%M:%S')
-        print(f"[SISTEMA] {t} - {msg}")
-    sys.stdout.flush()
+def add_log(msg, tipo='info'):
+    global logs_web
+    t = datetime.now().strftime('%H:%M:%S')
+    logs_web.append({'time': t, 'msg': msg, 'tipo': tipo})
+    if len(logs_web) > MAX_LOGS_WEB: logs_web = logs_web[-MAX_LOGS_WEB:]
+    print(f"{t} - {msg}"); sys.stdout.flush()
 
-def get_logs_html(user=None, limite=40):
-    # Se nenhum usuario especificado, tenta usar o primeiro conectado
-    if user is None:
-        for u in usuarios.values():
-            if u.conectado:
-                user = u
-                break
-    
+def get_logs_html(limite=40):
     html = ''
-    if user:
-        for log in user.logs[-limite:]:
-            cor = {'win': '#00ff88', 'loss': '#ff4444', 'info': '#00ff88', 'sensitive': '#ff69b4', 'indicator': '#ffd700', 'error': '#ff4444'}.get(log['tipo'], '#00ff88')
-            html += f'<span style="color:#666">{log["time"]}</span> <span style="color:{cor}">{log["msg"]}</span>\n'
+    for log in logs_web[-limite:]:
+        cor = {'win': '#00ff88', 'loss': '#ff4444', 'info': '#00ff88', 'sensitive': '#ff69b4', 'indicator': '#ffd700', 'error': '#ff4444'}.get(log['tipo'], '#00ff88')
+        html += f'<span style="color:#666">{log["time"]}</span> <span style="color:{cor}">{log["msg"]}</span>\n'
     return html or '📡 Aguardando...'
-    
-# Compatibilidade: logs_web ainda existe para codigo legado
-logs_web, MAX_LOGS_WEB = [], 200
 
 def conectar_api():
     while bot_rodando:
@@ -395,22 +338,16 @@ def estocastico(v, p=14):
 # ═══════════════════════════════════════════════════════
 # SINAIS DAS ESTRATÉGIAS
 # ═══════════════════════════════════════════════════════
-def sinal_v_sensitivo(user=None):
-    if user is None:
-        for u in usuarios.values():
-            if u.conectado:
-                user = u
-                break
-    if user is None:
-        return None
+def sinal_v_sensitivo():
+    global ultimo_sinal, ultima_analise
     try:
         s = datetime.now().second
         fase = "🌅NASCENDO" if s < 20 else ("☀️VIVA" if s < 45 else "🌇MORRENDO")
-        v = user.api.get_candles(user.par, user.timeframe_atual, 30, time.time())
+        v = API.get_candles(par, timeframe_atual, 30, time.time())
         if len(v) < 20: return None
         rs = rsi(v); m5 = sma(v, 5); m10 = sma(v, 10); m20 = sma(v, 20)
         bs, _, bi = bollinger(v); mc = macd(v); st = estocastico(v); pc = v[-1]['close']
-        user.ultima_analise = {'preco': pc, 'rsi': rs, 'mm5': m5, 'mm10': m10, 'mm20': m20, 'stoch': st, 'fase': fase}
+        ultima_analise = {'preco': pc, 'rsi': rs, 'mm5': m5, 'mm10': m10, 'mm20': m20, 'stoch': st, 'fase': fase}
         sc = sp = 0; sinais = []
         if m5 and m20:
             if m5 > m20: sc += 20; sinais.append("MM5>MM20")
@@ -439,25 +376,19 @@ def sinal_v_sensitivo(user=None):
         add_log(f"🔮{fase} | C={sc} P={sp} | {' '.join(sinais[:3])}", 'indicator')
         dif = abs(sc-sp)
         if sc > sp and dif >= 15:
-            user.ultimo_sinal = f"🔮 CALL ({sc}x{sp})"; add_log(f"CALL!", 'sensitive'); return 'call'
+            ultimo_sinal = f"🔮 CALL ({sc}x{sp})"; add_log(f"CALL!", 'sensitive'); return 'call'
         if sp > sc and dif >= 15:
-            user.ultimo_sinal = f"🔮 PUT ({sp}x{sc})"; add_log(f"PUT!", 'sensitive'); return 'put'
-        user.ultimo_sinal = "⏳..."; return None
+            ultimo_sinal = f"🔮 PUT ({sp}x{sc})"; add_log(f"PUT!", 'sensitive'); return 'put'
+        ultimo_sinal = "⏳..."; return None
     except Exception as e: add_log(f"Erro: {e}", 'error'); return None
 
-def sinal_tesla_369(user=None):
-    if user is None:
-        for u in usuarios.values():
-            if u.conectado:
-                user = u
-                break
-    if user is None:
-        return None
+def sinal_tesla_369():
+    global ultimo_sinal, ultima_analise
     try:
         agora = datetime.now()
         if not ((agora.minute >= 1.55 and agora.minute <= 2) or (agora.minute >= 6.55 and agora.minute <= 7)):
-            user.ultimo_sinal = f"⏳ Min: {agora.minute}:{agora.second:02d}"; return None
-        v = user.api.get_candles(user.par, user.timeframe_atual, 6, time.time())
+            ultimo_sinal = f"⏳ Min: {agora.minute}:{agora.second:02d}"; return None
+        v = API.get_candles(par, timeframe_atual, 6, time.time())
         if len(v) < 6: return None
         velas = []
         for vela in v:
@@ -465,28 +396,22 @@ def sinal_tesla_369(user=None):
             elif vela['open'] > vela['close']: velas.append('r')
             else: velas.append('d')
         cores = ''.join(velas); pc = v[-1]['close']
-        user.ultima_analise = {'preco': pc, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': None, 'stoch': None, 'fase': 'TESLA-369'}
-        add_log(f"⚡ TESLA-369 | Velas: {cores}", 'indicator'); user.ultimo_sinal = f"⚡ 369: {cores}"
+        ultima_analise = {'preco': pc, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': None, 'stoch': None, 'fase': 'TESLA-369'}
+        add_log(f"⚡ TESLA-369 | Velas: {cores}", 'indicator'); ultimo_sinal = f"⚡ 369: {cores}"
         if velas[0] == 'g' and velas[3] == 'g' and velas[4] == 'r' and velas[5] == 'r' and 'd' not in cores:
             add_log("TESLA-369: CALL!", 'sensitive'); return 'call'
         if velas[0] == 'r' and velas[3] == 'r' and velas[4] == 'g' and velas[5] == 'g' and 'd' not in cores:
             add_log("TESLA-369: PUT!", 'sensitive'); return 'put'
-        user.ultimo_sinal = "⏳..."; return None
+        ultimo_sinal = "⏳..."; return None
     except Exception as e: add_log(f"Erro: {e}", 'error'); return None
 
-def sinal_mhi_filtrado(user=None):
-    if user is None:
-        for u in usuarios.values():
-            if u.conectado:
-                user = u
-                break
-    if user is None:
-        return None
+def sinal_mhi_filtrado():
+    global ultimo_sinal, ultima_analise
     try:
         agora = datetime.now()
         if not ((agora.minute >= 4.55 and agora.minute <= 5) or (agora.minute >= 9.55 and agora.minute <= 10)):
-            user.ultimo_sinal = f"⏳ MHI: {agora.minute}:{agora.second:02d}"; return None
-        v = user.api.get_candles(user.par, user.timeframe_atual, 22, time.time())
+            ultimo_sinal = f"⏳ MHI: {agora.minute}:{agora.second:02d}"; return None
+        v = API.get_candles(par, timeframe_atual, 22, time.time())
         if len(v) < 22: return None
         velas = []
         for vela in v[-5:]:
@@ -494,53 +419,41 @@ def sinal_mhi_filtrado(user=None):
             elif vela['open'] > vela['close']: velas.append('r')
             else: velas.append('d')
         cores = ''.join(velas); preco_atual = v[-1]['close']; mm = sum(c['close'] for c in v[:-1]) / 21
-        user.ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': 'MHI-FILTRADO'}
+        ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': 'MHI-FILTRADO'}
         add_log(f"📊 MHI | Velas: {cores} | MM: {mm:.5f}", 'indicator')
         if preco_atual > mm and cores.count('r') > cores.count('g') and 'd' not in cores and velas[4] == 'r':
-            user.ultimo_sinal = "📊 CALL (MHI)"; add_log("MHI: CALL!", 'sensitive'); return 'call'
+            ultimo_sinal = "📊 CALL (MHI)"; add_log("MHI: CALL!", 'sensitive'); return 'call'
         if preco_atual < mm and cores.count('r') < cores.count('g') and 'd' not in cores and velas[4] == 'g':
-            user.ultimo_sinal = "📊 PUT (MHI)"; add_log("MHI: PUT!", 'sensitive'); return 'put'
-        user.ultimo_sinal = "⏳..."; return None
+            ultimo_sinal = "📊 PUT (MHI)"; add_log("MHI: PUT!", 'sensitive'); return 'put'
+        ultimo_sinal = "⏳..."; return None
     except Exception as e: add_log(f"Erro: {e}", 'error'); return None
 
 
-def sinal_terceira_igual_primeira(user=None):
-    if user is None:
-        for u in usuarios.values():
-            if u.conectado:
-                user = u
-                break
-    if user is None:
-        return None
+def sinal_terceira_igual_primeira():
+    global ultimo_sinal, ultima_analise
     try:
         agora = datetime.now()
-        if agora.minute % 5 != 0: user.ultimo_sinal = f"⏳ Min: {agora.minute} (5/10/15...)"; return None
-        if agora.second < 55: user.ultimo_sinal = f"⏳ Seg: {agora.second}s (aguardando 55)"; return None
+        if agora.minute % 5 != 0: ultimo_sinal = f"⏳ Min: {agora.minute} (5/10/15...)"; return None
+        if agora.second < 55: ultimo_sinal = f"⏳ Seg: {agora.second}s (aguardando 55)"; return None
         time.sleep(2)
-        v = user.api.get_candles(user.par, user.timeframe_atual, 22, time.time())
+        v = API.get_candles(par, timeframe_atual, 22, time.time())
         if len(v) < 22: return None
         vela_atual = 'g' if v[-1]['open'] < v[-1]['close'] else ('r' if v[-1]['open'] > v[-1]['close'] else 'd')
         preco_atual = v[-1]['close']; mm = sum(c['close'] for c in v[:-1]) / 21
-        user.ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': '3ª=1ª'}
+        ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': '3ª=1ª'}
         add_log(f"3️⃣ 3=1 | Vela: {vela_atual} | MM: {mm:.5f}", 'indicator')
-        if preco_atual > mm and vela_atual == 'g': user.ultimo_sinal = "3️⃣ CALL (3=1)"; add_log("3ª=1ª: CALL!", 'sensitive'); return 'call'
-        if preco_atual < mm and vela_atual == 'r': user.ultimo_sinal = "3️⃣ PUT (3=1)"; add_log("3ª=1ª: PUT!", 'sensitive'); return 'put'
-        user.ultimo_sinal = "⏳..."; return None
+        if preco_atual > mm and vela_atual == 'g': ultimo_sinal = "3️⃣ CALL (3=1)"; add_log("3ª=1ª: CALL!", 'sensitive'); return 'call'
+        if preco_atual < mm and vela_atual == 'r': ultimo_sinal = "3️⃣ PUT (3=1)"; add_log("3ª=1ª: PUT!", 'sensitive'); return 'put'
+        ultimo_sinal = "⏳..."; return None
     except Exception as e: add_log(f"Erro: {e}", 'error'); return None
 
-def sinal_quadrante_de_7(user=None):
-    if user is None:
-        for u in usuarios.values():
-            if u.conectado:
-                user = u
-                break
-    if user is None:
-        return None
+def sinal_quadrante_de_7():
+    global ultimo_sinal, ultima_analise
     try:
         agora = datetime.now()
         if not ((agora.minute >= 1.55 and agora.minute <= 2) or (agora.minute >= 6.55 and agora.minute <= 7)):
-            user.ultimo_sinal = f"⏳ Q7: {agora.minute}:{agora.second:02d}"; return None
-        v = user.api.get_candles(user.par, user.timeframe_atual, 22, time.time())
+            ultimo_sinal = f"⏳ Q7: {agora.minute}:{agora.second:02d}"; return None
+        v = API.get_candles(par, timeframe_atual, 22, time.time())
         if len(v) < 22: return None
         velas = []
         for vela in v[-7:]:
@@ -548,27 +461,21 @@ def sinal_quadrante_de_7(user=None):
             elif vela['open'] > vela['close']: velas.append('r')
             else: velas.append('d')
         cores = ''.join(velas); preco_atual = v[-1]['close']; mm = sum(c['close'] for c in v[:-1]) / 21
-        user.ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': 'QUADRANTE-7'}
+        ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': 'QUADRANTE-7'}
         add_log(f"7️⃣ Q7 | Velas: {cores}", 'indicator')
         if preco_atual > mm and cores.count('g') < cores.count('r') and 'd' not in cores:
-            user.ultimo_sinal = "7️⃣ CALL (Q7)"; add_log("Q7: CALL!", 'sensitive'); return 'call'
+            ultimo_sinal = "7️⃣ CALL (Q7)"; add_log("Q7: CALL!", 'sensitive'); return 'call'
         if preco_atual < mm and cores.count('g') > cores.count('r') and 'd' not in cores:
-            user.ultimo_sinal = "7️⃣ PUT (Q7)"; add_log("Q7: PUT!", 'sensitive'); return 'put'
-        user.ultimo_sinal = "⏳..."; return None
+            ultimo_sinal = "7️⃣ PUT (Q7)"; add_log("Q7: PUT!", 'sensitive'); return 'put'
+        ultimo_sinal = "⏳..."; return None
     except Exception as e: add_log(f"Erro: {e}", 'error'); return None
 
-def sinal_fluxo_de_velas(user=None):
-    if user is None:
-        for u in usuarios.values():
-            if u.conectado:
-                user = u
-                break
-    if user is None:
-        return None
+def sinal_fluxo_de_velas():
+    global ultimo_sinal, ultima_analise
     try:
         agora = datetime.now()
         if agora.second % 55 != 0: return None
-        v = user.api.get_candles(user.par, user.timeframe_atual, 22, time.time())
+        v = API.get_candles(par, timeframe_atual, 22, time.time())
         if len(v) < 22: return None
         velas = []
         for vela in v[-5:]:
@@ -576,27 +483,21 @@ def sinal_fluxo_de_velas(user=None):
             elif vela['open'] > vela['close']: velas.append('r')
             else: velas.append('d')
         cores = ''.join(velas); preco_atual = v[-1]['close']; mm = sum(c['close'] for c in v[:-1]) / 21
-        user.ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': 'FLUXO'}
+        ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': 'FLUXO'}
         add_log(f"🌊 FLUXO | Velas: {cores}", 'indicator')
         if preco_atual > mm and cores == 'ggggg' and 'd' not in cores:
-            user.ultimo_sinal = "🌊 CALL (FLUXO)"; add_log("FLUXO: CALL!", 'sensitive'); return 'call'
+            ultimo_sinal = "🌊 CALL (FLUXO)"; add_log("FLUXO: CALL!", 'sensitive'); return 'call'
         if preco_atual < mm and cores == 'rrrrr' and 'd' not in cores:
-            user.ultimo_sinal = "🌊 PUT (FLUXO)"; add_log("FLUXO: PUT!", 'sensitive'); return 'put'
-        user.ultimo_sinal = "⏳..."; return None
+            ultimo_sinal = "🌊 PUT (FLUXO)"; add_log("FLUXO: PUT!", 'sensitive'); return 'put'
+        ultimo_sinal = "⏳..."; return None
     except Exception as e: add_log(f"Erro: {e}", 'error'); return None
 
-def sinal_reversao(user=None):
-    if user is None:
-        for u in usuarios.values():
-            if u.conectado:
-                user = u
-                break
-    if user is None:
-        return None
+def sinal_reversao():
+    global ultimo_sinal, ultima_analise
     try:
         agora = datetime.now()
         if agora.second % 55 != 0: return None
-        v = user.api.get_candles(user.par, user.timeframe_atual, 22, time.time())
+        v = API.get_candles(par, timeframe_atual, 22, time.time())
         if len(v) < 22: return None
         velas = []
         for vela in v[-5:]:
@@ -604,28 +505,22 @@ def sinal_reversao(user=None):
             elif vela['open'] > vela['close']: velas.append('r')
             else: velas.append('d')
         cores = ''.join(velas); preco_atual = v[-1]['close']; mm = sum(c['close'] for c in v[:-1]) / 21
-        user.ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': 'REVERSÃO'}
+        ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': 'REVERSÃO'}
         add_log(f"🔄 REV | Velas: {cores}", 'indicator')
         if preco_atual > mm and cores == 'grgrg':
-            user.ultimo_sinal = "🔄 CALL (REV)"; add_log("REVERSÃO: CALL!", 'sensitive'); return 'call'
+            ultimo_sinal = "🔄 CALL (REV)"; add_log("REVERSÃO: CALL!", 'sensitive'); return 'call'
         if preco_atual < mm and cores == 'rgrgr':
-            user.ultimo_sinal = "🔄 PUT (REV)"; add_log("REVERSÃO: PUT!", 'sensitive'); return 'put'
-        user.ultimo_sinal = "⏳..."; return None
+            ultimo_sinal = "🔄 PUT (REV)"; add_log("REVERSÃO: PUT!", 'sensitive'); return 'put'
+        ultimo_sinal = "⏳..."; return None
     except Exception as e: add_log(f"Erro: {e}", 'error'); return None
 
-def sinal_m5(user=None):
-    if user is None:
-        for u in usuarios.values():
-            if u.conectado:
-                user = u
-                break
-    if user is None:
-        return None
+def sinal_m5():
+    global ultimo_sinal, ultima_analise
     try:
         agora = datetime.now()
-        if agora.minute % 15 != 0: user.ultimo_sinal = f"⏳ M5: min {agora.minute} (15/30/45/0)"; return None
+        if agora.minute % 15 != 0: ultimo_sinal = f"⏳ M5: min {agora.minute} (15/30/45/0)"; return None
         time.sleep(2)
-        v = user.api.get_candles(user.par, user.timeframe_atual, 7, time.time())
+        v = API.get_candles(par, timeframe_atual, 7, time.time())
         if len(v) < 7: return None
         velas = []
         for vela in v:
@@ -633,12 +528,12 @@ def sinal_m5(user=None):
             elif vela['open'] > vela['close']: velas.append('r')
             else: velas.append('d')
         pc = v[-1]['close']
-        user.ultima_analise = {'preco': pc, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': None, 'stoch': None, 'fase': 'M5'}
+        ultima_analise = {'preco': pc, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': None, 'stoch': None, 'fase': 'M5'}
         add_log(f"⏰ M5 | Velas: {''.join(velas)}", 'indicator')
         if velas[0] == velas[1] and velas[1] == velas[2] and velas[3] == velas[4] and velas[4] == velas[5]:
-            if velas[6] == 'g' and 'd' not in velas: user.ultimo_sinal = "⏰ PUT (M5)"; add_log("M5: PUT!", 'sensitive'); return 'put'
-            if velas[6] == 'r' and 'd' not in velas: user.ultimo_sinal = "⏰ CALL (M5)"; add_log("M5: CALL!", 'sensitive'); return 'call'
-        user.ultimo_sinal = "⏳ Sem sinal M5"; return None
+            if velas[6] == 'g' and 'd' not in velas: ultimo_sinal = "⏰ PUT (M5)"; add_log("M5: PUT!", 'sensitive'); return 'put'
+            if velas[6] == 'r' and 'd' not in velas: ultimo_sinal = "⏰ CALL (M5)"; add_log("M5: CALL!", 'sensitive'); return 'call'
+        ultimo_sinal = "⏳ Sem sinal M5"; return None
     except Exception as e: add_log(f"Erro: {e}", 'error'); return None
 
 MAPA_SINAIS = {
@@ -673,15 +568,8 @@ def calcular_entradas(b, p, g):
     if soma > b: entradas[-1] = round(entradas[-1] - (soma-b) - 0.02, 2)
     return [max(1, e) for e in entradas]
 
-def pegar_timestamp(u=None):
-    if u is None:
-        for e, us in usuarios.items():
-            if us.conectado:
-                u = us
-                break
-    if u is None:
-        return 0
-    v = u.api.get_candles(u.par, u.timeframe_atual, 1, time.time())
+def pegar_timestamp():
+    v = API.get_candles(par, timeframe_atual, 1, time.time())
     return v[0]['from'] if v else 0
 
 def aguardar_inicio_vela():
@@ -710,96 +598,6 @@ def verificar_resultado(saldo_antes, valor):
         if d >= 1.0: return d
     except: pass
     return -valor
-
-def executar_ciclo_usuario(u, direcao):
-    """Executa ciclo ISOLADO para um usuario"""
-    bi = u.api.get_balance()
-    payout = Payout_usuario(u, u.par)
-    entradas = calcular_entradas(bi, payout, MARTINGALE)
-    
-    add_log(f'💰 Banca: ${bi:.2f} | Payout: {payout*100:.0f}%', 'info', u)
-    add_log(f'📐 E1:${entradas[0]:.2f} | E2:${entradas[1]:.2f} | E3:${entradas[2]:.2f}', 'info', u)
-    
-    for i in range(MARTINGALE + 1):
-        if not u.bot_rodando: break
-        valor = entradas[i]
-        
-        # Aguardar inicio da vela
-        while datetime.now().second > 5:
-            if not u.bot_rodando: return
-            time.sleep(0.3)
-        
-        saldo_antes = u.api.get_balance()
-        if saldo_antes < valor:
-            add_log('❌ Saldo insuficiente!', 'error', u)
-            break
-        
-        add_log(f'🎯 {"ENTRADA" if i == 0 else f"GALE {i}"}: {direcao.upper()} ${valor:.2f}', 'info', u)
-        st, id_ordem = u.api.buy(valor, u.par, direcao, 1)
-        
-        if not st or not id_ordem:
-            try:
-                st, id_ordem = u.api.buy_digital_spot(u.par, valor, direcao, 1)
-            except:
-                pass
-        
-        if not st or not id_ordem:
-            add_log('❌ Falha na ordem!', 'error', u)
-            break
-        
-        add_log(f'   📝 Ordem #{id_ordem}', 'info', u)
-        time.sleep(60)
-        
-        saldo_depois = u.api.get_balance()
-        lucro_liquido = round(saldo_depois - saldo_antes, 2)
-        u.lucro += lucro_liquido
-        
-        if lucro_liquido > 0:
-            add_log(f'🌟 WIN! +${lucro_liquido:.2f}', 'win', u)
-            u.NumDeOperacoes += 1
-            u.STOP_GAIN_ATINGIDO = True
-            
-            usuario_db = carregar_usuario(u.email)
-            if usuario_db:
-                usuario_db['total_wins'] += 1
-                usuario_db['total_ganho'] += abs(lucro_liquido)
-                usuario_db['lucro_total'] = usuario_db['total_ganho'] - usuario_db['total_gasto']
-                usuario_db['banca_atual'] = round(saldo_depois, 2)
-                salvar_usuario(u.email, usuario_db)
-            
-            add_log('🎯 STOP GAIN! Vitoria alcancada!', 'win', u)
-            u.bot_rodando = False
-            break
-        else:
-            add_log(f'💀 LOSS! -${valor:.2f}', 'loss', u)
-            usuario_db = carregar_usuario(u.email)
-            if usuario_db:
-                usuario_db['total_losses'] += 1
-                usuario_db['total_gasto'] += valor
-                usuario_db['lucro_total'] = usuario_db['total_ganho'] - usuario_db['total_gasto']
-                salvar_usuario(u.email, usuario_db)
-            
-            if i < MARTINGALE:
-                add_log(f'   ➡️ Indo para GALE {i + 1}...', 'loss', u)
-            else:
-                add_log('   💀 CICLO COMPLETO PERDIDO!', 'loss', u)
-                u.bot_rodando = False
-
-def Payout_usuario(u, p):
-    try:
-        u.api.subscribe_strike_list(p, 1)
-        tentativas = 0
-        while tentativas < 20:
-            d = u.api.get_digital_current_profit(p, 1)
-            if d != False:
-                u.api.unsubscribe_strike_list(p, 1)
-                return round(int(d) / 100, 2)
-            time.sleep(0.5)
-            tentativas += 1
-        u.api.unsubscribe_strike_list(p, 1)
-        return PAYOUT_PADRAO
-    except:
-        return PAYOUT_PADRAO
 
 def executar_ciclo(direcao):
     global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando
@@ -866,38 +664,6 @@ def executar_ciclo(direcao):
     add_log("=" * 50, 'info')
     bot_rodando = False
     add_log("⏹️ Ciclo concluído! Clique em CONECTAR e depois COMEÇAR OPERAR para novo ciclo.", 'info')
-
-def bot_loop_usuario(u):
-    """Bot loop ISOLADO para um usuario especifico"""
-    nome_est = ESTRATEGIAS.get(u.estrategia_atual, ESTRATEGIAS['tesla_369'])['nome']
-    add_log(f'⚡ TESLA 369 - INICIANDO...', 'sensitive', u)
-    add_log(f'📊 Estrategia: {nome_est}', 'info', u)
-    add_log(f'🌐 Usuario: {u.email}', 'info', u)
-    
-    u.BANCA_INICIAL_DO_BOT = u.api.get_balance()
-    u.STOP_GAIN_ATINGIDO = False
-    u.lucro = 0.0
-    u.NumDeOperacoes = 0
-    
-    add_log(f'📌 {u.par} | Timeframe: {u.timeframe_atual}s | 💰 ${u.BANCA_INICIAL_DO_BOT:.2f}', 'info', u)
-    add_log('🧿 SIGILOS ATIVADOS 🧿', 'win', u)
-    add_log('🔮 Buscando sinal...', 'info', u)
-    
-    funcao_sinal = MAPA_SINAIS.get(u.estrategia_atual, sinal_v_sensitivo)
-    
-    while u.bot_rodando and not u.STOP_GAIN_ATINGIDO:
-        try:
-            direcao = funcao_sinal(u) if funcao_sinal.__code__.co_argcount > 0 else funcao_sinal()
-            if direcao:
-                executar_ciclo_usuario(u, direcao)
-                break
-            time.sleep(0.3)
-        except Exception as e:
-            add_log(f'Erro: {e}', 'error', u)
-            time.sleep(5)
-    
-    if not u.bot_rodando:
-        add_log('⏹️ Bot parado.', 'info', u)
 
 def bot_loop():
     global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO
@@ -1049,13 +815,7 @@ HTML = r'''
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="TESLA 369">
-    <link rel="apple-touch-icon" href="/icon-192.png">
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#ffd700"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>⚡ TESLA 369 BOT v6.5.0</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
@@ -1258,7 +1018,6 @@ HTML = r'''
             <button class="btn btn-info" id="btnConectar" onclick="conectarIQ()">🔌 CONECTAR</button>
             <button class="btn btn-stop" id="btnDesconectar" onclick="desconectarIQ()" style="display:none">🔌 DESCONECTAR</button>
             <button class="btn btn-start" id="btnOperar" onclick="comecarOperar()" style="display:none">🚀 COMEÇAR OPERAR</button>
-            <button id="btnInstalar" onclick="instalarApp()" style="display:none;background:linear-gradient(135deg,#ff8c00,#ffd700);color:#000;padding:10px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:11px;font-family:Courier New,monospace;margin-top:8px;width:100%">📱 INSTALAR APP</button>
             <button class="btn btn-stop" id="btnParar" onclick="pararBot()" style="display:none">⏹️ PARAR</button>
         </div></div>
         <div class="dashboard">
@@ -1281,7 +1040,7 @@ HTML = r'''
         <div class="terminal" id="terminal">📡 Aguardando...</div>
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
-            <span>⚡ TESLA 369</span>\n            <span id="usuariosOnline" style="color:#ffd700;font-size:9px">👥 1 online</span>
+            <span>⚡ TESLA 369</span>
             <span>v6.5.0 | GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
@@ -1520,7 +1279,7 @@ function conectarIQ(){
 function desconectarIQ(){
     if(botAtivo){alert('⚠️ Pare o bot primeiro!');return;}
     if(confirm('Desconectar da IQ Option?')){
-        fetch('/parar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:emailLogado,desconectar:true})})
+        fetch('/parar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({desconectar:true})})
         .then(r=>r.json()).then(d=>{
             conectadoIQ=false;
             document.getElementById('btnConectar').style.display='inline-block';
@@ -1541,7 +1300,7 @@ function comecarOperar(){
     if(!conectadoIQ){alert('Conecte primeiro!');return}
     document.getElementById('btnOperar').disabled=true;
     document.getElementById('btnOperar').textContent='...';
-    fetch('/comecar_operar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:emailLogado})})
+    fetch('/comecar_operar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})})
     .then(r=>r.json()).then(d=>{
         if(d.ok){
             botAtivo=true;
@@ -1559,7 +1318,7 @@ function comecarOperar(){
 
 function pararBot(){
     if(!confirm('Parar o bot?'))return;
-    fetch('/parar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:emailLogado})})
+    fetch('/parar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})})
     .then(r=>r.json()).then(d=>{
         botAtivo=false;
         document.getElementById('btnOperar').style.display='inline-block';
@@ -1574,7 +1333,7 @@ function pararBot(){
 }
 
 function renderEstrategias(){
-    fetch('/status?email='+encodeURIComponent(emailLogado)).then(r=>r.json()).then(d=>{
+    fetch('/status').then(r=>r.json()).then(d=>{
         var estrategiasCompradas = d.estrategias_compradas || ['tesla_369'];
         // Garantir que tesla_369 sempre aparece
         if (!estrategiasCompradas.includes('tesla_369')) {
@@ -1609,7 +1368,7 @@ function selecionarEstrategia(key){
 
 
 function renderLojaCategoria(categoria) {
-    fetch('/status?email='+encodeURIComponent(emailLogado)).then(r=>r.json()).then(d=>{
+    fetch('/status').then(r=>r.json()).then(d=>{
         var skinsStatus = d.skins_status || [];
         var gridId = categoria === 'basica' ? 'skinsGridBasicas' : (categoria === 'premium' ? 'skinsGridPremium' : 'skinsGridLendarias');
         var grid = document.getElementById(gridId);
@@ -1651,7 +1410,7 @@ function renderLoja() {
 }
 
 function renderLoja(){
-    fetch('/status?email='+encodeURIComponent(emailLogado)).then(r=>r.json()).then(d=>{
+    fetch('/status').then(r=>r.json()).then(d=>{
         var skinsStatus = d.skins_status || [];
         var grid=document.getElementById('skinsGrid');
         var html='';
@@ -1728,7 +1487,7 @@ function comprarEstrategia(estrategiaId) {
 }
 
 function renderLojaEstrategias(){
-    fetch('/status?email='+encodeURIComponent(emailLogado)).then(r=>r.json()).then(d=>{
+    fetch('/status').then(r=>r.json()).then(d=>{
         var grid = document.getElementById('estrategiasLojaGrid');
         if (!grid) return;
         var html = '';
@@ -1963,7 +1722,7 @@ function resetarRelatorio(){
 }
 
 function atualizar(){
-    fetch('/status?email='+encodeURIComponent(emailLogado)).then(r=>r.json()).then(d=>{
+    fetch('/status').then(r=>r.json()).then(d=>{
         if(!d.conectado&&conectadoIQ){
             conectadoIQ=false;botAtivo=false;
             document.getElementById('btnConectar').style.display='inline-block';
@@ -2004,15 +1763,13 @@ function atualizar(){
             document.getElementById('preco').textContent=d.analise.preco?d.analise.preco.toFixed(5):'--';
         }
         if(d.logs)document.getElementById('terminal').innerHTML=d.logs;
-        if(d.usuarios_online){var elOnline=document.getElementById('usuariosOnline');if(elOnline)elOnline.textContent='👥 '+d.usuarios_online+' online';}
-        if(d.bots_ativos!==undefined){var modoEl=document.getElementById('modoConexao');if(modoEl)modoEl.textContent='🔗 IP LOCAL | 🤖 '+d.bots_ativos+' bots ativos';}
         document.getElementById('terminal').scrollTop=document.getElementById('terminal').scrollHeight;
     });
 }
 
 window.onload=function(){
     renderEstrategias();
-    fetch('/status?email='+encodeURIComponent(emailLogado)).then(r=>r.json()).then(d=>{
+    fetch('/status').then(r=>r.json()).then(d=>{
         if(d.estrategia){estrategiaSel=d.estrategia;renderEstrategias();}
         if(d.estrategia_nome)document.getElementById('estrategiaAtiva').textContent=d.estrategia_nome;
         if(d.conectado&&d.email){
@@ -2408,41 +2165,6 @@ window.addEventListener('load', function() {
 });
 
 </script>
-
-    <script>
-    var deferredPrompt;
-    window.addEventListener('beforeinstallprompt', function(e) {
-        e.preventDefault();
-        deferredPrompt = e;
-        setTimeout(function() {
-            var btn = document.getElementById('btnInstalar');
-            if(btn) btn.style.display = 'block';
-        }, 3000);
-    });
-    
-    function instalarApp() {
-        if(deferredPrompt) {
-            deferredPrompt.prompt();
-            deferredPrompt.userChoice.then(function(result) {
-                if(result.outcome === 'accepted') {
-                    document.getElementById('btnInstalar').style.display = 'none';
-                }
-                deferredPrompt = null;
-            });
-        } else {
-            alert('📱 Abra o menu do navegador e toque em "Adicionar a tela inicial"');
-        }
-    }
-    
-    if('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js');
-    }
-    
-    if(window.matchMedia('(display-mode: standalone)').matches) {
-        console.log('App instalado');
-    }
-    </script>
-
 </body>
 </html>
 '''
@@ -2467,279 +2189,101 @@ def processar_html_com_skin():
 @app.route('/')
 def index(): return render_template_string(processar_html_com_skin())
 
-
-@app.route('/manifest.json')
-def manifest():
-    data = {
-        "name": "TESLA 369 BOT",
-        "short_name": "TESLA369",
-        "description": "Bot de opcoes binarias Tesla 369",
-        "start_url": "/",
-        "display": "standalone",
-        "background_color": "#0a0a1a",
-        "theme_color": "#ffd700",
-        "orientation": "portrait",
-        "icons": [
-            {"src": "/icon-192.png", "sizes": "192x192", "type": "image/png"},
-            {"src": "/icon-512.png", "sizes": "512x512", "type": "image/png"}
-        ]
-    }
-    return jsonify(data)
-
-@app.route('/sw.js')
-def service_worker():
-    return app.response_class(
-        response="""self.addEventListener('install', function(e) {
-    e.waitUntil(caches.open('tesla369-v1').then(function(cache) {
-        return cache.addAll(['/']);
-    }));
-});
-self.addEventListener('fetch', function(e) {
-    e.respondWith(caches.match(e.request).then(function(r) {
-        return r || fetch(e.request);
-    }));
-});""",
-        mimetype='application/javascript'
-    )
-
-@app.route('/icon-192.png')
-def icon_192():
-    try:
-        from PIL import Image, ImageDraw
-    except:
-        return app.response_class('', mimetype='image/png')
-    img = Image.new('RGB', (192, 192), color='#0a0a1a')
-    d = ImageDraw.Draw(img)
-    d.rectangle([20, 20, 172, 172], fill='#ffd700', outline='#ff8c00', width=3)
-    from io import BytesIO
-    buf = BytesIO()
-    img.save(buf, format='PNG')
-    buf.seek(0)
-    return app.response_class(buf.read(), mimetype='image/png')
-
-@app.route('/icon-512.png')
-def icon_512():
-    try:
-        from PIL import Image, ImageDraw
-    except:
-        return app.response_class('', mimetype='image/png')
-    img = Image.new('RGB', (512, 512), color='#0a0a1a')
-    d = ImageDraw.Draw(img)
-    d.rectangle([50, 50, 462, 462], fill='#ffd700', outline='#ff8c00', width=5)
-    from io import BytesIO
-    buf = BytesIO()
-    img.save(buf, format='PNG')
-    buf.seek(0)
-    return app.response_class(buf.read(), mimetype='image/png')
 @app.route('/status')
 def status():
-    email = request.args.get('email', '')
-    
-    # Se nao veio email, pegar do primeiro usuario conectado
-    if not email:
-        for e, u in usuarios.items():
-            if u.conectado:
-                email = e
-                break
-    
-    user = usuarios.get(email) if email else None
-    usuario_db = carregar_usuario(email) if email else {}
-    
-    # Skins
+    global skin_atual_global, estrategia_atual
+    if email_usuario_atual:
+        u = carregar_usuario(email_usuario_atual)
+        if u: skin_atual_global = u.get('skin_atual', 'skin_padrao')
+    u = carregar_usuario(email_usuario_atual) if email_usuario_atual else {}
     skins_status = []
-    skins_compradas = usuario_db.get('skins_compradas', ['skin_padrao'])
-    skin_atual = usuario_db.get('skin_atual', 'skin_padrao')
+    skins_compradas = u.get('skins_compradas', ['skin_padrao']) if u else ['skin_padrao']
+    skin_atual = u.get('skin_atual', 'skin_padrao') if u else 'skin_padrao'
     for skin in SKINS:
-        skins_status.append({
-            'id': skin['id'], 'nome': skin['nome'], 'desc': skin['desc'],
-            'preco_moedas': skin['preco_moedas'], 'categoria': skin.get('categoria', 'basica'),
-            'comprado': skin['id'] in skins_compradas, 'ativo': skin['id'] == skin_atual
-        })
-    
-    # Estrategias
-    estrategias_compradas = usuario_db.get('estrategias_compradas', ['tesla_369'])
+        skins_status.append({'id': skin['id'], 'nome': skin['nome'], 'desc': skin['desc'], 'preco_moedas': skin['preco_moedas'], 'categoria': skin.get('categoria', 'basica'), 'comprado': skin['id'] in skins_compradas, 'ativo': skin['id'] == skin_atual})
+    # NOVO: Calcular estrategias_disponiveis e estrategias_compradas
+    estrategias_compradas = u.get('estrategias_compradas', ['tesla_369']) if u else ['tesla_369']
     estrategias_disponiveis = {}
     for key, est in ESTRATEGIAS.items():
         estrategias_disponiveis[key] = {
-            'nome': est['nome'], 'desc': est['desc'],
-            'preco_moedas': est.get('preco_moedas', 0), 'gratis': est.get('gratis', False)
+            'nome': est['nome'],
+            'desc': est['desc'],
+            'preco_moedas': est.get('preco_moedas', 0),
+            'gratis': est.get('gratis', False)
         }
     
-    return jsonify({
-        'conectado': user.conectado if user else False,
-        'rodando': user.bot_rodando if user else False,
-        'email': user.email if user else '',
-        'banca': user.api.get_balance() if user and user.api else 0,
-        'lucro': user.lucro if user else 0,
-        'ops': user.NumDeOperacoes if user else 0,
-        'sinal': user.ultimo_sinal if user else 'Aguardando...',
-        'analise': user.ultima_analise if user else {},
-        'logs': get_logs_html(user, 40),
-        'moedas': usuario_db.get('moedas', 0),
-        'estrategia': user.estrategia_atual if user else 'tesla_369',
-        'estrategia_nome': ESTRATEGIAS.get(user.estrategia_atual if user else 'tesla_369', {}).get('nome', '--'),
-        'skin_id': skin_atual,
-        'skins_status': skins_status,
-        'estrategias_compradas': estrategias_compradas,
-        'estrategias_disponiveis': estrategias_disponiveis,
-        'usuarios_online': len([u for u in usuarios.values() if u.conectado]),
-        'bots_ativos': len([u for u in usuarios.values() if u.bot_rodando])
-    })
+    return jsonify({'conectado': conectado_iq, 'rodando': bot_rodando, 'email': email_usuario_atual, 'banca': API.get_balance() if API else 0, 'lucro': lucro, 'ops': NumDeOperacoes, 'sinal': ultimo_sinal, 'analise': ultima_analise, 'logs': get_logs_html(40), 'moedas': u.get('moedas', 0) if u else 0, 'estrategia': estrategia_atual, 'estrategia_nome': ESTRATEGIAS.get(estrategia_atual, {}).get('nome', '--'), 'skin_id': skin_atual, 'skins_status': skins_status, 'estrategias_compradas': estrategias_compradas, 'estrategias_disponiveis': estrategias_disponiveis})
 
 @app.route('/conectar', methods=['POST'])
 def conectar():
+    global API, email_usuario_atual, conectado_iq, skin_atual_global, par, timeframe_atual
     try:
-        d = request.get_json()
-        email = d.get('email', '').strip()
-        senha = d.get('senha', '').strip()
-        tipo = d.get('tipo', 'PRACTICE')
-        
-        if not email or not senha:
-            return jsonify({'ok': False, 'erro': 'Email e senha obrigatorios'})
-        
-        # ⭐ CRIAR INSTANCIA ISOLADA PARA ESTE USUARIO ⭐
-        user = get_usuario(email)
-        
-        # Conectar na IQ Option
-        user.api = IQ_Option(email, senha)
-        status_conn, reason = user.api.connect()
-        if not status_conn:
-            return jsonify({'ok': False, 'erro': str(reason)[:100]})
-        
-        user.api.change_balance(tipo)
-        user.conectado = True
-        user.par = ESTRATEGIAS[user.estrategia_atual]['pares'][0]
-        user.timeframe_atual = ESTRATEGIAS[user.estrategia_atual]['timeframe']
-        
-        # Carregar dados do banco
-        usuario_db = carregar_usuario(email) or criar_usuario(email)
-        hoje = str(datetime.now())[:10]
-        if usuario_db.get('moedas_ganhas_hoje') != hoje:
-            usuario_db['moedas'] = usuario_db.get('moedas', 0) + 1
-            usuario_db['moedas_ganhas_hoje'] = hoje
-            salvar_usuario(email, usuario_db)
-        
-        user.skin_atual = usuario_db.get('skin_atual', 'skin_padrao')
-        
-        if 'estrategias_compradas' not in usuario_db:
-            usuario_db['estrategias_compradas'] = ['tesla_369']
-        elif 'tesla_369' not in usuario_db['estrategias_compradas']:
-            usuario_db['estrategias_compradas'].append('tesla_369')
-        salvar_usuario(email, usuario_db)
-        
-        # Atualizar variaveis globais (compatibilidade)
-        global API, email_usuario_atual, conectado_iq, skin_atual_global, par, timeframe_atual
-        API = user.api
+        d = request.get_json(); email = d.get('email', '').strip(); senha = d.get('senha', '').strip(); tipo = d.get('tipo', 'PRACTICE')
+        if not email or not senha: return jsonify({'ok': False, 'erro': 'Email e senha obrigatórios'})
         email_usuario_atual = email
+        
+        # Criar API isolada para este usuário
+        API = IQ_Option(email, senha)
+        status_conn, reason = API.connect()
+        if not status_conn: return jsonify({'ok': False, 'erro': str(reason)[:100]})
+        API.change_balance(tipo)
         conectado_iq = True
-        skin_atual_global = user.skin_atual
-        par = user.par
-        timeframe_atual = user.timeframe_atual
-        
-        add_log(f'✅ Conectado! ${user.api.get_balance():.2f} | ⚡ {usuario_db.get("moedas", 0)} VOLTS', 'win', user)
-        
-        online = len([u for u in usuarios.values() if u.conectado])
-        add_log(f'👥 Usuarios online: {online}', 'info', user)
-        
-        return jsonify({
-            'ok': True,
-            'email': email,
-            'moedas': usuario_db.get('moedas', 0),
-            'banca': user.api.get_balance(),
-            'usuarios_online': online
-        })
-    except Exception as e:
-        return jsonify({'ok': False, 'erro': str(e)[:100]})
+        usuario = carregar_usuario(email) or criar_usuario(email)
+        hoje = str(datetime.now())[:10]
+        if usuario.get('moedas_ganhas_hoje') != hoje:
+            usuario['moedas'] = usuario.get('moedas', 0) + 1; usuario['moedas_ganhas_hoje'] = hoje
+            salvar_usuario(email, usuario)
+        skin_atual_global = usuario.get('skin_atual', 'skin_padrao')
+        # Garantir que tesla_369 está nas estratégias compradas
+        if 'estrategias_compradas' not in usuario:
+            usuario['estrategias_compradas'] = ['tesla_369']
+        elif 'tesla_369' not in usuario['estrategias_compradas']:
+            usuario['estrategias_compradas'].append('tesla_369')
+        salvar_usuario(email, usuario)
+        par = ESTRATEGIAS[estrategia_atual]['pares'][0]; timeframe_atual = ESTRATEGIAS[estrategia_atual]['timeframe']
+        add_log('🔌 Conectando na IQ Option...', 'info')
+        add_log(f'✅ Conectado! ${API.get_balance():.2f} | ⚡ {usuario.get("moedas", 0)} VOLTS', 'win')
+        return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0)})
+    except Exception as e: return jsonify({'ok': False, 'erro': str(e)[:100]})
 
 @app.route('/comecar_operar', methods=['POST'])
 def comecar_operar():
+    global bot_rodando, bot_thread, lucro, NumDeOperacoes
     try:
-        d = request.get_json() or {}
-        email = d.get('email', email_usuario_atual if 'email_usuario_atual' in dir() else '')
+        if not conectado_iq: return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+        usuario = carregar_usuario(email_usuario_atual)
+        if not usuario: return jsonify({'ok': False, 'erro': 'Usuário não encontrado!'})
         
-        if not email:
-            return jsonify({'ok': False, 'erro': 'Email nao encontrado! Conecte primeiro.'})
+        estrategias_compradas = usuario.get('estrategias_compradas', ['tesla_369'])
+        if estrategia_atual not in estrategias_compradas:
+            preco = ESTRATEGIAS.get(estrategia_atual, {}).get('preco_moedas', 0)
+            return jsonify({'ok': False, 'erro': f'Estratégia não comprada! Compre na loja por {preco} ⚡'})
         
-        # Obter instancia do usuario
-        user = get_usuario(email)
-        if not user or not user.conectado:
-            return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+        if usuario.get('moedas', 0) < 1: return jsonify({'ok': False, 'erro': 'Sem VOLTS!'})
+        usuario['moedas'] -= 1; usuario['total_ciclos'] += 1; salvar_usuario(email_usuario_atual, usuario)
+        lucro = 0.0; NumDeOperacoes = 0
         
-        usuario_db = carregar_usuario(email)
-        if not usuario_db:
-            return jsonify({'ok': False, 'erro': 'Usuario nao encontrado!'})
+        # Iniciar bot em thread separada para este usuário
+        email_atual = email_usuario_atual
+        if not bot_rodando:
+            bot_rodando = True
+            bot_thread = threading.Thread(target=bot_loop, daemon=True)
+            bot_thread.start()
+            bots_ativos[email_atual] = bot_thread
         
-        # Verificar estrategia comprada
-        estrategias_compradas = usuario_db.get('estrategias_compradas', ['tesla_369'])
-        if user.estrategia_atual not in estrategias_compradas:
-            preco = ESTRATEGIAS.get(user.estrategia_atual, {}).get('preco_moedas', 0)
-            return jsonify({'ok': False, 'erro': f'Estrategia nao comprada! Compre na loja por {preco} ⚡'})
-        
-        # Verificar VOLTS
-        if usuario_db.get('moedas', 0) < 1:
-            return jsonify({'ok': False, 'erro': 'Sem VOLTS! Compre na loja.'})
-        
-        # Verificar se ja tem bot rodando para ESTE usuario
-        if user.bot_rodando:
-            return jsonify({'ok': False, 'erro': 'Bot ja esta rodando para este usuario! Pare primeiro.'})
-        
-        # Consumir 1 VOLT
-        usuario_db['moedas'] -= 1
-        usuario_db['total_ciclos'] += 1
-        salvar_usuario(email, usuario_db)
-        
-        # Iniciar bot ISOLADO para este usuario
-        user.lucro = 0.0
-        user.NumDeOperacoes = 0
-        user.bot_rodando = True
-        user.STOP_GAIN_ATINGIDO = False
-        
-        user.bot_thread = threading.Thread(
-            target=lambda: bot_loop_usuario(user),
-            daemon=True
-        )
-        user.bot_thread.start()
-        
-        # Atualizar variaveis globais (compatibilidade)
-        global bot_rodando, bot_thread, lucro, NumDeOperacoes
-        bot_rodando = True
-        bot_thread = user.bot_thread
-        lucro = 0.0
-        NumDeOperacoes = 0
-        
-        add_log(f'🚀 Bot iniciado! Estrategia: {ESTRATEGIAS[user.estrategia_atual]["nome"]}', 'win', user)
-        
-        return jsonify({
-            'ok': True,
-            'moedas': usuario_db['moedas'],
-            'usuarios_online': len([u for u in usuarios.values() if u.conectado]),
-            'bots_ativos': len([u for u in usuarios.values() if u.bot_rodando])
-        })
-    except Exception as e:
-        return jsonify({'ok': False, 'erro': str(e)[:100]})
+        return jsonify({'ok': True, 'moedas': usuario['moedas']})
+    except Exception as e: return jsonify({'ok': False, 'erro': str(e)[:100]})
 
 @app.route('/parar', methods=['POST'])
 def parar():
     global bot_rodando, conectado_iq
     data = request.json or {}
-    email = data.get('email', email_usuario_atual if 'email_usuario_atual' in dir() else '')
-    
-    # Parar instancia especifica do usuario
-    user = get_usuario(email) if email else None
-    
+    bot_rodando = False
     if data.get('desconectar'):
-        if user:
-            user.bot_rodando = False
-            user.conectado = False
-            user.STOP_GAIN_ATINGIDO = True
         conectado_iq = False
-        bot_rodando = False
-    else:
-        if user:
-            user.bot_rodando = False
-            user.STOP_GAIN_ATINGIDO = True
-        bot_rodando = False
-    
+        # Remover bot da lista de ativos
+        if email_usuario_atual in bots_ativos:
+            del bots_ativos[email_usuario_atual]
     return jsonify({'ok': True})
 
 @app.route('/selecionar_estrategia', methods=['POST'])
