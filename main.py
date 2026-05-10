@@ -5,7 +5,7 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT v6.2.1 ⚡
+# ⚡ TESLA 369 BOT v6.3.0 ⚡
 # TESLA-369 GRÁTIS | v_SENSITIVO 6⚡ | 3=1 3⚡ | LOJA ESTRATÉGIAS | SKINS | MERCADO PAGO
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
@@ -54,8 +54,90 @@ PLANOS = [
 
 # ⭐ SKINS DA LOJA ⭐
 SKINS = [
+    # ═══════════ ⚡ SKINS BÁSICAS (3 VOLTS) ═══════════
     {
         'id': 'skin_padrao', 'nome': '⚡ TESLA PADRÃO', 'desc': 'Tema escuro com raios dourados', 'preco_moedas': 0,
+        'categoria': 'basica',
+        'cor_fundo': '#0a0a1a', 'cor_panel': '#1a1a3e', 'cor_destaque': '#ffd700', 'cor_texto': '#fff',
+        'cor_botao': 'linear-gradient(135deg,#cc8800,#ffd700)', 'cor_tab_ativa': '#ffd700',
+        'cor_header_bg': 'linear-gradient(135deg,#1a0000,#331100,#553300,#331100,#1a0000)', 'cor_header_borda': '#ffd700',
+        'header_extra': '<div class="lightning"></div>',
+        'css_extra': '.lightning{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:150px;height:150px;background:radial-gradient(circle at 30% 30%,rgba(255,215,0,0.3) 0%,rgba(255,165,0,0.15) 30%,transparent 100%);border-radius:50%;z-index:0;animation:glow 3s ease-in-out infinite;pointer-events:none}@keyframes glow{0%,100%{box-shadow:0 0 30px rgba(255,215,0,0.3)}50%{box-shadow:0 0 50px rgba(255,165,0,0.5)}}.lightning::after{content:"⚡";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:50px;animation:float 2s ease-in-out infinite}@keyframes float{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-60%) scale(1.1)}}'
+    },
+    {
+        'id': 'skin_brasil', 'nome': '🇧🇷 BRASIL', 'desc': 'Tema verde e amarelo', 'preco_moedas': 0,
+        'categoria': 'basica',
+        'cor_fundo': '#001a0a', 'cor_panel': '#0a2a15', 'cor_destaque': '#ffd700', 'cor_texto': '#fff',
+        'cor_botao': 'linear-gradient(135deg,#009933,#00cc44)', 'cor_tab_ativa': '#ffd700',
+        'cor_header_bg': 'linear-gradient(135deg,#001a0a,#003315,#004d20,#003315,#001a0a)', 'cor_header_borda': '#ffd700',
+        'header_extra': '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:60px;z-index:0;opacity:0.3;pointer-events:none">🇧🇷</div>', 'css_extra': ''
+    },
+    {
+        'id': 'skin_dark', 'nome': '🌑 TESLA DARK', 'desc': 'Tema escuro com detalhes roxos', 'preco_moedas': 3,
+        'categoria': 'basica',
+        'cor_fundo': '#000000', 'cor_panel': '#0a0a0a', 'cor_destaque': '#9933ff', 'cor_texto': '#ccc',
+        'cor_botao': 'linear-gradient(135deg,#4400aa,#9933ff)', 'cor_tab_ativa': '#9933ff',
+        'cor_header_bg': 'linear-gradient(135deg,#000000,#110022,#220044,#110022,#000000)', 'cor_header_borda': '#9933ff',
+        'header_extra': '<div class="lightning"></div>',
+        'css_extra': ''
+    },
+    # ═══════════ 🔮 SKINS PREMIUM (6 VOLTS) ═══════════
+    {
+        'id': 'skin_magos', 'nome': '🔮 MAGOS DA BOLA DE CRISTAL', 'desc': 'Tema roxo místico', 'preco_moedas': 6,
+        'categoria': 'premium',
+        'cor_fundo': '#0a0a1a', 'cor_panel': '#1a1a3e', 'cor_destaque': '#cc66ff', 'cor_texto': '#e0d0ff',
+        'cor_botao': 'linear-gradient(135deg,#6600cc,#9933ff)', 'cor_tab_ativa': '#9933ff',
+        'cor_header_bg': 'linear-gradient(135deg,#0d001a,#1a0033,#2d0055,#1a0033,#0d001a)', 'cor_header_borda': '#9933ff',
+        'header_extra': '<div class="crystal-ball"></div><div class="mago mago-esq">🧙‍♂️</div><div class="mago mago-dir">🧙‍♀️</div>',
+        'css_extra': '.crystal-ball{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:130px;height:130px;background:radial-gradient(circle at 30% 30%,rgba(200,150,255,0.4) 0%,rgba(153,51,255,0.2) 30%,transparent 70%);border-radius:50%;z-index:0;animation:crystalGlow 4s ease-in-out infinite;pointer-events:none;border:2px solid rgba(153,51,255,0.3)}@keyframes crystalGlow{0%,100%{box-shadow:0 0 30px rgba(153,51,255,0.4),0 0 60px rgba(153,51,255,0.2)}50%{box-shadow:0 0 50px rgba(200,100,255,0.6),0 0 80px rgba(200,100,255,0.3)}}.crystal-ball::after{content:"🔮";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:45px;animation:floatCrystal 3s ease-in-out infinite}@keyframes floatCrystal{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-60%) scale(1.1)}}.mago{position:absolute;top:50%;font-size:30px;z-index:1;animation:magoFloat 2s ease-in-out infinite;pointer-events:none}.mago-esq{left:15px}.mago-dir{right:15px;animation-delay:0.5s}@keyframes magoFloat{0%,100%{transform:translateY(-50%)}50%{transform:translateY(-60%)}}'
+    },
+    {
+        'id': 'skin_fire', 'nome': '🔥 TESLA FIRE', 'desc': 'Chamas e faíscas animadas', 'preco_moedas': 6,
+        'categoria': 'premium',
+        'cor_fundo': '#1a0000', 'cor_panel': '#2a0a0a', 'cor_destaque': '#ff4400', 'cor_texto': '#ffccaa',
+        'cor_botao': 'linear-gradient(135deg,#cc2200,#ff6600)', 'cor_tab_ativa': '#ff4400',
+        'cor_header_bg': 'linear-gradient(135deg,#1a0000,#330000,#551100,#330000,#1a0000)', 'cor_header_borda': '#ff4400',
+        'header_extra': '<canvas id="fireCanvas" style="position:absolute;bottom:0;left:0;width:100%;height:80px;z-index:0"></canvas>',
+        'css_extra': 'body{background:radial-gradient(ellipse at bottom,#1a0000 0%,#0a0000 50%,#000000 100%)!important}.header{border-color:#ff4400!important;box-shadow:0 0 30px rgba(255,68,0,0.4),inset 0 0 30px rgba(255,68,0,0.05)}'
+    },
+    # ═══════════ 💎 SKINS LENDÁRIAS (9+ VOLTS) ═══════════
+    {
+        'id': 'skin_ice', 'nome': '❄️ TESLA ICE', 'desc': 'Cristais de gelo e aurora boreal', 'preco_moedas': 9,
+        'categoria': 'lendaria',
+        'cor_fundo': '#000a1a', 'cor_panel': '#0a102a', 'cor_destaque': '#3399ff', 'cor_texto': '#aaccff',
+        'cor_botao': 'linear-gradient(135deg,#0044aa,#3399ff)', 'cor_tab_ativa': '#3399ff',
+        'cor_header_bg': 'linear-gradient(135deg,#000a1a,#001133,#002255,#001133,#000a1a)', 'cor_header_borda': '#3399ff',
+        'header_extra': '<canvas id="snowCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>',
+        'css_extra': 'body{background:linear-gradient(180deg,#000a1a 0%,#001030 50%,#000a1a 100%)!important}.header{border-color:#3399ff!important;box-shadow:0 0 30px rgba(51,153,255,0.3),inset 0 0 30px rgba(51,153,255,0.05)}'
+    },
+    {
+        'id': 'skin_princesa', 'nome': '👸 PRINCESA', 'desc': 'Tema rosa com brilhos', 'preco_moedas': 9,
+        'categoria': 'lendaria',
+        'cor_fundo': '#1a0010', 'cor_panel': '#2a0a20', 'cor_destaque': '#ff69b4', 'cor_texto': '#ffe0f0',
+        'cor_botao': 'linear-gradient(135deg,#cc3388,#ff69b4)', 'cor_tab_ativa': '#ff69b4',
+        'cor_header_bg': 'linear-gradient(135deg,#1a0010,#2a0a20,#3a1530,#2a0a20,#1a0010)', 'cor_header_borda': '#ff69b4',
+        'header_extra': '<div class="coroa-p">👑</div>',
+        'css_extra': '.coroa-p{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:40px;animation:float 2s ease-in-out infinite}@keyframes float{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-10px)}}.header h1{color:#ff69b4!important;text-shadow:0 0 30px #ff1493!important}'
+    },
+    {
+        'id': 'skin_nebula', 'nome': '🌌 TESLA NEBULA', 'desc': 'Nebulosa cósmica com estrelas', 'preco_moedas': 9,
+        'categoria': 'lendaria',
+        'cor_fundo': '#000011', 'cor_panel': '#0a0a1a', 'cor_destaque': '#aa66ff', 'cor_texto': '#d4c8ff',
+        'cor_botao': 'linear-gradient(135deg,#440088,#aa66ff)', 'cor_tab_ativa': '#aa66ff',
+        'cor_header_bg': 'linear-gradient(135deg,#000011,#110033,#220066,#110033,#000011)', 'cor_header_borda': '#aa66ff',
+        'header_extra': '<canvas id="nebulaCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>',
+        'css_extra': 'body{background:#000011!important}.header{border-color:#aa66ff!important;box-shadow:0 0 40px rgba(170,102,255,0.4)}.terminal{border-color:#aa66ff22!important;box-shadow:0 0 25px rgba(170,102,255,0.1)}'
+    },
+    {
+        'id': 'skin_matrix', 'nome': '🧬 TESLA MATRIX', 'desc': 'Chuva de caracteres estilo Matrix', 'preco_moedas': 9,
+        'categoria': 'lendaria',
+        'cor_fundo': '#000000', 'cor_panel': '#0a0a0a', 'cor_destaque': '#00ff00', 'cor_texto': '#00cc00',
+        'cor_botao': 'linear-gradient(135deg,#006600,#00ff00)', 'cor_tab_ativa': '#00ff00',
+        'cor_header_bg': 'linear-gradient(135deg,#000000,#001100,#003300,#001100,#000000)', 'cor_header_borda': '#00ff00',
+        'header_extra': '<canvas id="matrixCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>',
+        'css_extra': 'body{background:#000000!important}.header{border-color:#00ff00!important;box-shadow:0 0 30px rgba(0,255,0,0.4)}.terminal{color:#00ff00!important;border-color:#00ff0022!important;box-shadow:0 0 20px rgba(0,255,0,0.1);font-family:"Courier New",monospace!important}'
+    },
+]
         'cor_fundo': '#0a0a1a', 'cor_panel': '#1a1a3e', 'cor_destaque': '#ffd700', 'cor_texto': '#fff',
         'cor_botao': 'linear-gradient(135deg,#cc8800,#ffd700)', 'cor_tab_ativa': '#ffd700',
         'cor_header_bg': 'linear-gradient(135deg,#1a0000,#331100,#553300,#331100,#1a0000)', 'cor_header_borda': '#ffd700',
@@ -813,7 +895,7 @@ HTML = r'''
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ TESLA 369 BOT v6.2.1</title>
+    <title>⚡ TESLA 369 BOT v6.3.0</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:{{COR_FUNDO}};color:{{COR_TEXTO}};font-family:'Courier New',monospace;padding:10px}
@@ -1038,7 +1120,7 @@ HTML = r'''
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
             <span>⚡ TESLA 369</span>
-            <span>v6.2.1 | GALE 2 | SG: 1 WIN</span>
+            <span>v6.3.0 | GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
     
@@ -1058,7 +1140,7 @@ HTML = r'''
         <div class="planos-grid">''' + ''.join([f'<div class="plano-card" id="plano{p["id"]}" onclick="selecionarPlano({p["id"]})"><div style="color:#ffd700;font-size:11px">{p["nome"]}</div><div class="plano-moedas">⚡ {p["moedas"]}</div><div class="plano-preco">R$ {p["preco"]:.2f}</div><div class="plano-desc">{p.get("desc","")}</div>{f"<div><span class=\"plano-desconto\">{p['desconto']}</span></div>" if p.get("desconto") else ""}{f"<div class=\"plano-tag\">{p['tag']}</div>" if p.get("tag") else ""}<button class="btn-loja btn-comprar-volts" style="display:none;margin-top:10px" id="btnPlano{p['id']}" onclick="event.stopPropagation();pagarComPix({p['id']})">💳 PAGAR COM PIX</button></div>' for p in PLANOS]) + r'''</div>
         </div>
         <div class="sub-panel" id="sub-panel-skins">
-            <div class="config-section"><h3>SKINS DISPONIVEIS</h3><p style="color:#888;font-size:10px">Personalize a aparencia do seu bot! Skins compradas ficam salvas.</p></div>
+            <div class="config-section"><h3>🎨 LOJA DE SKINS</h3><p style="color:#888;font-size:10px">⚡ Básicas (0-3) | 🔮 Premium (6) | 💎 Lendárias (9+)</p><p style="color:#888;font-size:10px">Personalize a aparencia do seu bot! Skins compradas ficam salvas.</p></div>
             <div class="skins-grid" id="skinsGrid"></div>
         </div>
         <div class="sub-panel" id="sub-panel-estrategias">
@@ -1762,6 +1844,155 @@ function atualizarChat() {
         document.getElementById('chatOnline').textContent = '🟢 ' + (d.online || 1) + ' online';
     });
 }
+
+
+// ========== CANVAS ANIMATIONS PARA SKINS LENDÁRIAS ==========
+function initSkinEffects() {
+    // ❄️ TESLA ICE - Neve caindo
+    var snowCanvas = document.getElementById('snowCanvas');
+    if (snowCanvas) {
+        var ctx = snowCanvas.getContext('2d');
+        snowCanvas.width = snowCanvas.parentElement.offsetWidth;
+        snowCanvas.height = snowCanvas.parentElement.offsetHeight;
+        var snowflakes = [];
+        for (var i = 0; i < 30; i++) {
+            snowflakes.push({
+                x: Math.random() * snowCanvas.width,
+                y: Math.random() * snowCanvas.height,
+                r: Math.random() * 3 + 1,
+                speed: Math.random() * 1 + 0.3
+            });
+        }
+        function drawSnow() {
+            ctx.clearRect(0, 0, snowCanvas.width, snowCanvas.height);
+            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            snowflakes.forEach(function(f) {
+                ctx.beginPath();
+                ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+                ctx.fill();
+                f.y += f.speed;
+                if (f.y > snowCanvas.height) { f.y = 0; f.x = Math.random() * snowCanvas.width; }
+            });
+            requestAnimationFrame(drawSnow);
+        }
+        drawSnow();
+    }
+    
+    // 🔥 TESLA FIRE - Chamas
+    var fireCanvas = document.getElementById('fireCanvas');
+    if (fireCanvas) {
+        var fctx = fireCanvas.getContext('2d');
+        fireCanvas.width = fireCanvas.parentElement.offsetWidth;
+        fireCanvas.height = 80;
+        var particles = [];
+        for (var i = 0; i < 40; i++) {
+            particles.push({
+                x: Math.random() * fireCanvas.width,
+                y: fireCanvas.height - Math.random() * 40,
+                vx: (Math.random() - 0.5) * 0.5,
+                vy: -Math.random() * 2 - 0.5,
+                life: Math.random() * 60 + 30,
+                maxLife: 90
+            });
+        }
+        function drawFire() {
+            fctx.clearRect(0, 0, fireCanvas.width, fireCanvas.height);
+            particles.forEach(function(p, i) {
+                var alpha = p.life / p.maxLife;
+                fctx.fillStyle = 'rgba(255,' + Math.floor(150 * alpha) + ',0,' + alpha + ')';
+                fctx.beginPath();
+                fctx.arc(p.x, p.y, 4 * alpha, 0, Math.PI * 2);
+                fctx.fill();
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+                if (p.life <= 0) {
+                    particles[i] = {
+                        x: Math.random() * fireCanvas.width,
+                        y: fireCanvas.height,
+                        vx: (Math.random() - 0.5) * 0.5,
+                        vy: -Math.random() * 2 - 0.5,
+                        life: Math.random() * 60 + 30,
+                        maxLife: 90
+                    };
+                }
+            });
+            requestAnimationFrame(drawFire);
+        }
+        drawFire();
+    }
+    
+    // 🌌 TESLA NEBULA - Partículas coloridas
+    var nebulaCanvas = document.getElementById('nebulaCanvas');
+    if (nebulaCanvas) {
+        var nctx = nebulaCanvas.getContext('2d');
+        nebulaCanvas.width = nebulaCanvas.parentElement.offsetWidth;
+        nebulaCanvas.height = nebulaCanvas.parentElement.offsetHeight;
+        var stars = [];
+        for (var i = 0; i < 50; i++) {
+            stars.push({
+                x: Math.random() * nebulaCanvas.width,
+                y: Math.random() * nebulaCanvas.height,
+                r: Math.random() * 2 + 0.5,
+                twinkle: Math.random() * Math.PI * 2,
+                speed: Math.random() * 0.03 + 0.01
+            });
+        }
+        function drawNebula() {
+            nctx.clearRect(0, 0, nebulaCanvas.width, nebulaCanvas.height);
+            stars.forEach(function(s) {
+                s.twinkle += s.speed;
+                var alpha = 0.3 + Math.sin(s.twinkle) * 0.4;
+                nctx.fillStyle = 'rgba(170,102,255,' + alpha + ')';
+                nctx.beginPath();
+                nctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                nctx.fill();
+                nctx.fillStyle = 'rgba(255,255,255,' + (alpha * 0.5) + ')';
+                nctx.beginPath();
+                nctx.arc(s.x, s.y, s.r * 0.5, 0, Math.PI * 2);
+                nctx.fill();
+            });
+            requestAnimationFrame(drawNebula);
+        }
+        drawNebula();
+    }
+    
+    // 🧬 TESLA MATRIX - Chuva de caracteres
+    var matrixCanvas = document.getElementById('matrixCanvas');
+    if (matrixCanvas) {
+        var mctx = matrixCanvas.getContext('2d');
+        matrixCanvas.width = matrixCanvas.parentElement.offsetWidth;
+        matrixCanvas.height = matrixCanvas.parentElement.offsetHeight;
+        var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*()';
+        var fontSize = 12;
+        var columns = Math.floor(matrixCanvas.width / fontSize);
+        var drops = [];
+        for (var i = 0; i < columns; i++) {
+            drops[i] = Math.random() * -100;
+        }
+        function drawMatrix() {
+            mctx.fillStyle = 'rgba(0,0,0,0.05)';
+            mctx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
+            mctx.fillStyle = '#00ff00';
+            mctx.font = fontSize + 'px monospace';
+            for (var i = 0; i < drops.length; i++) {
+                var text = chars[Math.floor(Math.random() * chars.length)];
+                mctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > matrixCanvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+            requestAnimationFrame(drawMatrix);
+        }
+        drawMatrix();
+    }
+}
+
+// Inicializar efeitos quando a página carregar
+window.addEventListener('load', function() {
+    setTimeout(initSkinEffects, 500);
+});
 
 </script>
 </body>
