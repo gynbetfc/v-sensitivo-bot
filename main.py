@@ -258,7 +258,7 @@ class UsuarioInstancia:
         self.bot_thread = None
         self.conectado = False
         self.ultimo_sinal = "Aguardando..."
-        self.ultima_analise = {}
+        self.user.user.ultima_analise = {}
         self.logs = []
         self.MAX_LOGS = 200
         self.skin_atual = "skin_padrao"
@@ -395,16 +395,22 @@ def estocastico(v, p=14):
 # ═══════════════════════════════════════════════════════
 # SINAIS DAS ESTRATÉGIAS
 # ═══════════════════════════════════════════════════════
-def sinal_v_sensitivo():
-    global ultimo_sinal, ultima_analise
+def sinal_v_sensitivo(user=None):
+    if user is None:
+        for u in usuarios.values():
+            if u.conectado:
+                user = u
+                break
+    if user is None:
+        return None
     try:
         s = datetime.now().second
         fase = "🌅NASCENDO" if s < 20 else ("☀️VIVA" if s < 45 else "🌇MORRENDO")
-        v = API.get_candles(par, timeframe_atual, 30, time.time())
+        v = user.api.get_candles(user.par, user.timeframe_atual, 30, time.time())
         if len(v) < 20: return None
         rs = rsi(v); m5 = sma(v, 5); m10 = sma(v, 10); m20 = sma(v, 20)
         bs, _, bi = bollinger(v); mc = macd(v); st = estocastico(v); pc = v[-1]['close']
-        ultima_analise = {'preco': pc, 'rsi': rs, 'mm5': m5, 'mm10': m10, 'mm20': m20, 'stoch': st, 'fase': fase}
+        user.user.ultima_analise = {'preco': pc, 'rsi': rs, 'mm5': m5, 'mm10': m10, 'mm20': m20, 'stoch': st, 'fase': fase}
         sc = sp = 0; sinais = []
         if m5 and m20:
             if m5 > m20: sc += 20; sinais.append("MM5>MM20")
@@ -433,19 +439,25 @@ def sinal_v_sensitivo():
         add_log(f"🔮{fase} | C={sc} P={sp} | {' '.join(sinais[:3])}", 'indicator')
         dif = abs(sc-sp)
         if sc > sp and dif >= 15:
-            ultimo_sinal = f"🔮 CALL ({sc}x{sp})"; add_log(f"CALL!", 'sensitive'); return 'call'
+            user.user.ultimo_sinal = f"🔮 CALL ({sc}x{sp})"; add_log(f"CALL!", 'sensitive'); return 'call'
         if sp > sc and dif >= 15:
-            ultimo_sinal = f"🔮 PUT ({sp}x{sc})"; add_log(f"PUT!", 'sensitive'); return 'put'
+            user.user.ultimo_sinal = f"🔮 PUT ({sp}x{sc})"; add_log(f"PUT!", 'sensitive'); return 'put'
         ultimo_sinal = "⏳..."; return None
     except Exception as e: add_log(f"Erro: {e}", 'error'); return None
 
-def sinal_tesla_369():
-    global ultimo_sinal, ultima_analise
+def sinal_tesla_369(user=None):
+    if user is None:
+        for u in usuarios.values():
+            if u.conectado:
+                user = u
+                break
+    if user is None:
+        return None
     try:
         agora = datetime.now()
         if not ((agora.minute >= 1.55 and agora.minute <= 2) or (agora.minute >= 6.55 and agora.minute <= 7)):
-            ultimo_sinal = f"⏳ Min: {agora.minute}:{agora.second:02d}"; return None
-        v = API.get_candles(par, timeframe_atual, 6, time.time())
+            user.user.ultimo_sinal = f"⏳ Min: {agora.minute}:{agora.second:02d}"; return None
+        v = user.api.get_candles(user.par, user.timeframe_atual, 6, time.time())
         if len(v) < 6: return None
         velas = []
         for vela in v:
@@ -453,8 +465,8 @@ def sinal_tesla_369():
             elif vela['open'] > vela['close']: velas.append('r')
             else: velas.append('d')
         cores = ''.join(velas); pc = v[-1]['close']
-        ultima_analise = {'preco': pc, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': None, 'stoch': None, 'fase': 'TESLA-369'}
-        add_log(f"⚡ TESLA-369 | Velas: {cores}", 'indicator'); ultimo_sinal = f"⚡ 369: {cores}"
+        user.user.ultima_analise = {'preco': pc, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': None, 'stoch': None, 'fase': 'TESLA-369'}
+        add_log(f"⚡ TESLA-369 | Velas: {cores}", 'indicator'); user.user.ultimo_sinal = f"⚡ 369: {cores}"
         if velas[0] == 'g' and velas[3] == 'g' and velas[4] == 'r' and velas[5] == 'r' and 'd' not in cores:
             add_log("TESLA-369: CALL!", 'sensitive'); return 'call'
         if velas[0] == 'r' and velas[3] == 'r' and velas[4] == 'g' and velas[5] == 'g' and 'd' not in cores:
@@ -467,8 +479,8 @@ def sinal_mhi_filtrado():
     try:
         agora = datetime.now()
         if not ((agora.minute >= 4.55 and agora.minute <= 5) or (agora.minute >= 9.55 and agora.minute <= 10)):
-            ultimo_sinal = f"⏳ MHI: {agora.minute}:{agora.second:02d}"; return None
-        v = API.get_candles(par, timeframe_atual, 22, time.time())
+            user.user.ultimo_sinal = f"⏳ MHI: {agora.minute}:{agora.second:02d}"; return None
+        v = user.api.get_candles(user.par, user.timeframe_atual, 22, time.time())
         if len(v) < 22: return None
         velas = []
         for vela in v[-5:]:
@@ -476,7 +488,7 @@ def sinal_mhi_filtrado():
             elif vela['open'] > vela['close']: velas.append('r')
             else: velas.append('d')
         cores = ''.join(velas); preco_atual = v[-1]['close']; mm = sum(c['close'] for c in v[:-1]) / 21
-        ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': 'MHI-FILTRADO'}
+        user.user.ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': 'MHI-FILTRADO'}
         add_log(f"📊 MHI | Velas: {cores} | MM: {mm:.5f}", 'indicator')
         if preco_atual > mm and cores.count('r') > cores.count('g') and 'd' not in cores and velas[4] == 'r':
             ultimo_sinal = "📊 CALL (MHI)"; add_log("MHI: CALL!", 'sensitive'); return 'call'
@@ -490,14 +502,14 @@ def sinal_terceira_igual_primeira():
     global ultimo_sinal, ultima_analise
     try:
         agora = datetime.now()
-        if agora.minute % 5 != 0: ultimo_sinal = f"⏳ Min: {agora.minute} (5/10/15...)"; return None
-        if agora.second < 55: ultimo_sinal = f"⏳ Seg: {agora.second}s (aguardando 55)"; return None
+        if agora.minute % 5 != 0: user.user.ultimo_sinal = f"⏳ Min: {agora.minute} (5/10/15...)"; return None
+        if agora.second < 55: user.user.ultimo_sinal = f"⏳ Seg: {agora.second}s (aguardando 55)"; return None
         time.sleep(2)
-        v = API.get_candles(par, timeframe_atual, 22, time.time())
+        v = user.api.get_candles(user.par, user.timeframe_atual, 22, time.time())
         if len(v) < 22: return None
         vela_atual = 'g' if v[-1]['open'] < v[-1]['close'] else ('r' if v[-1]['open'] > v[-1]['close'] else 'd')
         preco_atual = v[-1]['close']; mm = sum(c['close'] for c in v[:-1]) / 21
-        ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': '3ª=1ª'}
+        user.user.ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': '3ª=1ª'}
         add_log(f"3️⃣ 3=1 | Vela: {vela_atual} | MM: {mm:.5f}", 'indicator')
         if preco_atual > mm and vela_atual == 'g': ultimo_sinal = "3️⃣ CALL (3=1)"; add_log("3ª=1ª: CALL!", 'sensitive'); return 'call'
         if preco_atual < mm and vela_atual == 'r': ultimo_sinal = "3️⃣ PUT (3=1)"; add_log("3ª=1ª: PUT!", 'sensitive'); return 'put'
@@ -509,8 +521,8 @@ def sinal_quadrante_de_7():
     try:
         agora = datetime.now()
         if not ((agora.minute >= 1.55 and agora.minute <= 2) or (agora.minute >= 6.55 and agora.minute <= 7)):
-            ultimo_sinal = f"⏳ Q7: {agora.minute}:{agora.second:02d}"; return None
-        v = API.get_candles(par, timeframe_atual, 22, time.time())
+            user.user.ultimo_sinal = f"⏳ Q7: {agora.minute}:{agora.second:02d}"; return None
+        v = user.api.get_candles(user.par, user.timeframe_atual, 22, time.time())
         if len(v) < 22: return None
         velas = []
         for vela in v[-7:]:
@@ -518,7 +530,7 @@ def sinal_quadrante_de_7():
             elif vela['open'] > vela['close']: velas.append('r')
             else: velas.append('d')
         cores = ''.join(velas); preco_atual = v[-1]['close']; mm = sum(c['close'] for c in v[:-1]) / 21
-        ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': 'QUADRANTE-7'}
+        user.user.ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': 'QUADRANTE-7'}
         add_log(f"7️⃣ Q7 | Velas: {cores}", 'indicator')
         if preco_atual > mm and cores.count('g') < cores.count('r') and 'd' not in cores:
             ultimo_sinal = "7️⃣ CALL (Q7)"; add_log("Q7: CALL!", 'sensitive'); return 'call'
@@ -532,7 +544,7 @@ def sinal_fluxo_de_velas():
     try:
         agora = datetime.now()
         if agora.second % 55 != 0: return None
-        v = API.get_candles(par, timeframe_atual, 22, time.time())
+        v = user.api.get_candles(user.par, user.timeframe_atual, 22, time.time())
         if len(v) < 22: return None
         velas = []
         for vela in v[-5:]:
@@ -540,7 +552,7 @@ def sinal_fluxo_de_velas():
             elif vela['open'] > vela['close']: velas.append('r')
             else: velas.append('d')
         cores = ''.join(velas); preco_atual = v[-1]['close']; mm = sum(c['close'] for c in v[:-1]) / 21
-        ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': 'FLUXO'}
+        user.user.ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': 'FLUXO'}
         add_log(f"🌊 FLUXO | Velas: {cores}", 'indicator')
         if preco_atual > mm and cores == 'ggggg' and 'd' not in cores:
             ultimo_sinal = "🌊 CALL (FLUXO)"; add_log("FLUXO: CALL!", 'sensitive'); return 'call'
@@ -554,7 +566,7 @@ def sinal_reversao():
     try:
         agora = datetime.now()
         if agora.second % 55 != 0: return None
-        v = API.get_candles(par, timeframe_atual, 22, time.time())
+        v = user.api.get_candles(user.par, user.timeframe_atual, 22, time.time())
         if len(v) < 22: return None
         velas = []
         for vela in v[-5:]:
@@ -562,7 +574,7 @@ def sinal_reversao():
             elif vela['open'] > vela['close']: velas.append('r')
             else: velas.append('d')
         cores = ''.join(velas); preco_atual = v[-1]['close']; mm = sum(c['close'] for c in v[:-1]) / 21
-        ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': 'REVERSÃO'}
+        user.user.ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': 'REVERSÃO'}
         add_log(f"🔄 REV | Velas: {cores}", 'indicator')
         if preco_atual > mm and cores == 'grgrg':
             ultimo_sinal = "🔄 CALL (REV)"; add_log("REVERSÃO: CALL!", 'sensitive'); return 'call'
@@ -575,9 +587,9 @@ def sinal_m5():
     global ultimo_sinal, ultima_analise
     try:
         agora = datetime.now()
-        if agora.minute % 15 != 0: ultimo_sinal = f"⏳ M5: min {agora.minute} (15/30/45/0)"; return None
+        if agora.minute % 15 != 0: user.user.ultimo_sinal = f"⏳ M5: min {agora.minute} (15/30/45/0)"; return None
         time.sleep(2)
-        v = API.get_candles(par, timeframe_atual, 7, time.time())
+        v = user.api.get_candles(user.par, user.timeframe_atual, 7, time.time())
         if len(v) < 7: return None
         velas = []
         for vela in v:
@@ -585,7 +597,7 @@ def sinal_m5():
             elif vela['open'] > vela['close']: velas.append('r')
             else: velas.append('d')
         pc = v[-1]['close']
-        ultima_analise = {'preco': pc, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': None, 'stoch': None, 'fase': 'M5'}
+        user.user.ultima_analise = {'preco': pc, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': None, 'stoch': None, 'fase': 'M5'}
         add_log(f"⏰ M5 | Velas: {''.join(velas)}", 'indicator')
         if velas[0] == velas[1] and velas[1] == velas[2] and velas[3] == velas[4] and velas[4] == velas[5]:
             if velas[6] == 'g' and 'd' not in velas: ultimo_sinal = "⏰ PUT (M5)"; add_log("M5: PUT!", 'sensitive'); return 'put'
@@ -626,7 +638,7 @@ def calcular_entradas(b, p, g):
     return [max(1, e) for e in entradas]
 
 def pegar_timestamp():
-    v = API.get_candles(par, timeframe_atual, 1, time.time())
+    v = user.api.get_candles(user.par, user.timeframe_atual, 1, time.time())
     return v[0]['from'] if v else 0
 
 def aguardar_inicio_vela():
@@ -655,6 +667,96 @@ def verificar_resultado(saldo_antes, valor):
         if d >= 1.0: return d
     except: pass
     return -valor
+
+def executar_ciclo_usuario(u, direcao):
+    """Executa ciclo ISOLADO para um usuario"""
+    bi = u.api.get_balance()
+    payout = Payout_usuario(u, u.par)
+    entradas = calcular_entradas(bi, payout, MARTINGALE)
+    
+    add_log(f'💰 Banca: ${bi:.2f} | Payout: {payout*100:.0f}%', 'info', u)
+    add_log(f'📐 E1:${entradas[0]:.2f} | E2:${entradas[1]:.2f} | E3:${entradas[2]:.2f}', 'info', u)
+    
+    for i in range(MARTINGALE + 1):
+        if not u.bot_rodando: break
+        valor = entradas[i]
+        
+        # Aguardar inicio da vela
+        while datetime.now().second > 5:
+            if not u.bot_rodando: return
+            time.sleep(0.3)
+        
+        saldo_antes = u.api.get_balance()
+        if saldo_antes < valor:
+            add_log('❌ Saldo insuficiente!', 'error', u)
+            break
+        
+        add_log(f'🎯 {"ENTRADA" if i == 0 else f"GALE {i}"}: {direcao.upper()} ${valor:.2f}', 'info', u)
+        st, id_ordem = u.api.buy(valor, u.par, direcao, 1)
+        
+        if not st or not id_ordem:
+            try:
+                st, id_ordem = u.api.buy_digital_spot(u.par, valor, direcao, 1)
+            except:
+                pass
+        
+        if not st or not id_ordem:
+            add_log('❌ Falha na ordem!', 'error', u)
+            break
+        
+        add_log(f'   📝 Ordem #{id_ordem}', 'info', u)
+        time.sleep(60)
+        
+        saldo_depois = u.api.get_balance()
+        lucro_liquido = round(saldo_depois - saldo_antes, 2)
+        u.lucro += lucro_liquido
+        
+        if lucro_liquido > 0:
+            add_log(f'🌟 WIN! +${lucro_liquido:.2f}', 'win', u)
+            u.NumDeOperacoes += 1
+            u.STOP_GAIN_ATINGIDO = True
+            
+            usuario_db = carregar_usuario(u.email)
+            if usuario_db:
+                usuario_db['total_wins'] += 1
+                usuario_db['total_ganho'] += abs(lucro_liquido)
+                usuario_db['lucro_total'] = usuario_db['total_ganho'] - usuario_db['total_gasto']
+                usuario_db['banca_atual'] = round(saldo_depois, 2)
+                salvar_usuario(u.email, usuario_db)
+            
+            add_log('🎯 STOP GAIN! Vitoria alcancada!', 'win', u)
+            u.bot_rodando = False
+            break
+        else:
+            add_log(f'💀 LOSS! -${valor:.2f}', 'loss', u)
+            usuario_db = carregar_usuario(u.email)
+            if usuario_db:
+                usuario_db['total_losses'] += 1
+                usuario_db['total_gasto'] += valor
+                usuario_db['lucro_total'] = usuario_db['total_ganho'] - usuario_db['total_gasto']
+                salvar_usuario(u.email, usuario_db)
+            
+            if i < MARTINGALE:
+                add_log(f'   ➡️ Indo para GALE {i + 1}...', 'loss', u)
+            else:
+                add_log('   💀 CICLO COMPLETO PERDIDO!', 'loss', u)
+                u.bot_rodando = False
+
+def Payout_usuario(u, p):
+    try:
+        u.api.subscribe_strike_list(p, 1)
+        tentativas = 0
+        while tentativas < 20:
+            d = u.api.get_digital_current_profit(p, 1)
+            if d != False:
+                u.api.unsubscribe_strike_list(p, 1)
+                return round(int(d) / 100, 2)
+            time.sleep(0.5)
+            tentativas += 1
+        u.api.unsubscribe_strike_list(p, 1)
+        return PAYOUT_PADRAO
+    except:
+        return PAYOUT_PADRAO
 
 def executar_ciclo(direcao):
     global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando
@@ -721,6 +823,38 @@ def executar_ciclo(direcao):
     add_log("=" * 50, 'info')
     bot_rodando = False
     add_log("⏹️ Ciclo concluído! Clique em CONECTAR e depois COMEÇAR OPERAR para novo ciclo.", 'info')
+
+def bot_loop_usuario(u):
+    """Bot loop ISOLADO para um usuario especifico"""
+    nome_est = ESTRATEGIAS.get(u.estrategia_atual, ESTRATEGIAS['tesla_369'])['nome']
+    add_log(f'⚡ TESLA 369 - INICIANDO...', 'sensitive', u)
+    add_log(f'📊 Estrategia: {nome_est}', 'info', u)
+    add_log(f'🌐 Usuario: {u.email}', 'info', u)
+    
+    u.BANCA_INICIAL_DO_BOT = u.api.get_balance()
+    u.STOP_GAIN_ATINGIDO = False
+    u.lucro = 0.0
+    u.NumDeOperacoes = 0
+    
+    add_log(f'📌 {u.par} | Timeframe: {u.timeframe_atual}s | 💰 ${u.BANCA_INICIAL_DO_BOT:.2f}', 'info', u)
+    add_log('🧿 SIGILOS ATIVADOS 🧿', 'win', u)
+    add_log('🔮 Buscando sinal...', 'info', u)
+    
+    funcao_sinal = MAPA_SINAIS.get(u.estrategia_atual, sinal_v_sensitivo)
+    
+    while u.bot_rodando and not u.STOP_GAIN_ATINGIDO:
+        try:
+            direcao = funcao_sinal(u)
+            if direcao:
+                executar_ciclo_usuario(u, direcao)
+                break
+            time.sleep(0.3)
+        except Exception as e:
+            add_log(f'Erro: {e}', 'error', u)
+            time.sleep(5)
+    
+    if not u.bot_rodando:
+        add_log('⏹️ Bot parado.', 'info', u)
 
 def bot_loop():
     global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO
