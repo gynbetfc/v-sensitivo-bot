@@ -14,6 +14,16 @@ from flask import Flask, render_template_string, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
 from datetime import datetime
 import threading, time, sys, os, json, warnings, requests, uuid, base64
+import threading, time, sys, os, json, warnings, requests, uuid, base64
+
+# ═══════════════════════════════════════════════════════
+# MODO DE OPERAÇÃO
+# ═══════════════════════════════════════════════════════
+MODO_SERVIDOR = os.environ.get('MODO_SERVIDOR', 'false').lower() == 'true'
+SERVIDOR_API_URL = os.environ.get('SERVIDOR_API_URL', 'https://seu-bot.onrender.com')
+
+print(f"🖥️ MODO: {'SERVIDOR' if MODO_SERVIDOR else 'CLIENTE LOCAL'}")
+print(f"🌐 IP: Conectando do IP do {'servidor' if MODO_SERVIDOR else 'usuário'}")
 
 warnings.filterwarnings("ignore")
 app = Flask(__name__)
@@ -599,6 +609,104 @@ def verificar_resultado(saldo_antes, valor):
     except: pass
     return -valor
 
+def executar_ciclo_usuario(u, direcao):
+    """Executa ciclo ISOLADO para um usuário"""
+    bi = u.api.get_balance()
+    payout = Payout_usuario(u, u.par)
+    entradas = calcular_entradas(bi, payout, MARTINGALE)
+    
+    add_log(f'💰 Banca: ${bi:.2f} | Payout: {payout*100:.0f}%', 'info', u)
+    add_log(f'📐 E1:${entradas[0]:.2f} | E2:${entradas[1]:.2f} | E3:${entradas[2]:.2f}', 'info', u)
+    
+    for i in range(MARTINGALE + 1):
+        if not u.bot_rodando: break
+        valor = entradas[i]
+        
+        # Aguardar vela
+        while datetime.now().second > 5:
+            if not u.bot_rodando: return
+            time.sleep(0.3)
+        
+        saldo_antes = u.api.get_balance()
+        if saldo_antes < valor:
+            add_log('❌ Saldo insuficiente!', 'error', u)
+            break
+        
+        add_log(f'🎯 {"ENTRADA" if i == 0 else f"GALE {i}"}: {direcao.upper()} ${valor:.2f}', 'info', u)
+        st, id_ordem = u.api.buy(valor, u.par, direcao, 1)
+        
+        if not st or not id_ordem:
+            try:
+                st, id_ordem = u.api.buy_digital_spot(u.par, valor, direcao, 1)
+            except:
+                pass
+        
+        if not st or not id_ordem:
+            add_log('❌ Falha na ordem!', 'error', u)
+            break
+        
+        add_log(f'   📝 Ordem #{id_ordem}', 'info', u)
+        time.sleep(60)  # Aguardar 1 minuto
+        
+        saldo_depois = u.api.get_balance()
+        lucro_liquido = round(saldo_depois - saldo_antes, 2)
+        u.lucro += lucro_liquido
+        
+        if lucro_liquido > 0:
+            add_log(f'🌟 WIN! +${lucro_liquido:.2f}', 'win', u)
+            u.NumDeOperacoes += 1
+            u.STOP_GAIN_ATINGIDO = True
+            
+            # Atualizar dados no servidor
+            usuario_db = carregar_usuario(u.email)
+            if usuario_db:
+                usuario_db['total_wins'] += 1
+                usuario_db['total_ganho'] += abs(lucro_liquido)
+                usuario_db['lucro_total'] = usuario_db['total_ganho'] - usuario_db['total_gasto']
+                usuario_db['banca_atual'] = round(saldo_depois, 2)
+                salvar_usuario(u.email, usuario_db)
+            
+            add_log('🎯 STOP GAIN! Vitória alcançada!', 'win', u)
+            u.bot_rodando = False
+            break
+        else:
+            add_log(f'💀 LOSS! -${valor:.2f}', 'loss', u)
+            usuario_db = carregar_usuario(u.email)
+            if usuario_db:
+                usuario_db['total_losses'] += 1
+                usuario_db['total_gasto'] += valor
+                usuario_db['lucro_total'] = usuario_db['total_ganho'] - usuario_db['total_gasto']
+                salvar_usuario(u.email, usuario_db)
+            
+            if i < MARTINGALE:
+                add_log(f'   ➡️ Indo para GALE {i + 1}...', 'loss', u)
+            else:
+                add_log('   💀 CICLO COMPLETO PERDIDO!', 'loss', u)
+                u.bot_rodando = False
+
+def Payout_usuario(u, p):
+    try:
+        u.api.subscribe_strike_list(p, 1)
+        tentativas = 0
+        while tentativas < 20:
+            d = u.api.get_digital_current_profit(p, 1)
+            if d != False:
+                u.api.unsubscribe_strike_list(p, 1)
+                return round(int(d) / 100, 2)
+            time.sleep(0.5)
+            tentativas += 1
+        u.api.unsubscribe_strike_list(p, 1)
+        return PAYOUT_PADRAO
+    except:
+        return PAYOUT_PADRAO
+
+def executar_ciclo(direcao):
+    """Versão antiga - compatibilidade"""
+    for email, u in usuarios.items():
+        if u.conectado and u.bot_rodando:
+            executar_ciclo_usuario(u, direcao)
+            return
+
 def executar_ciclo(direcao):
     global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando
     bi = API.get_balance()
@@ -664,6 +772,49 @@ def executar_ciclo(direcao):
     add_log("=" * 50, 'info')
     bot_rodando = False
     add_log("⏹️ Ciclo concluído! Clique em CONECTAR e depois COMEÇAR OPERAR para novo ciclo.", 'info')
+
+def bot_loop_usuario(u):
+    """Bot loop ISOLADO para um usuário específico"""
+    global MODO_SERVIDOR
+    
+    nome_est = ESTRATEGIAS.get(u.estrategia_atual, ESTRATEGIAS['tesla_369'])['nome']
+    add_log(f'⚡ TESLA 369 - INICIANDO...', 'sensitive', u)
+    add_log(f'📊 Estratégia: {nome_est}', 'info', u)
+    add_log(f'🌐 Rodando no IP do usuário (CONEXÃO LOCAL)', 'win', u)
+    
+    u.BANCA_INICIAL_DO_BOT = u.api.get_balance()
+    u.STOP_GAIN_ATINGIDO = False
+    u.lucro = 0.0
+    u.NumDeOperacoes = 0
+    
+    add_log(f'📌 {u.par} | Timeframe: {u.timeframe_atual}s | 💰 ${u.BANCA_INICIAL_DO_BOT:.2f}', 'info', u)
+    add_log('🧿 SIGILOS ATIVADOS 🧿', 'win', u)
+    add_log('🔮 Buscando sinal...', 'info', u)
+    
+    funcao_sinal = MAPA_SINAIS.get(u.estrategia_atual, sinal_v_sensitivo)
+    
+    while u.bot_rodando and not u.STOP_GAIN_ATINGIDO:
+        try:
+            direcao = funcao_sinal()
+            if direcao:
+                executar_ciclo_usuario(u, direcao)
+                break
+            time.sleep(0.3)
+        except Exception as e:
+            add_log(f'Erro: {e}', 'error', u)
+            time.sleep(5)
+    
+    if not u.bot_rodando:
+        add_log('⏹️ Bot parado.', 'info', u)
+
+def bot_loop():
+    """Versão antiga - compatibilidade"""
+    # Encontrar primeiro usuário ativo
+    for email, u in usuarios.items():
+        if u.conectado:
+            bot_loop_usuario(u)
+            return
+    add_log('❌ Nenhum usuário conectado!', 'error')
 
 def bot_loop():
     global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO
@@ -1041,6 +1192,7 @@ HTML = r'''
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
             <span>⚡ TESLA 369</span>
+            <span id="modoConexao" style="color:#00ff88;font-size:9px">🔗 IP LOCAL</span>
             <span>v6.5.0 | GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
@@ -2213,6 +2365,97 @@ def status():
         }
     
     return jsonify({'conectado': conectado_iq, 'rodando': bot_rodando, 'email': email_usuario_atual, 'banca': API.get_balance() if API else 0, 'lucro': lucro, 'ops': NumDeOperacoes, 'sinal': ultimo_sinal, 'analise': ultima_analise, 'logs': get_logs_html(40), 'moedas': u.get('moedas', 0) if u else 0, 'estrategia': estrategia_atual, 'estrategia_nome': ESTRATEGIAS.get(estrategia_atual, {}).get('nome', '--'), 'skin_id': skin_atual, 'skins_status': skins_status, 'estrategias_compradas': estrategias_compradas, 'estrategias_disponiveis': estrategias_disponiveis})
+
+@app.route('/conectar_local', methods=['POST'])
+def conectar_local():
+    """CONEXÃO LOCAL - Usa o IP do próprio usuário"""
+    try:
+        d = request.get_json()
+        email = d.get('email', '').strip()
+        senha = d.get('senha', '').strip()
+        tipo = d.get('tipo', 'PRACTICE')
+        
+        if not email or not senha:
+            return jsonify({'ok': False, 'erro': 'Email e senha obrigatórios'})
+        
+        # Criar instância local
+        u = get_usuario(email)
+        
+        # Conectar na IQ Option DO IP DO USUÁRIO
+        u.api = IQ_Option(email, senha)
+        status_conn, reason = u.api.connect()
+        
+        if not status_conn:
+            return jsonify({'ok': False, 'erro': str(reason)[:100]})
+        
+        u.api.change_balance(tipo)
+        u.conectado = True
+        u.par = ESTRATEGIAS[u.estrategia_atual]['pares'][0]
+        u.timeframe_atual = ESTRATEGIAS[u.estrategia_atual]['timeframe']
+        
+        # Sincronizar com servidor (se existir)
+        try:
+            usuario_db = carregar_usuario(email) or criar_usuario(email)
+        except:
+            usuario_db = {'moedas': 1, 'skin_atual': 'skin_padrao'}
+        
+        u.skin_atual = usuario_db.get('skin_atual', 'skin_padrao')
+        
+        add_log(f'✅ Conectado LOCALMENTE! IP do usuário', 'win', u)
+        add_log(f'💰 Saldo: ${u.api.get_balance():.2f}', 'info', u)
+        
+        return jsonify({
+            'ok': True,
+            'modo': 'local',
+            'ip_usuario': True,
+            'moedas': usuario_db.get('moedas', 0),
+            'banca': u.api.get_balance()
+        })
+    except Exception as e:
+        return jsonify({'ok': False, 'erro': str(e)[:100]})
+
+@app.route('/operar_local', methods=['POST'])
+def operar_local():
+    """Inicia bot no IP do usuário"""
+    try:
+        d = request.get_json()
+        email = d.get('email', '')
+        
+        u = get_usuario(email)
+        if not u or not u.conectado:
+            return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+        
+        usuario_db = carregar_usuario(email)
+        if not usuario_db:
+            return jsonify({'ok': False, 'erro': 'Usuário não encontrado!'})
+        
+        if usuario_db.get('moedas', 0) < 1:
+            return jsonify({'ok': False, 'erro': 'Sem VOLTS! Compre na loja.'})
+        
+        usuario_db['moedas'] -= 1
+        usuario_db['total_ciclos'] += 1
+        salvar_usuario(email, usuario_db)
+        
+        # Iniciar bot em thread separada
+        if not u.bot_rodando:
+            u.bot_rodando = True
+            u.lucro = 0.0
+            u.NumDeOperacoes = 0
+            # Passar a instância do usuário para o bot_loop
+            u.bot_thread = threading.Thread(
+                target=lambda: bot_loop_usuario(u),
+                daemon=True
+            )
+            u.bot_thread.start()
+        
+        return jsonify({
+            'ok': True,
+            'modo': 'local',
+            'moedas': usuario_db['moedas'],
+            'mensagem': '🤖 Bot iniciado no seu IP!'
+        })
+    except Exception as e:
+        return jsonify({'ok': False, 'erro': str(e)[:100]})
 
 @app.route('/conectar', methods=['POST'])
 def conectar():
