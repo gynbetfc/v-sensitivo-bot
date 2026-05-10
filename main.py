@@ -1861,8 +1861,37 @@ function atualizarChat() {
 }
 
 
-// ========== EFEITOS VISUAIS DAS SKINS ==========
+// ========== EFEITOS VISUAIS DAS SKINS (SÓ APÓS LOGIN) ==========
+var skinEffectsStarted = false;
+
+function getActiveSkin() {
+    // Retorna o id da skin ativa baseado no CSS atual
+    if (document.body.style.background && document.body.style.background.includes('#000000') && document.querySelector('.header') && document.querySelector('.header').style.boxShadow.includes('153,51,255')) return 'skin_dark';
+    if (document.querySelector('#darkCanvas')) return 'skin_dark';
+    if (document.querySelector('#fireCanvas')) return 'skin_fire';
+    if (document.querySelector('#snowCanvas')) return 'skin_ice';
+    if (document.querySelector('#matrixHeaderCanvas')) return 'skin_matrix';
+    if (document.querySelector('#sakuraCanvas')) return 'skin_sakura';
+    if (document.querySelector('#thunderCanvas')) return 'skin_thunder';
+    if (document.querySelector('#oceanCanvas')) return 'skin_ocean';
+    if (document.querySelector('#sunsetCanvas')) return 'skin_sunset';
+    return null;
+}
+
 function initSkinEffects() {
+    if (skinEffectsStarted) return;
+    if (!conectadoIQ) return; // Só inicia após login
+    
+    skinEffectsStarted = true;
+    var skin = getActiveSkin();
+    if (!skin) return;
+    
+    // ========== CANVAS NO TERMINAL (para todas as skins com efeito) ==========
+    var terminal = document.getElementById('terminal');
+    if (terminal) {
+        terminal.style.position = 'relative';
+        terminal.style.overflow = 'hidden';
+    }
     // 🧬 TESLA MATRIX - Header + Terminal
     // Canvas do header
     var matrixHeader = document.getElementById('matrixHeaderCanvas');
@@ -2176,8 +2205,24 @@ function initSkinEffects() {
     }
 }
 
+// Iniciar efeitos apenas quando conectar
+var originalConectarIQ2 = conectarIQ;
+conectarIQ = function() {
+    originalConectarIQ2();
+    setTimeout(function() {
+        if (conectadoIQ) {
+            setTimeout(initSkinEffects, 800);
+        }
+    }, 1500);
+};
+
+// Também verificar ao carregar se já está conectado
 window.addEventListener('load', function() {
-    setTimeout(initSkinEffects, 300);
+    setTimeout(function() {
+        if (conectadoIQ) {
+            setTimeout(initSkinEffects, 500);
+        }
+    }, 1000);
 });
 
 </script>
