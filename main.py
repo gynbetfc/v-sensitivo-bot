@@ -1340,6 +1340,7 @@ function renderLoja(){
         var skinsStatus = d.skins_status || [];
         var grid=document.getElementById('skinsGrid');
         var html='';
+        skinsStatus.sort(function(a,b){ var ordem={'basica':1,'premium':2,'lendaria':3}; return (ordem[a.categoria]||1) - (ordem[b.categoria]||1); });
         skinsStatus.forEach(function(skin){
             var ativa=skin.ativo?' ativo':'';
             var btnHtml='';
@@ -1356,7 +1357,10 @@ function renderLoja(){
             }
             html+='<div class="skin-card'+ativa+'">';
             var catBadge = skin.categoria === 'lendaria' ? '💎 LENDÁRIA' : (skin.categoria === 'premium' ? '🔮 PREMIUM' : '⚡ BÁSICA');
+            var catBadge = skin.categoria === 'lendaria' ? '💎 LENDÁRIA' : (skin.categoria === 'premium' ? '🔮 PREMIUM' : '⚡ BÁSICA');
+            var catColor = skin.categoria === 'lendaria' ? '#ffd700' : (skin.categoria === 'premium' ? '#9933ff' : '#888');
             html+='<div class="skin-nome">'+skin.nome+'</div>';
+            html+='<div style="font-size:8px;color:'+catColor+';margin-bottom:4px">'+catBadge+'</div>';
             html+='<div class="skin-desc">'+skin.desc+'</div>';
             html+='<div style="margin-top:5px">';
             if(skin.preco_moedas==0){html+='<span class="badge-gratis">GRÁTIS</span>';}
