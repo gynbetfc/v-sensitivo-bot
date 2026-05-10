@@ -849,7 +849,7 @@ HTML = r'''
         .indicators{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px;margin-bottom:10px}
         .ind-card{background:#111;padding:6px;border-radius:8px;border:1px solid #222;text-align:center;font-size:10px}
         .ind-card .ind-label{color:#666;font-size:9px}.ind-card .ind-value{color:{{COR_DESTAQUE}};font-size:11px}
-        .terminal{background:#000;color:#00ff88;padding:12px;border-radius:10px;height:200px;overflow-y:auto;font-size:10px;line-height:1.4;white-space:pre-wrap;border:1px solid #333}
+        .terminal{background:#000;color:#00ff88;padding:12px;border-radius:10px;height:200px;overflow-y:auto;font-size:10px;line-height:1.4;white-space:pre-wrap;border:1px solid #333;position:relative;overflow:hidden}.terminal span{position:relative;z-index:1}
         .barra-status{display:flex;justify-content:space-between;padding:8px;background:{{COR_PANEL}};border-radius:10px;margin-top:10px;font-size:10px;flex-wrap:wrap;gap:5px}
         .status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
         .status-dot.active{background:#00ff88;animation:pulse 1s infinite}.status-dot.inactive{background:#888}
@@ -2022,12 +2022,20 @@ function initSkinEffects() {
         drawSunset();
     }
 
-    // 🌑 TESLA DARK - Partículas roxas flutuantes
+    // 🌑 TESLA DARK - Header + Terminal
     var darkCanvas = document.getElementById('darkCanvas');
     if (darkCanvas) {
         var dctx = darkCanvas.getContext('2d');
         darkCanvas.width = darkCanvas.parentElement.offsetWidth;
         darkCanvas.height = darkCanvas.parentElement.offsetHeight;
+        // Terminal
+        var td = document.getElementById('terminal');
+        if(td){td.style.position='relative';td.style.overflow='hidden';
+            var dc=document.createElement('canvas');dc.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.5';
+            td.insertBefore(dc,td.firstChild);var d2=dc.getContext('2d');dc.width=td.offsetWidth;dc.height=td.offsetHeight;
+            var pt=[];for(var i=0;i<20;i++)pt.push({x:Math.random()*dc.width,y:Math.random()*dc.height,r:Math.random()*3+1,vx:(Math.random()-0.5)*0.3,vy:-Math.random()*0.5-0.1,alpha:Math.random()*0.5+0.2});
+            function dd(){d2.clearRect(0,0,dc.width,dc.height);pt.forEach(function(p){d2.beginPath();d2.arc(p.x,p.y,p.r,0,Math.PI*2);d2.fillStyle='rgba(153,51,255,'+p.alpha+')';d2.fill();p.x+=p.vx;p.y+=p.vy;if(p.y<-10){p.y=dc.height+10;p.x=Math.random()*dc.width}});requestAnimationFrame(dd)}dd();
+        }
         var particles = [];
         for (var i = 0; i < 25; i++) {
             particles.push({
@@ -2061,12 +2069,20 @@ function initSkinEffects() {
         drawDark();
     }
     
-    // 🔥 TESLA FIRE - Chamas realistas
+    // 🔥 TESLA FIRE - Header + Terminal
     var fireCanvas = document.getElementById('fireCanvas');
     if (fireCanvas) {
         var fctx = fireCanvas.getContext('2d');
         fireCanvas.width = fireCanvas.parentElement.offsetWidth;
         fireCanvas.height = 80;
+        // Terminal
+        var tf=document.getElementById('terminal');
+        if(tf){tf.style.position='relative';tf.style.overflow='hidden';
+            var fc=document.createElement('canvas');fc.style.cssText='position:absolute;bottom:0;left:0;width:100%;height:60px;z-index:0;pointer-events:none;opacity:0.5';
+            tf.insertBefore(fc,tf.firstChild);var f2=fc.getContext('2d');fc.width=tf.offsetWidth;fc.height=60;
+            var fp=[];for(var i=0;i<30;i++)fp.push({x:Math.random()*fc.width,y:fc.height-Math.random()*20,vx:(Math.random()-0.5)*0.8,vy:-Math.random()*2-1,life:Math.random()*40+20,maxLife:60,size:Math.random()*4+2});
+            function fd(){f2.clearRect(0,0,fc.width,fc.height);fp.forEach(function(p,i){var pr=p.life/p.maxLife;var g=f2.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*pr);g.addColorStop(0,'rgba(255,255,100,'+pr+')');g.addColorStop(0.4,'rgba(255,150,0,'+pr*0.8+')');g.addColorStop(1,'rgba(255,0,0,0)');f2.beginPath();f2.arc(p.x,p.y,p.size*pr,0,Math.PI*2);f2.fillStyle=g;f2.fill();p.x+=p.vx;p.y+=p.vy;p.life--;if(p.life<=0){fp[i]={x:Math.random()*fc.width,y:fc.height-Math.random()*10,vx:(Math.random()-0.5)*0.8,vy:-Math.random()*2-1,life:Math.random()*40+20,maxLife:60,size:Math.random()*4+2}}});requestAnimationFrame(fd)}fd();
+        }
         var fireParticles = [];
         for (var i = 0; i < 50; i++) {
             fireParticles.push({
@@ -2111,9 +2127,17 @@ function initSkinEffects() {
         drawFire();
     }
     
-    // ❄️ TESLA ICE - Neve caindo
+    // ❄️ TESLA ICE - Header + Terminal
     var snowCanvas = document.getElementById('snowCanvas');
     if (snowCanvas) {
+        // Terminal
+        var ts=document.getElementById('terminal');
+        if(ts){ts.style.position='relative';ts.style.overflow='hidden';
+            var sc=document.createElement('canvas');sc.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.5';
+            ts.insertBefore(sc,ts.firstChild);var s2=sc.getContext('2d');sc.width=ts.offsetWidth;sc.height=ts.offsetHeight;
+            var sf=[];for(var i=0;i<25;i++)sf.push({x:Math.random()*sc.width,y:Math.random()*sc.height,r:Math.random()*3+1,speed:Math.random()*0.8+0.2,wind:(Math.random()-0.5)*0.3,opacity:Math.random()*0.6+0.4});
+            function sd(){s2.clearRect(0,0,sc.width,sc.height);sf.forEach(function(f){s2.beginPath();s2.arc(f.x,f.y,f.r,0,Math.PI*2);s2.fillStyle='rgba(255,255,255,'+f.opacity+')';s2.fill();f.y+=f.speed;f.x+=f.wind;if(f.y>sc.height+10){f.y=-10;f.x=Math.random()*sc.width}});requestAnimationFrame(sd)}sd();
+        }
         var sctx = snowCanvas.getContext('2d');
         snowCanvas.width = snowCanvas.parentElement.offsetWidth;
         snowCanvas.height = snowCanvas.parentElement.offsetHeight;
