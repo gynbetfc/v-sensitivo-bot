@@ -1097,7 +1097,7 @@ HTML = r'''
         <div class="terminal" id="terminal">📡 Aguardando...</div>
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
-            <span>⚡ TESLA 369</span>
+            <span>⚡ TESLA 369</span>\n            <span id="usuariosOnline" style="color:#ffd700;font-size:9px">👥 1 online</span>
             <span>v6.5.0 | GALE 2 | SG: 1 WIN</span>
         </div>
     </div>
@@ -1336,7 +1336,7 @@ function conectarIQ(){
 function desconectarIQ(){
     if(botAtivo){alert('⚠️ Pare o bot primeiro!');return;}
     if(confirm('Desconectar da IQ Option?')){
-        fetch('/parar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({desconectar:true})})
+        fetch('/parar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:emailLogado,desconectar:true})})
         .then(r=>r.json()).then(d=>{
             conectadoIQ=false;
             document.getElementById('btnConectar').style.display='inline-block';
@@ -1357,7 +1357,7 @@ function comecarOperar(){
     if(!conectadoIQ){alert('Conecte primeiro!');return}
     document.getElementById('btnOperar').disabled=true;
     document.getElementById('btnOperar').textContent='...';
-    fetch('/comecar_operar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})})
+    fetch('/comecar_operar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:emailLogado})})
     .then(r=>r.json()).then(d=>{
         if(d.ok){
             botAtivo=true;
@@ -1375,7 +1375,7 @@ function comecarOperar(){
 
 function pararBot(){
     if(!confirm('Parar o bot?'))return;
-    fetch('/parar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})})
+    fetch('/parar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:emailLogado})})
     .then(r=>r.json()).then(d=>{
         botAtivo=false;
         document.getElementById('btnOperar').style.display='inline-block';
@@ -1390,7 +1390,7 @@ function pararBot(){
 }
 
 function renderEstrategias(){
-    fetch('/status').then(r=>r.json()).then(d=>{
+    fetch('/status?email='+encodeURIComponent(emailLogado)).then(r=>r.json()).then(d=>{
         var estrategiasCompradas = d.estrategias_compradas || ['tesla_369'];
         // Garantir que tesla_369 sempre aparece
         if (!estrategiasCompradas.includes('tesla_369')) {
@@ -1425,7 +1425,7 @@ function selecionarEstrategia(key){
 
 
 function renderLojaCategoria(categoria) {
-    fetch('/status').then(r=>r.json()).then(d=>{
+    fetch('/status?email='+encodeURIComponent(emailLogado)).then(r=>r.json()).then(d=>{
         var skinsStatus = d.skins_status || [];
         var gridId = categoria === 'basica' ? 'skinsGridBasicas' : (categoria === 'premium' ? 'skinsGridPremium' : 'skinsGridLendarias');
         var grid = document.getElementById(gridId);
@@ -1467,7 +1467,7 @@ function renderLoja() {
 }
 
 function renderLoja(){
-    fetch('/status').then(r=>r.json()).then(d=>{
+    fetch('/status?email='+encodeURIComponent(emailLogado)).then(r=>r.json()).then(d=>{
         var skinsStatus = d.skins_status || [];
         var grid=document.getElementById('skinsGrid');
         var html='';
@@ -1544,7 +1544,7 @@ function comprarEstrategia(estrategiaId) {
 }
 
 function renderLojaEstrategias(){
-    fetch('/status').then(r=>r.json()).then(d=>{
+    fetch('/status?email='+encodeURIComponent(emailLogado)).then(r=>r.json()).then(d=>{
         var grid = document.getElementById('estrategiasLojaGrid');
         if (!grid) return;
         var html = '';
@@ -1779,7 +1779,7 @@ function resetarRelatorio(){
 }
 
 function atualizar(){
-    fetch('/status').then(r=>r.json()).then(d=>{
+    fetch('/status?email='+encodeURIComponent(emailLogado)).then(r=>r.json()).then(d=>{
         if(!d.conectado&&conectadoIQ){
             conectadoIQ=false;botAtivo=false;
             document.getElementById('btnConectar').style.display='inline-block';
@@ -1820,13 +1820,15 @@ function atualizar(){
             document.getElementById('preco').textContent=d.analise.preco?d.analise.preco.toFixed(5):'--';
         }
         if(d.logs)document.getElementById('terminal').innerHTML=d.logs;
+        if(d.usuarios_online){var elOnline=document.getElementById('usuariosOnline');if(elOnline)elOnline.textContent='👥 '+d.usuarios_online+' online';}
+        if(d.bots_ativos!==undefined){var modoEl=document.getElementById('modoConexao');if(modoEl)modoEl.textContent='🔗 IP LOCAL | 🤖 '+d.bots_ativos+' bots ativos';}
         document.getElementById('terminal').scrollTop=document.getElementById('terminal').scrollHeight;
     });
 }
 
 window.onload=function(){
     renderEstrategias();
-    fetch('/status').then(r=>r.json()).then(d=>{
+    fetch('/status?email='+encodeURIComponent(emailLogado)).then(r=>r.json()).then(d=>{
         if(d.estrategia){estrategiaSel=d.estrategia;renderEstrategias();}
         if(d.estrategia_nome)document.getElementById('estrategiaAtiva').textContent=d.estrategia_nome;
         if(d.conectado&&d.email){
@@ -2248,28 +2250,58 @@ def index(): return render_template_string(processar_html_com_skin())
 
 @app.route('/status')
 def status():
-    global skin_atual_global, estrategia_atual
-    if email_usuario_atual:
-        u = carregar_usuario(email_usuario_atual)
-        if u: skin_atual_global = u.get('skin_atual', 'skin_padrao')
-    u = carregar_usuario(email_usuario_atual) if email_usuario_atual else {}
+    email = request.args.get('email', '')
+    
+    # Se nao veio email, pegar do primeiro usuario conectado
+    if not email:
+        for e, u in usuarios.items():
+            if u.conectado:
+                email = e
+                break
+    
+    user = usuarios.get(email) if email else None
+    usuario_db = carregar_usuario(email) if email else {}
+    
+    # Skins
     skins_status = []
-    skins_compradas = u.get('skins_compradas', ['skin_padrao']) if u else ['skin_padrao']
-    skin_atual = u.get('skin_atual', 'skin_padrao') if u else 'skin_padrao'
+    skins_compradas = usuario_db.get('skins_compradas', ['skin_padrao'])
+    skin_atual = usuario_db.get('skin_atual', 'skin_padrao')
     for skin in SKINS:
-        skins_status.append({'id': skin['id'], 'nome': skin['nome'], 'desc': skin['desc'], 'preco_moedas': skin['preco_moedas'], 'categoria': skin.get('categoria', 'basica'), 'comprado': skin['id'] in skins_compradas, 'ativo': skin['id'] == skin_atual})
-    # NOVO: Calcular estrategias_disponiveis e estrategias_compradas
-    estrategias_compradas = u.get('estrategias_compradas', ['tesla_369']) if u else ['tesla_369']
+        skins_status.append({
+            'id': skin['id'], 'nome': skin['nome'], 'desc': skin['desc'],
+            'preco_moedas': skin['preco_moedas'], 'categoria': skin.get('categoria', 'basica'),
+            'comprado': skin['id'] in skins_compradas, 'ativo': skin['id'] == skin_atual
+        })
+    
+    # Estrategias
+    estrategias_compradas = usuario_db.get('estrategias_compradas', ['tesla_369'])
     estrategias_disponiveis = {}
     for key, est in ESTRATEGIAS.items():
         estrategias_disponiveis[key] = {
-            'nome': est['nome'],
-            'desc': est['desc'],
-            'preco_moedas': est.get('preco_moedas', 0),
-            'gratis': est.get('gratis', False)
+            'nome': est['nome'], 'desc': est['desc'],
+            'preco_moedas': est.get('preco_moedas', 0), 'gratis': est.get('gratis', False)
         }
     
-    return jsonify({'conectado': conectado_iq, 'rodando': bot_rodando, 'email': email_usuario_atual, 'banca': API.get_balance() if API else 0, 'lucro': lucro, 'ops': NumDeOperacoes, 'sinal': ultimo_sinal, 'analise': ultima_analise, 'logs': get_logs_html(40), 'moedas': u.get('moedas', 0) if u else 0, 'estrategia': estrategia_atual, 'estrategia_nome': ESTRATEGIAS.get(estrategia_atual, {}).get('nome', '--'), 'skin_id': skin_atual, 'skins_status': skins_status, 'estrategias_compradas': estrategias_compradas, 'estrategias_disponiveis': estrategias_disponiveis})
+    return jsonify({
+        'conectado': user.conectado if user else False,
+        'rodando': user.bot_rodando if user else False,
+        'email': user.email if user else '',
+        'banca': user.api.get_balance() if user and user.api else 0,
+        'lucro': user.lucro if user else 0,
+        'ops': user.NumDeOperacoes if user else 0,
+        'sinal': user.ultimo_sinal if user else 'Aguardando...',
+        'analise': user.ultima_analise if user else {},
+        'logs': get_logs_html(user, 40),
+        'moedas': usuario_db.get('moedas', 0),
+        'estrategia': user.estrategia_atual if user else 'tesla_369',
+        'estrategia_nome': ESTRATEGIAS.get(user.estrategia_atual if user else 'tesla_369', {}).get('nome', '--'),
+        'skin_id': skin_atual,
+        'skins_status': skins_status,
+        'estrategias_compradas': estrategias_compradas,
+        'estrategias_disponiveis': estrategias_disponiveis,
+        'usuarios_online': len([u for u in usuarios.values() if u.conectado]),
+        'bots_ativos': len([u for u in usuarios.values() if u.bot_rodando])
+    })
 
 @app.route('/conectar', methods=['POST'])
 def conectar():
