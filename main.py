@@ -55,7 +55,7 @@ PLANOS = [
 # ⭐ SKINS DA LOJA ⭐
 SKINS = [
     {
-        'id': 'skin_padrao', 'nome': '⚡ TESLA PADRÃO', 'desc': 'Tema escuro com raios dourados', 'preco_moedas': 0,
+        'id': 'skin_padrao', 'nome': '⚡ TESLA PADRÃO', 'desc': 'Tema escuro com raios dourados', 'preco_moedas': 0, 'categoria': 'basica',
         'cor_fundo': '#0a0a1a', 'cor_panel': '#1a1a3e', 'cor_destaque': '#ffd700', 'cor_texto': '#fff',
         'cor_botao': 'linear-gradient(135deg,#cc8800,#ffd700)', 'cor_tab_ativa': '#ffd700',
         'cor_header_bg': 'linear-gradient(135deg,#1a0000,#331100,#553300,#331100,#1a0000)', 'cor_header_borda': '#ffd700',
@@ -71,7 +71,7 @@ SKINS = [
         'css_extra': '.crystal-ball{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:130px;height:130px;background:radial-gradient(circle at 30% 30%,rgba(200,150,255,0.4) 0%,rgba(153,51,255,0.2) 30%,transparent 70%);border-radius:50%;z-index:0;animation:crystalGlow 4s ease-in-out infinite;pointer-events:none;border:2px solid rgba(153,51,255,0.3)}@keyframes crystalGlow{0%,100%{box-shadow:0 0 30px rgba(153,51,255,0.4),0 0 60px rgba(153,51,255,0.2)}50%{box-shadow:0 0 50px rgba(200,100,255,0.6),0 0 80px rgba(200,100,255,0.3)}}.crystal-ball::after{content:"🔮";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:45px;animation:floatCrystal 3s ease-in-out infinite}@keyframes floatCrystal{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-60%) scale(1.1)}}.mago{position:absolute;top:50%;font-size:30px;z-index:1;animation:magoFloat 2s ease-in-out infinite;pointer-events:none}.mago-esq{left:15px}.mago-dir{right:15px;animation-delay:0.5s}@keyframes magoFloat{0%,100%{transform:translateY(-50%)}50%{transform:translateY(-60%)}}'
     },
     {
-        'id': 'skin_brasil', 'nome': '🇧🇷 BRASIL', 'desc': 'Tema verde e amarelo', 'preco_moedas': 0,
+        'id': 'skin_brasil', 'nome': '🇧🇷 BRASIL', 'desc': 'Tema verde e amarelo', 'preco_moedas': 0, 'categoria': 'basica',
         'cor_fundo': '#001a0a', 'cor_panel': '#0a2a15', 'cor_destaque': '#ffd700', 'cor_texto': '#fff',
         'cor_botao': 'linear-gradient(135deg,#009933,#00cc44)', 'cor_tab_ativa': '#ffd700',
         'cor_header_bg': 'linear-gradient(135deg,#001a0a,#003315,#004d20,#003315,#001a0a)', 'cor_header_borda': '#ffd700',
@@ -1034,7 +1034,7 @@ HTML = r'''
         <div class="planos-grid">''' + ''.join([f'<div class="plano-card" id="plano{p["id"]}" onclick="selecionarPlano({p["id"]})"><div style="color:#ffd700;font-size:11px">{p["nome"]}</div><div class="plano-moedas">⚡ {p["moedas"]}</div><div class="plano-preco">R$ {p["preco"]:.2f}</div><div class="plano-desc">{p.get("desc","")}</div>{f"<div><span class=\"plano-desconto\">{p['desconto']}</span></div>" if p.get("desconto") else ""}{f"<div class=\"plano-tag\">{p['tag']}</div>" if p.get("tag") else ""}<button class="btn-loja btn-comprar-volts" style="display:none;margin-top:10px" id="btnPlano{p['id']}" onclick="event.stopPropagation();pagarComPix({p['id']})">💳 PAGAR COM PIX</button></div>' for p in PLANOS]) + r'''</div>
         </div>
         <div class="sub-panel" id="sub-panel-skins">
-            <div class="config-section"><h3>SKINS DISPONIVEIS</h3><p style="color:#888;font-size:10px">Personalize a aparencia do seu bot! Skins compradas ficam salvas.</p></div>
+            <div class="config-section"><h3>🎨 LOJA DE SKINS</h3><p style="color:#888;font-size:9px">⚡ Básicas (0-3 VOLTS) | 🔮 Premium (6 VOLTS) | 💎 Lendárias (9 VOLTS)</p><p style="color:#888;font-size:10px">Personalize a aparencia do seu bot! Skins compradas ficam salvas.</p></div>
             <div class="skins-grid" id="skinsGrid"></div>
         </div>
         <div class="sub-panel" id="sub-panel-estrategias">
@@ -1346,6 +1346,7 @@ function renderLoja(){
                 }
             }
             html+='<div class="skin-card'+ativa+'">';
+            var catBadge = skin.categoria === 'lendaria' ? '💎 LENDÁRIA' : (skin.categoria === 'premium' ? '🔮 PREMIUM' : '⚡ BÁSICA');
             html+='<div class="skin-nome">'+skin.nome+'</div>';
             html+='<div class="skin-desc">'+skin.desc+'</div>';
             html+='<div style="margin-top:5px">';
@@ -1785,7 +1786,7 @@ def status():
     skins_compradas = u.get('skins_compradas', ['skin_padrao']) if u else ['skin_padrao']
     skin_atual = u.get('skin_atual', 'skin_padrao') if u else 'skin_padrao'
     for skin in SKINS:
-        skins_status.append({'id': skin['id'], 'nome': skin['nome'], 'desc': skin['desc'], 'preco_moedas': skin['preco_moedas'], 'comprado': skin['id'] in skins_compradas, 'ativo': skin['id'] == skin_atual})
+        skins_status.append({'id': skin['id'], 'nome': skin['nome'], 'desc': skin['desc'], 'preco_moedas': skin['preco_moedas'], 'categoria': skin.get('categoria', 'basica'), 'comprado': skin['id'] in skins_compradas, 'ativo': skin['id'] == skin_atual})
     # NOVO: Calcular estrategias_disponiveis e estrategias_compradas
     estrategias_compradas = u.get('estrategias_compradas', ['tesla_369']) if u else ['tesla_369']
     estrategias_disponiveis = {}
