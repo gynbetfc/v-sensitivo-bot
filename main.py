@@ -2273,35 +2273,68 @@ def status():
 
 @app.route('/conectar', methods=['POST'])
 def conectar():
-    global API, email_usuario_atual, conectado_iq, skin_atual_global, par, timeframe_atual
     try:
-        d = request.get_json(); email = d.get('email', '').strip(); senha = d.get('senha', '').strip(); tipo = d.get('tipo', 'PRACTICE')
-        if not email or not senha: return jsonify({'ok': False, 'erro': 'Email e senha obrigatórios'})
-        email_usuario_atual = email
+        d = request.get_json()
+        email = d.get('email', '').strip()
+        senha = d.get('senha', '').strip()
+        tipo = d.get('tipo', 'PRACTICE')
         
-        # Criar API isolada para este usuário
-        API = IQ_Option(email, senha)
-        status_conn, reason = API.connect()
-        if not status_conn: return jsonify({'ok': False, 'erro': str(reason)[:100]})
-        API.change_balance(tipo)
-        conectado_iq = True
-        usuario = carregar_usuario(email) or criar_usuario(email)
+        if not email or not senha:
+            return jsonify({'ok': False, 'erro': 'Email e senha obrigatorios'})
+        
+        # ⭐ CRIAR INSTANCIA ISOLADA PARA ESTE USUARIO ⭐
+        user = get_usuario(email)
+        
+        # Conectar na IQ Option
+        user.api = IQ_Option(email, senha)
+        status_conn, reason = user.api.connect()
+        if not status_conn:
+            return jsonify({'ok': False, 'erro': str(reason)[:100]})
+        
+        user.api.change_balance(tipo)
+        user.conectado = True
+        user.par = ESTRATEGIAS[user.estrategia_atual]['pares'][0]
+        user.timeframe_atual = ESTRATEGIAS[user.estrategia_atual]['timeframe']
+        
+        # Carregar dados do banco
+        usuario_db = carregar_usuario(email) or criar_usuario(email)
         hoje = str(datetime.now())[:10]
-        if usuario.get('moedas_ganhas_hoje') != hoje:
-            usuario['moedas'] = usuario.get('moedas', 0) + 1; usuario['moedas_ganhas_hoje'] = hoje
-            salvar_usuario(email, usuario)
-        skin_atual_global = usuario.get('skin_atual', 'skin_padrao')
-        # Garantir que tesla_369 está nas estratégias compradas
-        if 'estrategias_compradas' not in usuario:
-            usuario['estrategias_compradas'] = ['tesla_369']
-        elif 'tesla_369' not in usuario['estrategias_compradas']:
-            usuario['estrategias_compradas'].append('tesla_369')
-        salvar_usuario(email, usuario)
-        par = ESTRATEGIAS[estrategia_atual]['pares'][0]; timeframe_atual = ESTRATEGIAS[estrategia_atual]['timeframe']
-        add_log('🔌 Conectando na IQ Option...', 'info')
-        add_log(f'✅ Conectado! ${API.get_balance():.2f} | ⚡ {usuario.get("moedas", 0)} VOLTS', 'win')
-        return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0)})
-    except Exception as e: return jsonify({'ok': False, 'erro': str(e)[:100]})
+        if usuario_db.get('moedas_ganhas_hoje') != hoje:
+            usuario_db['moedas'] = usuario_db.get('moedas', 0) + 1
+            usuario_db['moedas_ganhas_hoje'] = hoje
+            salvar_usuario(email, usuario_db)
+        
+        user.skin_atual = usuario_db.get('skin_atual', 'skin_padrao')
+        
+        if 'estrategias_compradas' not in usuario_db:
+            usuario_db['estrategias_compradas'] = ['tesla_369']
+        elif 'tesla_369' not in usuario_db['estrategias_compradas']:
+            usuario_db['estrategias_compradas'].append('tesla_369')
+        salvar_usuario(email, usuario_db)
+        
+        # Atualizar variaveis globais (compatibilidade)
+        global API, email_usuario_atual, conectado_iq, skin_atual_global, par, timeframe_atual
+        API = user.api
+        email_usuario_atual = email
+        conectado_iq = True
+        skin_atual_global = user.skin_atual
+        par = user.par
+        timeframe_atual = user.timeframe_atual
+        
+        add_log(f'✅ Conectado! ${user.api.get_balance():.2f} | ⚡ {usuario_db.get("moedas", 0)} VOLTS', 'win', user)
+        
+        online = len([u for u in usuarios.values() if u.conectado])
+        add_log(f'👥 Usuarios online: {online}', 'info', user)
+        
+        return jsonify({
+            'ok': True,
+            'email': email,
+            'moedas': usuario_db.get('moedas', 0),
+            'banca': user.api.get_balance(),
+            'usuarios_online': online
+        })
+    except Exception as e:
+        return jsonify({'ok': False, 'erro': str(e)[:100]})
 
 @app.route('/comecar_operar', methods=['POST'])
 def comecar_operar():
