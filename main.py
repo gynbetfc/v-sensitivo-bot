@@ -258,7 +258,7 @@ class UsuarioInstancia:
         self.bot_thread = None
         self.conectado = False
         self.ultimo_sinal = "Aguardando..."
-        self.user.user.ultima_analise = {}
+        self.api.user.ultima_analise = {}
         self.logs = []
         self.MAX_LOGS = 200
         self.skin_atual = "skin_padrao"
