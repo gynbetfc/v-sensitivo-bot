@@ -251,35 +251,70 @@ def criar_usuario(email):
     salvar_usuario(email, dados)
     return dados
 
-# ============= VARIÁVEIS GLOBAIS =============
-API, par = None, "EURUSD-OTC"
-estrategia_atual = 'tesla_369'
-timeframe_atual = 60
-lucro, NumDeOperacoes = 0.0, 0
-BANCA_INICIAL_DO_BOT, STOP_GAIN_ATINGIDO = 0, False
-bot_rodando, bot_thread = False, None
-conectado_iq = False
-ultimo_sinal, ultima_analise = "Aguardando...", {}
-logs_web, MAX_LOGS_WEB = [], 200
-email_usuario_atual = ""
-skin_atual_global = 'skin_padrao'
+# ============= SISTEMA MULTI-USUARIO ISOLADO =============
+
+class UsuarioInstancia:
+    def __init__(self, email):
+        self.email = email
+        self.api = None
+        self.par = "EURUSD-OTC"
+        self.estrategia_atual = "tesla_369"
+        self.timeframe_atual = 60
+        self.lucro = 0.0
+        self.NumDeOperacoes = 0
+        self.BANCA_INICIAL_DO_BOT = 0
+        self.STOP_GAIN_ATINGIDO = False
+        self.bot_rodando = False
+        self.bot_thread = None
+        self.conectado = False
+        self.ultimo_sinal = "Aguardando..."
+        self.ultima_analise = {}
+        self.logs = []
+        self.MAX_LOGS = 200
+        self.skin_atual = "skin_padrao"
+
+usuarios = {}
 pagamentos_pendentes = {}
 
-# ============= SISTEMA MULTI-USUÁRIO =============
-bots_ativos = {}  # {email: thread_do_bot}
+def get_usuario(email):
+    if email not in usuarios:
+        usuarios[email] = UsuarioInstancia(email)
+    return usuarios[email]
 
-def add_log(msg, tipo='info'):
-    global logs_web
-    t = datetime.now().strftime('%H:%M:%S')
-    logs_web.append({'time': t, 'msg': msg, 'tipo': tipo})
-    if len(logs_web) > MAX_LOGS_WEB: logs_web = logs_web[-MAX_LOGS_WEB:]
-    print(f"{t} - {msg}"); sys.stdout.flush()
+def email_da_sessao():
+    for email, u in usuarios.items():
+        if u.conectado:
+            return email
+    return ""
 
-def get_logs_html(limite=40):
+def add_log(msg, tipo='info', user=None):
+    if user is None:
+        for u in usuarios.values():
+            if u.conectado:
+                user = u
+                break
+    if user:
+        t = datetime.now().strftime('%H:%M:%S')
+        user.logs.append({'time': t, 'msg': msg, 'tipo': tipo})
+        if len(user.logs) > user.MAX_LOGS:
+            user.logs = user.logs[-user.MAX_LOGS:]
+        print(f"[{user.email[:15]}] {t} - {msg}")
+    else:
+        t = datetime.now().strftime('%H:%M:%S')
+        print(f"[SISTEMA] {t} - {msg}")
+    sys.stdout.flush()
+
+def get_logs_html(user=None, limite=40):
+    if user is None:
+        for u in usuarios.values():
+            if u.conectado:
+                user = u
+                break
     html = ''
-    for log in logs_web[-limite:]:
-        cor = {'win': '#00ff88', 'loss': '#ff4444', 'info': '#00ff88', 'sensitive': '#ff69b4', 'indicator': '#ffd700', 'error': '#ff4444'}.get(log['tipo'], '#00ff88')
-        html += f'<span style="color:#666">{log["time"]}</span> <span style="color:{cor}">{log["msg"]}</span>\n'
+    if user:
+        for log in user.logs[-limite:]:
+            cor = {'win': '#00ff88', 'loss': '#ff4444', 'info': '#00ff88', 'sensitive': '#ff69b4', 'indicator': '#ffd700', 'error': '#ff4444'}.get(log['tipo'], '#00ff88')
+            html += f'<span style="color:#666">{log["time"]}</span> <span style="color:{cor}">{log["msg"]}</span>\n'
     return html or '📡 Aguardando...'
 
 def conectar_api():
@@ -742,27 +777,27 @@ def executar_ciclo(direcao):
         if res > 0:
             add_log(f"🌟 WIN! +${lucro_liquido:.2f}", 'win')
             NumDeOperacoes += 1
-            u = carregar_usuario(email_usuario_atual)
+            u = carregar_usuario(email_da_sessao())
             if u:
                 u['total_wins'] += 1; u['total_ganho'] += abs(lucro_liquido)
                 u['lucro_total'] = u['total_ganho'] - u['total_gasto']
                 u['banca_atual'] = round(saldo_depois, 2)
                 u['historico_operacoes'].append({'data': str(datetime.now())[:19], 'resultado': 'WIN', 'valor': valor, 'lucro': lucro_liquido, 'estrategia': estrategia_atual})
                 u['dias_ativos'][str(datetime.now())[:10]] = u['dias_ativos'].get(str(datetime.now())[:10], 0) + 1
-                salvar_usuario(email_usuario_atual, u)
+                salvar_usuario(email_da_sessao(), u)
             STOP_GAIN_ATINGIDO = True
             add_log("🎯 STOP GAIN! Vitória alcançada - Bot PARADO!", 'win')
             break
         else:
             add_log(f"💀 LOSS! -${valor:.2f}", 'loss')
-            u = carregar_usuario(email_usuario_atual)
+            u = carregar_usuario(email_da_sessao())
             if u:
                 u['total_losses'] += 1; u['total_gasto'] += valor
                 u['lucro_total'] = u['total_ganho'] - u['total_gasto']
                 u['banca_atual'] = round(saldo_depois, 2)
                 u['historico_operacoes'].append({'data': str(datetime.now())[:19], 'resultado': 'LOSS', 'valor': valor, 'lucro': -valor, 'estrategia': estrategia_atual})
                 u['dias_ativos'][str(datetime.now())[:10]] = u['dias_ativos'].get(str(datetime.now())[:10], 0) + 1
-                salvar_usuario(email_usuario_atual, u)
+                salvar_usuario(email_da_sessao(), u)
             if i < MARTINGALE: add_log(f"   ➡️ Indo para GALE {i + 1}...", 'loss')
             else: add_log("   💀 CICLO COMPLETO PERDIDO! Bot PARADO!", 'loss')
     bf = API.get_balance()
@@ -795,7 +830,7 @@ def bot_loop_usuario(u):
     
     while u.bot_rodando and not u.STOP_GAIN_ATINGIDO:
         try:
-            direcao = funcao_sinal()
+            direcao = funcao_sinal(u)
             if direcao:
                 executar_ciclo_usuario(u, direcao)
                 break
@@ -891,7 +926,7 @@ def comprar_estrategia():
     data = request.json
     estrategia_id = data.get('estrategia_id', '')
     
-    if not email_usuario_atual:
+    if not email_da_sessao() or not usuarios.get(email_da_sessao()):
         return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
     
     if estrategia_id not in ESTRATEGIAS:
@@ -905,12 +940,12 @@ def comprar_estrategia():
             u['estrategias_compradas'] = ['tesla_369']
         if estrategia_id not in u['estrategias_compradas']:
             u['estrategias_compradas'].append(estrategia_id)
-            salvar_usuario(email_usuario_atual, u)
+            salvar_usuario(email_da_sessao(), u)
         return jsonify({'ok': True, 'msg': f'Estratégia {estrategia["nome"]} ativada gratuitamente!', 'moedas': u['moedas']})
     
-    u = carregar_usuario(email_usuario_atual)
+    u = carregar_usuario(email_da_sessao())
     if not u:
-        u = criar_usuario(email_usuario_atual)
+        u = criar_usuario(email_da_sessao())
     
     if estrategia_id in u.get('estrategias_compradas', []):
         return jsonify({'ok': False, 'erro': 'Estratégia já comprada!'})
@@ -923,7 +958,7 @@ def comprar_estrategia():
     if 'estrategias_compradas' not in u:
         u['estrategias_compradas'] = ['tesla_369']
     u['estrategias_compradas'].append(estrategia_id)
-    salvar_usuario(email_usuario_atual, u)
+    salvar_usuario(email_da_sessao(), u)
     
     return jsonify({'ok': True, 'msg': f'Estratégia {estrategia["nome"]} comprada!', 'moedas': u['moedas']})
 
@@ -1485,7 +1520,7 @@ function pararBot(){
 }
 
 function renderEstrategias(){
-    fetch('/status').then(r=>r.json()).then(d=>{
+    fetch('/status?email='+encodeURIComponent(emailLogado)).then(r=>r.json()).then(d=>{
         var estrategiasCompradas = d.estrategias_compradas || ['tesla_369'];
         // Garantir que tesla_369 sempre aparece
         if (!estrategiasCompradas.includes('tesla_369')) {
@@ -1520,7 +1555,7 @@ function selecionarEstrategia(key){
 
 
 function renderLojaCategoria(categoria) {
-    fetch('/status').then(r=>r.json()).then(d=>{
+    fetch('/status?email='+encodeURIComponent(emailLogado)).then(r=>r.json()).then(d=>{
         var skinsStatus = d.skins_status || [];
         var gridId = categoria === 'basica' ? 'skinsGridBasicas' : (categoria === 'premium' ? 'skinsGridPremium' : 'skinsGridLendarias');
         var grid = document.getElementById(gridId);
@@ -1562,7 +1597,7 @@ function renderLoja() {
 }
 
 function renderLoja(){
-    fetch('/status').then(r=>r.json()).then(d=>{
+    fetch('/status?email='+encodeURIComponent(emailLogado)).then(r=>r.json()).then(d=>{
         var skinsStatus = d.skins_status || [];
         var grid=document.getElementById('skinsGrid');
         var html='';
@@ -1639,7 +1674,7 @@ function comprarEstrategia(estrategiaId) {
 }
 
 function renderLojaEstrategias(){
-    fetch('/status').then(r=>r.json()).then(d=>{
+    fetch('/status?email='+encodeURIComponent(emailLogado)).then(r=>r.json()).then(d=>{
         var grid = document.getElementById('estrategiasLojaGrid');
         if (!grid) return;
         var html = '';
@@ -1874,7 +1909,7 @@ function resetarRelatorio(){
 }
 
 function atualizar(){
-    fetch('/status').then(r=>r.json()).then(d=>{
+    fetch('/status?email='+encodeURIComponent(emailLogado)).then(r=>r.json()).then(d=>{
         if(!d.conectado&&conectadoIQ){
             conectadoIQ=false;botAtivo=false;
             document.getElementById('btnConectar').style.display='inline-block';
@@ -1921,7 +1956,7 @@ function atualizar(){
 
 window.onload=function(){
     renderEstrategias();
-    fetch('/status').then(r=>r.json()).then(d=>{
+    fetch('/status?email='+encodeURIComponent(emailLogado)).then(r=>r.json()).then(d=>{
         if(d.estrategia){estrategiaSel=d.estrategia;renderEstrategias();}
         if(d.estrategia_nome)document.getElementById('estrategiaAtiva').textContent=d.estrategia_nome;
         if(d.conectado&&d.email){
@@ -2343,11 +2378,23 @@ def index(): return render_template_string(processar_html_com_skin())
 
 @app.route('/status')
 def status():
-    global skin_atual_global, estrategia_atual
-    if email_usuario_atual:
-        u = carregar_usuario(email_usuario_atual)
+    email = request.args.get('email', email_da_sessao())
+    user = usuarios.get(email) if email else None
+    usuario_db = carregar_usuario(email) if email else {}
+    skins_status = []
+    skins_compradas = usuario_db.get('skins_compradas', ['skin_padrao'])
+    skin_atual = usuario_db.get('skin_atual', 'skin_padrao')
+    for skin in SKINS:
+        skins_status.append({'id': skin['id'], 'nome': skin['nome'], 'desc': skin['desc'], 'preco_moedas': skin['preco_moedas'], 'categoria': skin.get('categoria', 'basica'), 'comprado': skin['id'] in skins_compradas, 'ativo': skin['id'] == skin_atual})
+    estrategias_compradas = usuario_db.get('estrategias_compradas', ['tesla_369'])
+    estrategias_disponiveis = {}
+    for key, est in ESTRATEGIAS.items():
+        estrategias_disponiveis[key] = {'nome': est['nome'], 'desc': est['desc'], 'preco_moedas': est.get('preco_moedas', 0), 'gratis': est.get('gratis', False)}
+    return jsonify({'conectado': user.conectado if user else False, 'rodando': user.bot_rodando if user else False, 'email': user.email if user else '', 'banca': user.api.get_balance() if user and user.api else 0, 'lucro': user.lucro if user else 0, 'ops': user.NumDeOperacoes if user else 0, 'sinal': user.ultimo_sinal if user else 'Aguardando...', 'analise': user.ultima_analise if user else {}, 'logs': get_logs_html(user, 40), 'moedas': usuario_db.get('moedas', 0), 'estrategia': user.estrategia_atual if user else 'tesla_369', 'estrategia_nome': ESTRATEGIAS.get(user.estrategia_atual if user else 'tesla_369', {}).get('nome', '--'), 'skin_id': skin_atual, 'skins_status': skins_status, 'estrategias_compradas': estrategias_compradas, 'estrategias_disponiveis': estrategias_disponiveis, 'usuarios_online': len([u for u in usuarios.values() if u.conectado])})
+    if email_da_sessao():
+        u = carregar_usuario(email_da_sessao())
         if u: skin_atual_global = u.get('skin_atual', 'skin_padrao')
-    u = carregar_usuario(email_usuario_atual) if email_usuario_atual else {}
+    u = carregar_usuario(email_da_sessao()) if email_da_sessao() else {}
     skins_status = []
     skins_compradas = u.get('skins_compradas', ['skin_padrao']) if u else ['skin_padrao']
     skin_atual = u.get('skin_atual', 'skin_padrao') if u else 'skin_padrao'
@@ -2364,7 +2411,7 @@ def status():
             'gratis': est.get('gratis', False)
         }
     
-    return jsonify({'conectado': conectado_iq, 'rodando': bot_rodando, 'email': email_usuario_atual, 'banca': API.get_balance() if API else 0, 'lucro': lucro, 'ops': NumDeOperacoes, 'sinal': ultimo_sinal, 'analise': ultima_analise, 'logs': get_logs_html(40), 'moedas': u.get('moedas', 0) if u else 0, 'estrategia': estrategia_atual, 'estrategia_nome': ESTRATEGIAS.get(estrategia_atual, {}).get('nome', '--'), 'skin_id': skin_atual, 'skins_status': skins_status, 'estrategias_compradas': estrategias_compradas, 'estrategias_disponiveis': estrategias_disponiveis})
+    return jsonify({'conectado': conectado_iq, 'rodando': bot_rodando, 'email': email_da_sessao(), 'banca': API.get_balance() if API else 0, 'lucro': lucro, 'ops': NumDeOperacoes, 'sinal': ultimo_sinal, 'analise': ultima_analise, 'logs': get_logs_html(40), 'moedas': u.get('moedas', 0) if u else 0, 'estrategia': estrategia_atual, 'estrategia_nome': ESTRATEGIAS.get(estrategia_atual, {}).get('nome', '--'), 'skin_id': skin_atual, 'skins_status': skins_status, 'estrategias_compradas': estrategias_compradas, 'estrategias_disponiveis': estrategias_disponiveis})
 
 @app.route('/conectar_local', methods=['POST'])
 def conectar_local():
@@ -2459,63 +2506,72 @@ def operar_local():
 
 @app.route('/conectar', methods=['POST'])
 def conectar():
-    global API, email_usuario_atual, conectado_iq, skin_atual_global, par, timeframe_atual
     try:
-        d = request.get_json(); email = d.get('email', '').strip(); senha = d.get('senha', '').strip(); tipo = d.get('tipo', 'PRACTICE')
-        if not email or not senha: return jsonify({'ok': False, 'erro': 'Email e senha obrigatórios'})
-        email_usuario_atual = email
-        
-        # Criar API isolada para este usuário
-        API = IQ_Option(email, senha)
-        status_conn, reason = API.connect()
-        if not status_conn: return jsonify({'ok': False, 'erro': str(reason)[:100]})
-        API.change_balance(tipo)
-        conectado_iq = True
-        usuario = carregar_usuario(email) or criar_usuario(email)
+        d = request.get_json()
+        email = d.get('email', '').strip()
+        senha = d.get('senha', '').strip()
+        tipo = d.get('tipo', 'PRACTICE')
+        if not email or not senha:
+            return jsonify({'ok': False, 'erro': 'Email e senha obrigatorios'})
+        user = get_usuario(email)
+        user.api = IQ_Option(email, senha)
+        status_conn, reason = user.api.connect()
+        if not status_conn:
+            return jsonify({'ok': False, 'erro': str(reason)[:100]})
+        user.api.change_balance(tipo)
+        user.conectado = True
+        user.par = ESTRATEGIAS[user.estrategia_atual]['pares'][0]
+        user.timeframe_atual = ESTRATEGIAS[user.estrategia_atual]['timeframe']
+        usuario_db = carregar_usuario(email) or criar_usuario(email)
         hoje = str(datetime.now())[:10]
-        if usuario.get('moedas_ganhas_hoje') != hoje:
-            usuario['moedas'] = usuario.get('moedas', 0) + 1; usuario['moedas_ganhas_hoje'] = hoje
-            salvar_usuario(email, usuario)
-        skin_atual_global = usuario.get('skin_atual', 'skin_padrao')
-        # Garantir que tesla_369 está nas estratégias compradas
-        if 'estrategias_compradas' not in usuario:
-            usuario['estrategias_compradas'] = ['tesla_369']
-        elif 'tesla_369' not in usuario['estrategias_compradas']:
-            usuario['estrategias_compradas'].append('tesla_369')
-        salvar_usuario(email, usuario)
-        par = ESTRATEGIAS[estrategia_atual]['pares'][0]; timeframe_atual = ESTRATEGIAS[estrategia_atual]['timeframe']
-        add_log('🔌 Conectando na IQ Option...', 'info')
-        add_log(f'✅ Conectado! ${API.get_balance():.2f} | ⚡ {usuario.get("moedas", 0)} VOLTS', 'win')
-        return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0)})
-    except Exception as e: return jsonify({'ok': False, 'erro': str(e)[:100]})
+        if usuario_db.get('moedas_ganhas_hoje') != hoje:
+            usuario_db['moedas'] = usuario_db.get('moedas', 0) + 1
+            usuario_db['moedas_ganhas_hoje'] = hoje
+            salvar_usuario(email, usuario_db)
+        user.skin_atual = usuario_db.get('skin_atual', 'skin_padrao')
+        if 'estrategias_compradas' not in usuario_db:
+            usuario_db['estrategias_compradas'] = ['tesla_369']
+        salvar_usuario(email, usuario_db)
+        add_log(f'✅ Conectado! ${user.api.get_balance():.2f} | {usuario_db.get("moedas", 0)} VOLTS', 'win', user)
+        return jsonify({'ok': True, 'email': email, 'moedas': usuario_db.get('moedas', 0), 'banca': user.api.get_balance(), 'usuarios_online': len([u for u in usuarios.values() if u.conectado])})
+    except Exception as e:
+        return jsonify({'ok': False, 'erro': str(e)[:100]})
+
 
 @app.route('/comecar_operar', methods=['POST'])
 def comecar_operar():
-    global bot_rodando, bot_thread, lucro, NumDeOperacoes
     try:
-        if not conectado_iq: return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
-        usuario = carregar_usuario(email_usuario_atual)
-        if not usuario: return jsonify({'ok': False, 'erro': 'Usuário não encontrado!'})
-        
-        estrategias_compradas = usuario.get('estrategias_compradas', ['tesla_369'])
-        if estrategia_atual not in estrategias_compradas:
-            preco = ESTRATEGIAS.get(estrategia_atual, {}).get('preco_moedas', 0)
-            return jsonify({'ok': False, 'erro': f'Estratégia não comprada! Compre na loja por {preco} ⚡'})
-        
-        if usuario.get('moedas', 0) < 1: return jsonify({'ok': False, 'erro': 'Sem VOLTS!'})
-        usuario['moedas'] -= 1; usuario['total_ciclos'] += 1; salvar_usuario(email_usuario_atual, usuario)
-        lucro = 0.0; NumDeOperacoes = 0
-        
-        # Iniciar bot em thread separada para este usuário
-        email_atual = email_usuario_atual
-        if not bot_rodando:
-            bot_rodando = True
-            bot_thread = threading.Thread(target=bot_loop, daemon=True)
-            bot_thread.start()
-            bots_ativos[email_atual] = bot_thread
-        
-        return jsonify({'ok': True, 'moedas': usuario['moedas']})
-    except Exception as e: return jsonify({'ok': False, 'erro': str(e)[:100]})
+        d = request.get_json() or {}
+        email = d.get('email', email_da_sessao())
+        if not email:
+            return jsonify({'ok': False, 'erro': 'Nenhum usuario conectado!'})
+        user = usuarios.get(email)
+        if not user or not user.conectado:
+            return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+        usuario_db = carregar_usuario(email)
+        if not usuario_db:
+            return jsonify({'ok': False, 'erro': 'Usuario nao encontrado!'})
+        estrategias_compradas = usuario_db.get('estrategias_compradas', ['tesla_369'])
+        if user.estrategia_atual not in estrategias_compradas:
+            return jsonify({'ok': False, 'erro': 'Estrategia nao comprada!'})
+        if usuario_db.get('moedas', 0) < 1:
+            return jsonify({'ok': False, 'erro': 'Sem VOLTS!'})
+        if user.bot_rodando:
+            return jsonify({'ok': False, 'erro': 'Bot ja esta rodando!'})
+        usuario_db['moedas'] -= 1
+        usuario_db['total_ciclos'] += 1
+        salvar_usuario(email, usuario_db)
+        user.lucro = 0.0
+        user.NumDeOperacoes = 0
+        user.bot_rodando = True
+        user.STOP_GAIN_ATINGIDO = False
+        user.bot_thread = threading.Thread(target=lambda: bot_loop_usuario(user), daemon=True)
+        user.bot_thread.start()
+        add_log('🚀 Bot iniciado!', 'win', user)
+        return jsonify({'ok': True, 'moedas': usuario_db['moedas']})
+    except Exception as e:
+        return jsonify({'ok': False, 'erro': str(e)[:100]})
+
 
 @app.route('/parar', methods=['POST'])
 def parar():
@@ -2525,16 +2581,20 @@ def parar():
     if data.get('desconectar'):
         conectado_iq = False
         # Remover bot da lista de ativos
-        if email_usuario_atual in bots_ativos:
-            del bots_ativos[email_usuario_atual]
+        if email_da_sessao() in bots_ativos:
+            del bots_ativos[email_da_sessao()]
     return jsonify({'ok': True})
 
 @app.route('/selecionar_estrategia', methods=['POST'])
 def selecionar_estrategia():
-    global estrategia_atual, par, timeframe_atual
-    d = request.get_json(); est_key = d.get('estrategia', 'v_sensitivo')
-    if est_key in ESTRATEGIAS:
-        estrategia_atual = est_key; par = ESTRATEGIAS[est_key]['pares'][0]; timeframe_atual = ESTRATEGIAS[est_key]['timeframe']
+    d = request.get_json()
+    est_key = d.get('estrategia', 'tesla_369')
+    email = d.get('email', email_da_sessao())
+    user = usuarios.get(email) if email else None
+    if est_key in ESTRATEGIAS and user:
+        user.estrategia_atual = est_key
+        user.par = ESTRATEGIAS[est_key]['pares'][0]
+        user.timeframe_atual = ESTRATEGIAS[est_key]['timeframe']
         return jsonify({'ok': True})
     return jsonify({'ok': False})
 
@@ -2542,37 +2602,37 @@ def selecionar_estrategia():
 def comprar_skin():
     global skin_atual_global
     d = request.get_json(); skin_id = d.get('skin_id', '')
-    if not email_usuario_atual: return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+    if not email_da_sessao() or not usuarios.get(email_da_sessao()): return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
     skin = next((s for s in SKINS if s['id'] == skin_id), None)
     if not skin: return jsonify({'ok': False, 'erro': 'Skin não encontrada'})
-    usuario = carregar_usuario(email_usuario_atual)
+    usuario = carregar_usuario(email_da_sessao())
     if not usuario: return jsonify({'ok': False, 'erro': 'Usuário não encontrado'})
     if skin['preco_moedas'] == 0:
         if 'skins_compradas' not in usuario: usuario['skins_compradas'] = ['skin_padrao']
         if skin_id not in usuario['skins_compradas']: usuario['skins_compradas'].append(skin_id)
-        usuario['skin_atual'] = skin_id; salvar_usuario(email_usuario_atual, usuario); skin_atual_global = skin_id
+        usuario['skin_atual'] = skin_id; salvar_usuario(email_da_sessao(), usuario); skin_atual_global = skin_id
         return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0), 'msg': 'Skin grátis ativada!'})
     if 'skins_compradas' not in usuario: usuario['skins_compradas'] = ['skin_padrao']
     if skin_id in usuario['skins_compradas']:
-        usuario['skin_atual'] = skin_id; salvar_usuario(email_usuario_atual, usuario); skin_atual_global = skin_id
+        usuario['skin_atual'] = skin_id; salvar_usuario(email_da_sessao(), usuario); skin_atual_global = skin_id
         return jsonify({'ok': True, 'moedas': usuario['moedas'], 'msg': 'Skin já comprada! Ativada.'})
     if usuario.get('moedas', 0) < skin['preco_moedas']: return jsonify({'ok': False, 'erro': f'VOLTS insuficientes! Precisa de {skin["preco_moedas"]} ⚡'})
     usuario['moedas'] -= skin['preco_moedas']; usuario['skins_compradas'].append(skin_id); usuario['skin_atual'] = skin_id
-    salvar_usuario(email_usuario_atual, usuario); skin_atual_global = skin_id
+    salvar_usuario(email_da_sessao(), usuario); skin_atual_global = skin_id
     return jsonify({'ok': True, 'moedas': usuario['moedas'], 'msg': f'Skin {skin["nome"]} comprada e ativada!'})
 
 @app.route('/ativar_skin', methods=['POST'])
 def ativar_skin():
     d = request.get_json(); skin_id = d.get('skin_id', '')
-    if not email_usuario_atual: return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+    if not email_da_sessao() or not usuarios.get(email_da_sessao()): return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
     skin = next((s for s in SKINS if s['id'] == skin_id), None)
     if not skin: return jsonify({'ok': False, 'erro': 'Skin não encontrada'})
-    usuario = carregar_usuario(email_usuario_atual)
+    usuario = carregar_usuario(email_da_sessao())
     if not usuario: return jsonify({'ok': False, 'erro': 'Usuário não encontrado'})
     if 'skins_compradas' not in usuario: usuario['skins_compradas'] = ['skin_padrao']
     if skin['preco_moedas'] > 0 and skin_id not in usuario['skins_compradas']: return jsonify({'ok': False, 'erro': 'Compre a skin primeiro!'})
     if skin_id not in usuario['skins_compradas']: usuario['skins_compradas'].append(skin_id)
-    usuario['skin_atual'] = skin_id; salvar_usuario(email_usuario_atual, usuario)
+    usuario['skin_atual'] = skin_id; salvar_usuario(email_da_sessao(), usuario)
     global skin_atual_global; skin_atual_global = skin_id
     return jsonify({'ok': True})
 
