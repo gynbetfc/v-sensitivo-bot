@@ -1341,6 +1341,7 @@ function renderLoja(){
         var grid=document.getElementById('skinsGrid');
         var html='';
         skinsStatus.sort(function(a,b){ var ordem={'basica':1,'premium':2,'lendaria':3}; return (ordem[a.categoria]||1) - (ordem[b.categoria]||1); });
+        var lastCat = '';
         skinsStatus.forEach(function(skin){
             var ativa=skin.ativo?' ativo':'';
             var btnHtml='';
@@ -1356,7 +1357,23 @@ function renderLoja(){
                 }
             }
             html+='<div class="skin-card'+ativa+'">';
+            if (skin.categoria !== lastCat) {
+                var tituloCat = skin.categoria === 'lendaria' ? '💎 LENDÁRIAS (9 VOLTS)' : (skin.categoria === 'premium' ? '🔮 PREMIUM (6 VOLTS)' : '⚡ BÁSICAS (0-3 VOLTS)');
+                var corCat = skin.categoria === 'lendaria' ? '#ffd700' : (skin.categoria === 'premium' ? '#9933ff' : '#888');
+                html += '<div style="grid-column:1/-1;text-align:center;padding:10px;margin:10px 0 5px;background:linear-gradient(90deg,transparent,'+corCat+'22,transparent);border-left:3px solid '+corCat+';border-right:3px solid '+corCat+'">';
+                html += '<span style="color:'+corCat+';font-size:13px;font-weight:bold;letter-spacing:2px">'+tituloCat+'</span>';
+                html += '</div>';
+                lastCat = skin.categoria;
+            }
             var catBadge = skin.categoria === 'lendaria' ? '💎 LENDÁRIA' : (skin.categoria === 'premium' ? '🔮 PREMIUM' : '⚡ BÁSICA');
+            if (skin.categoria !== lastCat) {
+                var tituloCat = skin.categoria === 'lendaria' ? '💎 LENDÁRIAS (9 VOLTS)' : (skin.categoria === 'premium' ? '🔮 PREMIUM (6 VOLTS)' : '⚡ BÁSICAS (0-3 VOLTS)');
+                var corCat = skin.categoria === 'lendaria' ? '#ffd700' : (skin.categoria === 'premium' ? '#9933ff' : '#888');
+                html += '<div style="grid-column:1/-1;text-align:center;padding:10px;margin:10px 0 5px;background:linear-gradient(90deg,transparent,'+corCat+'22,transparent);border-left:3px solid '+corCat+';border-right:3px solid '+corCat+'">';
+                html += '<span style="color:'+corCat+';font-size:13px;font-weight:bold;letter-spacing:2px">'+tituloCat+'</span>';
+                html += '</div>';
+                lastCat = skin.categoria;
+            }
             var catBadge = skin.categoria === 'lendaria' ? '💎 LENDÁRIA' : (skin.categoria === 'premium' ? '🔮 PREMIUM' : '⚡ BÁSICA');
             var catColor = skin.categoria === 'lendaria' ? '#ffd700' : (skin.categoria === 'premium' ? '#9933ff' : '#888');
             html+='<div class="skin-nome">'+skin.nome+'</div>';
