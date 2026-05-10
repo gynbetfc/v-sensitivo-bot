@@ -1006,7 +1006,13 @@ HTML = r'''
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TESLA 369">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#ffd700"><meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>⚡ TESLA 369 BOT v6.5.0</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
@@ -1209,6 +1215,7 @@ HTML = r'''
             <button class="btn btn-info" id="btnConectar" onclick="conectarIQ()">🔌 CONECTAR</button>
             <button class="btn btn-stop" id="btnDesconectar" onclick="desconectarIQ()" style="display:none">🔌 DESCONECTAR</button>
             <button class="btn btn-start" id="btnOperar" onclick="comecarOperar()" style="display:none">🚀 COMEÇAR OPERAR</button>
+            <button id="btnInstalar" onclick="instalarApp()" style="display:none;background:linear-gradient(135deg,#ff8c00,#ffd700);color:#000;padding:10px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:11px;font-family:Courier New,monospace;margin-top:8px;width:100%">📱 INSTALAR APP</button>
             <button class="btn btn-stop" id="btnParar" onclick="pararBot()" style="display:none">⏹️ PARAR</button>
         </div></div>
         <div class="dashboard">
@@ -2358,6 +2365,41 @@ window.addEventListener('load', function() {
 });
 
 </script>
+
+    <script>
+    var deferredPrompt;
+    window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        deferredPrompt = e;
+        setTimeout(function() {
+            var btn = document.getElementById('btnInstalar');
+            if(btn) btn.style.display = 'block';
+        }, 3000);
+    });
+    
+    function instalarApp() {
+        if(deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then(function(result) {
+                if(result.outcome === 'accepted') {
+                    document.getElementById('btnInstalar').style.display = 'none';
+                }
+                deferredPrompt = null;
+            });
+        } else {
+            alert('📱 Abra o menu do navegador e toque em "Adicionar a tela inicial"');
+        }
+    }
+    
+    if('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js');
+    }
+    
+    if(window.matchMedia('(display-mode: standalone)').matches) {
+        console.log('App instalado');
+    }
+    </script>
+
 </body>
 </html>
 '''
@@ -2382,6 +2424,70 @@ def processar_html_com_skin():
 @app.route('/')
 def index(): return render_template_string(processar_html_com_skin())
 
+
+@app.route('/manifest.json')
+def manifest():
+    data = {
+        "name": "TESLA 369 BOT",
+        "short_name": "TESLA369",
+        "description": "Bot de opcoes binarias Tesla 369",
+        "start_url": "/",
+        "display": "standalone",
+        "background_color": "#0a0a1a",
+        "theme_color": "#ffd700",
+        "orientation": "portrait",
+        "icons": [
+            {"src": "/icon-192.png", "sizes": "192x192", "type": "image/png"},
+            {"src": "/icon-512.png", "sizes": "512x512", "type": "image/png"}
+        ]
+    }
+    return jsonify(data)
+
+@app.route('/sw.js')
+def service_worker():
+    return app.response_class(
+        response="""self.addEventListener('install', function(e) {
+    e.waitUntil(caches.open('tesla369-v1').then(function(cache) {
+        return cache.addAll(['/']);
+    }));
+});
+self.addEventListener('fetch', function(e) {
+    e.respondWith(caches.match(e.request).then(function(r) {
+        return r || fetch(e.request);
+    }));
+});""",
+        mimetype='application/javascript'
+    )
+
+@app.route('/icon-192.png')
+def icon_192():
+    try:
+        from PIL import Image, ImageDraw
+    except:
+        return app.response_class('', mimetype='image/png')
+    img = Image.new('RGB', (192, 192), color='#0a0a1a')
+    d = ImageDraw.Draw(img)
+    d.rectangle([20, 20, 172, 172], fill='#ffd700', outline='#ff8c00', width=3)
+    from io import BytesIO
+    buf = BytesIO()
+    img.save(buf, format='PNG')
+    buf.seek(0)
+    return app.response_class(buf.read(), mimetype='image/png')
+
+@app.route('/icon-512.png')
+def icon_512():
+    try:
+        from PIL import Image, ImageDraw
+    except:
+        return app.response_class('', mimetype='image/png')
+    img = Image.new('RGB', (512, 512), color='#0a0a1a')
+    d = ImageDraw.Draw(img)
+    d.rectangle([50, 50, 462, 462], fill='#ffd700', outline='#ff8c00', width=5)
+    from io import BytesIO
+    buf = BytesIO()
+    img.save(buf, format='PNG')
+    buf.seek(0)
+    return app.response_class(buf.read(), mimetype='image/png')
 @app.route('/status')
 def status():
     email = request.args.get('email', '')
