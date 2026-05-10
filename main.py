@@ -2338,42 +2338,93 @@ def conectar():
 
 @app.route('/comecar_operar', methods=['POST'])
 def comecar_operar():
-    global bot_rodando, bot_thread, lucro, NumDeOperacoes
     try:
-        if not conectado_iq: return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
-        usuario = carregar_usuario(email_usuario_atual)
-        if not usuario: return jsonify({'ok': False, 'erro': 'Usuário não encontrado!'})
+        d = request.get_json() or {}
+        email = d.get('email', email_usuario_atual if 'email_usuario_atual' in dir() else '')
         
-        estrategias_compradas = usuario.get('estrategias_compradas', ['tesla_369'])
-        if estrategia_atual not in estrategias_compradas:
-            preco = ESTRATEGIAS.get(estrategia_atual, {}).get('preco_moedas', 0)
-            return jsonify({'ok': False, 'erro': f'Estratégia não comprada! Compre na loja por {preco} ⚡'})
+        if not email:
+            return jsonify({'ok': False, 'erro': 'Email nao encontrado! Conecte primeiro.'})
         
-        if usuario.get('moedas', 0) < 1: return jsonify({'ok': False, 'erro': 'Sem VOLTS!'})
-        usuario['moedas'] -= 1; usuario['total_ciclos'] += 1; salvar_usuario(email_usuario_atual, usuario)
-        lucro = 0.0; NumDeOperacoes = 0
+        # Obter instancia do usuario
+        user = get_usuario(email)
+        if not user or not user.conectado:
+            return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
         
-        # Iniciar bot em thread separada para este usuário
-        email_atual = email_usuario_atual
-        if not bot_rodando:
-            bot_rodando = True
-            bot_thread = threading.Thread(target=bot_loop, daemon=True)
-            bot_thread.start()
-            bots_ativos[email_atual] = bot_thread
+        usuario_db = carregar_usuario(email)
+        if not usuario_db:
+            return jsonify({'ok': False, 'erro': 'Usuario nao encontrado!'})
         
-        return jsonify({'ok': True, 'moedas': usuario['moedas']})
-    except Exception as e: return jsonify({'ok': False, 'erro': str(e)[:100]})
+        # Verificar estrategia comprada
+        estrategias_compradas = usuario_db.get('estrategias_compradas', ['tesla_369'])
+        if user.estrategia_atual not in estrategias_compradas:
+            preco = ESTRATEGIAS.get(user.estrategia_atual, {}).get('preco_moedas', 0)
+            return jsonify({'ok': False, 'erro': f'Estrategia nao comprada! Compre na loja por {preco} ⚡'})
+        
+        # Verificar VOLTS
+        if usuario_db.get('moedas', 0) < 1:
+            return jsonify({'ok': False, 'erro': 'Sem VOLTS! Compre na loja.'})
+        
+        # Verificar se ja tem bot rodando para ESTE usuario
+        if user.bot_rodando:
+            return jsonify({'ok': False, 'erro': 'Bot ja esta rodando para este usuario! Pare primeiro.'})
+        
+        # Consumir 1 VOLT
+        usuario_db['moedas'] -= 1
+        usuario_db['total_ciclos'] += 1
+        salvar_usuario(email, usuario_db)
+        
+        # Iniciar bot ISOLADO para este usuario
+        user.lucro = 0.0
+        user.NumDeOperacoes = 0
+        user.bot_rodando = True
+        user.STOP_GAIN_ATINGIDO = False
+        
+        user.bot_thread = threading.Thread(
+            target=lambda: bot_loop_usuario(user),
+            daemon=True
+        )
+        user.bot_thread.start()
+        
+        # Atualizar variaveis globais (compatibilidade)
+        global bot_rodando, bot_thread, lucro, NumDeOperacoes
+        bot_rodando = True
+        bot_thread = user.bot_thread
+        lucro = 0.0
+        NumDeOperacoes = 0
+        
+        add_log(f'🚀 Bot iniciado! Estrategia: {ESTRATEGIAS[user.estrategia_atual]["nome"]}', 'win', user)
+        
+        return jsonify({
+            'ok': True,
+            'moedas': usuario_db['moedas'],
+            'usuarios_online': len([u for u in usuarios.values() if u.conectado]),
+            'bots_ativos': len([u for u in usuarios.values() if u.bot_rodando])
+        })
+    except Exception as e:
+        return jsonify({'ok': False, 'erro': str(e)[:100]})
 
 @app.route('/parar', methods=['POST'])
 def parar():
     global bot_rodando, conectado_iq
     data = request.json or {}
-    bot_rodando = False
+    email = data.get('email', email_usuario_atual if 'email_usuario_atual' in dir() else '')
+    
+    # Parar instancia especifica do usuario
+    user = get_usuario(email) if email else None
+    
     if data.get('desconectar'):
+        if user:
+            user.bot_rodando = False
+            user.conectado = False
+            user.STOP_GAIN_ATINGIDO = True
         conectado_iq = False
-        # Remover bot da lista de ativos
-        if email_usuario_atual in bots_ativos:
-            del bots_ativos[email_usuario_atual]
+        bot_rodando = False
+    else:
+        if user:
+            user.bot_rodando = False
+            user.STOP_GAIN_ATINGIDO = True
+        bot_rodando = False
+    
     return jsonify({'ok': True})
 
 @app.route('/selecionar_estrategia', methods=['POST'])
