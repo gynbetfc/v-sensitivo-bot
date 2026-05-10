@@ -291,19 +291,43 @@ pagamentos_pendentes = {}
 # ============= SISTEMA MULTI-USUÁRIO =============
 bots_ativos = {}  # {email: thread_do_bot}
 
-def add_log(msg, tipo='info'):
-    global logs_web
-    t = datetime.now().strftime('%H:%M:%S')
-    logs_web.append({'time': t, 'msg': msg, 'tipo': tipo})
-    if len(logs_web) > MAX_LOGS_WEB: logs_web = logs_web[-MAX_LOGS_WEB:]
-    print(f"{t} - {msg}"); sys.stdout.flush()
+def add_log(msg, tipo='info', user=None):
+    # Se nenhum usuario especificado, tenta usar o primeiro conectado
+    if user is None:
+        for u in usuarios.values():
+            if u.conectado:
+                user = u
+                break
+    
+    if user:
+        t = datetime.now().strftime('%H:%M:%S')
+        user.logs.append({'time': t, 'msg': msg, 'tipo': tipo})
+        if len(user.logs) > user.MAX_LOGS:
+            user.logs = user.logs[-user.MAX_LOGS:]
+        print(f"[{user.email[:20]}] {t} - {msg}")
+    else:
+        # Fallback: log do sistema (sem usuario)
+        t = datetime.now().strftime('%H:%M:%S')
+        print(f"[SISTEMA] {t} - {msg}")
+    sys.stdout.flush()
 
-def get_logs_html(limite=40):
+def get_logs_html(user=None, limite=40):
+    # Se nenhum usuario especificado, tenta usar o primeiro conectado
+    if user is None:
+        for u in usuarios.values():
+            if u.conectado:
+                user = u
+                break
+    
     html = ''
-    for log in logs_web[-limite:]:
-        cor = {'win': '#00ff88', 'loss': '#ff4444', 'info': '#00ff88', 'sensitive': '#ff69b4', 'indicator': '#ffd700', 'error': '#ff4444'}.get(log['tipo'], '#00ff88')
-        html += f'<span style="color:#666">{log["time"]}</span> <span style="color:{cor}">{log["msg"]}</span>\n'
+    if user:
+        for log in user.logs[-limite:]:
+            cor = {'win': '#00ff88', 'loss': '#ff4444', 'info': '#00ff88', 'sensitive': '#ff69b4', 'indicator': '#ffd700', 'error': '#ff4444'}.get(log['tipo'], '#00ff88')
+            html += f'<span style="color:#666">{log["time"]}</span> <span style="color:{cor}">{log["msg"]}</span>\n'
     return html or '📡 Aguardando...'
+    
+# Compatibilidade: logs_web ainda existe para codigo legado
+logs_web, MAX_LOGS_WEB = [], 200
 
 def conectar_api():
     while bot_rodando:
