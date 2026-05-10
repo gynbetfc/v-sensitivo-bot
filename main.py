@@ -1137,14 +1137,7 @@ HTML = r'''
         </div>
         
         <!-- ABA INTERNA: AVISOS -->
-        <div style="background:#1a0000;border:2px solid #ff4444;border-radius:15px;padding:20px;margin:10px 0">
-            <p style="color:#ff4444;font-size:16px;text-align:center;font-weight:bold;margin-bottom:15px">⚠️ A VERDADE SOBRE A IQ OPTION</p>
-            <p style="color:#ff8888;font-size:12px;line-height:1.8;text-align:justify">
-                A <span style="color:#ffd700;font-weight:bold">IQ Option</span> <span style="color:#ff4444;font-weight:bold">NÃO É</span> o mercado financeiro real. 
-                Ela é uma <span style="color:#ffd700;font-weight:bold">corretora de opções binárias</span> - um modelo onde você aposta se o preço vai subir ou descer.
-                Não há compra real de ativos. É uma <span style="color:#ff4444;font-weight:bold">aposta</span> contra a própria corretora.
-            </p>
-        </div>
+        
         
         <div style="background:#0a0a1a;border:1px solid #ffd700;border-radius:15px;padding:20px;margin:10px 0">
             <p style="color:#ffd700;font-size:14px;font-weight:bold;margin-bottom:10px">🤖 COMO O ROBÔ FUNCIONA</p>
@@ -1163,7 +1156,7 @@ HTML = r'''
             <p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify">
                 <span style="color:#ff4444">• Você pode PERDER TODO seu dinheiro.</span><br>
                 • Opções binárias são proibidas em vários países.<br>
-                • A IQ Option pode recusar pagamentos ou encerrar contas.<br>
+                
                 • O Martingale é perigoso: 3 perdas seguidas consomem 7x o valor inicial.<br>
                 • <span style="color:#ffd700">NUNCA invista dinheiro que você não pode perder.</span><br>
                 • Resultados passados não garantem resultados futuros.<br>
@@ -1174,6 +1167,15 @@ HTML = r'''
         <div style="text-align:center;margin-top:15px">
             <p style="color:#ffd700;font-size:12px;font-weight:bold">🎯 A INTENÇÃO É GANHAR DINHEIRO - MAS COM CONSCIÊNCIA</p>
             <p style="color:#888;font-size:10px;margin-top:5px">Use com responsabilidade. Conheça os riscos. Comece pela conta PRACTICE.</p>
+        </div>
+        
+        <div style="background:#1a0000;border:2px solid #ff4444;border-radius:15px;padding:20px;margin:10px 0">
+            <p style="color:#ff4444;font-size:16px;text-align:center;font-weight:bold;margin-bottom:15px">⚠️ A VERDADE SOBRE A IQ OPTION</p>
+            <p style="color:#ff8888;font-size:12px;line-height:1.8;text-align:justify">
+                A <span style="color:#ffd700;font-weight:bold">IQ Option</span> <span style="color:#ff4444;font-weight:bold">NÃO É</span> o mercado financeiro real. 
+                Ela é uma <span style="color:#ffd700;font-weight:bold">corretora de opções binárias</span> - um modelo onde você aposta se o preço vai subir ou descer.
+                Não há compra real de ativos. É uma <span style="color:#ff4444;font-weight:bold">aposta</span> contra a própria corretora.
+            </p>
         </div>
     </div>
     
