@@ -241,7 +241,40 @@ def criar_usuario(email):
     salvar_usuario(email, dados)
     return dados
 
-# ============= VARIÁVEIS GLOBAIS =============
+# ============= SISTEMA MULTI-USUARIO =============
+class UsuarioInstancia:
+    """Cada usuario tem sua propria instancia isolada"""
+    def __init__(self, email):
+        self.email = email
+        self.api = None
+        self.par = "EURUSD-OTC"
+        self.estrategia_atual = "tesla_369"
+        self.timeframe_atual = 60
+        self.lucro = 0.0
+        self.NumDeOperacoes = 0
+        self.BANCA_INICIAL_DO_BOT = 0
+        self.STOP_GAIN_ATINGIDO = False
+        self.bot_rodando = False
+        self.bot_thread = None
+        self.conectado = False
+        self.ultimo_sinal = "Aguardando..."
+        self.ultima_analise = {}
+        self.logs = []
+        self.MAX_LOGS = 200
+        self.skin_atual = "skin_padrao"
+
+# Dicionario de usuarios ativos
+usuarios = {}
+
+def get_usuario(email):
+    """Obtem ou cria instancia do usuario"""
+    if email not in usuarios:
+        usuarios[email] = UsuarioInstancia(email)
+    return usuarios[email]
+
+# ============= VARIÁVEIS GLOBAIS (LEGADO) =============
+# Mantidas para compatibilidade enquanto migramos
+
 API, par = None, "EURUSD-OTC"
 estrategia_atual = 'tesla_369'
 timeframe_atual = 60
