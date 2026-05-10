@@ -257,8 +257,8 @@ class UsuarioInstancia:
         self.bot_rodando = False
         self.bot_thread = None
         self.conectado = False
-        self.user.ultimo_sinal = "Aguardando..."
-        self.user.ultima_analise = {}
+        self.ultimo_sinal = "Aguardando..."
+        self.ultima_analise = {}
         self.logs = []
         self.MAX_LOGS = 200
         self.skin_atual = "skin_padrao"
@@ -410,7 +410,7 @@ def sinal_v_sensitivo(user=None):
         if len(v) < 20: return None
         rs = rsi(v); m5 = sma(v, 5); m10 = sma(v, 10); m20 = sma(v, 20)
         bs, _, bi = bollinger(v); mc = macd(v); st = estocastico(v); pc = v[-1]['close']
-        user.user.ultima_analise = {'preco': pc, 'rsi': rs, 'mm5': m5, 'mm10': m10, 'mm20': m20, 'stoch': st, 'fase': fase}
+        user.ultima_analise = {'preco': pc, 'rsi': rs, 'mm5': m5, 'mm10': m10, 'mm20': m20, 'stoch': st, 'fase': fase}
         sc = sp = 0; sinais = []
         if m5 and m20:
             if m5 > m20: sc += 20; sinais.append("MM5>MM20")
@@ -439,9 +439,9 @@ def sinal_v_sensitivo(user=None):
         add_log(f"🔮{fase} | C={sc} P={sp} | {' '.join(sinais[:3])}", 'indicator')
         dif = abs(sc-sp)
         if sc > sp and dif >= 15:
-            user.user.ultimo_sinal = f"🔮 CALL ({sc}x{sp})"; add_log(f"CALL!", 'sensitive'); return 'call'
+            user.ultimo_sinal = f"🔮 CALL ({sc}x{sp})"; add_log(f"CALL!", 'sensitive'); return 'call'
         if sp > sc and dif >= 15:
-            user.user.ultimo_sinal = f"🔮 PUT ({sp}x{sc})"; add_log(f"PUT!", 'sensitive'); return 'put'
+            user.ultimo_sinal = f"🔮 PUT ({sp}x{sc})"; add_log(f"PUT!", 'sensitive'); return 'put'
         user.ultimo_sinal = "⏳..."; return None
     except Exception as e: add_log(f"Erro: {e}", 'error'); return None
 
@@ -456,7 +456,7 @@ def sinal_tesla_369(user=None):
     try:
         agora = datetime.now()
         if not ((agora.minute >= 1.55 and agora.minute <= 2) or (agora.minute >= 6.55 and agora.minute <= 7)):
-            user.user.ultimo_sinal = f"⏳ Min: {agora.minute}:{agora.second:02d}"; return None
+            user.ultimo_sinal = f"⏳ Min: {agora.minute}:{agora.second:02d}"; return None
         v = user.api.get_candles(user.par, user.timeframe_atual, 6, time.time())
         if len(v) < 6: return None
         velas = []
@@ -465,8 +465,8 @@ def sinal_tesla_369(user=None):
             elif vela['open'] > vela['close']: velas.append('r')
             else: velas.append('d')
         cores = ''.join(velas); pc = v[-1]['close']
-        user.user.ultima_analise = {'preco': pc, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': None, 'stoch': None, 'fase': 'TESLA-369'}
-        add_log(f"⚡ TESLA-369 | Velas: {cores}", 'indicator'); user.user.ultimo_sinal = f"⚡ 369: {cores}"
+        user.ultima_analise = {'preco': pc, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': None, 'stoch': None, 'fase': 'TESLA-369'}
+        add_log(f"⚡ TESLA-369 | Velas: {cores}", 'indicator'); user.ultimo_sinal = f"⚡ 369: {cores}"
         if velas[0] == 'g' and velas[3] == 'g' and velas[4] == 'r' and velas[5] == 'r' and 'd' not in cores:
             add_log("TESLA-369: CALL!", 'sensitive'); return 'call'
         if velas[0] == 'r' and velas[3] == 'r' and velas[4] == 'g' and velas[5] == 'g' and 'd' not in cores:
@@ -485,7 +485,7 @@ def sinal_mhi_filtrado(user=None):
     try:
         agora = datetime.now()
         if not ((agora.minute >= 4.55 and agora.minute <= 5) or (agora.minute >= 9.55 and agora.minute <= 10)):
-            user.user.ultimo_sinal = f"⏳ MHI: {agora.minute}:{agora.second:02d}"; return None
+            user.ultimo_sinal = f"⏳ MHI: {agora.minute}:{agora.second:02d}"; return None
         v = user.api.get_candles(user.par, user.timeframe_atual, 22, time.time())
         if len(v) < 22: return None
         velas = []
@@ -494,7 +494,7 @@ def sinal_mhi_filtrado(user=None):
             elif vela['open'] > vela['close']: velas.append('r')
             else: velas.append('d')
         cores = ''.join(velas); preco_atual = v[-1]['close']; mm = sum(c['close'] for c in v[:-1]) / 21
-        user.user.ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': 'MHI-FILTRADO'}
+        user.ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': 'MHI-FILTRADO'}
         add_log(f"📊 MHI | Velas: {cores} | MM: {mm:.5f}", 'indicator')
         if preco_atual > mm and cores.count('r') > cores.count('g') and 'd' not in cores and velas[4] == 'r':
             user.ultimo_sinal = "📊 CALL (MHI)"; add_log("MHI: CALL!", 'sensitive'); return 'call'
@@ -514,14 +514,14 @@ def sinal_terceira_igual_primeira(user=None):
         return None
     try:
         agora = datetime.now()
-        if agora.minute % 5 != 0: user.user.ultimo_sinal = f"⏳ Min: {agora.minute} (5/10/15...)"; return None
-        if agora.second < 55: user.user.ultimo_sinal = f"⏳ Seg: {agora.second}s (aguardando 55)"; return None
+        if agora.minute % 5 != 0: user.ultimo_sinal = f"⏳ Min: {agora.minute} (5/10/15...)"; return None
+        if agora.second < 55: user.ultimo_sinal = f"⏳ Seg: {agora.second}s (aguardando 55)"; return None
         time.sleep(2)
         v = user.api.get_candles(user.par, user.timeframe_atual, 22, time.time())
         if len(v) < 22: return None
         vela_atual = 'g' if v[-1]['open'] < v[-1]['close'] else ('r' if v[-1]['open'] > v[-1]['close'] else 'd')
         preco_atual = v[-1]['close']; mm = sum(c['close'] for c in v[:-1]) / 21
-        user.user.ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': '3ª=1ª'}
+        user.ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': '3ª=1ª'}
         add_log(f"3️⃣ 3=1 | Vela: {vela_atual} | MM: {mm:.5f}", 'indicator')
         if preco_atual > mm and vela_atual == 'g': user.ultimo_sinal = "3️⃣ CALL (3=1)"; add_log("3ª=1ª: CALL!", 'sensitive'); return 'call'
         if preco_atual < mm and vela_atual == 'r': user.ultimo_sinal = "3️⃣ PUT (3=1)"; add_log("3ª=1ª: PUT!", 'sensitive'); return 'put'
@@ -539,7 +539,7 @@ def sinal_quadrante_de_7(user=None):
     try:
         agora = datetime.now()
         if not ((agora.minute >= 1.55 and agora.minute <= 2) or (agora.minute >= 6.55 and agora.minute <= 7)):
-            user.user.ultimo_sinal = f"⏳ Q7: {agora.minute}:{agora.second:02d}"; return None
+            user.ultimo_sinal = f"⏳ Q7: {agora.minute}:{agora.second:02d}"; return None
         v = user.api.get_candles(user.par, user.timeframe_atual, 22, time.time())
         if len(v) < 22: return None
         velas = []
@@ -548,7 +548,7 @@ def sinal_quadrante_de_7(user=None):
             elif vela['open'] > vela['close']: velas.append('r')
             else: velas.append('d')
         cores = ''.join(velas); preco_atual = v[-1]['close']; mm = sum(c['close'] for c in v[:-1]) / 21
-        user.user.ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': 'QUADRANTE-7'}
+        user.ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': 'QUADRANTE-7'}
         add_log(f"7️⃣ Q7 | Velas: {cores}", 'indicator')
         if preco_atual > mm and cores.count('g') < cores.count('r') and 'd' not in cores:
             user.ultimo_sinal = "7️⃣ CALL (Q7)"; add_log("Q7: CALL!", 'sensitive'); return 'call'
@@ -576,7 +576,7 @@ def sinal_fluxo_de_velas(user=None):
             elif vela['open'] > vela['close']: velas.append('r')
             else: velas.append('d')
         cores = ''.join(velas); preco_atual = v[-1]['close']; mm = sum(c['close'] for c in v[:-1]) / 21
-        user.user.ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': 'FLUXO'}
+        user.ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': 'FLUXO'}
         add_log(f"🌊 FLUXO | Velas: {cores}", 'indicator')
         if preco_atual > mm and cores == 'ggggg' and 'd' not in cores:
             user.ultimo_sinal = "🌊 CALL (FLUXO)"; add_log("FLUXO: CALL!", 'sensitive'); return 'call'
@@ -604,7 +604,7 @@ def sinal_reversao(user=None):
             elif vela['open'] > vela['close']: velas.append('r')
             else: velas.append('d')
         cores = ''.join(velas); preco_atual = v[-1]['close']; mm = sum(c['close'] for c in v[:-1]) / 21
-        user.user.ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': 'REVERSÃO'}
+        user.ultima_analise = {'preco': preco_atual, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': round(mm, 6), 'stoch': None, 'fase': 'REVERSÃO'}
         add_log(f"🔄 REV | Velas: {cores}", 'indicator')
         if preco_atual > mm and cores == 'grgrg':
             user.ultimo_sinal = "🔄 CALL (REV)"; add_log("REVERSÃO: CALL!", 'sensitive'); return 'call'
@@ -623,7 +623,7 @@ def sinal_m5(user=None):
         return None
     try:
         agora = datetime.now()
-        if agora.minute % 15 != 0: user.user.ultimo_sinal = f"⏳ M5: min {agora.minute} (15/30/45/0)"; return None
+        if agora.minute % 15 != 0: user.ultimo_sinal = f"⏳ M5: min {agora.minute} (15/30/45/0)"; return None
         time.sleep(2)
         v = user.api.get_candles(user.par, user.timeframe_atual, 7, time.time())
         if len(v) < 7: return None
@@ -633,7 +633,7 @@ def sinal_m5(user=None):
             elif vela['open'] > vela['close']: velas.append('r')
             else: velas.append('d')
         pc = v[-1]['close']
-        user.user.ultima_analise = {'preco': pc, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': None, 'stoch': None, 'fase': 'M5'}
+        user.ultima_analise = {'preco': pc, 'rsi': None, 'mm5': None, 'mm10': None, 'mm20': None, 'stoch': None, 'fase': 'M5'}
         add_log(f"⏰ M5 | Velas: {''.join(velas)}", 'indicator')
         if velas[0] == velas[1] and velas[1] == velas[2] and velas[3] == velas[4] and velas[4] == velas[5]:
             if velas[6] == 'g' and 'd' not in velas: user.ultimo_sinal = "⏰ PUT (M5)"; add_log("M5: PUT!", 'sensitive'); return 'put'
@@ -673,8 +673,15 @@ def calcular_entradas(b, p, g):
     if soma > b: entradas[-1] = round(entradas[-1] - (soma-b) - 0.02, 2)
     return [max(1, e) for e in entradas]
 
-def pegar_timestamp():
-    v = user.api.get_candles(user.par, user.timeframe_atual, 1, time.time())
+def pegar_timestamp(u=None):
+    if u is None:
+        for e, us in usuarios.items():
+            if us.conectado:
+                u = us
+                break
+    if u is None:
+        return 0
+    v = u.api.get_candles(u.par, u.timeframe_atual, 1, time.time())
     return v[0]['from'] if v else 0
 
 def aguardar_inicio_vela():
