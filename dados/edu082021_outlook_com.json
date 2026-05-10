@@ -1,6 +1,6 @@
 {
   "email": "edu082021@outlook.com",
-  "moedas": 2880,
+  "moedas": 2877,
   "moedas_ganhas_hoje": "2026-05-10",
   "total_ciclos": 7,
   "total_wins": 3,
@@ -57,7 +57,7 @@
   "dias_ativos": {
     "2026-05-09": 6
   },
-  "skin_atual": "skin_matrix",
+  "skin_atual": "skin_neon",
   "skins_compradas": [
     "skin_padrao",
     "skin_magos",
@@ -70,7 +70,8 @@
     "skin_ocean",
     "skin_sakura",
     "skin_thunder",
-    "skin_sunset"
+    "skin_sunset",
+    "skin_neon"
   ],
   "estrategias_compradas": [
     "terceira_igual_primeira",
