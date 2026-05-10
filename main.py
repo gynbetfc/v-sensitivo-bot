@@ -69,7 +69,7 @@ SKINS = [
         'id': 'skin_neon', 'nome': '💜 TESLA NEON', 'desc': 'Brilho neon roxo pulsante', 'preco_moedas': 3, 'categoria': 'basica', 'cor_fundo': '#0a0015', 'cor_panel': '#150025', 'cor_destaque': '#cc00ff', 'cor_texto': '#e0c0ff', 'cor_botao': 'linear-gradient(135deg,#8800cc,#cc00ff)', 'cor_tab_ativa': '#cc00ff', 'cor_header_bg': 'linear-gradient(135deg,#0a0015,#150030,#200050,#150030,#0a0015)', 'cor_header_borda': '#cc00ff', 'header_extra': '<div class="neon-glow"></div>', 'css_extra': '.neon-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:200px;background:radial-gradient(circle,rgba(204,0,255,0.2) 0%,transparent 70%);border-radius:50%;z-index:0;animation:neonPulse 2s ease-in-out infinite;pointer-events:none}@keyframes neonPulse{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:0.5}50%{transform:translate(-50%,-50%) scale(1.3);opacity:0.8}}body{background:#0a0015!important}.header{border-color:#cc00ff!important;box-shadow:0 0 30px rgba(204,0,255,0.4)}'
     },
     {
-        'id': 'skin_matrix', 'nome': '🧬 TESLA MATRIX', 'desc': 'Chuva de caracteres verdes', 'preco_moedas': 9, 'categoria': 'lendaria', 'cor_fundo': '#000000', 'cor_panel': '#0a0a0a', 'cor_destaque': '#00ff00', 'cor_texto': '#00cc00', 'cor_botao': 'linear-gradient(135deg,#004400,#00ff00)', 'cor_tab_ativa': '#00ff00', 'cor_header_bg': 'linear-gradient(135deg,#000000,#001100,#003300,#001100,#000000)', 'cor_header_borda': '#00ff00', 'header_extra': '<canvas id="matrixHeaderCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.5"></canvas>', 'css_extra': 'body{background:#000000!important}.header{border-color:#00ff00!important;box-shadow:0 0 30px rgba(0,255,0,0.4)}.terminal{color:#00ff00!important;font-family:monospace!important;position:relative;overflow:hidden}.terminal span{position:relative;z-index:1;text-shadow:0 0 5px #00ff00}'
+        'id': 'skin_matrix', 'nome': '🧬 TESLA MATRIX', 'desc': 'Chuva de caracteres verdes', 'preco_moedas': 9, 'categoria': 'lendaria', 'cor_fundo': '#000000', 'cor_panel': '#0a0a0a', 'cor_destaque': '#00ff00', 'cor_texto': '#00cc00', 'cor_botao': 'linear-gradient(135deg,#004400,#00ff00)', 'cor_tab_ativa': '#00ff00', 'cor_header_bg': 'linear-gradient(135deg,#000000,#001100,#003300,#001100,#000000)', 'cor_header_borda': '#00ff00', 'header_extra': '<canvas id="matrixCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>', 'css_extra': 'body{background:#000000!important}.header{border-color:#00ff00!important;box-shadow:0 0 30px rgba(0,255,0,0.4)}.terminal{color:#00ff00!important;font-family:monospace!important}'
     },
     {
         'id': 'skin_sakura', 'nome': '🌸 TESLA SAKURA', 'desc': 'Pétalas de cerejeira caindo', 'preco_moedas': 9, 'categoria': 'lendaria', 'cor_fundo': '#1a0a1a', 'cor_panel': '#2a0a2a', 'cor_destaque': '#ff69b4', 'cor_texto': '#ffe0f0', 'cor_botao': 'linear-gradient(135deg,#cc3388,#ff69b4)', 'cor_tab_ativa': '#ff69b4', 'cor_header_bg': 'linear-gradient(135deg,#1a0020,#330033,#4d004d,#330033,#1a0020)', 'cor_header_borda': '#ff69b4', 'header_extra': '<canvas id="sakuraCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>', 'css_extra': 'body{background:linear-gradient(180deg,#1a0a1a 0%,#0d001a 100%)!important}.header{border-color:#ff69b4!important;box-shadow:0 0 40px rgba(255,105,180,0.3)}'
@@ -131,7 +131,7 @@ ESTRATEGIAS = {
         'desc': 'RSI + MM + Bollinger + MACD + Estocástico + Fase da Vela',
         'timeframe': 60,
         'pares': ['EURUSD-OTC'],
-        'preco_moedas': 9,
+        'preco_moedas': 6,
         'gratis': False
     },
     'terceira_igual_primeira': {
@@ -139,7 +139,7 @@ ESTRATEGIAS = {
         'desc': 'Opera a cada 5min, seg 55+',
         'timeframe': 60,
         'pares': ['EURUSD-OTC'],
-        'preco_moedas': 6,
+        'preco_moedas': 3,
         'gratis': False
     },
     'mhi_filtrado': {
@@ -849,7 +849,7 @@ HTML = r'''
         .indicators{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px;margin-bottom:10px}
         .ind-card{background:#111;padding:6px;border-radius:8px;border:1px solid #222;text-align:center;font-size:10px}
         .ind-card .ind-label{color:#666;font-size:9px}.ind-card .ind-value{color:{{COR_DESTAQUE}};font-size:11px}
-        .terminal{background:#000;color:#00ff88;padding:12px;border-radius:10px;height:200px;overflow-y:auto;font-size:10px;line-height:1.4;white-space:pre-wrap;border:1px solid #333;position:relative}.terminal span{position:relative;z-index:1}
+        .terminal{background:#000;color:#00ff88;padding:12px;border-radius:10px;height:200px;overflow-y:auto;font-size:10px;line-height:1.4;white-space:pre-wrap;border:1px solid #333}
         .barra-status{display:flex;justify-content:space-between;padding:8px;background:{{COR_PANEL}};border-radius:10px;margin-top:10px;font-size:10px;flex-wrap:wrap;gap:5px}
         .status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
         .status-dot.active{background:#00ff88;animation:pulse 1s infinite}.status-dot.inactive{background:#888}
@@ -1123,11 +1123,28 @@ HTML = r'''
                 <span style="color:#00ff88">6.</span> O bot opera automaticamente - <span style="color:#ff4444">não feche o navegador!</span>
             </p>
             
-            
+            <p style="color:#ffd700;font-size:13px;font-weight:bold;margin-bottom:10px;margin-top:15px">⚙️ ESTRATÉGIAS DISPONÍVEIS</p>
+            <p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify">
+                <span style="color:#ffd700">⚡ TESLA-369 (GRÁTIS):</span> Timeframe <span style="color:#00ff88">1 minuto</span> - Opera nos minutos 1:55-2:00 e 6:55-7:00.<br>
+                <span style="color:#ffd700">🔮 v_SENSITIVO (6 VOLTS):</span> Timeframe <span style="color:#00ff88">1 minuto</span> - Usa RSI, Bollinger, MACD, Médias Móveis.<br>
+                <span style="color:#ffd700">3️⃣ 3ª = 1ª (3 VOLTS):</span> Timeframe <span style="color:#00ff88">1 minuto</span> - Opera a cada 5 minutos no fechamento da vela.<br>
+                <span style="color:#ffd700">📊 MHI-FILTRADO (9 VOLTS):</span> Timeframe <span style="color:#00ff88">1 minuto</span> - Minutos 4:55 e 9:55 com filtro de tendência.<br>
+                <span style="color:#ffd700">7️⃣ QUADRANTE DE 7 (6 VOLTS):</span> Timeframe <span style="color:#00ff88">1 minuto</span> - 7 velas, conta maioria com média móvel.<br>
+                <span style="color:#ffd700">🌊 FLUXO-DE-VELAS (3 VOLTS):</span> Timeframe <span style="color:#00ff88">1 minuto</span> - 5 velas da mesma cor + MM.<br>
+                <span style="color:#ffd700">🔄 REVERSÃO (3 VOLTS):</span> Timeframe <span style="color:#00ff88">1 minuto</span> - Padrão alternado g-r-g-r-g ou r-g-r-g-r.<br>
+                <span style="color:#ffd700">⏰ M5 (6 VOLTS):</span> Timeframe <span style="color:#00ff88">5 minutos</span> - Quadrante de velas a cada 15 minutos.
+            </p>
         </div>
         
         <!-- ABA INTERNA: AVISOS -->
-        
+        <div style="background:#1a0000;border:2px solid #ff4444;border-radius:15px;padding:20px;margin:10px 0">
+            <p style="color:#ff4444;font-size:16px;text-align:center;font-weight:bold;margin-bottom:15px">⚠️ A VERDADE SOBRE A IQ OPTION</p>
+            <p style="color:#ff8888;font-size:12px;line-height:1.8;text-align:justify">
+                A <span style="color:#ffd700;font-weight:bold">IQ Option</span> <span style="color:#ff4444;font-weight:bold">NÃO É</span> o mercado financeiro real. 
+                Ela é uma <span style="color:#ffd700;font-weight:bold">corretora de opções binárias</span> - um modelo onde você aposta se o preço vai subir ou descer.
+                Não há compra real de ativos. É uma <span style="color:#ff4444;font-weight:bold">aposta</span> contra a própria corretora.
+            </p>
+        </div>
         
         <div style="background:#0a0a1a;border:1px solid #ffd700;border-radius:15px;padding:20px;margin:10px 0">
             <p style="color:#ffd700;font-size:14px;font-weight:bold;margin-bottom:10px">🤖 COMO O ROBÔ FUNCIONA</p>
@@ -1154,14 +1171,6 @@ HTML = r'''
             </p>
         </div>
         
-        <div style="background:#1a0000;border:2px solid #ff4444;border-radius:15px;padding:20px;margin:10px 0">
-            <p style="color:#ff4444;font-size:16px;text-align:center;font-weight:bold;margin-bottom:15px">⚠️ A VERDADE SOBRE A IQ OPTION</p>
-            <p style="color:#ff8888;font-size:12px;line-height:1.8;text-align:justify">
-                A <span style="color:#ffd700;font-weight:bold">IQ Option</span> <span style="color:#ff4444;font-weight:bold">NÃO É</span> o mercado financeiro real. 
-                Ela é uma <span style="color:#ffd700;font-weight:bold">corretora de opções binárias</span> - um modelo onde você aposta se o preço vai subir ou descer.
-                Não há compra real de ativos. É uma <span style="color:#ff4444;font-weight:bold">aposta</span> contra a própria corretora.
-            </p>
-        </div>
         <div style="text-align:center;margin-top:15px">
             <p style="color:#ffd700;font-size:12px;font-weight:bold">🎯 A INTENÇÃO É GANHAR DINHEIRO - MAS COM CONSCIÊNCIA</p>
             <p style="color:#888;font-size:10px;margin-top:5px">Use com responsabilidade. Conheça os riscos. Comece pela conta PRACTICE.</p>
@@ -1511,8 +1520,8 @@ function renderLojaEstrategias(){
                 if (key === 'tesla_369') continue;
                 // Preços fixos para cada estratégia
                 var precos = {
-                    'v_sensitivo': 9,
-                    'terceira_igual_primeira': 6,
+                    'v_sensitivo': 6,
+                    'terceira_igual_primeira': 3,
                     'mhi_filtrado': 9,
                     'quadrante_de_7': 6,
                     'fluxo_de_velas': 3,
@@ -1861,96 +1870,33 @@ function atualizarChat() {
 }
 
 
-// ========== EFEITOS VISUAIS DAS SKINS (SÓ APÓS LOGIN) ==========
-var skinEffectsStarted = false;
-
-function getActiveSkin() {
-    // Retorna o id da skin ativa baseado no CSS atual
-    if (document.body.style.background && document.body.style.background.includes('#000000') && document.querySelector('.header') && document.querySelector('.header').style.boxShadow.includes('153,51,255')) return 'skin_dark';
-    if (document.querySelector('#darkCanvas')) return 'skin_dark';
-    if (document.querySelector('#fireCanvas')) return 'skin_fire';
-    if (document.querySelector('#snowCanvas')) return 'skin_ice';
-    if (document.querySelector('#matrixHeaderCanvas')) return 'skin_matrix';
-    if (document.querySelector('#sakuraCanvas')) return 'skin_sakura';
-    if (document.querySelector('#thunderCanvas')) return 'skin_thunder';
-    if (document.querySelector('#oceanCanvas')) return 'skin_ocean';
-    if (document.querySelector('#sunsetCanvas')) return 'skin_sunset';
-    return null;
-}
-
+// ========== EFEITOS VISUAIS DAS SKINS ==========
 function initSkinEffects() {
-    if (skinEffectsStarted) return;
-    if (!conectadoIQ) return; // Só inicia após login
-    
-    skinEffectsStarted = true;
-    var skin = getActiveSkin();
-    if (!skin) return;
-    
-    // ========== CANVAS NO TERMINAL (para todas as skins com efeito) ==========
-    var terminal = document.getElementById('terminal');
-    if (terminal) {
-        terminal.style.position = 'relative';
-        terminal.style.overflow = 'hidden';
-    }
-    // 🧬 TESLA MATRIX - Header + Terminal
-    // Canvas do header
-    var matrixHeader = document.getElementById('matrixHeaderCanvas');
-    if (matrixHeader) {
-        var hctx = matrixHeader.getContext('2d');
-        matrixHeader.width = matrixHeader.parentElement.offsetWidth;
-        matrixHeader.height = matrixHeader.parentElement.offsetHeight;
-        var hChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*()';
-        var hFontSize = 12;
-        var hColumns = Math.floor(matrixHeader.width / hFontSize);
-        var hDrops = [];
-        for (var i = 0; i < hColumns; i++) hDrops[i] = Math.random() * -100;
-        function drawHeaderMatrix() {
-            hctx.fillStyle = 'rgba(0,0,0,0.05)';
-            hctx.fillRect(0, 0, matrixHeader.width, matrixHeader.height);
-            hctx.fillStyle = '#00ff00';
-            hctx.font = hFontSize + 'px monospace';
-            for (var i = 0; i < hDrops.length; i++) {
-                var text = hChars[Math.floor(Math.random() * hChars.length)];
-                hctx.fillText(text, i * hFontSize, hDrops[i] * hFontSize);
-                if (hDrops[i] * hFontSize > matrixHeader.height && Math.random() > 0.975) hDrops[i] = 0;
-                hDrops[i]++;
+    // 🧬 TESLA MATRIX - Chuva de caracteres
+    var matrixCanvas = document.getElementById('matrixCanvas');
+    if (matrixCanvas) {
+        var mctx = matrixCanvas.getContext('2d');
+        matrixCanvas.width = matrixCanvas.parentElement.offsetWidth;
+        matrixCanvas.height = matrixCanvas.parentElement.offsetHeight;
+        var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*()';
+        var fontSize = 14;
+        var columns = Math.floor(matrixCanvas.width / fontSize);
+        var drops = [];
+        for (var i = 0; i < columns; i++) drops[i] = Math.random() * -100;
+        function drawMatrix() {
+            mctx.fillStyle = 'rgba(0,0,0,0.05)';
+            mctx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
+            mctx.fillStyle = '#00ff00';
+            mctx.font = fontSize + 'px monospace';
+            for (var i = 0; i < drops.length; i++) {
+                var text = chars[Math.floor(Math.random() * chars.length)];
+                mctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > matrixCanvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
             }
-            requestAnimationFrame(drawHeaderMatrix);
+            requestAnimationFrame(drawMatrix);
         }
-        drawHeaderMatrix();
-    }
-    
-    // Canvas do terminal (sempre visível atrás dos logs)
-    var terminal = document.getElementById('terminal');
-    if (terminal) {
-        terminal.style.position = 'relative';
-        terminal.style.overflow = 'hidden';
-        var tCanvas = document.createElement('canvas');
-        tCanvas.id = 'matrixTerminalCanvas';
-        tCanvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.6';
-        terminal.insertBefore(tCanvas, terminal.firstChild);
-        var tctx = tCanvas.getContext('2d');
-        tCanvas.width = terminal.offsetWidth;
-        tCanvas.height = terminal.offsetHeight;
-        var tChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*()';
-        var tFontSize = 12;
-        var tColumns = Math.floor(tCanvas.width / tFontSize);
-        var tDrops = [];
-        for (var i = 0; i < tColumns; i++) tDrops[i] = Math.random() * -100;
-        function drawTerminalMatrix() {
-            tctx.fillStyle = 'rgba(0,0,0,0.05)';
-            tctx.fillRect(0, 0, tCanvas.width, tCanvas.height);
-            tctx.fillStyle = '#00ff00';
-            tctx.font = tFontSize + 'px monospace';
-            for (var i = 0; i < tDrops.length; i++) {
-                var text = tChars[Math.floor(Math.random() * tChars.length)];
-                tctx.fillText(text, i * tFontSize, tDrops[i] * tFontSize);
-                if (tDrops[i] * tFontSize > tCanvas.height && Math.random() > 0.975) tDrops[i] = 0;
-                tDrops[i]++;
-            }
-            requestAnimationFrame(drawTerminalMatrix);
-        }
-        drawTerminalMatrix();
+        drawMatrix();
     }
     
     // 🌸 TESLA SAKURA - Pétalas caindo
@@ -2076,26 +2022,12 @@ function initSkinEffects() {
         drawSunset();
     }
 
-    // 🌑 TESLA DARK - Header + Terminal
+    // 🌑 TESLA DARK - Partículas roxas flutuantes
     var darkCanvas = document.getElementById('darkCanvas');
     if (darkCanvas) {
         var dctx = darkCanvas.getContext('2d');
         darkCanvas.width = darkCanvas.parentElement.offsetWidth;
         darkCanvas.height = darkCanvas.parentElement.offsetHeight;
-        // Criar canvas no terminal também
-        var terminalDark = document.getElementById('terminal');
-        if (terminalDark) {
-            terminalDark.style.position = 'relative'; terminalDark.style.overflow = 'hidden';
-            var darkCanvasT = document.createElement('canvas');
-            darkCanvasT.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.5';
-            terminalDark.insertBefore(darkCanvasT, terminalDark.firstChild);
-            var dctxT = darkCanvasT.getContext('2d');
-            darkCanvasT.width = terminalDark.offsetWidth;
-            darkCanvasT.height = terminalDark.offsetHeight;
-            var particlesT = [];
-            for (var i = 0; i < 20; i++) particlesT.push({x:Math.random()*darkCanvasT.width,y:Math.random()*darkCanvasT.height,r:Math.random()*3+1,vx:(Math.random()-0.5)*0.3,vy:-Math.random()*0.5-0.1,alpha:Math.random()*0.5+0.2});
-            function drawDarkT(){dctxT.clearRect(0,0,darkCanvasT.width,darkCanvasT.height);particlesT.forEach(function(p){dctxT.beginPath();dctxT.arc(p.x,p.y,p.r,0,Math.PI*2);dctxT.fillStyle='rgba(153,51,255,'+p.alpha+')';dctxT.fill();p.x+=p.vx;p.y+=p.vy;if(p.y<-10){p.y=darkCanvasT.height+10;p.x=Math.random()*darkCanvasT.width}});requestAnimationFrame(drawDarkT)}drawDarkT();
-        }
         var particles = [];
         for (var i = 0; i < 25; i++) {
             particles.push({
@@ -2129,25 +2061,12 @@ function initSkinEffects() {
         drawDark();
     }
     
-    // 🔥 TESLA FIRE - Header + Terminal
+    // 🔥 TESLA FIRE - Chamas realistas
     var fireCanvas = document.getElementById('fireCanvas');
     if (fireCanvas) {
         var fctx = fireCanvas.getContext('2d');
         fireCanvas.width = fireCanvas.parentElement.offsetWidth;
         fireCanvas.height = 80;
-        // Terminal
-        var terminalFire = document.getElementById('terminal');
-        if (terminalFire) {
-            terminalFire.style.position = 'relative'; terminalFire.style.overflow = 'hidden';
-            var fireCanvasT = document.createElement('canvas');
-            fireCanvasT.style.cssText = 'position:absolute;bottom:0;left:0;width:100%;height:60px;z-index:0;pointer-events:none;opacity:0.5';
-            terminalFire.insertBefore(fireCanvasT, terminalFire.firstChild);
-            var fctxT = fireCanvasT.getContext('2d');
-            fireCanvasT.width = terminalFire.offsetWidth; fireCanvasT.height = 60;
-            var firePT = [];
-            for (var i = 0; i < 30; i++) firePT.push({x:Math.random()*fireCanvasT.width,y:fireCanvasT.height-Math.random()*20,vx:(Math.random()-0.5)*0.8,vy:-Math.random()*2-1,life:Math.random()*40+20,maxLife:60,size:Math.random()*4+2});
-            function drawFireT(){fctxT.clearRect(0,0,fireCanvasT.width,fireCanvasT.height);firePT.forEach(function(p,i){var prog=p.life/p.maxLife;var grad=fctxT.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*prog);grad.addColorStop(0,'rgba(255,255,100,'+prog+')');grad.addColorStop(0.4,'rgba(255,150,0,'+prog*0.8+')');grad.addColorStop(1,'rgba(255,0,0,0)');fctxT.beginPath();fctxT.arc(p.x,p.y,p.size*prog,0,Math.PI*2);fctxT.fillStyle=grad;fctxT.fill();p.x+=p.vx;p.y+=p.vy;p.life--;if(p.life<=0){firePT[i]={x:Math.random()*fireCanvasT.width,y:fireCanvasT.height-Math.random()*10,vx:(Math.random()-0.5)*0.8,vy:-Math.random()*2-1,life:Math.random()*40+20,maxLife:60,size:Math.random()*4+2}}});requestAnimationFrame(drawFireT)}drawFireT();
-        }
         var fireParticles = [];
         for (var i = 0; i < 50; i++) {
             fireParticles.push({
@@ -2192,22 +2111,9 @@ function initSkinEffects() {
         drawFire();
     }
     
-    // ❄️ TESLA ICE - Header + Terminal
+    // ❄️ TESLA ICE - Neve caindo
     var snowCanvas = document.getElementById('snowCanvas');
     if (snowCanvas) {
-        // Terminal
-        var terminalSnow = document.getElementById('terminal');
-        if (terminalSnow) {
-            terminalSnow.style.position = 'relative'; terminalSnow.style.overflow = 'hidden';
-            var snowCanvasT = document.createElement('canvas');
-            snowCanvasT.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.5';
-            terminalSnow.insertBefore(snowCanvasT, terminalSnow.firstChild);
-            var sctxT = snowCanvasT.getContext('2d');
-            snowCanvasT.width = terminalSnow.offsetWidth; snowCanvasT.height = terminalSnow.offsetHeight;
-            var sfT = [];
-            for (var i = 0; i < 25; i++) sfT.push({x:Math.random()*snowCanvasT.width,y:Math.random()*snowCanvasT.height,r:Math.random()*3+1,speed:Math.random()*0.8+0.2,wind:(Math.random()-0.5)*0.3,opacity:Math.random()*0.6+0.4});
-            function drawSnowT(){sctxT.clearRect(0,0,snowCanvasT.width,snowCanvasT.height);sfT.forEach(function(f){sctxT.beginPath();sctxT.arc(f.x,f.y,f.r,0,Math.PI*2);sctxT.fillStyle='rgba(255,255,255,'+f.opacity+')';sctxT.fill();f.y+=f.speed;f.x+=f.wind;if(f.y>snowCanvasT.height+10){f.y=-10;f.x=Math.random()*snowCanvasT.width}});requestAnimationFrame(drawSnowT)}drawSnowT();
-        }
         var sctx = snowCanvas.getContext('2d');
         snowCanvas.width = snowCanvas.parentElement.offsetWidth;
         snowCanvas.height = snowCanvas.parentElement.offsetHeight;
@@ -2245,24 +2151,8 @@ function initSkinEffects() {
     }
 }
 
-// Iniciar efeitos apenas quando conectar
-var originalConectarIQ2 = conectarIQ;
-conectarIQ = function() {
-    originalConectarIQ2();
-    setTimeout(function() {
-        if (conectadoIQ) {
-            setTimeout(initSkinEffects, 800);
-        }
-    }, 1500);
-};
-
-// Também verificar ao carregar se já está conectado
 window.addEventListener('load', function() {
-    setTimeout(function() {
-        if (conectadoIQ) {
-            setTimeout(initSkinEffects, 500);
-        }
-    }, 1000);
+    setTimeout(initSkinEffects, 300);
 });
 
 </script>
