@@ -69,7 +69,7 @@ SKINS = [
                 'id': 'skin_dark', 'nome': '🌑 TESLA DARK', 'desc': 'Particulas roxas flutuantes', 'preco_moedas': 3, 'categoria': 'basica', 'cor_fundo': '#000000', 'cor_panel': '#0a0a0a', 'cor_destaque': '#9933ff', 'cor_texto': '#ccc', 'cor_botao': 'linear-gradient(135deg,#4400aa,#9933ff)', 'cor_tab_ativa': '#9933ff', 'cor_header_bg': 'linear-gradient(135deg,#000000,#110022,#220044,#110022,#000000)', 'cor_header_borda': '#9933ff', 'header_extra': '<canvas id="darkCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>', 'css_extra': 'body{background:#000000!important}.header{border-color:#9933ff!important;box-shadow:0 0 40px rgba(153,51,255,0.3)}'
     },
     {
-        'id': 'skin_matrix', 'nome': '🧬 TESLA MATRIX', 'desc': 'Chuva de caracteres verdes', 'preco_moedas': 6, 'categoria': 'premium', 'cor_fundo': '#000000', 'cor_panel': '#0a0a0a', 'cor_destaque': '#00ff00', 'cor_texto': '#00cc00', 'cor_botao': 'linear-gradient(135deg,#004400,#00ff00)', 'cor_tab_ativa': '#00ff00', 'cor_header_bg': 'linear-gradient(135deg,#000000,#001100,#003300,#001100,#000000)', 'cor_header_borda': '#00ff00', 'header_extra': '<canvas id="matrixCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>', 'css_extra': 'body{background:#000000!important}.header{border-color:#00ff00!important;box-shadow:0 0 30px rgba(0,255,0,0.4)}.terminal{color:#00ff00!important;font-family:monospace!important}'
+        'id': 'skin_matrix', 'nome': '🧬 TESLA MATRIX', 'desc': 'Chuva de caracteres verdes', 'preco_moedas': 9, 'categoria': 'lendaria', 'cor_fundo': '#000000', 'cor_panel': '#0a0a0a', 'cor_destaque': '#00ff00', 'cor_texto': '#00cc00', 'cor_botao': 'linear-gradient(135deg,#004400,#00ff00)', 'cor_tab_ativa': '#00ff00', 'cor_header_bg': 'linear-gradient(135deg,#000000,#001100,#003300,#001100,#000000)', 'cor_header_borda': '#00ff00', 'header_extra': '<canvas id="matrixCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>', 'css_extra': 'body{background:#000000!important}.header{border-color:#00ff00!important;box-shadow:0 0 30px rgba(0,255,0,0.4)}.terminal{color:#00ff00!important;font-family:monospace!important}'
     },
     {
         'id': 'skin_sakura', 'nome': '🌸 TESLA SAKURA', 'desc': 'Pétalas de cerejeira caindo', 'preco_moedas': 9, 'categoria': 'lendaria', 'cor_fundo': '#1a0a1a', 'cor_panel': '#2a0a2a', 'cor_destaque': '#ff69b4', 'cor_texto': '#ffe0f0', 'cor_botao': 'linear-gradient(135deg,#cc3388,#ff69b4)', 'cor_tab_ativa': '#ff69b4', 'cor_header_bg': 'linear-gradient(135deg,#1a0020,#330033,#4d004d,#330033,#1a0020)', 'cor_header_borda': '#ff69b4', 'header_extra': '<canvas id="sakuraCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>', 'css_extra': 'body{background:linear-gradient(180deg,#1a0a1a 0%,#0d001a 100%)!important}.header{border-color:#ff69b4!important;box-shadow:0 0 40px rgba(255,105,180,0.3)}'
@@ -1053,27 +1053,36 @@ HTML = r'''
     <div class="panel" id="panel-loja">
         <div class="sub-tabs">
             <div class="sub-tab active" id="sub-tab-moedas" onclick="mostrarSubAba('moedas')">COMPRAR VOLTS</div>
-            <div class="sub-tab" id="sub-tab-skins-basicas" onclick="mostrarSubAba('skins-basicas')">⚡ BÁSICAS</div>
-            <div class="sub-tab" id="sub-tab-skins-premium" onclick="mostrarSubAba('skins-premium')">🔮 PREMIUM</div>
-            <div class="sub-tab" id="sub-tab-skins-lendarias" onclick="mostrarSubAba('skins-lendarias')">💎 LENDÁRIAS</div>
+            <div class="sub-tab" id="sub-tab-skins" onclick="mostrarSubAba('skins')">LOJA DE SKINS</div>
             <div class="sub-tab" id="sub-tab-estrategias" onclick="mostrarSubAba('estrategias')">LOJA DE ESTRATÉGIAS</div>
         </div>
         <div class="sub-panel active" id="sub-panel-moedas">
             <div class="config-section"><h3>💳 COMPRAR VOLTS COM PIX</h3><p style="color:#888;font-size:10px">📧 <input type="email" id="emailCompra" placeholder="Seu email" style="width:220px;padding:6px;background:#111;border:1px solid #333;color:#fff;border-radius:5px"></p><p style="color:#ffd700;font-size:10px;margin-top:5px">⚡ 1 VOLT = 1 ciclo | +1 VOLT grátis/dia</p><p style="color:#888;font-size:9px;margin-top:3px">⭐ Selecione o plano e pague com PIX</p></div>
         <div class="planos-grid">''' + ''.join([f'<div class="plano-card" id="plano{p["id"]}" onclick="selecionarPlano({p["id"]})"><div style="color:#ffd700;font-size:11px">{p["nome"]}</div><div class="plano-moedas">⚡ {p["moedas"]}</div><div class="plano-preco">R$ {p["preco"]:.2f}</div><div class="plano-desc">{p.get("desc","")}</div>{f"<div><span class=\"plano-desconto\">{p['desconto']}</span></div>" if p.get("desconto") else ""}{f"<div class=\"plano-tag\">{p['tag']}</div>" if p.get("tag") else ""}<button class="btn-loja btn-comprar-volts" style="display:none;margin-top:10px" id="btnPlano{p['id']}" onclick="event.stopPropagation();pagarComPix({p['id']})">💳 PAGAR COM PIX</button></div>' for p in PLANOS]) + r'''</div>
         </div>
+        <div class="sub-panel" id="sub-panel-skins">
+            <div class="config-section"><h3>🎨 LOJA DE SKINS</h3><p style="color:#888;font-size:10px">Escolha uma categoria abaixo</p></div>
+            <!-- Sub-sub-abas das skins -->
+            <div class="sub-tabs" style="margin-bottom:10px">
+                <div class="sub-tab active" id="sub-sub-tab-basicas" onclick="mostrarCategoriaSkin('basica')">⚡ BÁSICAS</div>
+                <div class="sub-tab" id="sub-sub-tab-premium" onclick="mostrarCategoriaSkin('premium')">🔮 PREMIUM</div>
+                <div class="sub-tab" id="sub-sub-tab-lendarias" onclick="mostrarCategoriaSkin('lendaria')">💎 LENDÁRIAS</div>
+            </div>
+            <div class="sub-panel active" id="sub-sub-panel-basicas">
+                <div class="skins-grid" id="skinsGridBasicas"></div>
+            </div>
+            <div class="sub-panel" id="sub-sub-panel-premium">
+                <div class="skins-grid" id="skinsGridPremium"></div>
+            </div>
+            <div class="sub-panel" id="sub-sub-panel-lendarias">
+                <div class="skins-grid" id="skinsGridLendarias"></div>
+            </div>
+        </div>
         <div class="sub-panel" id="sub-panel-skins-basicas">
             <div class="config-section"><h3>⚡ SKINS BÁSICAS (0-3 VOLTS)</h3><p style="color:#888;font-size:9px">⚡ Básicas (0-3 VOLTS) | 🔮 Premium (6 VOLTS) | 💎 Lendárias (9 VOLTS)</p><p style="color:#888;font-size:10px">Personalize a aparencia do seu bot! Skins compradas ficam salvas.</p></div>
             <div class="skins-grid" id="skinsGridBasicas"></div>
         </div>
-        <div class="sub-panel" id="sub-panel-skins-premium">
-            <div class="config-section"><h3>🔮 SKINS PREMIUM (6 VOLTS)</h3><p style="color:#888;font-size:10px">Efeitos visuais intermediários</p></div>
-            <div class="skins-grid" id="skinsGridPremium"></div>
-        </div>
-        <div class="sub-panel" id="sub-panel-skins-lendarias">
-            <div class="config-section"><h3>💎 SKINS LENDÁRIAS (9 VOLTS)</h3><p style="color:#888;font-size:10px">Efeitos visuais avançados com Canvas</p></div>
-            <div class="skins-grid" id="skinsGridLendarias"></div>
-        </div>
+        
         <div class="sub-panel" id="sub-panel-estrategias">
             <div class="config-section"><h3>📊 ESTRATÉGIAS PREMIUM</h3><p style="color:#888;font-size:10px">Compre estratégias avançadas com suas VOLTS! ⚡</p></div>
             <div class="skins-grid" id="estrategiasLojaGrid"></div>
@@ -1188,14 +1197,24 @@ HTML = r'''
 
 <script>
 
+
+function mostrarCategoriaSkin(categoria) {
+    // Atualizar sub-sub-abas
+    document.querySelectorAll('[id^="sub-sub-tab-"]').forEach(function(t) { t.classList.remove('active'); });
+    document.getElementById('sub-sub-tab-' + categoria + 's').classList.add('active');
+    // Mostrar painel correto
+    document.querySelectorAll('[id^="sub-sub-panel-"]').forEach(function(p) { p.classList.remove('active'); });
+    document.getElementById('sub-sub-panel-' + categoria + 's').classList.add('active');
+    // Renderizar skins da categoria
+    renderLojaCategoria(categoria);
+}
+
 function mostrarSubAba(aba){
     document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('active'));
     document.querySelectorAll('.sub-panel').forEach(p=>p.classList.remove('active'));
     document.getElementById('sub-tab-'+aba).classList.add('active');
     document.getElementById('sub-panel-'+aba).classList.add('active');
-    if(aba==='skins-basicas') renderLojaCategoria('basica');
-    if(aba==='skins-premium') renderLojaCategoria('premium');
-    if(aba==='skins-lendarias') renderLojaCategoria('lendaria');
+    if(aba==='skins') { mostrarCategoriaSkin('basica'); }
     if(aba==='estrategias') renderLojaEstrategias();
 }
 
@@ -1209,7 +1228,7 @@ function openTab(tab){
     event.target.classList.add('active');
     document.getElementById('panel-'+tab).classList.add('active');
     if(tab=='relatorio'&&emailLogado){document.getElementById('emailRelatorio').value=emailLogado;verRelatorio()}
-    if(tab=='loja'){mostrarSubAba('skins-basicas');}
+    if(tab=='loja'){mostrarSubAba('moedas');}
     if(tab=='estrategias'){
             if(botAtivo){alert('⚠️ Pare o bot antes de trocar de estratégia!');openTab('bot');return;}
             renderEstrategias();
