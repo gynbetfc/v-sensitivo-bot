@@ -1064,24 +1064,21 @@ HTML = r'''
             <div class="config-section"><h3>🎨 LOJA DE SKINS</h3><p style="color:#888;font-size:10px">Escolha uma categoria abaixo</p></div>
             <!-- Sub-sub-abas das skins -->
             <div class="sub-tabs" style="margin-bottom:10px">
-                <div class="sub-tab active" id="sub-sub-tab-basicas" onclick="mostrarCategoriaSkin('basica')">⚡ BÁSICAS</div>
+                <div class="sub-tab active" id="sub-sub-tab-basica" onclick="mostrarCategoriaSkin('basica')">⚡ BÁSICAS</div>
                 <div class="sub-tab" id="sub-sub-tab-premium" onclick="mostrarCategoriaSkin('premium')">🔮 PREMIUM</div>
-                <div class="sub-tab" id="sub-sub-tab-lendarias" onclick="mostrarCategoriaSkin('lendaria')">💎 LENDÁRIAS</div>
+                <div class="sub-tab" id="sub-sub-tab-lendaria" onclick="mostrarCategoriaSkin('lendaria')">💎 LENDÁRIAS</div>
             </div>
-            <div class="sub-panel active" id="sub-sub-panel-basicas">
+            <div class="sub-panel active" id="sub-sub-panel-basica">
                 <div class="skins-grid" id="skinsGridBasicas"></div>
             </div>
             <div class="sub-panel" id="sub-sub-panel-premium">
                 <div class="skins-grid" id="skinsGridPremium"></div>
             </div>
-            <div class="sub-panel" id="sub-sub-panel-lendarias">
+            <div class="sub-panel" id="sub-sub-panel-lendaria">
                 <div class="skins-grid" id="skinsGridLendarias"></div>
             </div>
         </div>
-        <div class="sub-panel" id="sub-panel-skins-basicas">
-            <div class="config-section"><h3>⚡ SKINS BÁSICAS (0-3 VOLTS)</h3><p style="color:#888;font-size:9px">⚡ Básicas (0-3 VOLTS) | 🔮 Premium (6 VOLTS) | 💎 Lendárias (9 VOLTS)</p><p style="color:#888;font-size:10px">Personalize a aparencia do seu bot! Skins compradas ficam salvas.</p></div>
-            <div class="skins-grid" id="skinsGridBasicas"></div>
-        </div>
+        
         
         <div class="sub-panel" id="sub-panel-estrategias">
             <div class="config-section"><h3>📊 ESTRATÉGIAS PREMIUM</h3><p style="color:#888;font-size:10px">Compre estratégias avançadas com suas VOLTS! ⚡</p></div>
@@ -1201,10 +1198,10 @@ HTML = r'''
 function mostrarCategoriaSkin(categoria) {
     // Atualizar sub-sub-abas
     document.querySelectorAll('[id^="sub-sub-tab-"]').forEach(function(t) { t.classList.remove('active'); });
-    document.getElementById('sub-sub-tab-' + categoria + 's').classList.add('active');
+    document.getElementById('sub-sub-tab-' + categoria).classList.add('active');
     // Mostrar painel correto
     document.querySelectorAll('[id^="sub-sub-panel-"]').forEach(function(p) { p.classList.remove('active'); });
-    document.getElementById('sub-sub-panel-' + categoria + 's').classList.add('active');
+    document.getElementById('sub-sub-panel-' + categoria).classList.add('active');
     // Renderizar skins da categoria
     renderLojaCategoria(categoria);
 }
@@ -1214,7 +1211,7 @@ function mostrarSubAba(aba){
     document.querySelectorAll('.sub-panel').forEach(p=>p.classList.remove('active'));
     document.getElementById('sub-tab-'+aba).classList.add('active');
     document.getElementById('sub-panel-'+aba).classList.add('active');
-    if(aba==='skins') { mostrarCategoriaSkin('basica'); }
+    if(aba==='skins') { setTimeout(function() { mostrarCategoriaSkin('basica'); }, 100); }
     if(aba==='estrategias') renderLojaEstrategias();
 }
 
