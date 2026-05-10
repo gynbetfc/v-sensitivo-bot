@@ -1053,16 +1053,26 @@ HTML = r'''
     <div class="panel" id="panel-loja">
         <div class="sub-tabs">
             <div class="sub-tab active" id="sub-tab-moedas" onclick="mostrarSubAba('moedas')">COMPRAR VOLTS</div>
-            <div class="sub-tab" id="sub-tab-skins" onclick="mostrarSubAba('skins')">LOJA DE SKINS</div>
+            <div class="sub-tab" id="sub-tab-skins-basicas" onclick="mostrarSubAba('skins-basicas')">⚡ BÁSICAS</div>
+            <div class="sub-tab" id="sub-tab-skins-premium" onclick="mostrarSubAba('skins-premium')">🔮 PREMIUM</div>
+            <div class="sub-tab" id="sub-tab-skins-lendarias" onclick="mostrarSubAba('skins-lendarias')">💎 LENDÁRIAS</div>
             <div class="sub-tab" id="sub-tab-estrategias" onclick="mostrarSubAba('estrategias')">LOJA DE ESTRATÉGIAS</div>
         </div>
         <div class="sub-panel active" id="sub-panel-moedas">
             <div class="config-section"><h3>💳 COMPRAR VOLTS COM PIX</h3><p style="color:#888;font-size:10px">📧 <input type="email" id="emailCompra" placeholder="Seu email" style="width:220px;padding:6px;background:#111;border:1px solid #333;color:#fff;border-radius:5px"></p><p style="color:#ffd700;font-size:10px;margin-top:5px">⚡ 1 VOLT = 1 ciclo | +1 VOLT grátis/dia</p><p style="color:#888;font-size:9px;margin-top:3px">⭐ Selecione o plano e pague com PIX</p></div>
         <div class="planos-grid">''' + ''.join([f'<div class="plano-card" id="plano{p["id"]}" onclick="selecionarPlano({p["id"]})"><div style="color:#ffd700;font-size:11px">{p["nome"]}</div><div class="plano-moedas">⚡ {p["moedas"]}</div><div class="plano-preco">R$ {p["preco"]:.2f}</div><div class="plano-desc">{p.get("desc","")}</div>{f"<div><span class=\"plano-desconto\">{p['desconto']}</span></div>" if p.get("desconto") else ""}{f"<div class=\"plano-tag\">{p['tag']}</div>" if p.get("tag") else ""}<button class="btn-loja btn-comprar-volts" style="display:none;margin-top:10px" id="btnPlano{p['id']}" onclick="event.stopPropagation();pagarComPix({p['id']})">💳 PAGAR COM PIX</button></div>' for p in PLANOS]) + r'''</div>
         </div>
-        <div class="sub-panel" id="sub-panel-skins">
-            <div class="config-section"><h3>🎨 LOJA DE SKINS</h3><p style="color:#888;font-size:9px">⚡ Básicas (0-3 VOLTS) | 🔮 Premium (6 VOLTS) | 💎 Lendárias (9 VOLTS)</p><p style="color:#888;font-size:10px">Personalize a aparencia do seu bot! Skins compradas ficam salvas.</p></div>
-            <div class="skins-grid" id="skinsGrid"></div>
+        <div class="sub-panel" id="sub-panel-skins-basicas">
+            <div class="config-section"><h3>⚡ SKINS BÁSICAS (0-3 VOLTS)</h3><p style="color:#888;font-size:9px">⚡ Básicas (0-3 VOLTS) | 🔮 Premium (6 VOLTS) | 💎 Lendárias (9 VOLTS)</p><p style="color:#888;font-size:10px">Personalize a aparencia do seu bot! Skins compradas ficam salvas.</p></div>
+            <div class="skins-grid" id="skinsGridBasicas"></div>
+        </div>
+        <div class="sub-panel" id="sub-panel-skins-premium">
+            <div class="config-section"><h3>🔮 SKINS PREMIUM (6 VOLTS)</h3><p style="color:#888;font-size:10px">Efeitos visuais intermediários</p></div>
+            <div class="skins-grid" id="skinsGridPremium"></div>
+        </div>
+        <div class="sub-panel" id="sub-panel-skins-lendarias">
+            <div class="config-section"><h3>💎 SKINS LENDÁRIAS (9 VOLTS)</h3><p style="color:#888;font-size:10px">Efeitos visuais avançados com Canvas</p></div>
+            <div class="skins-grid" id="skinsGridLendarias"></div>
         </div>
         <div class="sub-panel" id="sub-panel-estrategias">
             <div class="config-section"><h3>📊 ESTRATÉGIAS PREMIUM</h3><p style="color:#888;font-size:10px">Compre estratégias avançadas com suas VOLTS! ⚡</p></div>
@@ -1183,7 +1193,9 @@ function mostrarSubAba(aba){
     document.querySelectorAll('.sub-panel').forEach(p=>p.classList.remove('active'));
     document.getElementById('sub-tab-'+aba).classList.add('active');
     document.getElementById('sub-panel-'+aba).classList.add('active');
-    if(aba==='skins') renderLoja();
+    if(aba==='skins-basicas') renderLojaCategoria('basica');
+    if(aba==='skins-premium') renderLojaCategoria('premium');
+    if(aba==='skins-lendarias') renderLojaCategoria('lendaria');
     if(aba==='estrategias') renderLojaEstrategias();
 }
 
@@ -1197,7 +1209,7 @@ function openTab(tab){
     event.target.classList.add('active');
     document.getElementById('panel-'+tab).classList.add('active');
     if(tab=='relatorio'&&emailLogado){document.getElementById('emailRelatorio').value=emailLogado;verRelatorio()}
-    if(tab=='loja'){renderLoja();mostrarSubAba('moedas');}
+    if(tab=='loja'){mostrarSubAba('skins-basicas');}
     if(tab=='estrategias'){
             if(botAtivo){alert('⚠️ Pare o bot antes de trocar de estratégia!');openTab('bot');return;}
             renderEstrategias();
@@ -1351,6 +1363,49 @@ function selecionarEstrategia(key){
     document.querySelectorAll('.estrategia-card').forEach(c=>c.classList.remove('ativa'));
     document.getElementById('est_'+key).classList.add('ativa');
     fetch('/selecionar_estrategia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estrategia:key})});
+}
+
+
+function renderLojaCategoria(categoria) {
+    fetch('/status').then(r=>r.json()).then(d=>{
+        var skinsStatus = d.skins_status || [];
+        var gridId = categoria === 'basica' ? 'skinsGridBasicas' : (categoria === 'premium' ? 'skinsGridPremium' : 'skinsGridLendarias');
+        var grid = document.getElementById(gridId);
+        if (!grid) return;
+        var html = '';
+        var skinsFiltradas = skinsStatus.filter(function(s) { return s.categoria === categoria; });
+        skinsFiltradas.forEach(function(skin){
+            var ativa = skin.ativo ? ' ativo' : '';
+            var btnHtml = '';
+            if(skin.ativo){
+                btnHtml = '<button class="btn-loja btn-comprado" style="width:100%;cursor:default">✅ EM USO</button>';
+            } else if(skin.comprado){
+                btnHtml = '<button class="btn-loja btn-usar" style="width:100%" onclick="ativarSkin(\''+skin.id+'\')">🎨 USAR</button>';
+            } else {
+                if(skin.preco_moedas == 0){
+                    btnHtml = '<button class="btn-loja btn-usar" style="width:100%" onclick="ativarSkin(\''+skin.id+'\')">🆓 ATIVAR</button>';
+                } else {
+                    btnHtml = '<button class="btn-loja btn-comprar-skin" style="width:100%;margin-top:8px" onclick="comprarSkin(\''+skin.id+'\')">🛒 COMPRAR ('+skin.preco_moedas+' ⚡)</button>';
+                }
+            }
+            html += '<div class="skin-card'+ativa+'">';
+            html += '<div class="skin-nome">'+skin.nome+'</div>';
+            html += '<div class="skin-desc">'+skin.desc+'</div>';
+            html += '<div style="margin-top:5px">';
+            if(skin.preco_moedas == 0){ html += '<span class="badge-gratis">GRÁTIS</span>'; }
+            else if(skin.comprado){ html += '<span class="badge-gratis">✅ COMPRADO</span>'; }
+            else { html += '<span class="badge-pago">⚡ '+skin.preco_moedas+' VOLTS</span>'; }
+            html += '</div>';
+            html += btnHtml;
+            html += '</div>';
+        });
+        grid.innerHTML = html || '<p style="color:#888;text-align:center">Nenhuma skin nesta categoria</p>';
+    });
+}
+
+// Manter renderLoja original para compatibilidade
+function renderLoja() {
+    renderLojaCategoria('basica');
 }
 
 function renderLoja(){
