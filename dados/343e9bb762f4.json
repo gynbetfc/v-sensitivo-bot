@@ -1,1 +1,22 @@
-ewogICJlbWFpbCI6ICJlZHUwODIwMjFAb3V0bG9vay5jb20iLAogICJtb2VkYXMiOiAxLAogICJtb2VkYXNfZ2FuaGFzX2hvamUiOiAiMjAyNi0wNS0xMSIsCiAgInRvdGFsX2NpY2xvcyI6IDAsCiAgInRvdGFsX3dpbnMiOiAwLAogICJ0b3RhbF9sb3NzZXMiOiAwLAogICJ0b3RhbF9nYXN0byI6IDAuMCwKICAidG90YWxfZ2FuaG8iOiAwLjAsCiAgImx1Y3JvX3RvdGFsIjogMC4wLAogICJiYW5jYV9hdHVhbCI6IDAuMCwKICAiZGF0YV9jYWRhc3RybyI6ICIyMDI2LTA1LTExIDEwOjM4OjA3IiwKICAiaGlzdG9yaWNvX29wZXJhY29lcyI6IFtdLAogICJkaWFzX2F0aXZvcyI6IHt9LAogICJza2luX2F0dWFsIjogInNraW5fcGFkcmFvIiwKICAic2tpbnNfY29tcHJhZGFzIjogWwogICAgInNraW5fcGFkcmFvIgogIF0sCiAgImVzdHJhdGVnaWFzX2NvbXByYWRhcyI6IFsKICAgICJ0ZXNsYV8zNjkiCiAgXQp9
+{
+  "email": "edu082021@outlook.com",
+  "moedas": 1,
+  "moedas_ganhas_hoje": "2026-05-11",
+  "total_ciclos": 0,
+  "total_wins": 0,
+  "total_losses": 0,
+  "total_gasto": 0.0,
+  "total_ganho": 0.0,
+  "lucro_total": 0.0,
+  "banca_atual": 0.0,
+  "data_cadastro": "2026-05-11 10:38:07",
+  "historico_operacoes": [],
+  "dias_ativos": {},
+  "skin_atual": "skin_padrao",
+  "skins_compradas": [
+    "skin_padrao"
+  ],
+  "estrategias_compradas": [
+    "tesla_369"
+  ]
+}
