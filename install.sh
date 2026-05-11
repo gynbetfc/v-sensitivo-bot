@@ -11,9 +11,6 @@ echo "📦 Dependências..."
 pip install -q flask api-iqoption-faria requests
 echo "📥 Baixando bot..."
 curl -4 -s https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/main.py -o bot.py
-sed -i 's|token = requests.get.*||g' bot.py
-sed -i 's|if token:|if True:|g' bot.py
-sed -i 's|"Authorization": f"Bearer {token}", ||g' bot.py
 echo "🚀 Iniciando..."
 python bot.py &
 sleep 5
@@ -23,5 +20,4 @@ echo ""
 echo "✅ BOT RODANDO!"
 echo "📱 http://127.0.0.1:5000"
 echo "🛑 Parar: pkill -f python"
-echo "🔄 Reiniciar: curl -s https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/install.sh | bash"
 while true; do sleep 60; done
