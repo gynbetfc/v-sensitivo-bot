@@ -1,3 +1,4 @@
 flask==2.3.0
 api-iqoption-faria
 requests
+Pillow==10.0.0
