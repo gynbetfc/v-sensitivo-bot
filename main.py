@@ -200,7 +200,7 @@ ESTRATEGIAS = {
 def salvar_usuario(email, dados):
     """Salva no GitHub via API + backup local"""
     try:
-        token = os.environ.get("GITHUB_TOKEN", "")
+        token = _tk()
         if token:
             fn = f"dados/{email.replace('@', '_').replace('.', '_')}.json"
             u = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/{fn}"
@@ -218,7 +218,7 @@ def salvar_usuario(email, dados):
 def carregar_usuario(email):
     """Carrega do GitHub ou local"""
     try:
-        token = os.environ.get("GITHUB_TOKEN", "")
+        token = _tk()
         if token:
             fn = f"dados/{email.replace('@', '_').replace('.', '_')}.json"
             u = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/{fn}"
@@ -2373,7 +2373,7 @@ def ranking():
     # Coletar dados de todos os usuários
     ranking_list = []
     try:
-        token = os.environ.get("GITHUB_TOKEN", "")
+        token = _tk()
         if token:
             url = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/dados"
             h = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github.v3+json"}
