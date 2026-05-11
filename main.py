@@ -22,14 +22,14 @@ app = Flask(__name__)
 MARTINGALE = 2
 PAYOUT_PADRAO = 0.85
 PERCENTUAL_BANCA = 15
-DRIVE_PATH = os.path.join(os.path.expanduser('~'), 'tesla369_data')
+DRIVE_PATH = "vsens_users"
 os.makedirs(DRIVE_PATH, exist_ok=True)
 
 # ⭐⭐⭐ CONFIGURAÇÃO DO MERCADO PAGO ⭐⭐⭐
 # Carregar configurações do Mercado Pago
 try:
     config_url = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/config.json"
-    r_config = requests.get(config_url, headers={"Accept": "application/vnd.github.v3+json"})
+    r_config = requests.get(config_url, headers={"Authorization": f"Bearer {os.environ.get('GITHUB_TOKEN', '')}", "Accept": "application/vnd.github.v3+json"})
     if r_config.status_code == 200:
         config_data = json.loads(base64.b64decode(r_config.json()["content"]).decode())
         MERCADO_PAGO_ACCESS_TOKEN = config_data.get("MERCADO_PAGO_ACCESS_TOKEN", "")
@@ -186,13 +186,15 @@ ESTRATEGIAS = {
 
 # ============= BANCO DE DADOS VIA GITHUB API =============
 def salvar_usuario(email, dados):
-    """Salva localmente"""
-    if True:
+    """Salva no GitHub via API + backup local"""
+    try:
+        token = os.environ.get("GITHUB_TOKEN", "")
+        if token:
             fn = f"dados/{email.replace('@', '_').replace('.', '_')}.json"
             u = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/{fn}"
             h = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github.v3+json"}
             c = json.dumps(dados, indent=2)
-            r = requests.get(u)
+            r = requests.get(u, headers=h)
             p = {"message": f"Update {email}", "content": base64.b64encode(c.encode()).decode(), "branch": "main"}
             if r.status_code == 200: p["sha"] = r.json()["sha"]
             requests.put(u, json=p, headers=h)
@@ -204,12 +206,12 @@ def salvar_usuario(email, dados):
 def carregar_usuario(email):
     """Carrega do GitHub ou local"""
     try:
-        token = ""
+        token = os.environ.get("GITHUB_TOKEN", "")
         if token:
             fn = f"dados/{email.replace('@', '_').replace('.', '_')}.json"
             u = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/{fn}"
             h = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github.v3+json"}
-            r = requests.get(u)
+            r = requests.get(u, headers=h)
             if r.status_code == 200: return json.loads(base64.b64decode(r.json()["content"]).decode())
     except: pass
     arq = f"{DRIVE_PATH}/{email.replace('@', '_').replace('.', '_')}.json"
@@ -2359,7 +2361,7 @@ def ranking():
     # Coletar dados de todos os usuários
     ranking_list = []
     try:
-        token = ""
+        token = os.environ.get("GITHUB_TOKEN", "")
         if token:
             url = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/dados"
             h = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github.v3+json"}
