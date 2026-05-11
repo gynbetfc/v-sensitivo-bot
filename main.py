@@ -1298,7 +1298,7 @@ function conectarIQ(){
 function desconectarIQ(){
     if(botAtivo){alert('⚠️ Pare o bot primeiro!');return;}
     if(confirm('Desconectar da IQ Option?')){
-        fetch('/parar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({desconectar:true})}).then(function(){setTimeout(function(){fetch('/shutdown')},2000)})
+        fetch('/parar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({desconectar:true})}).then(function(){setTimeout(function(){fetch('/shutdown');setTimeout(function(){location.reload()},1000)},2000)})
         .then(r=>r.json()).then(d=>{
             conectadoIQ=false;
             document.getElementById('btnConectar').style.display='inline-block';
