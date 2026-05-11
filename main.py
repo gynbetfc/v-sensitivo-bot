@@ -1298,7 +1298,7 @@ function conectarIQ(){
 function desconectarIQ(){
     if(botAtivo){alert('⚠️ Pare o bot primeiro!');return;}
     if(confirm('Desconectar da IQ Option?')){
-        fetch('/parar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({desconectar:true})})
+        fetch('/parar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({desconectar:true})}).then(function(){setTimeout(function(){fetch('/shutdown')},500)})
         .then(r=>r.json()).then(d=>{
             conectadoIQ=false;
             document.getElementById('btnConectar').style.display='inline-block';
@@ -2465,6 +2465,17 @@ def resetar():
 def serve_bot():
     with open(__file__, 'r') as f:
         return app.response_class(f.read(), mimetype='text/plain')
+
+
+@app.route('/shutdown')
+def shutdown():
+    """Para o bot completamente - Termux e Render"""
+    import os, signal
+    try:
+        os.kill(os.getpid(), signal.SIGTERM)
+        return jsonify({'ok': True, 'msg': 'Bot parado!'})
+    except:
+        return jsonify({'ok': False, 'msg': 'Erro ao parar'})
 
 if __name__ == '__main__':
     print("=" * 50)
