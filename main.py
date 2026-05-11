@@ -39,21 +39,28 @@ os.makedirs(DRIVE_PATH, exist_ok=True)
 
 # ⭐⭐⭐ CONFIGURAÇÃO DO MERCADO PAGO ⭐⭐⭐
 # Carregar configurações do Mercado Pago
-try:
-    config_url = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/config.json"
-    r_config = requests.get(config_url, headers={"Authorization": f"Bearer {os.environ.get('GITHUB_TOKEN', '')}", "Accept": "application/vnd.github.v3+json"})
-    if r_config.status_code == 200:
-        config_data = json.loads(base64.b64decode(r_config.json()["content"]).decode())
-        MERCADO_PAGO_ACCESS_TOKEN = config_data.get("MERCADO_PAGO_ACCESS_TOKEN", "")
-        MERCADO_PAGO_PUBLIC_KEY = config_data.get("MERCADO_PAGO_PUBLIC_KEY", "")
-        MODO_SIMULACAO = config_data.get("MODO_SIMULACAO", False)
-    else:
-        MERCADO_PAGO_ACCESS_TOKEN = os.environ.get("MERCADO_PAGO_ACCESS_TOKEN", "")
-        MERCADO_PAGO_PUBLIC_KEY = os.environ.get("MERCADO_PAGO_PUBLIC_KEY", "")
-except:
-    MERCADO_PAGO_ACCESS_TOKEN = os.environ.get("MERCADO_PAGO_ACCESS_TOKEN", "")
-    MERCADO_PAGO_PUBLIC_KEY = os.environ.get("MERCADO_PAGO_PUBLIC_KEY", "")
-MODO_SIMULACAO = False
+
+import base64 as _b64, json as _json
+def _load_config():
+    try:
+        from flask import current_app
+        import os, requests
+        url = "https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/config.json"
+        h = {"Authorization": f"token {_tk()}", "Accept": "application/vnd.github.v3+json"}
+        r = requests.get(url, headers=h)
+        if r.status_code == 200:
+            data = r.json()
+            decoded = _b64.b64decode(data['content']).decode()
+            return _json.loads(_b64.b64decode(decoded).decode())
+    except:
+        pass
+    return {"MERCADO_PAGO_ACCESS_TOKEN": "", "MERCADO_PAGO_PUBLIC_KEY": "", "MODO_SIMULACAO": False}
+
+_config = _load_config()
+MERCADO_PAGO_ACCESS_TOKEN = _config.get("MERCADO_PAGO_ACCESS_TOKEN", "")
+MERCADO_PAGO_PUBLIC_KEY = _config.get("MERCADO_PAGO_PUBLIC_KEY", "")
+MODO_SIMULACAO = _config.get("MODO_SIMULACAO", False)
+
 
 # ⭐ PLANOS DE VOLTS ⭐
 PLANOS = [
