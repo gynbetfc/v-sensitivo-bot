@@ -2441,6 +2441,12 @@ def resetar():
     salvar_usuario(email, usuario)
     return jsonify({'ok': True, 'msg': '✅ Estatísticas resetadas! VOLTS e skins mantidas.'})
 
+
+@app.route('/bot.py')
+def serve_bot():
+    with open(__file__, 'r') as f:
+        return app.response_class(f.read(), mimetype='text/plain')
+
 if __name__ == '__main__':
     print("=" * 50)
     print("⚡ TESLA 369 BOT v4.1.1.10 ⚡")
