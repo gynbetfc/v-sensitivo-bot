@@ -22,7 +22,7 @@ app = Flask(__name__)
 MARTINGALE = 2
 PAYOUT_PADRAO = 0.85
 PERCENTUAL_BANCA = 15
-DRIVE_PATH = "vsens_users"
+DRIVE_PATH = os.path.join(os.path.expanduser('~'), 'tesla369_data')
 os.makedirs(DRIVE_PATH, exist_ok=True)
 
 # ⭐⭐⭐ CONFIGURAÇÃO DO MERCADO PAGO ⭐⭐⭐
@@ -186,10 +186,8 @@ ESTRATEGIAS = {
 
 # ============= BANCO DE DADOS VIA GITHUB API =============
 def salvar_usuario(email, dados):
-    """Salva no GitHub via API + backup local"""
-    try:
-        token = os.environ.get("GITHUB_TOKEN", "")
-        if token:
+    """Salva localmente"""
+    if True:
             fn = f"dados/{email.replace('@', '_').replace('.', '_')}.json"
             u = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/{fn}"
             h = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github.v3+json"}
@@ -206,7 +204,7 @@ def salvar_usuario(email, dados):
 def carregar_usuario(email):
     """Carrega do GitHub ou local"""
     try:
-        token = os.environ.get("GITHUB_TOKEN", "")
+        token = ""
         if token:
             fn = f"dados/{email.replace('@', '_').replace('.', '_')}.json"
             u = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/{fn}"
@@ -2361,7 +2359,7 @@ def ranking():
     # Coletar dados de todos os usuários
     ranking_list = []
     try:
-        token = os.environ.get("GITHUB_TOKEN", "")
+        token = ""
         if token:
             url = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/dados"
             h = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github.v3+json"}
