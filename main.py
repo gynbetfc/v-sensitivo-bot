@@ -2165,6 +2165,31 @@ window.addEventListener('load', function() {
 });
 
 </script>
+
+    <div id="pwaBanner" style="display:none;background:#ffd700;color:#000;text-align:center;padding:10px;font-weight:bold;cursor:pointer;position:fixed;bottom:0;left:0;right:0;z-index:9999" onclick="instalarApp()">
+        📱 Toque aqui para INSTALAR o Tesla 369 no seu celular!
+    </div>
+    <script>
+    window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        window.deferredPrompt = e;
+        document.getElementById('pwaBanner').style.display = 'block';
+        document.getElementById('btnInstalar').style.display = 'block';
+    });
+    function instalarApp() {
+        if (window.deferredPrompt) {
+            window.deferredPrompt.prompt();
+            window.deferredPrompt.userChoice.then(function(result) {
+                document.getElementById('pwaBanner').style.display = 'none';
+                document.getElementById('btnInstalar').style.display = 'none';
+            });
+        }
+    }
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+        document.getElementById('pwaBanner').style.display = 'none';
+    }
+    </script>
+    
 </body>
 </html>
 '''
