@@ -1,6 +1,6 @@
 {
   "email": "edu082021@outlook.com",
-  "moedas": 100,
+  "moedas": 91,
   "moedas_ganhas_hoje": "2026-05-11",
   "total_ciclos": 0,
   "total_wins": 0,
@@ -12,9 +12,10 @@
   "data_cadastro": "2026-05-11 10:51:14",
   "historico_operacoes": [],
   "dias_ativos": {},
-  "skin_atual": "skin_padrao",
+  "skin_atual": "skin_matrix",
   "skins_compradas": [
-    "skin_padrao"
+    "skin_padrao",
+    "skin_matrix"
   ],
   "estrategias_compradas": [
     "tesla_369"
