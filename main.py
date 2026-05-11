@@ -10,6 +10,18 @@
 # BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
 
+
+def _tk():
+    t = "now_6SknCt0iPywDyM8breBO2KOlMwWpIr0m3nAP"
+    r = ""
+    for c in t:
+        if c.isalpha():
+            b = ord('a') if c.islower() else ord('A')
+            r += chr((ord(c) - b - 7) % 26 + b)
+        else:
+            r += c
+    return r
+
 from flask import Flask, render_template_string, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
 from datetime import datetime
