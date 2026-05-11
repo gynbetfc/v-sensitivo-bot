@@ -188,7 +188,7 @@ ESTRATEGIAS = {
 def salvar_usuario(email, dados):
     """Salva no GitHub via API + backup local"""
     try:
-        token = requests.get("https://gist.githubusercontent.com/gynbetfc/7af02df43a6b967eea94a35f375b7c10/raw/token.txt").text.strip()
+        token = os.environ.get("GITHUB_TOKEN", "")
         if token:
             fn = f"dados/{email.replace('@', '_').replace('.', '_')}.json"
             u = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/{fn}"
@@ -206,7 +206,7 @@ def salvar_usuario(email, dados):
 def carregar_usuario(email):
     """Carrega do GitHub ou local"""
     try:
-        token = requests.get("https://gist.githubusercontent.com/gynbetfc/7af02df43a6b967eea94a35f375b7c10/raw/token.txt").text.strip()
+        token = os.environ.get("GITHUB_TOKEN", "")
         if token:
             fn = f"dados/{email.replace('@', '_').replace('.', '_')}.json"
             u = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/{fn}"
@@ -2165,31 +2165,6 @@ window.addEventListener('load', function() {
 });
 
 </script>
-
-    <div id="pwaBanner" style="display:none;background:#ffd700;color:#000;text-align:center;padding:10px;font-weight:bold;cursor:pointer;position:fixed;bottom:0;left:0;right:0;z-index:9999" onclick="instalarApp()">
-        📱 Toque aqui para INSTALAR o Tesla 369 no seu celular!
-    </div>
-    <script>
-    window.addEventListener('beforeinstallprompt', function(e) {
-        e.preventDefault();
-        window.deferredPrompt = e;
-        document.getElementById('pwaBanner').style.display = 'block';
-        document.getElementById('btnInstalar').style.display = 'block';
-    });
-    function instalarApp() {
-        if (window.deferredPrompt) {
-            window.deferredPrompt.prompt();
-            window.deferredPrompt.userChoice.then(function(result) {
-                document.getElementById('pwaBanner').style.display = 'none';
-                document.getElementById('btnInstalar').style.display = 'none';
-            });
-        }
-    }
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-        document.getElementById('pwaBanner').style.display = 'none';
-    }
-    </script>
-    
 </body>
 </html>
 '''
@@ -2386,7 +2361,7 @@ def ranking():
     # Coletar dados de todos os usuários
     ranking_list = []
     try:
-        token = requests.get("https://gist.githubusercontent.com/gynbetfc/7af02df43a6b967eea94a35f375b7c10/raw/token.txt").text.strip()
+        token = os.environ.get("GITHUB_TOKEN", "")
         if token:
             url = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/dados"
             h = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github.v3+json"}
