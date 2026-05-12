@@ -3,12 +3,12 @@
   "moedas": 91679464348,
   "moedas_ganhas_hoje": "2026-05-11",
   "total_ciclos": 2,
-  "total_wins": 1,
+  "total_wins": 2,
   "total_losses": 0,
   "total_gasto": 0.0,
-  "total_ganho": 10.29,
-  "lucro_total": 10.29,
-  "banca_atual": 212.77,
+  "total_ganho": 16.63,
+  "lucro_total": 16.63,
+  "banca_atual": 219.11,
   "data_cadastro": "2026-05-11 21:38:58",
   "historico_operacoes": [
     {
@@ -17,10 +17,17 @@
       "valor": 11.83,
       "lucro": 10.29,
       "estrategia": "terceira_igual_primeira"
+    },
+    {
+      "data": "2026-05-11 22:48:03",
+      "resultado": "WIN",
+      "valor": 7.46,
+      "lucro": 6.34,
+      "estrategia": "v_sensitivo"
     }
   ],
   "dias_ativos": {
-    "2026-05-11": 1
+    "2026-05-11": 2
   },
   "skin_atual": "skin_matrix",
   "skins_compradas": [
