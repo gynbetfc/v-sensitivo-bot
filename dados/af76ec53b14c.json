@@ -16,5 +16,7 @@
   "skins_compradas": [
     "skin_padrao"
   ],
-  "estrategias_compradas": []
+  "estrategias_compradas": [
+    "terceira_igual_primeira"
+  ]
 }
