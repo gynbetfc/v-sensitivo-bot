@@ -1,0 +1,21 @@
+# Crie este arquivo manualmente ou use este código Python uma única vez:
+import json
+
+firebase_credentials = {
+  "type": "service_account",
+  "project_id": "nexos-40654",
+  "private_key_id": "3e5a3548a64a6d745c32c2f16b6a977b0c26f1f9",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEuwIBADANBgkqhkiG9w0BAQEFAASCBKUwggShAgEAAoIBAQD0TTpNDPoScwAM\nyS/eLXUsMYvMWKuhQXgQAHiRcQow9Azmpwy8WvliCEb/ZF0zpCm9usGYU02gOx0V\nMn+yT34+BfxvTWMV8lnxVi7d1exZ3PdkYHTkzdnI6+vFuFOWXJ2s8FwwyS5N0OgX\nWwyv1uOOke1F6dbCacyk9MY1Adu3tO4dEUI5NoFYAUpNf4hme583KseKgS8hzvSn\n3TJZOGvNzWrjxItCquLVq7Bzyp9TLne1o38lLjVGcHJY226jorTeIYqjgSQuoYEp\nQcCV8nxvgnEobslArdj3eEXva60ObOrZ+jsN8rBZK2CzlD6pDOblUNBKEZ+BAyHb\nxRS0HG6VAgMBAAECggEADWq5XzZtfHpm4AzjjVzrQLpW3mnnQSOuk5hnBrvRzrb0\nh21YuHZ5mD3yoj+Rk866ASLC05oNmxVsBzg/BZyyhvb+smEqZi/payTrzYCcaqIF\nTzSx7sf0ZEG6sODq7EjZWwBXW9GMsrbcrD2yoGyZkkCm6o5JXmN/mvabdRlNRxUz\n/x89/6jEyVy0pV/O4zbJ/K5m9GhNktFyA8TNeT4aFK2Xs29ekwG76tdS0pOM0o2t\nJP5LZm8qB0Fit7CXKE+D7t8x12IQAy8s0zn+vPLihx0zOvFRMLfimJtcawyMeF9r\nj58e6qRks1eUW/eXYpu1K9ikEi02YAR4ROy6WG2I+QKBgQD8kv+N8fhNDU9ZX6l4\nc8Ljf31pSVBzOlsgfiEiWBsJSELZjkr1vTuoARZfMl1557ZnAy3PYuK1G39ff6Bs\newKjIFOCeVQpoyOXTTOSM8lHALuMnPKc+NyVVFnakPcmmiygm7GIHuLWIUmEIufo\nWVsYUtPzx9VmPxTArmjPMUs6CQKBgQD3nYFPW4xXBwl/HzNqC5pmy5Uj37GmrqOn\nsa/h+4/ElZp5E/aEHzjuOPFOoYtYqJ6egpinDCwjBCqZQN/oL94ppdOHa9l7+f2M\nXx4iOZMrlPSREYS788/2KfDqMWGoXnV2G3R025ZBjCoTXUU7m2tWOSq8DX9YV0w6\nR1/8hlQjLQJ/OzI4swwDJgv4jPnevlxjUO6Qdhy4vkjvEq59FY+QxpwpDtRKvU2c\nrcOTerxTLD8igQI9ul1yxP+s2rUO5F3wQEtTR0EoeJnDvbJaY+m/QuTpEAu40RGC\noX0jkhZn1qRL0VisQzr57zXeBRopQEuxDgJbqscrPMuMEZzO88CZ4QKBgQCRP0/5\n5/6zkgotCnVTUEka4XKzn2ULHEgddypvyeu0afk56s7hA5uWicpq0HH36Llay8qV\nupstUyVVzmtJPML59S7WshnaEnN7YtQ/STyeBPtNGVSeF8+2WzXZemwJopcOV96B\nKcnC22BXCZAx/eIBqvj5ZIV9oX+yc+nHLFiwZQKBgD8ZqAQGqa8yP1EvAyFXsGVr\nqnIgmRUkMcp/ZoykZA5y4a5sldrcaa0Kt7+CYAZdUnqtlqfqbBWI5V3WbbHrRjQ9\nI/Mywvjp9IcD6yOWJAHvxqzM4opIFqbZ19VuDkcoIw3FjGFuet2v2cCCHr+MNmVD\n2TPZUlQh/qE4fu8ovAwy\n-----END PRIVATE KEY-----\n",
+  "client_email": "firebase-adminsdk-fbsvc@nexos-40654.iam.gserviceaccount.com",
+  "client_id": "104738549323751149444",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40nexos-40654.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
+
+with open('firebase-key.json', 'w') as f:
+    json.dump(firebase_credentials, f, indent=2)
+
+print("✅ Arquivo firebase-key.json criado com sucesso!")
