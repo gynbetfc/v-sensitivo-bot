@@ -1,14 +1,31 @@
 #!/bin/bash
 echo "⚡ TESLA 369 BOT"
-rm -f bot.b64 2>/dev/null
-pkill -f python 2>/dev/null
+echo "=============================="
+
+# Mata bots anteriores
+pkill -f "python.*bot.py" 2>/dev/null
 sleep 1
-curl -4 -s "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/main.py?t=$(date +%s)" -o bot.b64
-python -c "import base64; open('bot.py','w').write(base64.b64decode(open('bot.b64').read()).decode())"
-rm bot.b64
+
+# Verifica se o bot.py existe
+if [ ! -f "bot.py" ]; then
+    echo "❌ bot.py não encontrado!"
+    echo "Execute: bash <(curl -4 -s https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/install.sh)"
+    exit 1
+fi
+
+# Verifica firebase-key.json
+if [ ! -f "firebase-key.json" ]; then
+    echo "⚠️ firebase-key.json não encontrado. Baixando..."
+    curl -4 -s -o firebase-key.json "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/firebase-key.json"
+fi
+
+# Inicia o bot
+echo "🚀 Iniciando Tesla 369..."
 python bot.py &
-sleep 8
-termux-open-url http://127.0.0.1:5000 2>/dev/null
+
+# Espera iniciar
+sleep 3
+
+# Abre o navegador
 echo "✅ Bot rodando! http://127.0.0.1:5000"
-wait
-rm -f bot.py
+termux-open-url http://127.0.0.1:5000 2>/dev/null || echo "📱 Abra manualmente: http://127.0.0.1:5000"
