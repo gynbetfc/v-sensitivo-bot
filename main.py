@@ -33,7 +33,12 @@ PERCENTUAL_BANCA = 15
 DRIVE_PATH = "vsens_users"
 os.makedirs(DRIVE_PATH, exist_ok=True)
 
+
 # ⭐⭐⭐ CONFIGURAÇÃO DO MERCADO PAGO ⭐⭐⭐
+MERCADO_PAGO_ACCESS_TOKEN = os.environ.get("MERCADO_PAGO_ACCESS_TOKEN", "APP_USR-4548266140377032-050311-6589fc22b166e4cb2cfad0379b28dcdf-1059299796")
+MERCADO_PAGO_PUBLIC_KEY = os.environ.get("MERCADO_PAGO_PUBLIC_KEY", "APP_USR-39e1950e-420d-479a-8125-902009ca3445")
+MODO_SIMULACAO = False
+
 # Carregar configurações do Mercado Pago
 try:
     config_url = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/config.json"
@@ -2227,20 +2232,29 @@ def conectar():
         d = request.get_json(); email = d.get('email', '').strip(); senha = d.get('senha', '').strip(); tipo = d.get('tipo', 'PRACTICE')
         if not email or not senha: return jsonify({'ok': False, 'erro': 'Email e senha obrigatórios'})
         email_usuario_atual = email
-        
-        # Criar API isolada para este usuário
         API = IQ_Option(email, senha)
         status_conn, reason = API.connect()
         if not status_conn: return jsonify({'ok': False, 'erro': str(reason)[:100]})
         API.change_balance(tipo)
         conectado_iq = True
         usuario = carregar_usuario(email) or criar_usuario(email)
+        
+        # 🔥 NOVA LÓGICA DE MOEDAS
         hoje = str(datetime.now())[:10]
         if usuario.get('moedas_ganhas_hoje') != hoje:
-            usuario['moedas'] = usuario.get('moedas', 0) + 1; usuario['moedas_ganhas_hoje'] = hoje
+            if tipo == 'PRACTICE':
+                # Conta DEMO: ganha 21 moedas no primeiro registro
+                if usuario.get('moedas', 0) <= 1:
+                    usuario['moedas'] = 21
+                else:
+                    usuario['moedas'] = usuario.get('moedas', 0) + 1
+            else:
+                # Conta REAL: ganha 1 moeda por dia
+                usuario['moedas'] = usuario.get('moedas', 0) + 1
+            usuario['moedas_ganhas_hoje'] = hoje
             salvar_usuario(email, usuario)
+        
         skin_atual_global = usuario.get('skin_atual', 'skin_padrao')
-        # Garantir que tesla_369 está nas estratégias compradas
         if 'estrategias_compradas' not in usuario:
             usuario['estrategias_compradas'] = ['tesla_369']
         elif 'tesla_369' not in usuario['estrategias_compradas']:
