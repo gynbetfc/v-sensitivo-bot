@@ -18,19 +18,10 @@ import threading, time, sys, os, json, warnings, requests, uuid, base64
 warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
-# ═══════════ FIREBASE SETUP ═══════════
-import firebase_admin
-from firebase_admin import credentials as fb_credentials, db as fb_db
-
-try:
-    if not firebase_admin._apps:
-        cred = fb_credentials.Certificate("firebase-key.json")
-        firebase_admin.initialize_app(cred, {
-            'databaseURL': 'https://nexos-40654-default-rtdb.firebaseio.com'
-        })
-    print("✅ Firebase conectado!")
-except Exception as e:
-    print(f"⚠️ Erro Firebase: {e}")
+# ═══════════ FIREBASE SETUP (HTTP REST) ═══════════
+FB_URL = "https://nexos-40654-default-rtdb.firebaseio.com"
+FIREBASE_ATIVO = True
+print("✅ Firebase HTTP REST configurado!")
 # ══════════════════════════════════════
 
 
@@ -213,8 +204,7 @@ def salvar_usuario(email, dados):
         pass
     try:
         key = email.replace("@", "_").replace(".", "_")
-        ref = fb_db.reference(f'/usuarios/{key}')
-        ref.set(dados)
+        requests.put(f'{FB_URL}/usuarios/{key}.json', json=dados)
     except Exception as e:
         print(f"⚠️ Firebase offline: {e}")
 
@@ -222,8 +212,8 @@ def carregar_usuario(email):
     """Carrega do Firebase ou local"""
     try:
         key = email.replace("@", "_").replace(".", "_")
-        ref = fb_db.reference(f'/usuarios/{key}')
-        dados = ref.get()
+        r = requests.get(f'{FB_URL}/usuarios/{key}.json')
+        dados = r.json() if r.status_code == 200 else None
         if dados:
             return dados
     except:
@@ -2376,8 +2366,8 @@ def verificar_pix():
 def ranking():
     ranking_list = []
     try:
-        ref = fb_db.reference('/usuarios')
-        usuarios = ref.get()
+        r = requests.get(f'{FB_URL}/usuarios.json')
+        usuarios = r.json() if r.status_code == 200 else {}
         if usuarios:
             for key, user_data in usuarios.items():
                 if user_data:
