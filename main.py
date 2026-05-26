@@ -25,11 +25,6 @@ if _sys_mod.stdout is None:
 
 app = Flask(__name__)
 
-# ═══════════ CORREÇÃO PC ═══════════
-
-# ════════════════════════════════════
-
-
 
 import hashlib as _hl
 import base64 as _b64
@@ -279,7 +274,9 @@ def add_log(msg, tipo='info'):
     t = datetime.now().strftime('%H:%M:%S')
     logs_web.append({'time': t, 'msg': msg, 'tipo': tipo})
     if len(logs_web) > MAX_LOGS_WEB: logs_web = logs_web[-MAX_LOGS_WEB:]
-    print(f"{t} - {msg}"); sys.stdout.flush()
+    print(f"{t} - {msg}")
+    try: sys.stdout.flush()
+    except: pass
 
 def get_logs_html(limite=40):
     html = ''
