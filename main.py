@@ -222,7 +222,7 @@ def criar_usuario(email):
         'total_gasto': 0.0, 'total_ganho': 0.0, 'lucro_total': 0.0,
         'banca_atual': 0.0, 'data_cadastro': str(datetime.now())[:19],
         'historico_operacoes': [],
-        'dias_ativos': {}, 'dias_ativos': {},
+        'dias_ativos': {},
         'skin_atual': 'skin_padrao', 'skins_compradas': ['skin_padrao'],
         'estrategias_compradas': ['tesla_369']
     }
@@ -639,7 +639,7 @@ def executar_ciclo(direcao):
                 u['lucro_total'] = u['total_ganho'] - u['total_gasto']
                 u['banca_atual'] = round(saldo_depois, 2)
                 u['historico_operacoes'].append({'data': str(datetime.now())[:19], 'resultado': 'WIN', 'valor': valor, 'lucro': lucro_liquido, 'estrategia': estrategia_atual})
-                u['dias_ativos']['d' + str(datetime.now())[:10].replace('-', '')] = u['dias_ativos'].get(str(datetime.now())[:10], 0) + 1
+                u['dias_ativos']['d' + str(datetime.now())[:10].replace('-', '')] = u['dias_ativos'].get('d' + str(datetime.now())[:10].replace('-', ''), 0) + 1
                 salvar_usuario(email_usuario_atual, u)
             STOP_GAIN_ATINGIDO = True
             add_log("🎯 STOP GAIN! Vitória alcançada - Bot PARADO!", 'win')
@@ -652,7 +652,7 @@ def executar_ciclo(direcao):
                 u['lucro_total'] = u['total_ganho'] - u['total_gasto']
                 u['banca_atual'] = round(saldo_depois, 2)
                 u['historico_operacoes'].append({'data': str(datetime.now())[:19], 'resultado': 'LOSS', 'valor': valor, 'lucro': -valor, 'estrategia': estrategia_atual})
-                u['dias_ativos']['d' + str(datetime.now())[:10].replace('-', '')] = u['dias_ativos'].get(str(datetime.now())[:10], 0) + 1
+                u['dias_ativos']['d' + str(datetime.now())[:10].replace('-', '')] = u['dias_ativos'].get('d' + str(datetime.now())[:10].replace('-', ''), 0) + 1
                 salvar_usuario(email_usuario_atual, u)
             if i < MARTINGALE: add_log(f"   ➡️ Indo para GALE {i + 1}...", 'loss')
             else: add_log("   💀 CICLO COMPLETO PERDIDO! Bot PARADO!", 'loss')
