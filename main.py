@@ -803,7 +803,19 @@ def chat_enviar():
     msg = data.get('msg', '')[:200]
     if not msg: return jsonify({'ok': False})
     try:
+        # Envia mensagem
         requests.post(f'{FB_URL}/chat.json', json={'nome': nome, 'msg': msg, 'hora': datetime.now().strftime('%H:%M')})
+        # Limpa chat antigo (mantém só 50)
+        try:
+            r_chat = requests.get(f'{FB_URL}/chat.json?orderBy="$key"&limitToLast=51')
+            if r_chat.status_code == 200 and r_chat.json():
+                dados = r_chat.json()
+                if len(dados) > 50:
+                    chaves = sorted(dados.keys())[:-50]
+                    for chave in chaves:
+                        requests.delete(f'{FB_URL}/chat/{chave}.json')
+        except:
+            pass
     except: pass
     return jsonify({'ok': True})
 
@@ -1049,7 +1061,7 @@ HTML = r'''
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
             <span>⚡ TESLA 369</span>
-            <span>v6.5.0 | GALE 2 | SG: 1 WIN</span>
+            <span>v6.5.0 | GALE 2 | SG: 1 WIN | 🔄 Bot roda em background</span>
         </div>
     </div>
     
