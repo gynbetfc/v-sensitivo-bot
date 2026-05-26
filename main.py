@@ -836,7 +836,7 @@ HTML = r'''
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ TESLA 369 BOT v6.5.0</title>
+    <title>⚡ TESLA 369 BOT v6.5.1</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:{{COR_FUNDO}};color:{{COR_TEXTO}};font-family:'Courier New',monospace;padding:10px}
@@ -2556,7 +2556,7 @@ function resetar(){fetch('/api/admin/resetar',{method:'POST',headers:{'Content-T
 
 if __name__ == '__main__':
     print("=" * 50)
-    print("⚡ TESLA 369 BOT v6.5.0 ⚡")
+    print("⚡ TESLA 369 BOT v6.5.1 ⚡")
     print("=" * 50)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
