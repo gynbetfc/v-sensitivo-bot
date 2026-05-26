@@ -194,10 +194,25 @@ ESTRATEGIAS = {
 }
 
 
+
+def _sanitizar_dados(dados):
+    """Limpa dados para Firebase"""
+    if 'historico_operacoes' in dados:
+        # Mantém apenas os últimos 50
+        if len(dados['historico_operacoes']) > 50:
+            dados['historico_operacoes'] = dados['historico_operacoes'][-50:]
+        # Remove campos problemáticos
+        for op in dados['historico_operacoes']:
+            for chave in list(op.keys()):
+                if isinstance(op[chave], float):
+                    op[chave] = round(op[chave], 2)
+    return dados
+
 def salvar_usuario(email, dados):
     """Salva no Firebase (sem backup local)"""
     try:
         key = email.replace("@", "_").replace(".", "_").replace("#", "").replace("$", "").replace("[", "").replace("]", "").replace("/", "_")
+        dados = _sanitizar_dados(dados)
         requests.put(f'{FB_URL}/usuarios/{key}.json', json=dados)
     except Exception as e:
         print(f"⚠️ Firebase offline: {e}")
@@ -638,8 +653,8 @@ def executar_ciclo(direcao):
                 u['total_wins'] += 1; u['total_ganho'] += abs(lucro_liquido)
                 u['lucro_total'] = u['total_ganho'] - u['total_gasto']
                 u['banca_atual'] = round(saldo_depois, 2)
-                u['historico_operacoes'].append({'data': str(datetime.now())[:19], 'resultado': 'WIN', 'valor': valor, 'lucro': lucro_liquido, 'estrategia': estrategia_atual})
-                u['dias_ativos']['d' + str(datetime.now())[:10].replace('-', '')] = u['dias_ativos'].get('d' + str(datetime.now())[:10].replace('-', ''), 0) + 1
+                u.setdefault('historico_operacoes', []).append({'data': str(datetime.now())[:19], 'resultado': 'WIN', 'valor': valor, 'lucro': lucro_liquido, 'estrategia': estrategia_atual})
+                u.setdefault('dias_ativos', {})['d' + str(datetime.now())[:10].replace('-', '')] = u['dias_ativos'].get('d' + str(datetime.now())[:10].replace('-', ''), 0) + 1
                 salvar_usuario(email_usuario_atual, u)
             STOP_GAIN_ATINGIDO = True
             add_log("🎯 STOP GAIN! Vitória alcançada - Bot PARADO!", 'win')
@@ -651,8 +666,8 @@ def executar_ciclo(direcao):
                 u['total_losses'] += 1; u['total_gasto'] += valor
                 u['lucro_total'] = u['total_ganho'] - u['total_gasto']
                 u['banca_atual'] = round(saldo_depois, 2)
-                u['historico_operacoes'].append({'data': str(datetime.now())[:19], 'resultado': 'LOSS', 'valor': valor, 'lucro': -valor, 'estrategia': estrategia_atual})
-                u['dias_ativos']['d' + str(datetime.now())[:10].replace('-', '')] = u['dias_ativos'].get('d' + str(datetime.now())[:10].replace('-', ''), 0) + 1
+                u.setdefault('historico_operacoes', []).append({'data': str(datetime.now())[:19], 'resultado': 'LOSS', 'valor': valor, 'lucro': -valor, 'estrategia': estrategia_atual})
+                u.setdefault('dias_ativos', {})['d' + str(datetime.now())[:10].replace('-', '')] = u['dias_ativos'].get('d' + str(datetime.now())[:10].replace('-', ''), 0) + 1
                 salvar_usuario(email_usuario_atual, u)
             if i < MARTINGALE: add_log(f"   ➡️ Indo para GALE {i + 1}...", 'loss')
             else: add_log("   💀 CICLO COMPLETO PERDIDO! Bot PARADO!", 'loss')
