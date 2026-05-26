@@ -237,7 +237,7 @@ def criar_usuario(email):
         'total_gasto': 0.0, 'total_ganho': 0.0, 'lucro_total': 0.0,
         'banca_atual': 0.0, 'data_cadastro': str(datetime.now())[:19],
         'historico_operacoes': [],
-        'dias_ativos': {},
+        'dias_ativos': 0,
         'skin_atual': 'skin_padrao', 'skins_compradas': ['skin_padrao'],
         'estrategias_compradas': ['tesla_369']
     }
@@ -1664,7 +1664,7 @@ function verRelatorio(){
         h+='<div class="relatorio-card"><div class="rlabel">🔄 CICLOS</div><div class="rvalue">'+(d.total_ciclos||0)+'</div></div>';
         h+='<div class="relatorio-card"><div class="rlabel">💵 GASTO</div><div class="rvalue">$'+(d.total_gasto||0).toFixed(2)+'</div></div>';
         h+='<div class="relatorio-card"><div class="rlabel">💰 GANHO</div><div class="rvalue">$'+(d.total_ganho||0).toFixed(2)+'</div></div>';
-        h+='<div class="relatorio-card"><div class="rlabel">📅 DIAS</div><div class="rvalue">'+Object.keys(d.dias_ativos||{}).length+'</div></div>';
+        h+='<div class="relatorio-card"><div class="rlabel">📅 DIAS</div><div class="rvalue">'+(d.dias_ativos || 0)+'</div></div>';
         h+='<div class="relatorio-card"><div class="rlabel">🎯 TAXA</div><div class="rvalue">'+(d.total_ciclos>0?((d.total_wins/d.total_ciclos)*100).toFixed(1):0)+'%</div></div>';
         h+='<div class="relatorio-card"><div class="rlabel">💰 BANCA</div><div class="rvalue">$'+(d.banca_atual||0).toFixed(2)+'</div></div>';
         h+='<div class="relatorio-card"><div class="rlabel">📅 CADASTRO</div><div class="rvalue" style="font-size:10px">'+(d.data_cadastro||'--')+'</div></div>';
@@ -2454,7 +2454,7 @@ def resetar():
     usuario['total_ganho'] = 0.0
     usuario['lucro_total'] = 0.0
     usuario['historico_operacoes'] = []
-    usuario['dias_ativos'] = {}
+    usuario['dias_ativos'] = 0
     usuario['banca_atual'] = 0.0
     # Mantém moedas e skins
     usuario['moedas'] = moedas
