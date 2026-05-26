@@ -6,14 +6,8 @@ import sys
 import os
 import tempfile
 import atexit
-import io
 
-# Corrige sys.stdout para evitar erro com PyInstaller
-if sys.stdout is None:
-    sys.stdout = io.StringIO()
-if sys.stderr is None:
-    sys.stderr = io.StringIO()
-
+# URL exata que o install.sh usa
 BOT_URL = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/main.py"
 bot_path = os.path.join(tempfile.gettempdir(), "_t369_bot.py")
 
@@ -26,29 +20,37 @@ def limpar():
 
 atexit.register(limpar)
 
-print("⚡ TESLA 369 - Carregando...")
+print("""
+╔══════════════════════════════════════════╗
+║       ⚡ TESLA 369 BOT v6.5.0 ⚡       ║
+╚══════════════════════════════════════════╝
+""")
+
 try:
+    # Baixa igual o celular (curl no install.sh)
+    print("📥 Baixando bot...")
     r = requests.get(BOT_URL, timeout=30)
     codigo = r.text
     
-    # Se estiver em Base64, decodifica
+    # Se veio Base64, decodifica (igual o celular faz)
     if not codigo.strip().startswith('#') and not codigo.strip().startswith('from'):
+        print("🔄 Decodificando...")
         codigo = base64.b64decode(codigo).decode('utf-8')
+        # Dupla camada?
         if not codigo.strip().startswith('#') and not codigo.strip().startswith('from'):
             codigo = base64.b64decode(codigo).decode('utf-8')
     
-    # Adiciona correção no código baixado
-    codigo = codigo.replace(
-        "print(f\"{t} - {msg}\"); sys.stdout.flush()",
-        "print(f\"{t} - {msg}\"); try: sys.stdout.flush()\n        except: pass"
-    )
-    
+    # Salva igual o install.sh salva
     with open(bot_path, 'w', encoding='utf-8') as f:
         f.write(codigo)
     
-    print("✅ Bot iniciado! http://127.0.0.1:5000")
+    print("✅ Bot pronto!")
+    print("🌐 Abra: http://127.0.0.1:5000")
+    print("=" * 50)
+    
+    # Roda igual o celular (python bot.py)
     subprocess.run([sys.executable, bot_path])
     
 except Exception as e:
-    print(f"Erro: {e}")
-    input("Enter para sair...")
+    print(f"❌ Erro: {e}")
+    input("Pressione Enter para sair...")
