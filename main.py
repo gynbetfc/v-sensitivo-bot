@@ -654,7 +654,7 @@ def executar_ciclo(direcao):
                 u['lucro_total'] = u['total_ganho'] - u['total_gasto']
                 u['banca_atual'] = round(saldo_depois, 2)
                 u.setdefault('historico_operacoes', []).append({'data': str(datetime.now())[:19], 'resultado': 'WIN', 'valor': valor, 'lucro': lucro_liquido, 'estrategia': estrategia_atual})
-                u.setdefault('dias_ativos', {})['d' + str(datetime.now())[:10].replace('-', '')] = u['dias_ativos'].get('d' + str(datetime.now())[:10].replace('-', ''), 0) + 1
+                u['dias_ativos'] = u.get('dias_ativos', 0) + 1
                 salvar_usuario(email_usuario_atual, u)
             STOP_GAIN_ATINGIDO = True
             add_log("🎯 STOP GAIN! Vitória alcançada - Bot PARADO!", 'win')
@@ -667,7 +667,7 @@ def executar_ciclo(direcao):
                 u['lucro_total'] = u['total_ganho'] - u['total_gasto']
                 u['banca_atual'] = round(saldo_depois, 2)
                 u.setdefault('historico_operacoes', []).append({'data': str(datetime.now())[:19], 'resultado': 'LOSS', 'valor': valor, 'lucro': -valor, 'estrategia': estrategia_atual})
-                u.setdefault('dias_ativos', {})['d' + str(datetime.now())[:10].replace('-', '')] = u['dias_ativos'].get('d' + str(datetime.now())[:10].replace('-', ''), 0) + 1
+                u['dias_ativos'] = u.get('dias_ativos', 0) + 1
                 salvar_usuario(email_usuario_atual, u)
             if i < MARTINGALE: add_log(f"   ➡️ Indo para GALE {i + 1}...", 'loss')
             else: add_log("   💀 CICLO COMPLETO PERDIDO! Bot PARADO!", 'loss')
