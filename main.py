@@ -7,7 +7,7 @@
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
 # ⚡ TESLA 369 BOT v6.5.0 ⚡
 # TESLA-369 GRÁTIS | v_SENSITIVO 6⚡ | 3=1 3⚡ | LOJA ESTRATÉGIAS | SKINS | MERCADO PAGO
-# BD VIA GITHUB API - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
+# BD VIA FIREBASE HTTP REST - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
 
 from flask import Flask, render_template_string, jsonify, request
@@ -35,16 +35,21 @@ def _dec(s):
 
 
 # ============= CONFIGURAÇÕES FIXAS =============
+
+# ═══════════ FIREBASE HTTP REST ═══════════
+FB_URL = "https://nexos-40654-default-rtdb.firebaseio.com"
+print("✅ Firebase HTTP REST configurado!")
+# ══════════════════════════════════════
+
 MARTINGALE = 2
 PAYOUT_PADRAO = 0.85
 PERCENTUAL_BANCA = 15
-DRIVE_PATH = "vsens_users"
-os.makedirs(DRIVE_PATH, exist_ok=True)
+DRIVE_PATH = "vsens_users"  # Não usado mais
 
 # ⭐⭐⭐ CONFIGURAÇÃO DO MERCADO PAGO ⭐⭐⭐
 # Carregar configurações do Mercado Pago
-MERCADO_PAGO_ACCESS_TOKEN = "MP_ACCESS_TOKEN"
-MERCADO_PAGO_PUBLIC_KEY = "MP_PUBLIC_KEY"
+MERCADO_PAGO_ACCESS_TOKEN = os.environ.get("MP_ACCESS_TOKEN", "")
+MERCADO_PAGO_PUBLIC_KEY = os.environ.get("MP_PUBLIC_KEY", "")
 MODO_SIMULACAO = False
 
 # ⭐ PLANOS DE VOLTS ⭐
@@ -188,39 +193,24 @@ ESTRATEGIAS = {
     }
 }
 
-# ============= BANCO DE DADOS VIA GITHUB API =============
+
 def salvar_usuario(email, dados):
-    """Salva no GitHub via API + backup local"""
+    """Salva no Firebase (sem backup local)"""
     try:
-        token = os.environ.get("GITHUB_TOKEN", "GITHUB_TOKEN_REMOVIDO")
-        if token:
-            fn = f"dados/{_hash_email(email)}.json"
-            u = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/{fn}"
-            h = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github.v3+json"}
-            c = json.dumps(dados, indent=2)
-            r = requests.get(u, headers=h)
-            p = {"message": f"Update {email}", "content": base64.b64encode(c.encode()).decode(), "branch": "main"}
-            if r.status_code == 200: p["sha"] = r.json()["sha"]
-            requests.put(u, json=p, headers=h)
-    except: pass
-    os.makedirs(DRIVE_PATH, exist_ok=True)
-    with open(f"{DRIVE_PATH}/{_hash_email(email)}.json", 'w') as f:
-        json.dump(dados, f, indent=2)
+        key = email.replace("@", "_").replace(".", "_")
+        requests.put(f'{FB_URL}/usuarios/{key}.json', json=dados)
+    except Exception as e:
+        print(f"⚠️ Firebase offline: {e}")
 
 def carregar_usuario(email):
-    """Carrega do GitHub ou local"""
+    """Carrega do Firebase"""
     try:
-        token = os.environ.get("GITHUB_TOKEN", "GITHUB_TOKEN_REMOVIDO")
-        if token:
-            fn = f"dados/{_hash_email(email)}.json"
-            u = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/{fn}"
-            h = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github.v3+json"}
-            r = requests.get(u, headers=h)
-            if r.status_code == 200: return json.loads(base64.b64decode(r.json()["content"]).decode())
-    except: pass
-    arq = f"{DRIVE_PATH}/{_hash_email(email)}.json"
-    if os.path.exists(arq):
-        with open(arq, 'r') as f: return json.load(f)
+        key = email.replace("@", "_").replace(".", "_")
+        r = requests.get(f'{FB_URL}/usuarios/{key}.json')
+        if r.status_code == 200 and r.json():
+            return r.json()
+    except:
+        pass
     return None
 
 def criar_usuario(email):
@@ -228,19 +218,12 @@ def criar_usuario(email):
         'email': email,
         'moedas': 1,
         'moedas_ganhas_hoje': str(datetime.now())[:10],
-        'total_ciclos': 0,
-        'total_wins': 0,
-        'total_losses': 0,
-        'total_gasto': 0.0,
-        'total_ganho': 0.0,
-        'lucro_total': 0.0,
-        'banca_atual': 0.0,
-        'data_cadastro': str(datetime.now())[:19],
-        'historico_operacoes': [],
-        'dias_ativos': {},
-        'skin_atual': 'skin_padrao',
-        'skins_compradas': ['skin_padrao'],
-        'estrategias_compradas': []
+        'total_ciclos': 0, 'total_wins': 0, 'total_losses': 0,
+        'total_gasto': 0.0, 'total_ganho': 0.0, 'lucro_total': 0.0,
+        'banca_atual': 0.0, 'data_cadastro': str(datetime.now())[:19],
+        'historico_operacoes': [], 'dias_ativos': {},
+        'skin_atual': 'skin_padrao', 'skins_compradas': ['skin_padrao'],
+        'estrategias_compradas': ['tesla_369']
     }
     salvar_usuario(email, dados)
     return dados
@@ -805,53 +788,16 @@ def chat_enviar():
     nome = data.get('nome', 'Anonimo')[:15]
     msg = data.get('msg', '')[:200]
     if not msg: return jsonify({'ok': False})
-    
     try:
-        # Salvar no GitHub
-        chat_id = datetime.now().strftime('%Y%m%d%H%M%S%f')[:-3]
-        fn = f"chat/{chat_id}.json"
-        msg_data = {'nome': nome, 'msg': msg, 'hora': datetime.now().strftime('%H:%M')}
-        
-        token = "GITHUB_TOKEN_REMOVIDO"
-        h = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github.v3+json"}
-        url = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/{fn}"
-        
-        c = json.dumps(msg_data)
-        r = requests.put(url, json={"message": "💬", "content": base64.b64encode(c.encode()).decode(), "branch": "main"}, headers=h)
-    except:
-        pass
-    
-    # Limpar chat antigo (manter só 50)
-    try:
-        r_list = requests.get("https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/chat", headers=h)
-        if r_list.status_code == 200:
-            arquivos = sorted(r_list.json(), key=lambda x: x['name'])
-            while len(arquivos) > 50:
-                arq_del = arquivos.pop(0)
-                requests.delete(arq_del['url'], json={"message":"🧹","sha":arq_del['sha'],"branch":"main"}, headers=h)
-    except:
-        pass
-    
+        requests.post(f'{FB_URL}/chat.json', json={'nome': nome, 'msg': msg, 'hora': datetime.now().strftime('%H:%M')})
+    except: pass
     return jsonify({'ok': True})
 
 @app.route('/chat_mensagens')
 def chat_mensagens_route():
     try:
-        token = "GITHUB_TOKEN_REMOVIDO"
-        h = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github.v3+json"}
-        url = "https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/chat"
-        r = requests.get(url, headers=h)
-        
-        mensagens = []
-        if r.status_code == 200:
-            for arq in sorted(r.json(), key=lambda x: x['name'], reverse=True)[:50]:
-                try:
-                    r_msg = requests.get(arq['url'], headers=h)
-                    msg = json.loads(base64.b64decode(r_msg.json()['content']).decode())
-                    mensagens.append(msg)
-                except:
-                    pass
-        
+        r = requests.get(f'{FB_URL}/chat.json?orderBy="$key"&limitToLast=50')
+        mensagens = list(r.json().values()) if r.status_code == 200 and r.json() else []
         return jsonify({'mensagens': mensagens, 'online': 1})
     except:
         return jsonify({'mensagens': [], 'online': 1})
@@ -2443,51 +2389,28 @@ def verificar_pix():
 
 @app.route('/ranking')
 def ranking():
-    # Coletar dados de todos os usuários
     ranking_list = []
     try:
-        token = os.environ.get("GITHUB_TOKEN", "GITHUB_TOKEN_REMOVIDO")
-        if token:
-            url = f"https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/dados"
-            h = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github.v3+json"}
-            r = requests.get(url, headers=h)
-            if r.status_code == 200:
-                arquivos = r.json()
-                for arquivo in arquivos:
-                    try:
-                        r_user = requests.get(arquivo['url'], headers=h)
-                        user_data = json.loads(base64.b64decode(r_user.json()['content']).decode())
-                        ranking_list.append({
-                            'email': user_data.get('email', 'N/A')[:20] + '...',
-                            'lucro_total': round(user_data.get('lucro_total', 0), 2),
-                            'total_wins': user_data.get('total_wins', 0),
-                            'total_losses': user_data.get('total_losses', 0),
-                            'total_ciclos': user_data.get('total_ciclos', 0),
-                            'taxa': round((user_data.get('total_wins', 0) / max(user_data.get('total_ciclos', 1), 1)) * 100, 1),
-                            'banca_atual': round(user_data.get('banca_atual', 0), 2)
-                        })
-                    except:
-                        pass
-    except:
-        pass
-    
-    # Ordenar por lucro total (maior primeiro)
+        r = requests.get(f'{FB_URL}/usuarios.json')
+        usuarios = r.json() if r.status_code == 200 else {}
+        if usuarios:
+            for key, user_data in usuarios.items():
+                if user_data:
+                    ranking_list.append({
+                        'email': user_data.get('email', 'N/A')[:20] + '...',
+                        'lucro_total': round(user_data.get('lucro_total', 0), 2),
+                        'total_wins': user_data.get('total_wins', 0),
+                        'total_losses': user_data.get('total_losses', 0),
+                        'total_ciclos': user_data.get('total_ciclos', 0),
+                        'taxa': round((user_data.get('total_wins', 0) / max(user_data.get('total_ciclos', 1), 1)) * 100, 1),
+                        'banca_atual': round(user_data.get('banca_atual', 0), 2)
+                    })
+    except: pass
     ranking_list.sort(key=lambda x: x['lucro_total'], reverse=True)
-    
-    # Estatísticas globais
     total_ops = sum(u['total_ciclos'] for u in ranking_list)
     total_wins = sum(u['total_wins'] for u in ranking_list)
     taxa_global = round((total_wins / max(total_ops, 1)) * 100, 1) if total_ops > 0 else 0
-    
-    return jsonify({
-        'ranking': ranking_list[:20],
-        'stats': {
-            'total_usuarios': len(ranking_list),
-            'total_ops': total_ops,
-            'total_wins': total_wins,
-            'taxa_global': taxa_global
-        }
-    })
+    return jsonify({'ranking': ranking_list[:20], 'stats': {'total_usuarios': len(ranking_list), 'total_ops': total_ops, 'total_wins': total_wins, 'taxa_global': taxa_global}})
 
 @app.route('/relatorio')
 def relatorio():
