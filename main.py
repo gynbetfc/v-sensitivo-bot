@@ -17,14 +17,8 @@ import threading, time, sys, os, json, warnings, requests, uuid, base64
 
 warnings.filterwarnings("ignore")
 
-# Corrige stdout para PC
-import sys as _sys_mod
-if _sys_mod.stdout is None:
-    import io
-    _sys_mod.stdout = io.StringIO()
 
 app = Flask(__name__)
-
 
 import hashlib as _hl
 import base64 as _b64
@@ -40,7 +34,6 @@ def _dec(s):
         return _b64.b64decode(s).decode()
     except:
         return s
-
 
 # ============= CONFIGURAÇÕES FIXAS =============
 
@@ -200,7 +193,6 @@ ESTRATEGIAS = {
         'gratis': False
     }
 }
-
 
 
 def _sanitizar_dados(dados):
@@ -441,7 +433,6 @@ def sinal_mhi_filtrado():
         ultimo_sinal = "⏳..."; return None
     except Exception as e: add_log(f"Erro: {e}", 'error'); return None
 
-
 def sinal_terceira_igual_primeira():
     global ultimo_sinal, ultima_analise
     try:
@@ -559,7 +550,6 @@ MAPA_SINAIS = {
     'reversao': sinal_reversao,
     'm5': sinal_m5
 }
-
 
 @app.route('/set_percentual', methods=['POST'])
 def set_percentual():
@@ -755,7 +745,6 @@ def verificador_automatico_pix():
 
 threading.Thread(target=verificador_automatico_pix, daemon=True).start()
 
-
 # ═══════════════════════════════════════════════════════
 # ROTA PARA COMPRAR ESTRATÉGIA
 # ═══════════════════════════════════════════════════════
@@ -800,7 +789,6 @@ def comprar_estrategia():
     salvar_usuario(email_usuario_atual, u)
     
     return jsonify({'ok': True, 'msg': f'Estratégia {estrategia["nome"]} comprada!', 'moedas': u['moedas']})
-
 
 
 # ═══════════════════════════════════════════════════════
@@ -1199,7 +1187,6 @@ HTML = r'''
 
 <script>
 
-
 function mostrarCategoriaSkin(categoria) {
     // Atualizar sub-sub-abas
     document.querySelectorAll('[id^="sub-sub-tab-"]').forEach(function(t) { t.classList.remove('active'); });
@@ -1236,7 +1223,6 @@ function openTab(tab){
             renderEstrategias();
         }
 }
-
 
 function atualizarPercentual() {
     var perc = document.getElementById('percentualBanca').value;
@@ -1386,7 +1372,6 @@ function selecionarEstrategia(key){
     document.getElementById('est_'+key).classList.add('ativa');
     fetch('/selecionar_estrategia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estrategia:key})});
 }
-
 
 function renderLojaCategoria(categoria) {
     fetch('/status').then(r=>r.json()).then(d=>{
@@ -1690,7 +1675,6 @@ function verRelatorio(){
     });
 }
 
-
 function verRanking() {
     document.getElementById('relatorioContent').innerHTML = '<p style="color:#ffd700;text-align:center">🏆 Carregando ranking...</p>';
     
@@ -1808,7 +1792,6 @@ window.onload=function(){
 }
 
 
-
 // ============= CHAT AUTO-CONECTA =============
 var chatIntervalo = null;
 
@@ -1874,7 +1857,6 @@ function atualizarChat() {
         document.getElementById('chatOnline').textContent = '🟢 ' + (d.online || 1) + ' online';
     });
 }
-
 
 // ========== EFEITOS VISUAIS DAS SKINS ==========
 function initSkinEffects() {
@@ -2412,7 +2394,6 @@ def verificar_pix():
         return jsonify({'pago': True})
     return jsonify({'pago': False})
 
-
 @app.route('/ranking')
 def ranking():
     ranking_list = []
@@ -2475,7 +2456,6 @@ def resetar():
     salvar_usuario(email, usuario)
     return jsonify({'ok': True, 'msg': '✅ Estatísticas resetadas! VOLTS e skins mantidas.'})
 
-
 @app.route('/shutdown')
 def shutdown():
     import os, signal
@@ -2492,7 +2472,6 @@ def shutdown():
         pass
     
     return jsonify({'ok': True})
-
 
 
 @app.route('/admin369', methods=['GET','POST'])
