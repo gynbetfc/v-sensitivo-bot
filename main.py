@@ -728,7 +728,7 @@ def verificar_pagamento_mp(pix_id):
     except: return False
 
 def verificador_automatico_pix():
-    add_log("🔄 Verificador automático PIX iniciado!", "info")
+    # Verificador PIX silencioso
     while True:
         time.sleep(10)
         try:
