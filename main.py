@@ -16,15 +16,17 @@ from datetime import datetime
 import threading, time, sys, os, json, warnings, requests, uuid, base64
 
 warnings.filterwarnings("ignore")
+
+# Corrige stdout para PC
+import sys as _sys_mod
+if _sys_mod.stdout is None:
+    import io
+    _sys_mod.stdout = io.StringIO()
+
 app = Flask(__name__)
 
 # ═══════════ CORREÇÃO PC ═══════════
-import sys as _sys
-import io as _io
-if _sys.stdout is None:
-    _sys.stdout = _io.StringIO()
-if _sys.stderr is None:
-    _sys.stderr = _io.StringIO()
+
 # ════════════════════════════════════
 
 
@@ -277,8 +279,7 @@ def add_log(msg, tipo='info'):
     t = datetime.now().strftime('%H:%M:%S')
     logs_web.append({'time': t, 'msg': msg, 'tipo': tipo})
     if len(logs_web) > MAX_LOGS_WEB: logs_web = logs_web[-MAX_LOGS_WEB:]
-    print(f"{t} - {msg}"); try: sys.stdout.flush()
-except: pass
+    print(f"{t} - {msg}"); sys.stdout.flush()
 
 def get_logs_html(limite=40):
     html = ''
