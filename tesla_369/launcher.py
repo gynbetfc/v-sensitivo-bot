@@ -1,75 +1,71 @@
 #!/usr/bin/env python3
-"""
-⚡ TESLA 369 LAUNCHER v6.5.2
-Lê o código DIRETO do GitHub em tempo real
-NÃO salva nada no dispositivo
-"""
 import requests
 import base64
 import sys
 import time
 import webbrowser
 
-GITHUB_REPO = "gynbetfc/v-sensitivo-bot"
-GITHUB_BRANCH = "main"
-BASE_URL = f"https://raw.githubusercontent.com/{GITHUB_REPO}/{GITHUB_BRANCH}/tesla_369"
-
-print("⚡ TESLA 369 v6.5.2 - Carregando...")
-
-# ═══════════ Baixa todos os módulos como texto ═══════════
+BASE_URL = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/tesla_369"
 modulos = {}
 
-def baixar_modulo(nome, caminho):
+def baixar(nome, caminho):
     try:
-        url = f"{BASE_URL}/{caminho}"
-        r = requests.get(url, timeout=10)
+        r = requests.get(BASE_URL + "/" + caminho, timeout=10)
         if r.status_code == 200:
             modulos[nome] = r.text
-            print(f"  ✅ {nome}")
-            return True
+            print("  OK " + nome)
         else:
-            print(f"  ⚠️ {nome} (HTTP {r.status_code})")
-            return False
+            print("  ERRO " + nome + " HTTP " + str(r.status_code))
     except Exception as e:
-        print(f"  ❌ {nome}: {e}")
-        return False
+        print("  FALHA " + nome + ": " + str(e))
 
-print("📥 Baixando módulos...")
-baixar_modulo("firebase", "core/firebase.py")
-baixar_modulo("indicadores", "core/indicadores.py")
-baixar_modulo("mercado_pago", "core/mercado_pago.py")
-baixar_modulo("skins_init", "skins/__init__.py")
-baixar_modulo("skins_padrao", "skins/padrao.py")
-baixar_modulo("skins_bobmarley", "skins/bobmarley.py")
-baixar_modulo("estrategias_init", "estrategias/__init__.py")
-baixar_modulo("estrategia_tesla369", "estrategias/tesla_369.py")
-baixar_modulo("main", "main.py")
+print("⚡ TESLA 369 v6.5.2")
+print("📥 Baixando modulos...")
 
-# ═══════════ Junta tudo em um único script ═══════════
-codigo_completo = ""
-for nome, conteudo in modulos.items():
-    if nome != "main":
-        codigo_completo += conteudo + '
-'
+baixar("fb", "core/firebase.py")
+baixar("ind", "core/indicadores.py")
+baixar("mp", "core/mercado_pago.py")
+baixar("skins_init", "skins/__init__.py")
+baixar("skins_padrao", "skins/padrao.py")
+baixar("skins_bob", "skins/bobmarley.py")
+baixar("skins_dark", "skins/dark.py")
+baixar("skins_neon", "skins/neon.py")
+baixar("skins_br", "skins/brasil.py")
+baixar("skins_fire", "skins/fire.py")
+baixar("skins_ice", "skins/ice.py")
+baixar("skins_sakura", "skins/sakura.py")
+baixar("skins_sunset", "skins/sunset.py")
+baixar("skins_ocean", "skins/ocean.py")
+baixar("skins_matrix", "skins/matrix.py")
+baixar("skins_thunder", "skins/thunder.py")
+baixar("skins_magos", "skins/magos.py")
+baixar("skins_princesa", "skins/princesa.py")
+baixar("est_init", "estrategias/__init__.py")
+baixar("est_tesla", "estrategias/tesla_369.py")
+baixar("est_v", "estrategias/v_sensitivo.py")
+baixar("est_m5", "estrategias/m5.py")
+baixar("main", "main.py")
 
-# Adiciona o main.py (substitui os imports por nada, pois já juntamos tudo)
-main_code = modulos.get("main", "")
-main_code = main_code.replace("from core.firebase import", "# from core.firebase import")
-main_code = main_code.replace("from core.indicadores import", "# from core.indicadores import")
-main_code = main_code.replace("from core.mercado_pago import", "# from core.mercado_pago import")
-main_code = main_code.replace("from skins import", "# from skins import")
-main_code = main_code.replace("from estrategias import", "# from estrategias import")
+# Junta tudo
+tudo = ""
+for k, v in modulos.items():
+    if k != "main":
+        tudo = tudo + v + "
+"
 
-codigo_completo += main_code
+main_code = modulos.get("main", "print('ERRO: main.py nao encontrado')")
+main_code = main_code.replace("from core.firebase import", "#")
+main_code = main_code.replace("from core.indicadores import", "#")
+main_code = main_code.replace("from core.mercado_pago import", "#")
+main_code = main_code.replace("from skins import", "#")
+main_code = main_code.replace("from estrategias import", "#")
+tudo = tudo + main_code
 
-# ═══════════ Executa TUDO em memória ═══════════
 print("🚀 Executando...")
-namespace = {"__name__": "__main__"}
 try:
-    exec(codigo_completo, namespace)
+    exec(tudo, {"__name__": "__main__"})
 except Exception as e:
-    print(f"❌ Erro: {e}")
-    # Mostra a linha do erro
+    print("❌ Erro: " + str(e))
     import traceback
     traceback.print_exc()
-    input("Pressione Enter para sair...")
+    input("Enter para sair...")
