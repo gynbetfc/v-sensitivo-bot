@@ -60,8 +60,7 @@ for arq in arquivos:
 codigo_completo = ""
 for arq, conteudo in modulos.items():
     if arq != "main.py":
-        codigo_completo += conteudo + "
-"
+        codigo_completo += conteudo + '\n'
 
 # Adiciona o main.py (remove imports relativos)
 main_code = modulos.get("main.py", "")
