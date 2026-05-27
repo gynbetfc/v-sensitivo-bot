@@ -212,6 +212,124 @@ def bot_loop():
 # ═══════════════════════════════════════════════════════
 
 
+
+def calcular_entradas(b, p, g):
+    global PERCENTUAL_BANCA
+    bs = (b * PERCENTUAL_BANCA / 100) * 0.99
+    e0 = bs / sum((1/p)**i for i in range(g+1))
+    entradas = [e0]
+    for i in range(1, g+1): entradas.append((sum(entradas)+e0)/p)
+    ajuste = bs / sum(entradas)
+    entradas = [round(e*ajuste, 2) for e in entradas]
+    soma = sum(entradas)
+    if soma > b: entradas[-1] = round(entradas[-1] - (soma-b) - 0.02, 2)
+    return [max(1, e) for e in entradas]
+
+def pegar_timestamp():
+    v = API.get_candles(par, timeframe_atual, 1, time.time())
+    return v[0]['from'] if v else 0
+
+def aguardar_inicio_vela():
+    add_log("   Aguardando inicio da vela...", 'info')
+    while datetime.now().second > 5:
+        if not bot_rodando: return False
+        time.sleep(0.3)
+    while True:
+        if not bot_rodando: return False
+        ts1 = pegar_timestamp(); time.sleep(0.5); ts2 = pegar_timestamp()
+        if ts1 == ts2: add_log("   Vela confirmada!", 'info'); return True
+
+def aguardar_vela_fechar(ts_entrada):
+    add_log("   Aguardando vela fechar...", 'info')
+    while True:
+        if not bot_rodando: return False
+        try:
+            if pegar_timestamp() != ts_entrada: add_log("   Vela fechou!", 'info'); return True
+        except: pass
+        time.sleep(0.3)
+
+def verificar_resultado(saldo_antes, valor):
+    saldo_base = saldo_antes - valor
+    try:
+        s = API.get_balance(); d = round(s-saldo_base, 2)
+        if d >= 1.0: return d
+    except: pass
+    return -valor
+
+def executar_ciclo(direcao):
+    global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando
+    bi = API.get_balance()
+    payout = Payout(par)
+    entradas = calcular_entradas(bi, payout, MARTINGALE)
+    add_log(f"Banca: ${bi:.2f} | Payout: {payout*100:.0f}%", 'info')
+    for i in range(MARTINGALE + 1):
+        if not bot_rodando: break
+        valor = entradas[i]
+        if not aguardar_inicio_vela(): break
+        saldo_antes = API.get_balance()
+        if saldo_antes < valor: add_log("Saldo insuficiente!", 'error'); break
+        add_log(f"{'ENTRADA' if i == 0 else f'GALE {i}'}: {direcao.upper()} ${valor:.2f}", 'info')
+        st, id_ordem = API.buy(valor, par, direcao, 1)
+        if not st or not id_ordem:
+            try: st, id_ordem = API.buy_digital_spot(par, valor, direcao, 1)
+            except: pass
+        if not st or not id_ordem: add_log("Falha na ordem!", 'error'); break
+        time.sleep(0.3)
+        ts_real = pegar_timestamp()
+        if not aguardar_vela_fechar(ts_real): break
+        res = verificar_resultado(saldo_antes, valor)
+        lucro += round(res, 2)
+        if res > 0:
+            add_log(f"WIN! +${round(API.get_balance()-saldo_antes,2):.2f}", 'win')
+            NumDeOperacoes += 1
+            u = carregar_usuario(email_usuario_atual)
+            if u:
+                u['total_wins'] += 1; u['total_ganho'] += abs(res)
+                u['lucro_total'] = u['total_ganho'] - u['total_gasto']
+                u['banca_atual'] = round(API.get_balance(), 2)
+                u.setdefault('historico_operacoes', []).append({'data': str(datetime.now())[:19], 'resultado': 'WIN', 'valor': valor, 'lucro': res, 'estrategia': estrategia_atual})
+                u['dias_ativos'] = u.get('dias_ativos', 0) + 1
+                salvar_usuario(email_usuario_atual, u)
+            STOP_GAIN_ATINGIDO = True; add_log("STOP GAIN! Bot PARADO!", 'win'); break
+        else:
+            add_log(f"LOSS! -${valor:.2f}", 'loss')
+            u = carregar_usuario(email_usuario_atual)
+            if u:
+                u['total_losses'] += 1; u['total_gasto'] += valor
+                u['lucro_total'] = u['total_ganho'] - u['total_gasto']
+                u.setdefault('historico_operacoes', []).append({'data': str(datetime.now())[:19], 'resultado': 'LOSS', 'valor': valor, 'lucro': -valor, 'estrategia': estrategia_atual})
+                u['dias_ativos'] = u.get('dias_ativos', 0) + 1
+                salvar_usuario(email_usuario_atual, u)
+            if i < MARTINGALE: add_log(f"Indo para GALE {i+1}...", 'loss')
+    bf = API.get_balance()
+    add_log(f"{'LUCRO' if bf > bi else 'PERDA'}: ${abs(bf-bi):.2f} | Banca: ${bf:.2f}", 'info')
+    bot_rodando = False
+
+def bot_loop():
+    global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO
+    BANCA_INICIAL_DO_BOT = API.get_balance()
+    STOP_GAIN_ATINGIDO = False; lucro = 0.0; NumDeOperacoes = 0
+    add_log(f"TESLA 369 - INICIANDO... {estrategia_atual}", 'sensitive')
+    add_log(f"{par} | Timeframe: {timeframe_atual}s | Banca: ${BANCA_INICIAL_DO_BOT:.2f}")
+    # Importa sinal da estratégia atual
+    if estrategia_atual == 'tesla_369':
+        from estrategias.tesla_369 import sinal_tesla_369 as funcao_sinal
+    elif estrategia_atual == 'v_sensitivo':
+        from estrategias.v_sensitivo import sinal_v_sensitivo as funcao_sinal
+    else:
+        from estrategias.tesla_369 import sinal_tesla_369 as funcao_sinal
+    
+    while bot_rodando and not STOP_GAIN_ATINGIDO:
+        try:
+            resultado = funcao_sinal(API, par, timeframe_atual)
+            if isinstance(resultado, tuple):
+                direcao, _ = resultado
+            else:
+                direcao = resultado
+            if direcao: executar_ciclo(direcao); break
+            time.sleep(0.3)
+        except Exception as e: add_log(f"Erro: {e}", 'error'); time.sleep(5)
+
 # ═══════════ HTML ═══════════
 HTML = r'''
 <!DOCTYPE html>
