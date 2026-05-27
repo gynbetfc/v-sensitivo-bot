@@ -83,9 +83,6 @@ def calcular_entradas(b, p, g):
 
 def pegar_timestamp():
 def pegar_timestamp():
-    v = API.get_candles(par, timeframe_atual, 1, time.time())
-    return v[0]['from'] if v else 0
-
 def aguardar_inicio_vela():
 def aguardar_inicio_vela():
     add_log("   ⏳ Aguardando início da vela...", 'info')
@@ -218,10 +215,6 @@ def calcular_entradas(b, p, g):
     soma = sum(entradas)
     if soma > b: entradas[-1] = round(entradas[-1] - (soma-b) - 0.02, 2)
     return [max(1, e) for e in entradas]
-
-def pegar_timestamp():
-    v = API.get_candles(par, timeframe_atual, 1, time.time())
-    return v[0]['from'] if v else 0
 
 def aguardar_inicio_vela():
     add_log("   Aguardando inicio da vela...", 'info')
