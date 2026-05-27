@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-⚡ TESLA 369 LAUNCHER v2.0
+⚡ TESLA 369 LAUNCHER v6.5.2 v6.5.2
 Lê o código DIRETO do GitHub em tempo real
 NÃO salva nada no dispositivo
 """
