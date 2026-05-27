@@ -131,7 +131,7 @@ SKINS = [
         'cor_header_bg': 'linear-gradient(135deg,#1a0010,#2a0a20,#3a1530,#2a0a20,#1a0010)', 'cor_header_borda': '#ff69b4',
         'header_extra': '<div class="coroa-p">👑</div>',
         'css_extra': '.coroa-p{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:40px;animation:float 2s ease-in-out infinite}@keyframes float{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-10px)}}.header h1{color:#ff69b4!important;text-shadow:0 0 30px #ff1493!important}'
-    }
+    },
     {
         'id': 'skin_bobmarley', 'nome': '🦁 BOB MARLEY', 'desc': 'Cores da Jamaica: verde, amarelo e vermelho', 'preco_moedas': 6, 'categoria': 'basica',
         'cor_fundo': '#0a1a0a', 'cor_panel': '#1a2a0a', 'cor_destaque': '#ffd700', 'cor_texto': '#ffe0c0',
