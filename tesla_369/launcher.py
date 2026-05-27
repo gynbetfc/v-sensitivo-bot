@@ -71,6 +71,12 @@ main_code = main_code.replace("from skins import", "# from skins")
 main_code = main_code.replace("from estrategias import", "# from estrategias")
 codigo_completo += main_code
 
+
+# Corrige automaticamente erros de indentação
+import re
+codigo_completo = re.sub(r'\n\s*\n(\s*def )', r'\n\1', codigo_completo)
+codigo_completo = re.sub(r'(def \w+\([^)]*\):)\n\s*\n', r'\1\n    pass\n', codigo_completo)
+
 print("🚀 Executando...")
 try:
     exec(codigo_completo, {"__name__": "__main__"})
