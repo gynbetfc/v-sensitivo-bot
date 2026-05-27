@@ -49,8 +49,8 @@ baixar_modulo("main", "main.py")
 codigo_completo = ""
 for nome, conteudo in modulos.items():
     if nome != "main":
-        codigo_completo += conteudo + "
-"
+        codigo_completo += conteudo + '
+'
 
 # Adiciona o main.py (substitui os imports por nada, pois já juntamos tudo)
 main_code = modulos.get("main", "")
