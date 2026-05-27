@@ -1,5 +1,5 @@
 #!/bin/bash
-echo "⚡ TESLA 369 BOT - Instalação Segura"
+echo "⚡ TESLA 369 BOT v6.5.2 - Instalação Segura"
 echo "===================================="
 pkill -f "python.*launcher" 2>/dev/null
 sleep 1
