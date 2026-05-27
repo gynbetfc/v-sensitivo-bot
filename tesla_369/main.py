@@ -82,13 +82,11 @@ def calcular_entradas(b, p, g):
     return [max(1, e) for e in entradas]
 
 def pegar_timestamp():
-    pass  # placeholder
 def pegar_timestamp():
     v = API.get_candles(par, timeframe_atual, 1, time.time())
     return v[0]['from'] if v else 0
 
 def aguardar_inicio_vela():
-    pass  # placeholder
 def aguardar_inicio_vela():
     add_log("   ⏳ Aguardando início da vela...", 'info')
     while datetime.now().second > 5:
@@ -100,7 +98,6 @@ def aguardar_inicio_vela():
         if ts1 == ts2: add_log("   ✅ Vela confirmada!", 'info'); return True
 
 def aguardar_vela_fechar(ts_entrada):
-    pass  # placeholder
 def aguardar_vela_fechar(ts_entrada):
     add_log(f"   ⏳ Aguardando vela fechar...", 'info')
     while True:
@@ -111,7 +108,6 @@ def aguardar_vela_fechar(ts_entrada):
         time.sleep(0.3)
 
 def verificar_resultado(saldo_antes, valor):
-    pass  # placeholder
 def verificar_resultado(saldo_antes, valor):
     saldo_base = saldo_antes - valor
     try:
@@ -121,7 +117,6 @@ def verificar_resultado(saldo_antes, valor):
     return -valor
 
 def executar_ciclo(direcao):
-    pass  # placeholder
 def executar_ciclo(direcao):
     global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando
     bi = API.get_balance()
@@ -189,7 +184,6 @@ def executar_ciclo(direcao):
     add_log("⏹️ Ciclo concluído! Clique em CONECTAR e depois COMEÇAR OPERAR para novo ciclo.", 'info')
 
 def bot_loop():
-    pass  # placeholder
 def bot_loop():
     global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO
     nome_est = ESTRATEGIAS.get(estrategia_atual, ESTRATEGIAS['v_sensitivo'])['nome']
@@ -598,7 +592,6 @@ def processar_html_com_skin():
 # ═══════════ ROTAS ═══════════
 @app.route('/')
 def index(): return render_template_string(processar_html_com_skin())
-    pass  # placeholder
 @app.route('/status')
 def status():
     u = carregar_usuario(email_usuario_atual) if email_usuario_atual else {}
