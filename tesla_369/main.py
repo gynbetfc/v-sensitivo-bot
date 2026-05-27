@@ -1,4 +1,4 @@
-# ⚡ TESLA 369 BOT v6.5.1 ⚡
+# ⚡ TESLA 369 BOT v6.5.2 ⚡
 from flask import Flask, render_template_string, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
 from datetime import datetime
@@ -336,7 +336,7 @@ HTML = r'''
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ TESLA 369 BOT v6.5.1</title>
+    <title>⚡ TESLA 369 BOT v6.5.2</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:{{COR_FUNDO}};color:{{COR_TEXTO}};font-family:'Courier New',monospace;padding:10px}
@@ -561,7 +561,7 @@ HTML = r'''
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
             <span>⚡ TESLA 369</span>
-            <span>v6.5.1 | GALE 2 | SG: 1 WIN | 🔄 Bot roda em background</span>
+            <span>v6.5.2 | GALE 2 | SG: 1 WIN | 🔄 Bot roda em background</span>
         </div>
     </div>
     
@@ -826,7 +826,7 @@ def set_percentual():
     return jsonify({'ok': True})
 
 # ═══════════ INICIAR ═══════════
-print("⚡ TESLA 369 v6.5.1 - Estrutura Modular")
+print("⚡ TESLA 369 v6.5.2 - Estrutura Modular")
 print(f"📁 Skins: {len(SKINS)} | 📊 Estratégias: {len(ESTRATEGIAS)}")
 
 if __name__ == '__main__':
