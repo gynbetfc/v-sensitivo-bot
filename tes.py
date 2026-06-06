@@ -496,8 +496,15 @@ def calcular_entradas(b, p, g):
     return [max(1, e) for e in entradas]
 
 def pegar_timestamp():
-    v = API.get_candles(par, timeframe_atual, 1, time.time())
-    return v[0]['from'] if v else 0
+    try:
+        v = API.get_candles(par, timeframe_atual, 1, time.time())
+        # Só tenta acessar a posição [0] se a resposta for uma lista válida e preenchida
+        if v and isinstance(v, list) and len(v) > 0:
+            return v[0]['from']
+    except Exception as e:
+        pass
+    return 0
+
 
 def aguardar_inicio_vela():
     add_log("   ⏳ Aguardando início da vela...", 'info')
@@ -1668,18 +1675,20 @@ function verRanking() {
         h += '<table class="historico-table">';
         h += '<tr><th>#</th><th>EMAIL</th><th>LUCRO</th><th>WINS</th><th>LOSS</th><th>TAXA</th><th>BANCA</th></tr>';
                 d.ranking.forEach(function(u, i) {
-            var cor = i === 0 ? '#ffd700' : (i === 1 ? '#c0c0c0' : (i === 2 ? '#cd7f32' : '#fff'));
-            var medalha = i === 0 ? '🥇' : (i === 1 ? '🥈' : (i === 2 ? '🥉' : (i + 1)));
-            h += '<tr>';
-            h += '<td style="color:' + cor + ';font-weight:bold">' + medalha + '</td>';
-            h += '<td style="color:#ccc;font-size:8px">' + u.email + '</td>';
-            h += '<td style="color:' + (u.lucro_total >= 0 ? '#00ff88' : '#ff4444') + '">$' + u.lucro_total.toFixed(2) + '</td>';
-            h += '<td style="color:#00ff88">' + u.total_wins + '<tr>';
-            h += '<td style="color:#ff4444">' + u.total_losses + '</td>';
-            h += '<td style="color:#ffd700">' + u.taxa + '%</td>';
-            h += '<td style="color:#00ff88">$' + u.banca_atual.toFixed(2) + '</td>';
-            h += '</tr>';
-        });
+    var cor = i === 0 ? '#ffd700' : (i === 1 ? '#c0c0c0' : (i === 2 ? '#cd7f32' : '#fff'));
+    var medalha = i === 0 ? '🥇' : (i === 1 ? '🥈' : (i === 2 ? '🥉' : (i + 1)));
+    
+    h += '<tr>';
+    h += '<td style="color:' + cor + ';font-weight:bold">' + medalha + '</td>';
+    h += '<td style="color:#ccc;font-size:8px">' + u.email + '</td>';
+    h += '<td style="color:' + (u.lucro_total >= 0 ? '#00ff88' : '#ff4444') + '">$' + u.lucro_total.toFixed(2) + '</td>';
+    h += '<td style="color:#00ff88">' + u.total_wins + '</td>'; // <-- CORRIGIDO: Agora fecha com </td>
+    h += '<td style="color:#ff4444">' + u.total_losses + '</td>';
+    h += '<td style="color:#ffd700">' + u.taxa + '%</td>';
+    h += '<td style="color:#00ff88">$' + u.banca_atual.toFixed(2) + '</td>';
+    h += '</tr>';
+});
+
                 h += '</table></div>';
         document.getElementById('relatorioContent').innerHTML = h;
     }).catch(function() {
@@ -2161,7 +2170,7 @@ def status():
             'ativo': skin['id'] == skin_atual
         })
     # NOVO: Calcular estrategias_disponiveis e estrategias_compradas
-    estrategias_compradas = u.get('estrategias_compradas', ['tesla_369']) if u else ['tesla_369']
+    estrategias_compradas = u.get('estrategias_compradas', ['v_sensitivo']) if u else ['v_sensitivo']
     estrategias_disponiveis = {}
     for key, est in ESTRATEGIAS.items():
         estrategias_disponiveis[key] = {
@@ -2218,9 +2227,9 @@ def conectar():
             usuario['moedas_ganhas_hoje'] = hoje
             salvar_usuario(email, usuario)
         skin_atual_global = usuario.get('skin_atual', 'skin_padrao')
-        # Garantir que tesla_369 está nas estratégias compradas
+        # Garantir que v_sensitivo está nas estratégias compradas
         if 'estrategias_compradas' not in usuario:
-            usuario['estrategias_compradas'] = []
+            usuario['estrategias_compradas'] = ['v_sensitivo']
         salvar_usuario(email, usuario)
         par = ESTRATEGIAS.get(estrategia_atual, {}).get('pares', ['EURUSD-OTC'])[0]
         timeframe_atual = ESTRATEGIAS.get(estrategia_atual, {}).get('timeframe', 60)
@@ -2236,30 +2245,37 @@ def comecar_operar():
     try:
         if not conectado_iq:
             return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+            
+        # BLINDAGEM: Se o robô já estiver operando, bloqueia cliques extras na tela do celular
+        if bot_rodando:
+            return jsonify({'ok': True, 'msg': 'O robô já está trabalhando em segundo plano!'})
+            
         usuario = carregar_usuario(email_usuario_atual)
         if not usuario:
             return jsonify({'ok': False, 'erro': 'Usuário não encontrado!'})
         
-        estrategias_compradas = usuario.get('estrategias_compradas', ['tesla_369'])
+        estrategias_compradas = usuario.get('estrategias_compradas', ['v_sensitivo']) # Ajustado fallback v7.0.3
         if estrategia_atual not in estrategias_compradas:
             preco = ESTRATEGIAS.get(estrategia_atual, {}).get('preco_moedas', 0)
             return jsonify({'ok': False, 'erro': f'Estratégia não comprada! Compre na loja por {preco} ⚡'})
         
         if usuario.get('moedas', 0) < 1:
             return jsonify({'ok': False, 'erro': 'Sem VOLTS!'})
+            
         usuario['moedas'] -= 1
         usuario['total_ciclos'] += 1
         salvar_usuario(email_usuario_atual, usuario)
+        
+        # Reseta os contadores estritamente ANTES de disparar a Thread
         lucro = 0.0
         NumDeOperacoes = 0
         
-        # Iniciar bot em thread separada para este usuário
+        # Iniciar bot em thread separada para este usuário de forma segura
         email_atual = email_usuario_atual
-        if not bot_rodando:
-            bot_rodando = True
-            bot_thread = threading.Thread(target=bot_loop, daemon=True)
-            bot_thread.start()
-            bots_ativos[email_atual] = bot_thread
+        bot_rodando = True
+        bot_thread = threading.Thread(target=bot_loop, daemon=True)
+        bot_thread.start()
+        bots_ativos[email_atual] = bot_thread
         
         return jsonify({'ok': True, 'moedas': usuario['moedas']})
     except Exception as e:
@@ -2275,16 +2291,6 @@ def parar():
         # Remover bot da lista de ativos
         if email_usuario_atual in bots_ativos:
             del bots_ativos[email_usuario_atual]
-    # Limpar chat antigo (manter só 50)
-    try:
-        r_list = requests.get(f"{FB_URL}/tesla_369/chat.json")
-        if r_list.status_code == 200:
-            arquivos = sorted(r_list.json(), key=lambda x: x['name'])
-            while len(arquivos) > 50:
-                arq_del = arquivos.pop(0)
-                pass  # Firebase não precisa deletar por URL
-    except:
-        pass
     return jsonify({'ok': True})
 
 @app.route('/selecionar_estrategia', methods=['POST'])
@@ -2296,16 +2302,6 @@ def selecionar_estrategia():
         estrategia_atual = est_key
         par = ESTRATEGIAS[est_key]['pares'][0]
         timeframe_atual = ESTRATEGIAS[est_key]['timeframe']
-        # Limpar chat antigo (manter só 50)
-        try:
-            r_list = requests.get(f"{FB_URL}/tesla_369/chat.json")
-            if r_list.status_code == 200:
-                arquivos = sorted(r_list.json(), key=lambda x: x['name'])
-                while len(arquivos) > 50:
-                    arq_del = arquivos.pop(0)
-                    pass  # Firebase não precisa deletar por URL
-        except:
-            pass
         return jsonify({'ok': True})
     return jsonify({'ok': False})
 
@@ -2348,7 +2344,7 @@ def comprar_skin():
     return jsonify({'ok': True, 'moedas': usuario['moedas'], 'msg': f'Skin {skin["nome"]} comprada e ativada!'})
 
 @app.route('/ativar_skin', methods=['POST'])
-def ativar_skin():
+def activar_skin():
     d = request.get_json()
     skin_id = d.get('skin_id', '')
     if not email_usuario_atual:
@@ -2369,16 +2365,6 @@ def ativar_skin():
     salvar_usuario(email_usuario_atual, usuario)
     global skin_atual_global
     skin_atual_global = skin_id
-    # Limpar chat antigo (manter só 50)
-    try:
-        r_list = requests.get(f"{FB_URL}/tesla_369/chat.json")
-        if r_list.status_code == 200:
-            arquivos = sorted(r_list.json(), key=lambda x: x['name'])
-            while len(arquivos) > 50:
-                arq_del = arquivos.pop(0)
-                pass  # Firebase não precisa deletar por URL
-    except:
-        pass
     return jsonify({'ok': True})
 
 @app.route('/criar_pix', methods=['POST'])
@@ -2490,16 +2476,6 @@ def resetar():
 def shutdown():
     import os, signal
     os.kill(os.getpid(), signal.SIGTERM)
-    # Limpar chat antigo (manter só 50)
-    try:
-        r_list = requests.get(f"{FB_URL}/tesla_369/chat.json")
-        if r_list.status_code == 200:
-            arquivos = sorted(r_list.json(), key=lambda x: x['name'])
-            while len(arquivos) > 50:
-                arq_del = arquivos.pop(0)
-                pass  # Firebase não precisa deletar por URL
-    except:
-        pass
     return jsonify({'ok': True})
 
 @app.route('/admin369', methods=['GET','POST'])
@@ -2550,6 +2526,25 @@ def admin_resetar():
     u['lucro_total'] = 0
     salvar_usuario(email, u)
     return jsonify({'ok': True, 'msg': 'Resetado!'})
+
+@app.route('/chat_enviar', methods=['POST'])
+def chat_enviar():
+    data = request.json
+    nome = data.get('nome', 'Anonimo')[:15]
+    msg = data.get('msg', '')[:200]
+    if not msg:
+        return jsonify({'ok': False})
+    try:
+        # Envia mensagem
+        requests.post(f'{FB_URL}/tesla_369/chat.json', json={
+            'nome': nome,
+            'msg': msg,
+            'hora': datetime.now().strftime('%H:%M')
+        })
+    except:
+        pass
+    return jsonify({'ok': True})
+
 
 LOGIN_HTML = """<!DOCTYPE html>
 <html>
@@ -2671,6 +2666,32 @@ ADMIN_HTML = """<!DOCTYPE html>
     </script>
 </body>
 </html>"""
+
+
+
+
+
+def faxina_automatica_chat_background():
+    """Roda de forma totalmente silenciosa a cada 5 minutos salvando o desempenho do celular"""
+    while True:
+        time.sleep(300) # Limpa a cada 5 minutos
+        try:
+            r_chat = requests.get(f'{FB_URL}/tesla_369/chat.json?orderBy="$key"&limitToLast=51')
+            if r_chat.status_code == 200 and r_chat.json():
+                dados = r_chat.json()
+                if len(dados) > 50:
+                    chaves = sorted(dados.keys())[:-50]
+                    for chave in chaves:
+                        requests.delete(f'{FB_URL}/tesla_369/chat/{chave}.json')
+        except:
+            pass
+
+# Inicializa o monitor de faxina em background assim que o script liga
+threading.Thread(target=faxina_automatica_chat_background, daemon=True).start()
+
+
+
+
 
 if __name__ == '__main__':
     print("=" * 50)
