@@ -853,7 +853,8 @@ def chat_enviar():
 def chat_mensagens_route():
     try:
         r = requests.get(f'{FB_URL}/tesla_369/chat.json?orderBy="$key"&limitToLast=50')
-        mensagens = list(r.json().values()) if r.status_code == 200 and r.json() else []
+        dados = r.json()
+        mensagens = list(dados.values()) if r.status_code == 200 and isinstance(dados, dict) else []
         return jsonify({'mensagens': mensagens, 'online': 1})
     except:
         return jsonify({'mensagens': [], 'online': 1})
@@ -1345,9 +1346,8 @@ function pararBot(){
 function renderEstrategias(){
     fetch('/status').then(r=>r.json()).then(d=>{
         var estrategiasCompradas = d.estrategias_compradas || ['v_sensitivo'];
-        // Garantir que tesla_369 sempre aparece
         if (!estrategiasCompradas.includes('v_sensitivo')) {
-            estrategiasCompradas.push('tesla_369');
+            estrategiasCompradas.push('v_sensitivo');
         }
         var grid=document.getElementById('estrategiaGrid');
         var html='';
@@ -1494,16 +1494,15 @@ function renderLojaEstrategias(){
         if (!grid) return;
         var html = '';
         var estrategiasCompradas = d.estrategias_compradas || ['v_sensitivo'];
-        // Garantir que tesla_369 sempre aparece
         if (!estrategiasCompradas.includes('v_sensitivo')) {
-            estrategiasCompradas.push('tesla_369');
+            estrategiasCompradas.push('v_sensitivo');
         }
         var estrategiasDisponiveis = d.estrategias_disponiveis || {};
                 // Se não houver estrategias_disponiveis, usar o objeto global estrategias
         if (Object.keys(estrategiasDisponiveis).length === 0 && typeof estrategias !== 'undefined') {
             for (var key in estrategias) {
                 // Pular tesla_369 no fallback
-                if (key === 'tesla_369') continue;
+                if (key === 'v_sensitivo') continue;
                 // Preços fixos para cada estratégia
                 var precos = {
                     'v_sensitivo': 6,
@@ -1518,13 +1517,13 @@ function renderLojaEstrategias(){
                     'nome': estrategias[key].nome,
                     'desc': estrategias[key].desc || '',
                     'preco_moedas': precos[key] || 5,
-                    'gratis': (key === 'tesla_369')
+                    'gratis': (key === 'v_sensitivo')
                 };
             }
         }
                 for (var key in estrategiasDisponiveis) {
             // Pular estratégias fixas (não mostrar na loja)
-            if (estrategiasDisponiveis[key].fixa === true || key === 'tesla_369') continue;
+            if (estrategiasDisponiveis[key].fixa === true || key === 'v_sensitivo') continue;
             var est = estrategiasDisponiveis[key];
             var comprado = estrategiasCompradas.includes(key);
             var btnHtml = '';
