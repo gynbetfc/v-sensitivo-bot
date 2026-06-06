@@ -2526,23 +2526,7 @@ def admin_resetar():
     salvar_usuario(email, u)
     return jsonify({'ok': True, 'msg': 'Resetado!'})
 
-@app.route('/chat_enviar', methods=['POST'])
-def chat_enviar():
-    data = request.json
-    nome = data.get('nome', 'Anonimo')[:15]
-    msg = data.get('msg', '')[:200]
-    if not msg:
-        return jsonify({'ok': False})
-    try:
-        # Envia mensagem
-        requests.post(f'{FB_URL}/tesla_369/chat.json', json={
-            'nome': nome,
-            'msg': msg,
-            'hora': datetime.now().strftime('%H:%M')
-        })
-    except:
-        pass
-    return jsonify({'ok': True})
+
 
 
 LOGIN_HTML = """<!DOCTYPE html>
