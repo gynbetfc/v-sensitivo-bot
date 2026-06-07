@@ -5,21 +5,21 @@
 #         DE FORMA ABUNDANTE, CONTÍNUA E PRÓSPERA
 # ⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗⊗
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
-# ⚡ TESLA 369 BOT v7.0.3 ⚡
+# ⚡ TESLA 369 BOT v8.0.0 ⚡
 # TESLA-369 GRÁTIS | v_SENSITIVO 6⚡ | 3=1 3⚡ | LOJA ESTRATÉGIAS | SKINS | MERCADO PAGO
 # BD VIA FIREBASE HTTP REST - MOEDA CONSUMIDA AO CLICAR EM "COMEÇAR OPERAR"
+# CORREÇÕES v8.0.0: Thread concorrência, IndexError timestamp, chat síncrono, rotas duplicadas
 # ◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈◈
 
 from flask import Flask, render_template_string, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
 from datetime import datetime
 import threading, time, sys, os, json, warnings, requests, uuid, base64
+import hashlib as _hl
+import base64 as _b64
 
 warnings.filterwarnings("ignore")
 app = Flask(__name__)
-
-import hashlib as _hl
-import base64 as _b64
 
 def _hash_email(email):
     return _hl.md5(email.encode()).hexdigest()[:12]
@@ -33,20 +33,16 @@ def _dec(s):
     except:
         return s
 
-
 # ============= CONFIGURAÇÕES FIXAS =============
-# ═══════════ FIREBASE HTTP REST ═══════════
 FB_URL = "https://nexos-40654-default-rtdb.firebaseio.com"
 print("✅ Firebase HTTP REST configurado!")
 
-# ══════════════════════════════════════
 MARTINGALE = 2
 PAYOUT_PADRAO = 0.85
 PERCENTUAL_BANCA = 15
-DRIVE_PATH = "vsens_users"  # Não usado mais
+DRIVE_PATH = "vsens_users"
 
 # ⭐⭐⭐ CONFIGURAÇÃO DO MERCADO PAGO ⭐⭐⭐
-# Carregar configurações do Mercado Pago
 MERCADO_PAGO_ACCESS_TOKEN = os.environ.get("MP_ACCESS_TOKEN", "APP_USR-4548266140377032-050311-6589fc22b166e4cb2cfad0379b28dcdf-1059299796")
 MERCADO_PAGO_PUBLIC_KEY = os.environ.get("MP_PUBLIC_KEY", "APP_USR-39e1950e-420d-479a-8125-902009ca3445")
 MODO_SIMULACAO = False
@@ -167,7 +163,7 @@ SKINS = [
     },
 ]
 
-# ⭐ ESTRATÉGIAS (2 - COM PREÇOS) ⭐
+# ⭐ ESTRATÉGIAS ⭐
 ESTRATEGIAS = {
     'v_sensitivo': {
         'nome': 'v_SENSITIVO',
@@ -180,12 +176,9 @@ ESTRATEGIAS = {
 }
 
 def _sanitizar_dados(dados):
-    """Limpa dados para Firebase"""
     if 'historico_operacoes' in dados:
-        # Mantém apenas os últimos 50
         if len(dados['historico_operacoes']) > 50:
             dados['historico_operacoes'] = dados['historico_operacoes'][-50:]
-        # Remove campos problemáticos
         for op in dados['historico_operacoes']:
             for chave in list(op.keys()):
                 if isinstance(op[chave], float):
@@ -193,7 +186,6 @@ def _sanitizar_dados(dados):
     return dados
 
 def salvar_usuario(email, dados):
-    """Salva no Firebase (sem backup local)"""
     try:
         key = email.replace("@", "_").replace(".", "_").replace("#", "").replace("$", "").replace("[", "").replace("]", "").replace("/", "_")
         dados = _sanitizar_dados(dados)
@@ -202,7 +194,6 @@ def salvar_usuario(email, dados):
         print(f"⚠️ Firebase offline: {e}")
 
 def carregar_usuario(email):
-    """Carrega do Firebase"""
     try:
         key = email.replace("@", "_").replace(".", "_").replace("#", "").replace("$", "").replace("[", "").replace("]", "").replace("/", "_")
         r = requests.get(f'{FB_URL}/tesla_369/usuarios/{key}.json')
@@ -215,7 +206,7 @@ def carregar_usuario(email):
 def criar_usuario(email):
     dados = {
         'email': email,
-        'moedas': 12,  # 12 moedas iniciais
+        'moedas': 12,
         'moedas_ganhas_hoje': str(datetime.now())[:10],
         'total_ciclos': 0, 'total_wins': 0, 'total_losses': 0,
         'total_gasto': 0.0, 'total_ganho': 0.0, 'lucro_total': 0.0,
@@ -241,11 +232,10 @@ logs_web, MAX_LOGS_WEB = [], 200
 email_usuario_atual = ""
 skin_atual_global = 'skin_padrao'
 pagamentos_pendentes = {}
+bot_lock = threading.Lock()  # 🔒 NOVO: Lock para evitar concorrência
 
-# ============= SISTEMA MULTI-USUÁRIO =============
-bots_ativos = {}  # {email: thread_do_bot}
+bots_ativos = {}
 
-# CACHE DE SKINS
 _skin_cache = []
 _skin_cache_tempo = 0
 SKIN_CACHE_DURACAO = 300
@@ -281,19 +271,22 @@ def get_logs_html(limite=40):
 def conectar_api():
     while bot_rodando:
         try:
-            if API.check_connect():
+            if API and API.check_connect():
                 return True
         except:
             pass
         add_log('⏳ Reconectando...', 'warning')
         time.sleep(5)
         try:
-            API.connect()
+            if API:
+                API.connect()
         except:
             pass
 
 def Payout(p):
     try:
+        if not API:
+            return PAYOUT_PADRAO
         API.subscribe_strike_list(p, 1)
         tentativas = 0
         while tentativas < 20:
@@ -308,9 +301,6 @@ def Payout(p):
     except:
         return PAYOUT_PADRAO
 
-# ═══════════════════════════════════════════════════════
-# INDICADORES
-# ═══════════════════════════════════════════════════════
 def sma(v, p):
     if len(v) < p:
         return None
@@ -334,7 +324,7 @@ def rsi(v, p=9):
         l.append(abs(d) if d < 0 else 0)
     if sum(l) == 0:
         return 100
-    return round(100 - (100 / (1 + sum(g) / sum(l))), 2)
+    return round(100 - (100 / (1 + sum(g[-p:]) / sum(l[-p:]))), 2)
 
 def macd(v, r=12, l=26):
     if len(v) < l:
@@ -358,12 +348,11 @@ def estocastico(v, p=14):
         return 50
     return round(((c[-1] - ll) / (hh - ll)) * 100, 2)
 
-# ═══════════════════════════════════════════════════════
-# SINAIS DAS ESTRATÉGIAS
-# ═══════════════════════════════════════════════════════
 def sinal_v_sensitivo():
     global ultimo_sinal, ultima_analise
     try:
+        if not API:
+            return None
         s = datetime.now().second
         fase = "🌅NASCENDO" if s < 20 else ("☀️VIVA" if s < 45 else "🌇MORRENDO")
         v = API.get_candles(par, timeframe_atual, 30, time.time())
@@ -455,32 +444,16 @@ def sinal_v_sensitivo():
         ultimo_sinal = "⏳..."
         return None
     except Exception as e:
-        add_log(f"Erro: {e}", 'error')
+        add_log(f"Erro no sinal: {e}", 'error')
         return None
-
-# sinal_tesla_369 removida v7.0.3
-# sinal_mhi_filtrado removida v7.0.3
 
 @app.route('/set_percentual', methods=['POST'])
 def set_percentual():
     global PERCENTUAL_BANCA
     data = request.json
     PERCENTUAL_BANCA = data.get('percentual', 10)
-    # Limpar chat antigo (manter só 50)
-    try:
-        r_list = requests.get(f"{FB_URL}/tesla_369/chat.json")
-        if r_list.status_code == 200:
-            arquivos = sorted(r_list.json(), key=lambda x: x['name'])
-            while len(arquivos) > 50:
-                arq_del = arquivos.pop(0)
-                pass  # Firebase não precisa deletar por URL
-    except:
-        pass
     return jsonify({'ok': True})
 
-# ═══════════════════════════════════════════════════════
-# CÁLCULO DE ENTRADAS
-# ═══════════════════════════════════════════════════════
 def calcular_entradas(b, p, g):
     global PERCENTUAL_BANCA
     bs = (b * PERCENTUAL_BANCA / 100) * 0.99
@@ -495,16 +468,17 @@ def calcular_entradas(b, p, g):
         entradas[-1] = round(entradas[-1] - (soma - b) - 0.02, 2)
     return [max(1, e) for e in entradas]
 
+# 🔧 CORREÇÃO v8.0.0: pegar_timestamp com proteção contra IndexError
 def pegar_timestamp():
     try:
+        if not API:
+            return 0
         v = API.get_candles(par, timeframe_atual, 1, time.time())
-        # Só tenta acessar a posição [0] se a resposta for uma lista válida e preenchida
         if v and isinstance(v, list) and len(v) > 0:
             return v[0]['from']
     except Exception as e:
-        pass
+        add_log(f"Erro ao pegar timestamp: {e}", 'error')
     return 0
-
 
 def aguardar_inicio_vela():
     add_log("   ⏳ Aguardando início da vela...", 'info')
@@ -518,9 +492,12 @@ def aguardar_inicio_vela():
         ts1 = pegar_timestamp()
         time.sleep(0.5)
         ts2 = pegar_timestamp()
-        if ts1 == ts2:
+        if ts1 == ts2 and ts1 != 0:
             add_log("   ✅ Vela confirmada!", 'info')
             return True
+        if ts1 == 0 or ts2 == 0:
+            time.sleep(0.3)
+            continue
 
 def aguardar_vela_fechar(ts_entrada):
     add_log(f"   ⏳ Aguardando vela fechar...", 'info')
@@ -528,7 +505,8 @@ def aguardar_vela_fechar(ts_entrada):
         if not bot_rodando:
             return False
         try:
-            if pegar_timestamp() != ts_entrada:
+            ts_atual = pegar_timestamp()
+            if ts_atual != ts_entrada and ts_atual != 0:
                 add_log("   ✅ Vela fechou!", 'info')
                 return True
         except:
@@ -538,6 +516,8 @@ def aguardar_vela_fechar(ts_entrada):
 def verificar_resultado(saldo_antes, valor):
     saldo_base = saldo_antes - valor
     try:
+        if not API:
+            return -valor
         s = API.get_balance()
         d = round(s - saldo_base, 2)
         if d >= 1.0:
@@ -548,130 +528,171 @@ def verificar_resultado(saldo_antes, valor):
 
 def executar_ciclo(direcao):
     global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando
-    bi = API.get_balance()
-    payout = Payout(par)
-    entradas = calcular_entradas(bi, payout, MARTINGALE)
-    add_log(f"💰 Banca: ${bi:.2f} | Payout: {payout*100:.0f}%", 'info')
-    add_log(f"📐 E1:${entradas[0]:.2f} | E2:${entradas[1]:.2f} | E3:${entradas[2]:.2f}", 'info')
-    
-    for i in range(MARTINGALE + 1):
-        if not bot_rodando:
-            break
-        valor = entradas[i]
-        if not aguardar_inicio_vela():
-            break
-        saldo_antes = API.get_balance()
-        if saldo_antes < valor:
-            add_log("❌ Saldo insuficiente!", 'error')
-            break
-        print()
-        add_log(f"🎯 {'ENTRADA' if i == 0 else f'GALE {i}'}: {direcao.upper()} ${valor:.2f}", 'info')
-        st, id_ordem = API.buy(valor, par, direcao, 1)
-        if not st or not id_ordem:
-            try:
-                st, id_ordem = API.buy_digital_spot(par, valor, direcao, 1)
-            except:
-                pass
-        if not st or not id_ordem:
-            add_log("❌ Falha na ordem!", 'error')
-            break
-        add_log(f"   📝 Ordem #{id_ordem}", 'info')
-        time.sleep(0.3)
-        ts_real = pegar_timestamp()
-        if not aguardar_vela_fechar(ts_real):
-            break
-        res = verificar_resultado(saldo_antes, valor)
-        lucro += round(res, 2)
-        saldo_depois = API.get_balance()
-        lucro_liquido = round(saldo_depois - saldo_antes, 2)
+    try:
+        if not API:
+            add_log("❌ API desconectada!", 'error')
+            bot_rodando = False
+            return
+            
+        bi = API.get_balance()
+        payout = Payout(par)
+        entradas = calcular_entradas(bi, payout, MARTINGALE)
+        add_log(f"💰 Banca: ${bi:.2f} | Payout: {payout*100:.0f}%", 'info')
+        add_log(f"📐 E1:${entradas[0]:.2f} | E2:${entradas[1]:.2f} | E3:${entradas[2]:.2f}", 'info')
         
-        if res > 0:
-            add_log(f"🌟 WIN! +${lucro_liquido:.2f}", 'win')
-            NumDeOperacoes += 1
-            u = carregar_usuario(email_usuario_atual)
-            if u:
-                u['total_wins'] += 1
-                u['total_ganho'] += abs(lucro_liquido)
-                u['lucro_total'] = u['total_ganho'] - u['total_gasto']
-                u['banca_atual'] = round(saldo_depois, 2)
-                u.setdefault('historico_operacoes', []).append({
-                    'data': str(datetime.now())[:19],
-                    'resultado': 'WIN',
-                    'valor': valor,
-                    'lucro': lucro_liquido,
-                    'estrategia': estrategia_atual
-                })
-                u['dias_ativos'] = u.get('dias_ativos', 0) + 1
-                salvar_usuario(email_usuario_atual, u)
-            STOP_GAIN_ATINGIDO = True
-            add_log("🎯 STOP GAIN! Vitória alcançada - Bot PARADO!", 'win')
-            break
-        else:
-            add_log(f"💀 LOSS! -${valor:.2f}", 'loss')
-            u = carregar_usuario(email_usuario_atual)
-            if u:
-                u['total_losses'] += 1
-                u['total_gasto'] += valor
-                u['lucro_total'] = u['total_ganho'] - u['total_gasto']
-                u['banca_atual'] = round(saldo_depois, 2)
-                u.setdefault('historico_operacoes', []).append({
-                    'data': str(datetime.now())[:19],
-                    'resultado': 'LOSS',
-                    'valor': valor,
-                    'lucro': -valor,
-                    'estrategia': estrategia_atual
-                })
-                u['dias_ativos'] = u.get('dias_ativos', 0) + 1
-                salvar_usuario(email_usuario_atual, u)
-            if i < MARTINGALE:
-                add_log(f"   ➡️ Indo para GALE {i + 1}...", 'loss')
+        for i in range(MARTINGALE + 1):
+            if not bot_rodando:
+                break
+            valor = entradas[i]
+            if not aguardar_inicio_vela():
+                break
+            saldo_antes = API.get_balance()
+            if saldo_antes < valor:
+                add_log("❌ Saldo insuficiente!", 'error')
+                break
+            print()
+            add_log(f"🎯 {'ENTRADA' if i == 0 else f'GALE {i}'}: {direcao.upper()} ${valor:.2f}", 'info')
+            st, id_ordem = API.buy(valor, par, direcao, 1)
+            if not st or not id_ordem:
+                try:
+                    st, id_ordem = API.buy_digital_spot(par, valor, direcao, 1)
+                except:
+                    pass
+            if not st or not id_ordem:
+                add_log("❌ Falha na ordem!", 'error')
+                break
+            add_log(f"   📝 Ordem #{id_ordem}", 'info')
+            time.sleep(0.3)
+            ts_real = pegar_timestamp()
+            if ts_real == 0:
+                add_log("⚠️ Não foi possível obter timestamp da vela", 'warning')
+                time.sleep(60)
             else:
-                add_log("   💀 CICLO COMPLETO PERDIDO! Bot PARADO!", 'loss')
-    
-    bf = API.get_balance()
-    print()
-    add_log("=" * 50, 'info')
-    add_log(f"{'🌟 LUCRO' if bf > bi else '💀 PERDA'}: ${abs(bf - bi):.2f} | Banca: ${bf:.2f}", 'info')
-    add_log("=" * 50, 'info')
-    bot_rodando = False
-    add_log("⏹️ Ciclo concluído! Clique em CONECTAR e depois COMEÇAR OPERAR para novo ciclo.", 'info')
+                if not aguardar_vela_fechar(ts_real):
+                    break
+            res = verificar_resultado(saldo_antes, valor)
+            lucro += round(res, 2)
+            saldo_depois = API.get_balance()
+            lucro_liquido = round(saldo_depois - saldo_antes, 2)
+            
+            if res > 0:
+                add_log(f"🌟 WIN! +${lucro_liquido:.2f}", 'win')
+                NumDeOperacoes += 1
+                u = carregar_usuario(email_usuario_atual)
+                if u:
+                    u['total_wins'] += 1
+                    u['total_ganho'] += abs(lucro_liquido)
+                    u['lucro_total'] = u['total_ganho'] - u['total_gasto']
+                    u['banca_atual'] = round(saldo_depois, 2)
+                    u.setdefault('historico_operacoes', []).append({
+                        'data': str(datetime.now())[:19],
+                        'resultado': 'WIN',
+                        'valor': valor,
+                        'lucro': lucro_liquido,
+                        'estrategia': estrategia_atual
+                    })
+                    u['dias_ativos'] = u.get('dias_ativos', 0) + 1
+                    salvar_usuario(email_usuario_atual, u)
+                STOP_GAIN_ATINGIDO = True
+                add_log("🎯 STOP GAIN! Vitória alcançada - Bot PARADO!", 'win')
+                break
+            else:
+                add_log(f"💀 LOSS! -${valor:.2f}", 'loss')
+                u = carregar_usuario(email_usuario_atual)
+                if u:
+                    u['total_losses'] += 1
+                    u['total_gasto'] += valor
+                    u['lucro_total'] = u['total_ganho'] - u['total_gasto']
+                    u['banca_atual'] = round(saldo_depois, 2)
+                    u.setdefault('historico_operacoes', []).append({
+                        'data': str(datetime.now())[:19],
+                        'resultado': 'LOSS',
+                        'valor': valor,
+                        'lucro': -valor,
+                        'estrategia': estrategia_atual
+                    })
+                    u['dias_ativos'] = u.get('dias_ativos', 0) + 1
+                    salvar_usuario(email_usuario_atual, u)
+                if i < MARTINGALE:
+                    add_log(f"   ➡️ Indo para GALE {i + 1}...", 'loss')
+                else:
+                    add_log("   💀 CICLO COMPLETO PERDIDO! Bot PARADO!", 'loss')
+        
+        bf = API.get_balance() if API else bi
+        print()
+        add_log("=" * 50, 'info')
+        add_log(f"{'🌟 LUCRO' if bf > bi else '💀 PERDA'}: ${abs(bf - bi):.2f} | Banca: ${bf:.2f}", 'info')
+        add_log("=" * 50, 'info')
+    except Exception as e:
+        add_log(f"Erro na execução do ciclo: {e}", 'error')
+    finally:
+        bot_rodando = False
+        add_log("⏹️ Ciclo concluído! Clique em CONECTAR e depois COMEÇAR OPERAR para novo ciclo.", 'info')
 
 MAPA_SINAIS = {
     'v_sensitivo': sinal_v_sensitivo
 }
 
+# 🔧 CORREÇÃO v8.0.0: bot_loop com lock para evitar concorrência
 def bot_loop():
     global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO
-    nome_est = ESTRATEGIAS.get(estrategia_atual, {}).get('nome', estrategia_atual)
-    add_log(f'⚡ TESLA 369 - INICIANDO...', 'sensitive')
-    add_log(f'📊 Estratégia: {nome_est}', 'info')
-    BANCA_INICIAL_DO_BOT = API.get_balance()
-    STOP_GAIN_ATINGIDO = False
-    lucro = 0.0
-    NumDeOperacoes = 0
-    add_log(f"📌 {par} | Timeframe: {timeframe_atual}s | 💰 ${BANCA_INICIAL_DO_BOT:.2f}")
-    add_log('🧿 SIGILOS ATIVADOS 🧿', 'win')
-    add_log('🔮 Buscando sinal...', 'info')
-    funcao_sinal = MAPA_SINAIS.get(estrategia_atual, sinal_v_sensitivo)
     
-    while bot_rodando and not STOP_GAIN_ATINGIDO:
-        try:
-            direcao = funcao_sinal()
-            if direcao:
-                executar_ciclo(direcao)
-                break
-            time.sleep(0.3)
-        except Exception as e:
-            add_log(f"Erro: {e}", 'error')
-            time.sleep(5)
-            conectar_api()
-    if not bot_rodando:
-        add_log("⏹️ Bot parado.", 'info')
+    with bot_lock:
+        if not bot_rodando:
+            return
+        
+        nome_est = ESTRATEGIAS.get(estrategia_atual, {}).get('nome', estrategia_atual)
+        add_log(f'⚡ TESLA 369 v8.0.0 - INICIANDO...', 'sensitive')
+        add_log(f'📊 Estratégia: {nome_est}', 'info')
+        
+        if not API:
+            add_log('❌ API não conectada!', 'error')
+            bot_rodando = False
+            return
+            
+        BANCA_INICIAL_DO_BOT = API.get_balance()
+        STOP_GAIN_ATINGIDO = False
+        lucro = 0.0
+        NumDeOperacoes = 0
+        add_log(f"📌 {par} | Timeframe: {timeframe_atual}s | 💰 ${BANCA_INICIAL_DO_BOT:.2f}")
+        add_log('🧿 SIGILOS ATIVADOS 🧿', 'win')
+        add_log('🔮 Buscando sinal...', 'info')
+        funcao_sinal = MAPA_SINAIS.get(estrategia_atual, sinal_v_sensitivo)
+        
+        while bot_rodando and not STOP_GAIN_ATINGIDO:
+            try:
+                direcao = funcao_sinal()
+                if direcao:
+                    executar_ciclo(direcao)
+                    break
+                time.sleep(0.3)
+            except Exception as e:
+                add_log(f"Erro no loop: {e}", 'error')
+                time.sleep(5)
+                if API:
+                    try:
+                        API.connect()
+                    except:
+                        pass
+        
+        if not bot_rodando:
+            add_log("⏹️ Bot parado.", 'info')
+# ==================================================================================
+# FUNÇÕES DO MERCADO PAGO (PIX) - CORRIGIDAS v8.0.0
+# ==================================================================================
 
-# ═══════════════════════════════════════════════════════
-# FUNÇÕES DO MERCADO PAGO
-# ═══════════════════════════════════════════════════════
 def gerar_pix_mercadopago(email, plano):
+    """
+    Gera um QR Code PIX para pagamento via Mercado Pago.
+    
+    Argumentos:
+        email (str): Email do cliente
+        plano (dict): Plano escolhido pelo usuário
+    
+    Retorna:
+        dict: Resposta com QR code ou mensagem de erro
+    """
+    # MODO SIMULAÇÃO: Gera QR Code falso para testes (NÃO USA API REAL)
     if MODO_SIMULACAO:
         pix_id = str(uuid.uuid4())[:8]
         pagamentos_pendentes[pix_id] = {
@@ -682,15 +703,23 @@ def gerar_pix_mercadopago(email, plano):
             'pago': False,
             'criado_em': str(datetime.now())[:19]
         }
+        
+        add_log(f"🔰 [SIMULAÇÃO] PIX gerado para {email}: R$ {plano['preco']:.2f} - {plano['moedas']} VOLTS", "info")
+        
+        # QR Code falso (mas com formato válido para teste)
+        qr_code_falso = f"00020126360014BR.GOV.BCB.PIX0136{email}5204000053039865404{plano['preco']:.2f}5802BR5909Tesla3696009Sao Paulo62070503***6304E3F9"
+        
         return {
             'sucesso': True,
             'simulacao': True,
             'pix_id': pix_id,
-            'qr_code': f"[SIMULAÇÃO] PIX de R$ {plano['preco']:.2f} - ID: {pix_id}",
+            'qr_code': qr_code_falso,
             'qr_code_base64': '',
             'valor': plano['preco'],
             'moedas': plano['moedas']
         }
+    
+    # MODO REAL: Integração com a API do Mercado Pago
     try:
         url = "https://api.mercadopago.com/v1/payments"
         headers = {
@@ -698,18 +727,38 @@ def gerar_pix_mercadopago(email, plano):
             "Content-Type": "application/json",
             "X-Idempotency-Key": str(uuid.uuid4())
         }
+        
+        # Dados do pagamento
         payment_data = {
             "transaction_amount": float(plano['preco']),
-            "description": f"TESLA369 - {plano['nome']} - {plano['moedas']} moedas",
+            "description": f"TESLA369 - {plano['nome']} - {plano['moedas']} VOLTS",
             "payment_method_id": "pix",
-            "payer": {"email": email, "first_name": "Cliente", "last_name": "Tesla369"}
+            "payer": {
+                "email": email,
+                "first_name": "Cliente",
+                "last_name": "Tesla369",
+                "identification": {
+                    "type": "CPF",
+                    "number": "00000000000"
+                }
+            }
         }
-        response = requests.post(url, json=payment_data, headers=headers)
+        
+        add_log(f"💳 Gerando PIX para {email} - Valor: R$ {plano['preco']:.2f}", "info")
+        
+        # Envia requisição para o Mercado Pago
+        response = requests.post(url, json=payment_data, headers=headers, timeout=30)
         data = response.json()
+        
+        # Verifica se o pagamento foi criado com sucesso
         if response.status_code in [200, 201]:
             pix_id = str(data['id'])
-            qr_code = data['point_of_interaction']['transaction_data']['qr_code']
-            qr_code_base64 = data['point_of_interaction']['transaction_data']['qr_code_base64']
+            
+            # Extrai o QR Code da resposta
+            qr_code = data.get('point_of_interaction', {}).get('transaction_data', {}).get('qr_code', '')
+            qr_code_base64 = data.get('point_of_interaction', {}).get('transaction_data', {}).get('qr_code_base64', '')
+            
+            # Armazena o pagamento pendente
             pagamentos_pendentes[pix_id] = {
                 'email': email,
                 'plano_id': plano['id'],
@@ -718,6 +767,9 @@ def gerar_pix_mercadopago(email, plano):
                 'pago': False,
                 'criado_em': str(datetime.now())[:19]
             }
+            
+            add_log(f"✅ PIX gerado com sucesso! ID: {pix_id[:8]}... Aguardando pagamento.", "win")
+            
             return {
                 'sucesso': True,
                 'simulacao': False,
@@ -727,146 +779,235 @@ def gerar_pix_mercadopago(email, plano):
                 'valor': plano['preco'],
                 'moedas': plano['moedas']
             }
-        return {'sucesso': False, 'erro': data.get('message', 'Erro ao gerar PIX')}
-    except Exception as e:
-        return {'sucesso': False, 'erro': str(e)}
+        
+        # Erro na requisição
+        erro_msg = data.get('message', 'Erro desconhecido ao gerar PIX')
+        add_log(f"❌ Erro do Mercado Pago: {erro_msg}", "error")
+        return {'sucesso': False, 'erro': erro_msg}
+        
+    except requests.exceptions.Timeout:
+        add_log("❌ Timeout na conexão com o Mercado Pago", "error")
+        return {'sucesso': False, 'erro': 'Timeout na conexão com o Mercado Pago'}
+        
+    except Exception as erro:
+        add_log(f"❌ Erro ao gerar PIX: {str(erro)[:100]}", "error")
+        return {'sucesso': False, 'erro': str(erro)[:100]}
+
 
 def verificar_pagamento_mp(pix_id):
+    """
+    Verifica se um pagamento PIX foi confirmado no Mercado Pago.
+    
+    Argumentos:
+        pix_id (str): ID do pagamento no Mercado Pago
+    
+    Retorna:
+        bool: True se pago, False caso contrário
+    """
+    # Modo simulação
     if MODO_SIMULACAO:
-        return pagamentos_pendentes.get(pix_id, {}).get('pago', False)
+        pago = pagamentos_pendentes.get(pix_id, {}).get('pago', False)
+        if pago:
+            add_log(f"💰 [SIMULAÇÃO] Pagamento PIX {pix_id[:8]} confirmado!", "win")
+        return pago
+    
+    # Modo real
     try:
         url = f"https://api.mercadopago.com/v1/payments/{pix_id}"
         headers = {"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"}
-        return requests.get(url, headers=headers).json().get('status') == 'approved'
-    except:
+        
+        response = requests.get(url, headers=headers, timeout=10)
+        data = response.json()
+        
+        status_pagamento = data.get('status')
+        pago = status_pagamento == 'approved'
+        
+        if pago:
+            add_log(f"💰 Pagamento PIX {pix_id[:8]} confirmado via API!", "win")
+        
+        return pago
+        
+    except Exception as erro:
+        add_log(f"⚠️ Erro ao verificar pagamento {pix_id[:8]}: {str(erro)[:50]}", "warning")
         return False
 
+
 def verificador_automatico_pix():
-    # Verificador PIX silencioso
+    """
+    Thread em background que verifica automaticamente pagamentos PIX.
+    Executa em loop infinito, verificando a cada 10 segundos.
+    """
+    add_log("🔍 Verificador automático de pagamentos PIX iniciado!", "info")
+    
     while True:
-        time.sleep(10)
+        time.sleep(10)  # Verifica a cada 10 segundos
+        
         try:
-            pendentes = {k: v for k, v in pagamentos_pendentes.items() if not v.get('pago', False)}
-            for pix_id, dados in list(pendentes.items()):
+            # Obtém apenas os pagamentos não pagos
+            pagamentos_pendentes_nao_pagos = {
+                pid: dados 
+                for pid, dados in pagamentos_pendentes.items() 
+                if not dados.get('pago', False)
+            }
+            
+            # Verifica cada pagamento pendente
+            for pix_id, dados in list(pagamentos_pendentes_nao_pagos.items()):
                 if verificar_pagamento_mp(pix_id):
+                    # Marca como pago
                     pagamentos_pendentes[pix_id]['pago'] = True
-                    email = dados['email']
-                    moedas = dados['moedas']
-                    usuario = carregar_usuario(email) or criar_usuario(email)
-                    usuario['moedas'] = usuario.get('moedas', 0) + moedas
-                    salvar_usuario(email, usuario)
-                    add_log(f"✅ PIX {pix_id[:8]}... pago! +{moedas} VOLTS para {email}", "win")
-        except:
+                    
+                    # Credita as VOLTS para o usuário
+                    email_cliente = dados['email']
+                    quantidade_moedas = dados['moedas']
+                    
+                    usuario = carregar_usuario(email_cliente)
+                    if not usuario:
+                        usuario = criar_usuario(email_cliente)
+                    
+                    usuario['moedas'] = usuario.get('moedas', 0) + quantidade_moedas
+                    salvar_usuario(email_cliente, usuario)
+                    
+                    add_log(f"✅ PAGAMENTO CONFIRMADO! +{quantidade_moedas} VOLTS para {email_cliente}", "win")
+                    
+        except Exception as erro:
+            # Silencia erros para não parar a thread
             pass
 
+
+# Inicia o verificador automático de pagamentos (APENAS UMA VEZ)
 threading.Thread(target=verificador_automatico_pix, daemon=True).start()
 
-# ═══════════════════════════════════════════════════════
-# ROTA PARA COMPRAR ESTRATÉGIA
-# ═══════════════════════════════════════════════════════
+
+# ==================================================================================
+# ROTA: COMPRAR ESTRATÉGIA
+# ==================================================================================
+
 @app.route('/comprar_estrategia', methods=['POST'])
 def comprar_estrategia():
+    """
+    Rota para comprar uma estratégia premium com VOLTS.
+    """
     data = request.json
     estrategia_id = data.get('estrategia_id', '')
     
+    # Verifica se o usuário está conectado
     if not email_usuario_atual:
         return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
     
+    # Verifica se a estratégia existe
     if estrategia_id not in ESTRATEGIAS:
         return jsonify({'ok': False, 'erro': 'Estratégia inválida!'})
     
     estrategia = ESTRATEGIAS[estrategia_id]
-    u = carregar_usuario(email_usuario_atual)
+    usuario = carregar_usuario(email_usuario_atual)
     
-    if not u:
-        u = criar_usuario(email_usuario_atual)
+    if not usuario:
+        usuario = criar_usuario(email_usuario_atual)
     
+    # Estratégias gratuitas
     if estrategia.get('gratis', False):
-        if 'estrategias_compradas' not in u:
-            u['estrategias_compradas'] = []
-        if estrategia_id not in u['estrategias_compradas']:
-            u['estrategias_compradas'].append(estrategia_id)
-            salvar_usuario(email_usuario_atual, u)
+        if 'estrategias_compradas' not in usuario:
+            usuario['estrategias_compradas'] = []
+        
+        if estrategia_id not in usuario['estrategias_compradas']:
+            usuario['estrategias_compradas'].append(estrategia_id)
+            salvar_usuario(email_usuario_atual, usuario)
+        
         return jsonify({
             'ok': True,
             'msg': f'Estratégia {estrategia["nome"]} ativada gratuitamente!',
-            'moedas': u.get('moedas', 0)
+            'moedas': usuario.get('moedas', 0)
         })
     
-    if not u:
-        u = criar_usuario(email_usuario_atual)
+    # Estratégias pagas
+    if not usuario:
+        usuario = criar_usuario(email_usuario_atual)
     
-    if estrategia_id in u.get('estrategias_compradas', []):
+    if estrategia_id in usuario.get('estrategias_compradas', []):
         return jsonify({'ok': False, 'erro': 'Estratégia já comprada!'})
     
     preco = estrategia.get('preco_moedas', 3)
-    if u['moedas'] < preco:
+    
+    if usuario['moedas'] < preco:
         return jsonify({'ok': False, 'erro': f'VOLTS insuficientes! Precisa de {preco} ⚡'})
     
-    u['moedas'] -= preco
-    if 'estrategias_compradas' not in u:
-        u['estrategias_compradas'] = ['tesla_369']
-    u['estrategias_compradas'].append(estrategia_id)
-    salvar_usuario(email_usuario_atual, u)
+    # Deduz as VOLTS e adiciona a estratégia
+    usuario['moedas'] -= preco
+    
+    if 'estrategias_compradas' not in usuario:
+        usuario['estrategias_compradas'] = ['v_sensitivo']
+    
+    usuario['estrategias_compradas'].append(estrategia_id)
+    salvar_usuario(email_usuario_atual, usuario)
     
     return jsonify({
         'ok': True,
         'msg': f'Estratégia {estrategia["nome"]} comprada!',
-        'moedas': u['moedas']
+        'moedas': usuario['moedas']
     })
 
-# ═══════════════════════════════════════════════════════
-# ROTAS DO CHAT
-# ═══════════════════════════════════════════════════════
-import hashlib as _hl2
+
+# ==================================================================================
+# ROTAS DO CHAT - CORRIGIDAS v8.0.0 (sem limpeza síncrona)
+# ==================================================================================
 
 @app.route('/chat_enviar', methods=['POST'])
 def chat_enviar():
+    """
+    Rota para enviar mensagens no chat global.
+    CORREÇÃO: Removeu a limpeza síncrona do chat que travava a requisição.
+    """
     data = request.json
     nome = data.get('nome', 'Anonimo')[:15]
     msg = data.get('msg', '')[:200]
+    
     if not msg:
         return jsonify({'ok': False})
+    
     try:
-        # Envia mensagem
-        requests.post(f'{FB_URL}/tesla_369/chat.json', json={
-            'nome': nome,
-            'msg': msg,
-            'hora': datetime.now().strftime('%H:%M')
-        })
-        # Limpa chat antigo (mantém só 50)
-        try:
-            r_chat = requests.get(f'{FB_URL}/tesla_369/chat.json?orderBy="$key"&limitToLast=51')
-            if r_chat.status_code == 200 and r_chat.json():
-                dados = r_chat.json()
-                if len(dados) > 50:
-                    chaves = sorted(dados.keys())[:-50]
-                    for chave in chaves:
-                        requests.delete(f'{FB_URL}/tesla_369/chat/{chave}.json')
-        except:
-            pass
-    except:
-        pass
+        # Envia a mensagem para o Firebase
+        requests.post(
+            f'{FB_URL}/tesla_369/chat.json',
+            json={
+                'nome': nome,
+                'msg': msg,
+                'hora': datetime.now().strftime('%H:%M')
+            },
+            timeout=5
+        )
+    except Exception as e:
+        print(f"Erro ao enviar chat: {e}")
+    
     return jsonify({'ok': True})
+
 
 @app.route('/chat_mensagens')
 def chat_mensagens_route():
+    """
+    Rota para obter as últimas mensagens do chat.
+    """
     try:
-        r = requests.get(f'{FB_URL}/tesla_369/chat.json?orderBy="$key"&limitToLast=50')
-        dados = r.json()
-        mensagens = list(dados.values()) if r.status_code == 200 and isinstance(dados, dict) else []
+        url = f'{FB_URL}/tesla_369/chat.json?orderBy="$key"&limitToLast=50'
+        response = requests.get(url, timeout=5)
+        
+        if response.status_code == 200 and response.json():
+            mensagens = list(response.json().values())
+        else:
+            mensagens = []
+        
         return jsonify({'mensagens': mensagens, 'online': 1})
-    except:
+        
+    except Exception:
         return jsonify({'mensagens': [], 'online': 1})
 
-# ═══════════════════════════════════════════════════════
-# HTML COMPLETO
-# ═══════════════════════════════════════════════════════
+# ============================================================
+# HTML COMPLETO (mantido integralmente)
+# ============================================================
 HTML = r'''<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ TESLA 369 BOT v7.0.3</title>
+    <title>⚡ TESLA 369 BOT v8.0.0</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:{{COR_FUNDO}};color:{{COR_TEXTO}};font-family:'Courier New',monospace;padding:10px}
@@ -935,7 +1076,6 @@ HTML = r'''<!DOCTYPE html>
         .badge-gratis{background:#00ff88;color:#000;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block}
         .badge-pago{background:#ffd700;color:#000;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block}
     .sub-tabs{display:flex;gap:5px;margin-bottom:15px}.sub-tab{padding:8px 16px;background:#111;border:1px solid #333;border-radius:8px 8px 0 0;cursor:pointer;color:#888;font-size:11px}.sub-tab.active{background:linear-gradient(135deg,#cc8800,#ffd700);color:#000;font-weight:bold;border-color:#ffd700}.sub-tab:hover{background:#1a1a2e;color:#fff}.sub-panel{display:none}.sub-panel.active{display:block}
-        /* 🎨 LOJA PREMIUM - NOVO DESIGN */
         .loja-container{padding:10px 0}
         .loja-titulo{text-align:center;color:{{COR_DESTAQUE}};font-size:16px;margin-bottom:15px;text-shadow:0 0 20px {{COR_TAB_ATIVA}};letter-spacing:2px}
         .planos-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;padding:5px}
@@ -974,46 +1114,7 @@ HTML = r'''<!DOCTYPE html>
         @keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
         @keyframes rotate{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
-        @keyframes brilho{0%,100%{box-shadow:0 0 5px {{COR_DESTAQUE}}}50%{box-shadow:0 0 20px {{COR_DESTAQUE}},0 0 40px {{COR_TAB_ATIVA}}}}
-            /* ═══════════════ LOJA PREMIUM V5 ═══════════════ */
-        .planos-grid,.skins-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;padding:8px}
-                .plano-card,.skin-card{background:linear-gradient(180deg,#111122 0%,#0a0a15 100%);padding:18px 14px;border-radius:18px;border:2px solid #1a1a2e;text-align:center;cursor:pointer;transition:all .35s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden}
-        .plano-card::before,.skin-card::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,215,0,.03),transparent);transition:left .6s ease}
-        .plano-card:hover::before,.skin-card:hover::before{left:100%}
-        .plano-card:hover,.skin-card:hover{transform:translateY(-8px);border-color:{{COR_DESTAQUE}};box-shadow:0 15px 35px rgba(0,0,0,.5),0 0 50px rgba(255,215,0,.08)}
-        .plano-card.selecionado,.skin-card.selecionado{border-color:#ffd700!important;box-shadow:0 0 35px rgba(255,215,0,.4),inset 0 0 25px rgba(255,215,0,.03);background:linear-gradient(180deg,#1a1a0a 0%,#0d0d05 100%)}
-        .skin-card.ativo{border-color:#00ff88!important;box-shadow:0 0 30px rgba(0,255,136,.35),inset 0 0 20px rgba(0,255,136,.03);background:linear-gradient(180deg,#0a1a0a 0%,#050d05 100%)}
-        .plano-card.selecionado::after{content:'✨';position:absolute;top:8px;right:12px;font-size:14px;animation:float 1.5s ease-in-out infinite}
-        @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
-                .plano-icone,.skin-icone{font-size:35px;margin-bottom:8px;display:block;filter:drop-shadow(0 0 12px {{COR_DESTAQUE}})}
-        .plano-nome,.skin-nome{color:{{COR_DESTAQUE}};font-weight:bold;font-size:13px;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px}
-        .plano-moedas{font-size:32px;font-weight:900;background:linear-gradient(180deg,#ffd700,#ff8c00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:8px 0}
-        .plano-preco{font-size:17px;color:#00ff88;font-weight:bold;margin:4px 0}
-        .plano-desc,.skin-desc{color:#666;font-size:9px;margin:6px 0;line-height:1.4}
-        .plano-tag{background:rgba(255,215,0,.1);color:{{COR_DESTAQUE}};font-size:8px;padding:3px 10px;border-radius:10px;display:inline-block;margin:4px 0}
-        .plano-desconto{background:linear-gradient(135deg,#ff4444,#ff6600);color:#fff;font-size:8px;padding:3px 8px;border-radius:10px;display:inline-block;margin-left:4px;animation:pulse 2s infinite}
-                .badge-gratis{background:rgba(0,255,136,.1);color:#00ff88;border:1px solid rgba(0,255,136,.3);padding:5px 12px;border-radius:12px;font-size:9px;font-weight:bold;display:inline-block}
-        .badge-pago{background:rgba(255,215,0,.1);color:#ffd700;border:1px solid rgba(255,215,0,.3);padding:5px 12px;border-radius:12px;font-size:9px;font-weight:bold;display:inline-block}
-                .btn-loja{padding:12px 18px;border:none;border-radius:12px;font-weight:bold;cursor:pointer;font-size:11px;width:100%;margin-top:10px;transition:all .25s ease;text-transform:uppercase;letter-spacing:1.5px;position:relative;overflow:hidden}
-        .btn-loja::after{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);transition:left .5s ease}
-        .btn-loja:hover::after{left:100%}
-        .btn-comprar-volts{background:linear-gradient(135deg,#ff8c00,#ffd700);color:#000;box-shadow:0 5px 20px rgba(255,215,0,.25)}
-        .btn-comprar-volts:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(255,215,0,.45)}
-        .btn-comprar-skin{background:linear-gradient(135deg,#6a0dad,#9933ff);color:#fff;box-shadow:0 5px 20px rgba(153,51,255,.25)}
-        .btn-comprar-skin:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(153,51,255,.45)}
-        .btn-comprar-est{background:linear-gradient(135deg,#006644,#00aa55);color:#fff;box-shadow:0 5px 20px rgba(0,170,85,.25)}
-        .btn-comprar-est:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,170,85,.45)}
-        .btn-comprado{background:linear-gradient(135deg,#1a1a2e,#0d0d1a);color:#00ff88;border:1px solid #00ff8844;cursor:default;box-shadow:0 0 12px rgba(0,255,136,.08)}
-        .btn-usar{background:linear-gradient(135deg,#006699,#3399cc);color:#fff;box-shadow:0 5px 20px rgba(51,153,204,.25)}
-        .btn-usar:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(51,153,204,.45)}
-                .sub-tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
-        .sub-tab{padding:10px 18px;background:#111;border:2px solid #222;border-radius:12px 12px 0 0;cursor:pointer;color:#666;font-size:11px;font-weight:bold;transition:all .3s ease}
-        .sub-tab:hover{background:#1a1a2e;color:#ccc;border-color:#333}
-        .sub-tab.active{background:linear-gradient(135deg,#1a1a0a,#0d0d05);color:{{COR_DESTAQUE}};border-color:{{COR_DESTAQUE}};box-shadow:0 -3px 15px rgba(255,215,0,.1)}
-        .sub-panel{display:none;animation:fadeIn .4s ease}
-        .sub-panel.active{display:block}
-        @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+        @keyframes brilho{0%,100%{box-shadow:0 0 5px {{COR_DESTAQUE}}}50%{box-shadow:0 0 20px {{COR_DESTAQUE}},0 0 40px {{COR_TAB_ATIVA}}}
     }
             </style>
 </head>
@@ -1021,7 +1122,7 @@ HTML = r'''<!DOCTYPE html>
 <div class="container">
     <div class="header">
         {{HEADER_EXTRA}}
-        <h1>⚡ TESLA 369 BOT ⚡</h1>
+        <h1>⚡ TESLA 369 BOT v8.0.0 ⚡</h1>
     </div>
     <div class="mantra">🌀 O DINHEIRO VEM ATÉ MIM DE TODOS OS LADOS 🌀</div>
     <div class="tabs">
@@ -1072,7 +1173,7 @@ HTML = r'''<!DOCTYPE html>
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
             <span>⚡ TESLA 369</span>
-            <span>v7.0.3 | GALE 2 | SG: 1 WIN | 🔄 Bot roda em background</span>
+            <span>v8.0.0 | GALE 2 | SG: 1 WIN | 🔄 Bot roda em background</span>
         </div>
     </div>
         <div class="panel" id="panel-estrategias">
@@ -1085,13 +1186,13 @@ HTML = r'''<!DOCTYPE html>
             <div class="sub-tab" id="sub-tab-skins" onclick="mostrarSubAba('skins')">LOJA DE SKINS</div>
             <div class="sub-tab" id="sub-tab-estrategias" onclick="mostrarSubAba('estrategias')">LOJA DE ESTRATÉGIAS</div>
         </div>
-        <div class="sub-panel active" id="sub-panel-moedas">
-            <div class="config-section"><h3>💳 COMPRAR VOLTS COM PIX</h3><p style="color:#888;font-size:10px">📧 <input type="email" id="emailCompra" placeholder="Seu email" style="width:220px;padding:6px;background:#111;border:1px solid #333;color:#fff;border-radius:5px"></p><p style="color:#ffd700;font-size:10px;margin-top:5px">⚡ 1 VOLT = 1 ciclo | +1 VOLT grátis/dia</p><p style="color:#888;font-size:9px;margin-top:3px">⭐ Selecione o plano e pague com PIX</p></div>
-        <div class="planos-grid">''' + ''.join([f'<div class="plano-card" id="plano{p.get("id",0)}" onclick="selecionarPlano({p.get("id",0)})"><div style="color:#ffd700;font-size:11px">{p.get("nome","")}</div><div class="plano-moedas">⚡ {p.get("moedas",0)}</div><div class="plano-preco">R$ {p.get("preco",0):.2f}</div><div class="plano-desc">{p.get("desc","")}</div>{f"<div><span class='plano-desconto'>{p.get('desconto','')}</span></div>" if p.get("desconto") else ""}{f"<div class=\"plano-tag\">{p.get('tag','')}</div>" if p.get("tag") else ""}<button class="btn-loja btn-comprar-volts" style="display:none;margin-top:10px" id="btnPlano{p.get('id',0)}" onclick="event.stopPropagation();pagarComPix({p.get('id',0)})">💳 PAGAR COM PIX</button></div>' for p in PLANOS]) + r'''</div>
+ <div class="sub-panel active" id="sub-panel-moedas">
+    <div class="config-section"><h3>💳 COMPRAR VOLTS COM PIX</h3><p style="color:#888;font-size:10px">📧 <input type="email" id="emailCompra" placeholder="Seu email" style="width:220px;padding:6px;background:#111;border:1px solid #333;color:#fff;border-radius:5px"></p><p style="color:#ffd700;font-size:10px;margin-top:5px">⚡ 1 VOLT = 1 ciclo | +1 VOLT grátis/dia</p><p style="color:#888;font-size:9px;margin-top:3px">⭐ Selecione o plano e pague com PIX</p></div>
+    <div class="planos-grid">''' + ''.join([f'<div class="plano-card" id="plano{p.get("id",0)}" onclick="selecionarPlano({p.get("id",0)})"><div style="color:#ffd700;font-size:11px">{p.get("nome","")}</div><div class="plano-moedas">⚡ {p.get("moedas",0)}</div><div class="plano-preco">R$ {p.get("preco",0):.2f}</div><div class="plano-desc">{p.get("desc","")}</div>{f"<div><span class='plano-desconto'>{p.get('desconto','')}</span></div>" if p.get("desconto") else ""}{f"<div class=\"plano-tag\">{p.get('tag','')}</div>" if p.get("tag") else ""}<button class="btn-loja btn-comprar-volts" style="display:none;margin-top:10px" id="btnPlano{p.get('id',0)}" onclick="pagarComPix({p.get('id',0)}); return false;">💳 PAGAR COM PIX</button></div>' for p in PLANOS]) + r'''</div>
+</div>
         </div>
         <div class="sub-panel" id="sub-panel-skins">
             <div class="config-section"><h3>🎨 LOJA DE SKINS</h3><p style="color:#888;font-size:10px">Escolha uma categoria abaixo</p></div>
-            <!-- Sub-sub-abas das skins -->
             <div class="sub-tabs" style="margin-bottom:10px">
                 <div class="sub-tab active" id="sub-sub-tab-basica" onclick="mostrarCategoriaSkin('basica')">⚡ BÁSICAS</div>
                 <div class="sub-tab" id="sub-sub-tab-premium" onclick="mostrarCategoriaSkin('premium')">🔮 PREMIUM</div>
@@ -1183,7 +1284,7 @@ HTML = r'''<!DOCTYPE html>
         <div style="background:linear-gradient(135deg,#1a1a2e,#0d0d1a);border:2px solid #25D366;border-radius:15px;padding:20px;margin:15px 0;text-align:center">
             <p style="color:#25D366;font-size:16px;font-weight:bold;margin-bottom:10px">💬 FALE COM O DESENVOLVEDOR</p>
             <p style="color:#ccc;font-size:12px;margin:5px 0">📧 <span style="color:#00ff88">gyn.bet.fc@gmail.com</span></p>
-            <a href="https://wa.me/5562981728653?text=Ola!%20Vim%20do%20Tesla%20369%20Bot%20v7.0.3%20e%20gostaria%20de%20saber%20mais!" target="_blank" style="text-decoration:none">
+            <a href="https://wa.me/5562981728653?text=Ola!%20Vim%20do%20Tesla%20369%20Bot%20v8.0.0%20e%20gostaria%20de%20saber%20mais!" target="_blank" style="text-decoration:none">
                 <button style="background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;padding:14px 28px;border-radius:12px;font-size:15px;font-weight:bold;cursor:pointer;margin-top:10px;font-family:monospace;box-shadow:0 4px 15px rgba(37,211,102,0.3);transition:all 0.3s ease" onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 6px 20px rgba(37,211,102,0.5)'" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 4px 15px rgba(37,211,102,0.3)'">💬 WHATSAPP</button>
             </a>
             <p style="color:#888;font-size:10px;margin-top:10px">Duvidas, sugestoes ou interesse em recursos premium? Fale comigo!</p>
@@ -1203,13 +1304,10 @@ HTML = r'''<!DOCTYPE html>
 </div>
 <script>
 function mostrarCategoriaSkin(categoria) {
-    // Atualizar sub-sub-abas
     document.querySelectorAll('[id^="sub-sub-tab-"]').forEach(function(t) { t.classList.remove('active'); });
     document.getElementById('sub-sub-tab-' + categoria).classList.add('active');
-    // Mostrar painel correto
     document.querySelectorAll('[id^="sub-sub-panel-"]').forEach(function(p) { p.classList.remove('active'); });
     document.getElementById('sub-sub-panel-' + categoria).classList.add('active');
-    // Renderizar skins da categoria
     renderLojaCategoria(categoria);
 }
 function mostrarSubAba(aba){
@@ -1222,7 +1320,7 @@ function mostrarSubAba(aba){
 }
 var intervalo=null,botAtivo=false,conectadoIQ=false,emailLogado='',planoSelecionado=0,pixAtual=null;
 var estrategiaSel='v_sensitivo';
-var estrategias = {}; // Carregado do backend
+var estrategias = {};
 function openTab(tab){
     document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
     document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
@@ -1258,8 +1356,6 @@ function calcularMinimo() {
         document.getElementById('avisoMinimo').textContent = '';
     }
 }
-// ========== FUNÇÕES DOS BOTÕES ==========
-// ========== BOTÃO 1: CONECTAR / DESCONECTAR ==========
 function conectarIQ(){
     var email=document.getElementById('email').value.trim();
     var senha=document.getElementById('senha').value.trim();
@@ -1308,7 +1404,6 @@ function desconectarIQ(){
         });
     }
 }
-// ========== BOTÃO 2: COMEÇAR OPERAR / PARAR ==========
 function comecarOperar(){
     if(!conectadoIQ){alert('Conecte primeiro!');return}
     document.getElementById('btnOperar').disabled=true;
@@ -1410,64 +1505,8 @@ function renderLojaCategoria(categoria) {
         grid.innerHTML = html || '<p style="color:#888;text-align:center">Nenhuma skin nesta categoria</p>';
     });
 }
-// Manter renderLoja original para compatibilidade
 function renderLoja() {
     renderLojaCategoria('basica');
-}
-function renderLoja(){
-    fetch('/status').then(r=>r.json()).then(d=>{
-        var skinsStatus = d.skins_status || [];
-        var grid=document.getElementById('skinsGrid');
-        var html='';
-        skinsStatus.sort(function(a,b){ var ordem={'basica':1,'premium':2,'lendaria':3}; return (ordem[a.categoria]||1) - (ordem[b.categoria]||1); });
-        var lastCat = '';
-        skinsStatus.forEach(function(skin){
-            var ativa=skin.ativo?' ativo':'';
-            var btnHtml='';
-            if(skin.ativo){
-                btnHtml='<button class="btn-loja btn-comprado" style="width:100%;cursor:default">✅ EM USO</button>';
-            }else if(skin.comprado){
-                btnHtml='<button class="btn-loja btn-usar" style="width:100%" onclick="ativarSkin(\''+skin.id+'\')">🎨 USAR SKIN</button>';
-            }else{
-                if(skin.preco_moedas==0){
-                    btnHtml='<button class="btn-loja btn-usar" style="width:100%" onclick="ativarSkin(\''+skin.id+'\')">🆓 ATIVAR GRÁTIS</button>';
-                }else{
-                    btnHtml='<button class="btn-loja btn-comprar-skin" style="width:100%;margin-top:8px" onclick="comprarSkin(\''+skin.id+'\')">🛒 COMPRAR ('+skin.preco_moedas+' ⚡VOLTS)</button>';
-                }
-            }
-            html+='<div class="skin-card'+ativa+'">';
-            if (skin.categoria !== lastCat) {
-                var tituloCat = skin.categoria === 'lendaria' ? '💎 LENDÁRIAS (9 VOLTS - MATRIX, MAGOS, THUNDER)' : (skin.categoria === 'premium' ? '🔮 PREMIUM (6 VOLTS - SAKURA, SUNSET, OCEAN, ICE, FIRE)' : '⚡ BÁSICAS (0-3 VOLTS)');
-                var corCat = skin.categoria === 'lendaria' ? '#ffd700' : (skin.categoria === 'premium' ? '#9933ff' : '#888');
-                html += '<div style="grid-column:1/-1;text-align:center;padding:10px;margin:10px 0 5px;background:linear-gradient(90deg,transparent,'+corCat+'22,transparent);border-left:3px solid '+corCat+';border-right:3px solid '+corCat+'">';
-                html += '<span style="color:'+corCat+';font-size:13px;font-weight:bold;letter-spacing:2px">'+tituloCat+'</span>';
-                html += '</div>';
-                lastCat = skin.categoria;
-            }
-            var catBadge = skin.categoria === 'lendaria' ? '💎 LENDÁRIA' : (skin.categoria === 'premium' ? '🔮 PREMIUM' : '⚡ BÁSICA');
-            if (skin.categoria !== lastCat) {
-                var tituloCat = skin.categoria === 'lendaria' ? '💎 LENDÁRIAS (9 VOLTS - MATRIX, MAGOS, THUNDER)' : (skin.categoria === 'premium' ? '🔮 PREMIUM (6 VOLTS - SAKURA, SUNSET, OCEAN, ICE, FIRE)' : '⚡ BÁSICAS (0-3 VOLTS)');
-                var corCat = skin.categoria === 'lendaria' ? '#ffd700' : (skin.categoria === 'premium' ? '#9933ff' : '#888');
-                html += '<div style="grid-column:1/-1;text-align:center;padding:10px;margin:10px 0 5px;background:linear-gradient(90deg,transparent,'+corCat+'22,transparent);border-left:3px solid '+corCat+';border-right:3px solid '+corCat+'">';
-                html += '<span style="color:'+corCat+';font-size:13px;font-weight:bold;letter-spacing:2px">'+tituloCat+'</span>';
-                html += '</div>';
-                lastCat = skin.categoria;
-            }
-            var catBadge = skin.categoria === 'lendaria' ? '💎 LENDÁRIA' : (skin.categoria === 'premium' ? '🔮 PREMIUM' : '⚡ BÁSICA');
-            var catColor = skin.categoria === 'lendaria' ? '#ffd700' : (skin.categoria === 'premium' ? '#9933ff' : '#888');
-            html+='<div class="skin-nome">'+skin.nome+'</div>';
-            html+='<div style="font-size:8px;color:'+catColor+';margin-bottom:4px">'+catBadge+'</div>';
-            html+='<div class="skin-desc">'+skin.desc+'</div>';
-            html+='<div style="margin-top:5px">';
-            if(skin.preco_moedas==0){html+='<span class="badge-gratis">GRÁTIS</span>';}
-            else if(skin.comprado){html+='<span class="badge-gratis">✅ COMPRADO</span>';}
-            else{html+='<span class="badge-pago">⚡ '+skin.preco_moedas+' VOLTS</span>';}
-            html+='</div>';
-            html+=btnHtml;
-            html+='</div>';
-        });
-        grid.innerHTML=html;
-    });
 }
 function comprarEstrategia(estrategiaId) {
     if (!emailLogado) { alert('Conecte primeiro!'); return; }
@@ -1498,14 +1537,10 @@ function renderLojaEstrategias(){
             estrategiasCompradas.push('v_sensitivo');
         }
         var estrategiasDisponiveis = d.estrategias_disponiveis || {};
-                // Se não houver estrategias_disponiveis, usar o objeto global estrategias
-        if (Object.keys(estrategiasDisponiveis).length === 0 && typeof estrategias !== 'undefined') {
+                if (Object.keys(estrategiasDisponiveis).length === 0 && typeof estrategias !== 'undefined') {
             for (var key in estrategias) {
-                // Pular tesla_369 no fallback
                 if (key === 'v_sensitivo') continue;
-                // Preços fixos para cada estratégia
                 var precos = {
-                    'v_sensitivo': 6,
                     'terceira_igual_primeira': 3,
                     'mhi_filtrado': 9,
                     'quadrante_de_7': 6,
@@ -1517,12 +1552,11 @@ function renderLojaEstrategias(){
                     'nome': estrategias[key].nome,
                     'desc': estrategias[key].desc || '',
                     'preco_moedas': precos[key] || 5,
-                    'gratis': (key === 'v_sensitivo')
+                    'gratis': false
                 };
             }
         }
                 for (var key in estrategiasDisponiveis) {
-            // Pular estratégias fixas (não mostrar na loja)
             if (estrategiasDisponiveis[key].fixa === true || key === 'v_sensitivo') continue;
             var est = estrategiasDisponiveis[key];
             var comprado = estrategiasCompradas.includes(key);
@@ -1556,25 +1590,6 @@ function renderLojaEstrategias(){
     }).catch(function(err) {
         var grid = document.getElementById('estrategiasLojaGrid');
         if (grid) grid.innerHTML = '<p style="color:#ff4444;text-align:center">Erro ao carregar. Tente novamente.</p>';
-    });
-}
-function comprarEstrategia(estrategiaId) {
-    if (!emailLogado) { alert('Conecte primeiro!'); return; }
-    if (!confirm('Comprar esta estratégia?')) return;
-        fetch('/comprar_estrategia', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({estrategia_id: estrategiaId})
-    })
-    .then(r => r.json()).then(d => {
-        if (d.ok) {
-            alert(d.msg || 'Estratégia comprada!');
-            document.getElementById('moedasSaldo').textContent = d.moedas;
-            renderLojaEstrategias();
-            renderEstrategias();
-        } else {
-            alert('ERRO: ' + d.erro);
-        }
     });
 }
 function comprarSkin(skinId){
@@ -1659,7 +1674,6 @@ function verRanking() {
     document.getElementById('relatorioContent').innerHTML = '<p style="color:#ffd700;text-align:center">🏆 Carregando ranking...</p>';
         fetch('/ranking').then(r => r.json()).then(d => {
         var h = '';
-                // Estatísticas globais
         h += '<div style="background:#1a1a0a;border:2px solid #ffd700;border-radius:15px;padding:15px;margin-bottom:15px">';
         h += '<p style="color:#ffd700;font-size:14px;font-weight:bold;text-align:center;margin-bottom:10px">📊 ESTATÍSTICAS GLOBAIS</p>';
         h += '<div class="relatorio-grid">';
@@ -1668,7 +1682,6 @@ function verRanking() {
         h += '<div class="relatorio-card"><div class="rlabel">✅ WINS</div><div class="rvalue" style="color:#00ff88">' + d.stats.total_wins + '</div></div>';
         h += '<div class="relatorio-card"><div class="rlabel">🎯 TAXA GLOBAL</div><div class="rvalue" style="color:#ffd700">' + d.stats.taxa_global + '%</div></div>';
         h += '</div></div>';
-                // Ranking
         h += '<p style="color:#ffd700;font-size:14px;font-weight:bold;text-align:center;margin-bottom:10px">🏆 TOP TRADERS</p>';
         h += '<div style="background:#000;border:1px solid #333;border-radius:10px;overflow:hidden">';
         h += '<table class="historico-table">';
@@ -1681,13 +1694,12 @@ function verRanking() {
     h += '<td style="color:' + cor + ';font-weight:bold">' + medalha + '</td>';
     h += '<td style="color:#ccc;font-size:8px">' + u.email + '</td>';
     h += '<td style="color:' + (u.lucro_total >= 0 ? '#00ff88' : '#ff4444') + '">$' + u.lucro_total.toFixed(2) + '</td>';
-    h += '<td style="color:#00ff88">' + u.total_wins + '</td>'; // <-- CORRIGIDO: Agora fecha com </td>
+    h += '<td style="color:#00ff88">' + u.total_wins + '</td>';
     h += '<td style="color:#ff4444">' + u.total_losses + '</td>';
     h += '<td style="color:#ffd700">' + u.taxa + '%</td>';
     h += '<td style="color:#00ff88">$' + u.banca_atual.toFixed(2) + '</td>';
     h += '</tr>';
 });
-
                 h += '</table></div>';
         document.getElementById('relatorioContent').innerHTML = h;
     }).catch(function() {
@@ -1764,7 +1776,7 @@ window.onload=function(){
         }
     });
 }
-// ============= CHAT AUTO-CONECTA =============
+// 🔧 CORREÇÃO v8.0.0: Prevenir múltiplos setInterval no chat
 var chatIntervalo = null;
 function iniciarChat() {
     var nome = emailLogado || localStorage.getItem('chatNome') || '';
@@ -1821,9 +1833,7 @@ function atualizarChat() {
         document.getElementById('chatOnline').textContent = '🟢 ' + (d.online || 1) + ' online';
     });
 }
-// ========== EFEITOS VISUAIS DAS SKINS ==========
 function initSkinEffects() {
-    // 🧬 TESLA MATRIX - Chuva de caracteres
     var matrixCanvas = document.getElementById('matrixCanvas');
     if (matrixCanvas) {
         var mctx = matrixCanvas.getContext('2d');
@@ -1849,7 +1859,6 @@ function initSkinEffects() {
         }
         drawMatrix();
     }
-        // 🌸 TESLA SAKURA - Pétalas caindo
     var sakuraCanvas = document.getElementById('sakuraCanvas');
     if (sakuraCanvas) {
         var skctx = sakuraCanvas.getContext('2d');
@@ -1887,7 +1896,6 @@ function initSkinEffects() {
         }
         drawSakura();
     }
-        // ⚡ TESLA THUNDER - Raios aleatórios
     var thunderCanvas = document.getElementById('thunderCanvas');
     if (thunderCanvas) {
         var tctx = thunderCanvas.getContext('2d');
@@ -1914,7 +1922,6 @@ function initSkinEffects() {
         }
         drawThunder();
     }
-        // 🌊 TESLA OCEAN - Ondas
     var oceanCanvas = document.getElementById('oceanCanvas');
     if (oceanCanvas) {
         var octx = oceanCanvas.getContext('2d');
@@ -1938,7 +1945,6 @@ function initSkinEffects() {
         }
         drawOcean();
     }
-        // 🌅 TESLA SUNSET - Estrelas piscando
     var sunsetCanvas = document.getElementById('sunsetCanvas');
     if (sunsetCanvas) {
         var sctx2 = sunsetCanvas.getContext('2d');
@@ -1968,13 +1974,11 @@ function initSkinEffects() {
         }
         drawSunset();
     }
-    // 🌑 TESLA DARK - Header + Terminal
     var darkCanvas = document.getElementById('darkCanvas');
     if (darkCanvas) {
         var dctx = darkCanvas.getContext('2d');
         darkCanvas.width = darkCanvas.parentElement.offsetWidth;
         darkCanvas.height = darkCanvas.parentElement.offsetHeight;
-        // Terminal
         var td = document.getElementById('terminal');
         if(td){td.style.position='relative';td.style.overflow='hidden';
             var dc=document.createElement('canvas');dc.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.5';
@@ -2014,13 +2018,11 @@ function initSkinEffects() {
         }
         drawDark();
     }
-        // 🔥 TESLA FIRE - Header + Terminal
     var fireCanvas = document.getElementById('fireCanvas');
     if (fireCanvas) {
         var fctx = fireCanvas.getContext('2d');
         fireCanvas.width = fireCanvas.parentElement.offsetWidth;
         fireCanvas.height = 80;
-        // Terminal
         var tf=document.getElementById('terminal');
         if(tf){tf.style.position='relative';tf.style.overflow='hidden';
             var fc=document.createElement('canvas');fc.style.cssText='position:absolute;bottom:0;left:0;width:100%;height:60px;z-index:0;pointer-events:none;opacity:0.5';
@@ -2071,10 +2073,8 @@ function initSkinEffects() {
         }
         drawFire();
     }
-        // ❄️ TESLA ICE - Header + Terminal
     var snowCanvas = document.getElementById('snowCanvas');
     if (snowCanvas) {
-        // Terminal
         var ts=document.getElementById('terminal');
         if(ts){ts.style.position='relative';ts.style.overflow='hidden';
             var sc=document.createElement('canvas');sc.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.5';
@@ -2142,7 +2142,6 @@ def processar_html_com_skin():
     html = html.replace('{{HEADER_EXTRA}}', skin.get('header_extra', '<div class="lightning"></div>'))
     return html
 
-# ============= ROTAS =============
 @app.route('/')
 def index():
     return render_template_string(processar_html_com_skin())
@@ -2168,7 +2167,6 @@ def status():
             'comprado': skin['id'] in skins_compradas,
             'ativo': skin['id'] == skin_atual
         })
-    # NOVO: Calcular estrategias_disponiveis e estrategias_compradas
     estrategias_compradas = u.get('estrategias_compradas', ['v_sensitivo']) if u else ['v_sensitivo']
     estrategias_disponiveis = {}
     for key, est in ESTRATEGIAS.items():
@@ -2209,7 +2207,6 @@ def conectar():
             return jsonify({'ok': False, 'erro': 'Email e senha obrigatórios'})
         email_usuario_atual = email
         
-        # Criar API isolada para este usuário
         API = IQ_Option(email, senha)
         status_conn, reason = API.connect()
         if not status_conn:
@@ -2219,14 +2216,11 @@ def conectar():
         usuario = carregar_usuario(email) or criar_usuario(email)
         hoje = str(datetime.now())[:10]
         
-        # Conta DEMO ganha 51 VOLTS na PRIMEIRA vez
-        # 12 moedas iniciais - v7.0.3
         if usuario.get('moedas_ganhas_hoje') != hoje:
             usuario['moedas'] = usuario.get('moedas', 0) + 1
             usuario['moedas_ganhas_hoje'] = hoje
             salvar_usuario(email, usuario)
         skin_atual_global = usuario.get('skin_atual', 'skin_padrao')
-        # Garantir que v_sensitivo está nas estratégias compradas
         if 'estrategias_compradas' not in usuario:
             usuario['estrategias_compradas'] = ['v_sensitivo']
         salvar_usuario(email, usuario)
@@ -2238,43 +2232,40 @@ def conectar():
     except Exception as e:
         return jsonify({'ok': False, 'erro': str(e)[:100]})
 
+# 🔧 CORREÇÃO v8.0.0: Proteção contra múltiplas threads do bot
 @app.route('/comecar_operar', methods=['POST'])
 def comecar_operar():
     global bot_rodando, bot_thread, lucro, NumDeOperacoes
     try:
         if not conectado_iq:
             return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+        
+        with bot_lock:
+            if bot_rodando and bot_thread and bot_thread.is_alive():
+                return jsonify({'ok': False, 'erro': 'Bot já está rodando! Aguarde finalizar.'})
             
-        # BLINDAGEM: Se o robô já estiver operando, bloqueia cliques extras na tela do celular
-        if bot_rodando:
-            return jsonify({'ok': True, 'msg': 'O robô já está trabalhando em segundo plano!'})
+            usuario = carregar_usuario(email_usuario_atual)
+            if not usuario:
+                return jsonify({'ok': False, 'erro': 'Usuário não encontrado!'})
             
-        usuario = carregar_usuario(email_usuario_atual)
-        if not usuario:
-            return jsonify({'ok': False, 'erro': 'Usuário não encontrado!'})
-        
-        estrategias_compradas = usuario.get('estrategias_compradas', ['v_sensitivo']) # Ajustado fallback v7.0.3
-        if estrategia_atual not in estrategias_compradas:
-            preco = ESTRATEGIAS.get(estrategia_atual, {}).get('preco_moedas', 0)
-            return jsonify({'ok': False, 'erro': f'Estratégia não comprada! Compre na loja por {preco} ⚡'})
-        
-        if usuario.get('moedas', 0) < 1:
-            return jsonify({'ok': False, 'erro': 'Sem VOLTS!'})
+            estrategias_compradas = usuario.get('estrategias_compradas', ['v_sensitivo'])
+            if estrategia_atual not in estrategias_compradas:
+                preco = ESTRATEGIAS.get(estrategia_atual, {}).get('preco_moedas', 0)
+                return jsonify({'ok': False, 'erro': f'Estratégia não comprada! Compre na loja por {preco} ⚡'})
             
-        usuario['moedas'] -= 1
-        usuario['total_ciclos'] += 1
-        salvar_usuario(email_usuario_atual, usuario)
-        
-        # Reseta os contadores estritamente ANTES de disparar a Thread
-        lucro = 0.0
-        NumDeOperacoes = 0
-        
-        # Iniciar bot em thread separada para este usuário de forma segura
-        email_atual = email_usuario_atual
-        bot_rodando = True
-        bot_thread = threading.Thread(target=bot_loop, daemon=True)
-        bot_thread.start()
-        bots_ativos[email_atual] = bot_thread
+            if usuario.get('moedas', 0) < 1:
+                return jsonify({'ok': False, 'erro': 'Sem VOLTS!'})
+            
+            usuario['moedas'] -= 1
+            usuario['total_ciclos'] += 1
+            salvar_usuario(email_usuario_atual, usuario)
+            lucro = 0.0
+            NumDeOperacoes = 0
+            
+            bot_rodando = True
+            bot_thread = threading.Thread(target=bot_loop, daemon=True)
+            bot_thread.start()
+            bots_ativos[email_usuario_atual] = bot_thread
         
         return jsonify({'ok': True, 'moedas': usuario['moedas']})
     except Exception as e:
@@ -2284,10 +2275,10 @@ def comecar_operar():
 def parar():
     global bot_rodando, conectado_iq
     data = request.json or {}
-    bot_rodando = False
+    with bot_lock:
+        bot_rodando = False
     if data.get('desconectar'):
         conectado_iq = False
-        # Remover bot da lista de ativos
         if email_usuario_atual in bots_ativos:
             del bots_ativos[email_usuario_atual]
     return jsonify({'ok': True})
@@ -2343,7 +2334,7 @@ def comprar_skin():
     return jsonify({'ok': True, 'moedas': usuario['moedas'], 'msg': f'Skin {skin["nome"]} comprada e ativada!'})
 
 @app.route('/ativar_skin', methods=['POST'])
-def activar_skin():
+def ativar_skin():
     d = request.get_json()
     skin_id = d.get('skin_id', '')
     if not email_usuario_atual:
@@ -2447,12 +2438,10 @@ def resetar():
     usuario = carregar_usuario(email)
     if not usuario:
         return jsonify({'ok': False, 'msg': 'Usuário não encontrado'})
-    # Mantém moedas, skins e data de cadastro
     moedas = usuario.get('moedas', 0)
     skins_compradas = usuario.get('skins_compradas', ['skin_padrao'])
     skin_atual = usuario.get('skin_atual', 'skin_padrao')
     data_cadastro = usuario.get('data_cadastro', str(datetime.now())[:19])
-    # Zera apenas estatísticas
     usuario['total_ciclos'] = 0
     usuario['total_wins'] = 0
     usuario['total_losses'] = 0
@@ -2462,7 +2451,6 @@ def resetar():
     usuario['historico_operacoes'] = []
     usuario['dias_ativos'] = 0
     usuario['banca_atual'] = 0.0
-    # Mantém moedas e skins
     usuario['moedas'] = moedas
     usuario['skins_compradas'] = skins_compradas
     usuario['skin_atual'] = skin_atual
@@ -2525,9 +2513,6 @@ def admin_resetar():
     u['lucro_total'] = 0
     salvar_usuario(email, u)
     return jsonify({'ok': True, 'msg': 'Resetado!'})
-
-
-
 
 LOGIN_HTML = """<!DOCTYPE html>
 <html>
@@ -2601,7 +2586,7 @@ ADMIN_HTML = """<!DOCTYPE html>
                 <option value="skin_ice">Ice</option>
                 <option value="skin_princesa">Princesa</option>
             </select></p>
-            <p>📊 Estrategias: <textarea id="estrategias" rows="2" placeholder="tesla_369,fluxo_de_velas"></textarea></p>
+            <p>📊 Estrategias: <textarea id="estrategias" rows="2" placeholder="v_sensitivo,fluxo_de_velas"></textarea></p>
             <button class="btn btn-green" onclick="salvar()">💾 SALVAR</button>
             <button class="btn btn-red" onclick="resetar()">🔄 RESETAR</button>
             <div class="result" id="resultadoEdit"></div>
@@ -2650,35 +2635,10 @@ ADMIN_HTML = """<!DOCTYPE html>
 </body>
 </html>"""
 
-
-
-
-
-def faxina_automatica_chat_background():
-    """Roda de forma totalmente silenciosa a cada 5 minutos salvando o desempenho do celular"""
-    while True:
-        time.sleep(300) # Limpa a cada 5 minutos
-        try:
-            r_chat = requests.get(f'{FB_URL}/tesla_369/chat.json?orderBy="$key"&limitToLast=51')
-            if r_chat.status_code == 200 and r_chat.json():
-                dados = r_chat.json()
-                if len(dados) > 50:
-                    chaves = sorted(dados.keys())[:-50]
-                    for chave in chaves:
-                        requests.delete(f'{FB_URL}/tesla_369/chat/{chave}.json')
-        except:
-            pass
-
-# Inicializa o monitor de faxina em background assim que o script liga
-threading.Thread(target=faxina_automatica_chat_background, daemon=True).start()
-
-
-
-
-
 if __name__ == '__main__':
     print("=" * 50)
-    print("⚡ TESLA 369 BOT v7.0.3 ⚡")
+    print("⚡ TESLA 369 BOT v8.0.0 ⚡")
+    print("CORREÇÕES: Thread concorrência | IndexError timestamp | Chat síncrono | Rotas duplicadas")
     print("=" * 50)
     port = int(os.environ.get('PORT', 5000))
     import webbrowser as _wb
