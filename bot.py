@@ -30,9 +30,6 @@ import hashlib as _hl
 import base64 as _b64
 
 warnings.filterwarnings("ignore")
-
-# Importar módulo de skins
-from skins import SKINS, get_skins_cache, get_skin_by_id, get_skins_by_categoria
 app = Flask(__name__)
 
 def _hash_email(email):
@@ -71,7 +68,111 @@ PLANOS = [
 ]
 
 # ⭐ SKINS DA LOJA ⭐
-
+SKINS = [
+    {
+        'id': 'skin_padrao', 'nome': '⚡ TESLA PADRÃO', 'desc': 'Tema escuro com raios dourados', 'preco_moedas': 0, 'categoria': 'basica',
+        'cor_fundo': '#0a0a1a', 'cor_panel': '#1a1a3e', 'cor_destaque': '#ffd700', 'cor_texto': '#fff',
+        'cor_botao': 'linear-gradient(135deg,#cc8800,#ffd700)', 'cor_tab_ativa': '#ffd700',
+        'cor_header_bg': 'linear-gradient(135deg,#1a0000,#331100,#553300,#331100,#1a0000)', 'cor_header_borda': '#ffd700',
+        'header_extra': '<div class="lightning"></div>',
+        'css_extra': '.lightning{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:150px;height:150px;background:radial-gradient(circle at 30% 30%,rgba(255,215,0,0.3) 0%,rgba(255,165,0,0.15) 30%,transparent 100%);border-radius:50%;z-index:0;animation:glow 3s ease-in-out infinite;pointer-events:none}@keyframes glow{0%,100%{box-shadow:0 0 30px rgba(255,215,0,0.3)}50%{box-shadow:0 0 50px rgba(255,165,0,0.5)}}.lightning::after{content:"⚡";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:50px;animation:float 2s ease-in-out infinite}@keyframes float{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-60%) scale(1.1)}}'
+    },
+    {
+        'id': 'skin_dark', 'nome': '🌑 TESLA DARK', 'desc': 'Particulas roxas flutuantes', 'preco_moedas': 6, 'categoria': 'basica',
+        'cor_fundo': '#000000', 'cor_panel': '#0a0a0a', 'cor_destaque': '#9933ff', 'cor_texto': '#ccc',
+        'cor_botao': 'linear-gradient(135deg,#4400aa,#9933ff)', 'cor_tab_ativa': '#9933ff',
+        'cor_header_bg': 'linear-gradient(135deg,#000000,#110022,#220044,#110022,#000000)', 'cor_header_borda': '#9933ff',
+        'header_extra': '<canvas id="darkCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>',
+        'css_extra': 'body{background:#000000!important}.header{border-color:#9933ff!important;box-shadow:0 0 40px rgba(153,51,255,0.3)}'
+    },
+    {
+        'id': 'skin_neon', 'nome': '💜 TESLA NEON', 'desc': 'Brilho neon roxo pulsante', 'preco_moedas': 6, 'categoria': 'basica',
+        'cor_fundo': '#0a0015', 'cor_panel': '#150025', 'cor_destaque': '#cc00ff', 'cor_texto': '#e0c0ff',
+        'cor_botao': 'linear-gradient(135deg,#8800cc,#cc00ff)', 'cor_tab_ativa': '#cc00ff',
+        'cor_header_bg': 'linear-gradient(135deg,#0a0015,#150030,#200050,#150030,#0a0015)', 'cor_header_borda': '#cc00ff',
+        'header_extra': '<div class="neon-glow"></div>',
+        'css_extra': '.neon-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:200px;background:radial-gradient(circle,rgba(204,0,255,0.2) 0%,transparent 70%);border-radius:50%;z-index:0;animation:neonPulse 2s ease-in-out infinite;pointer-events:none}@keyframes neonPulse{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:0.5}50%{transform:translate(-50%,-50%) scale(1.3);opacity:0.8}}body{background:#0a0015!important}.header{border-color:#cc00ff!important;box-shadow:0 0 30px rgba(204,0,255,0.4)}'
+    },
+    {
+        'id': 'skin_matrix', 'nome': '🧬 TESLA MATRIX', 'desc': 'Chuva de caracteres verdes', 'preco_moedas': 12, 'categoria': 'lendaria',
+        'cor_fundo': '#000000', 'cor_panel': '#0a0a0a', 'cor_destaque': '#00ff00', 'cor_texto': '#00cc00',
+        'cor_botao': 'linear-gradient(135deg,#004400,#00ff00)', 'cor_tab_ativa': '#00ff00',
+        'cor_header_bg': 'linear-gradient(135deg,#000000,#001100,#003300,#001100,#000000)', 'cor_header_borda': '#00ff00',
+        'header_extra': '<canvas id="matrixCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>',
+        'css_extra': 'body{background:#000000!important}.header{border-color:#00ff00!important;box-shadow:0 0 30px rgba(0,255,0,0.4)}.terminal{color:#00ff00!important;font-family:monospace!important}'
+    },
+    {
+        'id': 'skin_sakura', 'nome': '🌸 TESLA SAKURA', 'desc': 'Pétalas de cerejeira caindo', 'preco_moedas': 9, 'categoria': 'premium',
+        'cor_fundo': '#1a0a1a', 'cor_panel': '#2a0a2a', 'cor_destaque': '#ff69b4', 'cor_texto': '#ffe0f0',
+        'cor_botao': 'linear-gradient(135deg,#cc3388,#ff69b4)', 'cor_tab_ativa': '#ff69b4',
+        'cor_header_bg': 'linear-gradient(135deg,#1a0020,#330033,#4d004d,#330033,#1a0020)', 'cor_header_borda': '#ff69b4',
+        'header_extra': '<canvas id="sakuraCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>',
+        'css_extra': 'body{background:linear-gradient(180deg,#1a0a1a 0%,#0d001a 100%)!important}.header{border-color:#ff69b4!important;box-shadow:0 0 40px rgba(255,105,180,0.3)}'
+    },
+    {
+        'id': 'skin_thunder', 'nome': '⚡ TESLA THUNDER', 'desc': 'Raios elétricos na tela', 'preco_moedas': 12, 'categoria': 'lendaria',
+        'cor_fundo': '#000011', 'cor_panel': '#0a0a1a', 'cor_destaque': '#ffff00', 'cor_texto': '#ffffff',
+        'cor_botao': 'linear-gradient(135deg,#aaaa00,#ffff00)', 'cor_tab_ativa': '#ffff00',
+        'cor_header_bg': 'linear-gradient(135deg,#000011,#111122,#222244,#111122,#000011)', 'cor_header_borda': '#ffff00',
+        'header_extra': '<canvas id="thunderCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>',
+        'css_extra': 'body{background:#000011!important}.header{border-color:#ffff00!important;box-shadow:0 0 50px rgba(255,255,0,0.3)}'
+    },
+    {
+        'id': 'skin_ocean', 'nome': '🌊 TESLA OCEAN', 'desc': 'Ondas do mar em movimento', 'preco_moedas': 9, 'categoria': 'premium',
+        'cor_fundo': '#001020', 'cor_panel': '#0a1a2a', 'cor_destaque': '#00aacc', 'cor_texto': '#aaddff',
+        'cor_botao': 'linear-gradient(135deg,#006688,#00aacc)', 'cor_tab_ativa': '#00aacc',
+        'cor_header_bg': 'linear-gradient(135deg,#001020,#002040,#003060,#002040,#001020)', 'cor_header_borda': '#00aacc',
+        'header_extra': '<canvas id="oceanCanvas" style="position:absolute;bottom:0;left:0;width:100%;height:100px;z-index:0"></canvas>',
+        'css_extra': 'body{background:linear-gradient(180deg,#001020 0%,#000810 100%)!important}.header{border-color:#00aacc!important;box-shadow:0 0 30px rgba(0,170,204,0.3)}'
+    },
+    {
+        'id': 'skin_sunset', 'nome': '🌅 TESLA SUNSET', 'desc': 'Ceu em degradê animado', 'preco_moedas': 9, 'categoria': 'premium',
+        'cor_fundo': '#1a0010', 'cor_panel': '#2a0a1a', 'cor_destaque': '#ff6600', 'cor_texto': '#ffddaa',
+        'cor_botao': 'linear-gradient(135deg,#cc4400,#ff8800)', 'cor_tab_ativa': '#ff6600',
+        'cor_header_bg': 'linear-gradient(135deg,#1a0000,#331100,#552200,#331100,#1a0000)', 'cor_header_borda': '#ff6600',
+        'header_extra': '<canvas id="sunsetCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>',
+        'css_extra': 'body{background:linear-gradient(180deg,#1a0010 0%,#331100 50%,#1a0000 100%)!important}.header{border-color:#ff6600!important;box-shadow:0 0 40px rgba(255,102,0,0.3)}'
+    },
+    {
+        'id': 'skin_magos', 'nome': '🔮 MAGOS DA BOLA DE CRISTAL', 'desc': 'Tema roxo místico', 'preco_moedas': 12, 'categoria': 'lendaria',
+        'cor_fundo': '#0a0a1a', 'cor_panel': '#1a1a3e', 'cor_destaque': '#cc66ff', 'cor_texto': '#e0d0ff',
+        'cor_botao': 'linear-gradient(135deg,#6600cc,#9933ff)', 'cor_tab_ativa': '#9933ff',
+        'cor_header_bg': 'linear-gradient(135deg,#0d001a,#1a0033,#2d0055,#1a0033,#0d001a)', 'cor_header_borda': '#9933ff',
+        'header_extra': '<div class="crystal-ball"></div><div class="mago mago-esq">🧙‍♂️</div><div class="mago mago-dir">🧙‍♀️</div>',
+        'css_extra': '.crystal-ball{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:130px;height:130px;background:radial-gradient(circle at 30% 30%,rgba(200,150,255,0.4) 0%,rgba(153,51,255,0.2) 30%,transparent 70%);border-radius:50%;z-index:0;animation:crystalGlow 4s ease-in-out infinite;pointer-events:none;border:2px solid rgba(153,51,255,0.3)}@keyframes crystalGlow{0%,100%{box-shadow:0 0 30px rgba(153,51,255,0.4),0 0 60px rgba(153,51,255,0.2)}50%{box-shadow:0 0 50px rgba(200,100,255,0.6),0 0 80px rgba(200,100,255,0.3)}}.crystal-ball::after{content:"🔮";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:45px;animation:floatCrystal 3s ease-in-out infinite}@keyframes floatCrystal{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-60%) scale(1.1)}}.mago{position:absolute;top:50%;font-size:30px;z-index:1;animation:magoFloat 2s ease-in-out infinite;pointer-events:none}.mago-esq{left:15px}.mago-dir{right:15px;animation-delay:0.5s}@keyframes magoFloat{0%,100%{transform:translateY(-50%)}50%{transform:translateY(-60%)}}'
+    },
+    {
+        'id': 'skin_brasil', 'nome': '🇧🇷 BRASIL', 'desc': 'Tema verde e amarelo', 'preco_moedas': 0, 'categoria': 'basica',
+        'cor_fundo': '#001a0a', 'cor_panel': '#0a2a15', 'cor_destaque': '#ffd700', 'cor_texto': '#fff',
+        'cor_botao': 'linear-gradient(135deg,#009933,#00cc44)', 'cor_tab_ativa': '#ffd700',
+        'cor_header_bg': 'linear-gradient(135deg,#001a0a,#003315,#004d20,#003315,#001a0a)', 'cor_header_borda': '#ffd700',
+        'header_extra': '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:60px;z-index:0;opacity:0.3;pointer-events:none">🇧🇷</div>', 'css_extra': ''
+    },
+    {
+        'id': 'skin_fire', 'nome': '🔥 TESLA FIRE', 'desc': 'Chamas realistas na base', 'preco_moedas': 9, 'categoria': 'premium',
+        'cor_fundo': '#1a0000', 'cor_panel': '#2a0a0a', 'cor_destaque': '#ff4400', 'cor_texto': '#ffccaa',
+        'cor_botao': 'linear-gradient(135deg,#cc2200,#ff6600)', 'cor_tab_ativa': '#ff4400',
+        'cor_header_bg': 'linear-gradient(135deg,#1a0000,#330000,#551100,#330000,#1a0000)', 'cor_header_borda': '#ff4400',
+        'header_extra': '<canvas id="fireCanvas" style="position:absolute;bottom:0;left:0;width:100%;height:80px;z-index:0"></canvas>',
+        'css_extra': 'body{background:radial-gradient(ellipse at bottom,#1a0000 0%,#000000 100%)!important}.header{border-color:#ff4400!important;box-shadow:0 0 30px rgba(255,68,0,0.4)}'
+    },
+    {
+        'id': 'skin_ice', 'nome': '❄️ TESLA ICE', 'desc': 'Neve caindo com cristais', 'preco_moedas': 9, 'categoria': 'premium',
+        'cor_fundo': '#000a1a', 'cor_panel': '#0a102a', 'cor_destaque': '#3399ff', 'cor_texto': '#aaccff',
+        'cor_botao': 'linear-gradient(135deg,#0044aa,#3399ff)', 'cor_tab_ativa': '#3399ff',
+        'cor_header_bg': 'linear-gradient(135deg,#000a1a,#001133,#002255,#001133,#000a1a)', 'cor_header_borda': '#3399ff',
+        'header_extra': '<canvas id="snowCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>',
+        'css_extra': 'body{background:linear-gradient(180deg,#000a1a 0%,#001133 100%)!important}.header{border-color:#3399ff!important;box-shadow:0 0 40px rgba(51,153,255,0.3)}'
+    },
+    {
+        'id': 'skin_princesa', 'nome': '👸 PRINCESA', 'desc': 'Tema rosa com brilhos', 'preco_moedas': 6, 'categoria': 'basica',
+        'cor_fundo': '#1a0010', 'cor_panel': '#2a0a20', 'cor_destaque': '#ff69b4', 'cor_texto': '#ffe0f0',
+        'cor_botao': 'linear-gradient(135deg,#cc3388,#ff69b4)', 'cor_tab_ativa': '#ff69b4',
+        'cor_header_bg': 'linear-gradient(135deg,#1a0010,#2a0a20,#3a1530,#2a0a20,#1a0010)', 'cor_header_borda': '#ff69b4',
+        'header_extra': '<div class="coroa-p">👑</div>',
+        'css_extra': '.coroa-p{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:40px;animation:float 2s ease-in-out infinite}@keyframes float{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-10px)}}.header h1{color:#ff69b4!important;text-shadow:0 0 30px #ff1493!important}'
+    },
+]
 
 # ⭐ ESTRATÉGIAS ⭐
 ESTRATEGIAS = {
@@ -146,6 +247,19 @@ bot_lock = threading.Lock()
 
 bots_ativos = {}
 
+_skin_cache = []
+_skin_cache_tempo = 0
+SKIN_CACHE_DURACAO = 300
+
+def get_skins_cache():
+    global _skin_cache, _skin_cache_tempo
+    agora = time.time()
+    if _skin_cache and (agora - _skin_cache_tempo) < SKIN_CACHE_DURACAO:
+        return _skin_cache
+    _skin_cache = list(SKINS)
+    _skin_cache_tempo = agora
+    return _skin_cache
+
 def add_log(msg, tipo='info'):
     global logs_web
     t = datetime.now().strftime('%H:%M:%S')
@@ -205,7 +319,7 @@ def sma(v, p):
 
 def bollinger(v, p=20, d=2):
     if len(v) < p:
-    return None, None, None
+        return None, None, None
     c = [x['close'] for x in v[-p:]]
     m = sum(c) / p
     dp = (sum((x-m)**2 for x in c) / p) ** 0.5
@@ -253,7 +367,7 @@ def sinal_v_sensitivo():
         s = datetime.now().second
         fase = "🌅NASCENDO" if s < 20 else ("☀️VIVA" if s < 45 else "🌇MORRENDO")
         v = API.get_candles(par, timeframe_atual, 30, time.time())
-    if len(v) < 20:
+        if len(v) < 20:
             return None
         rs = rsi(v)
         m5 = sma(v, 5)
@@ -267,7 +381,7 @@ def sinal_v_sensitivo():
         sc = sp = 0
         sinais = []
         
-    if m5 and m20:
+        if m5 and m20:
             if m5 > m20:
                 sc += 20
                 sinais.append("MM5>MM20")
@@ -275,7 +389,7 @@ def sinal_v_sensitivo():
                 sp += 20
                 sinais.append("MM5<MM20")
         
-    if m5 and m10:
+        if m5 and m10:
             if m5 > m10:
                 sc += 15
                 sinais.append("MM5>MM10")
@@ -283,7 +397,7 @@ def sinal_v_sensitivo():
                 sp += 15
                 sinais.append("MM5<MM10")
         
-    if rs:
+        if rs:
             if rs < 30:
                 sc += 25
                 sinais.append(f"RSI={rs:.0f}↓")
@@ -295,7 +409,7 @@ def sinal_v_sensitivo():
             else:
                 sp += 10
         
-    if bs and bi and pc:
+        if bs and bi and pc:
             if pc <= bi * 1.01:
                 sc += 20
                 sinais.append("BB↓")
@@ -303,7 +417,7 @@ def sinal_v_sensitivo():
                 sp += 20
                 sinais.append("BB↑")
         
-    if mc:
+        if mc:
             if mc > 0:
                 sc += 15
                 sinais.append("MACD+")
@@ -311,7 +425,7 @@ def sinal_v_sensitivo():
                 sp += 15
                 sinais.append("MACD-")
         
-    if st:
+        if st:
             if st < 20:
                 sc += 15
                 sinais.append(f"E={st:.0f}↓")
@@ -319,7 +433,7 @@ def sinal_v_sensitivo():
                 sp += 15
                 sinais.append(f"E={st:.0f}↑")
         
-    if fase == "🌇MORRENDO":
+        if fase == "🌇MORRENDO":
             cor = 'V' if v[-1]['open'] < v[-1]['close'] else 'R'
             if cor == 'V':
                 sp += 10
@@ -329,20 +443,20 @@ def sinal_v_sensitivo():
         add_log(f"🔮{fase} | C={sc} P={sp} | {' '.join(sinais[:3])}", 'indicator')
         dif = abs(sc - sp)
         
-    if sc > sp and dif >= 15:
+        if sc > sp and dif >= 15:
             ultimo_sinal = f"🔮 CALL ({sc}x{sp})"
             add_log(f"CALL!", 'sensitive')
             return 'call'
-    if sp > sc and dif >= 15:
+        if sp > sc and dif >= 15:
             ultimo_sinal = f"🔮 PUT ({sp}x{sc})"
             add_log(f"PUT!", 'sensitive')
             return 'put'
         
         ultimo_sinal = "⏳..."
-    return None
+        return None
     except Exception as e:
         add_log(f"Erro no sinal: {e}", 'error')
-    return None
+        return None
 
 @app.route('/set_percentual', methods=['POST'])
 def set_percentual():
@@ -372,12 +486,6 @@ def pegar_timestamp():
             return 0
         v = API.get_candles(par, timeframe_atual, 1, time.time())
         if v and isinstance(v, list) and len(v) > 0:
-            return v[0]['from']
-    except Exception as e:
-        add_log(f"Erro ao pegar timestamp: {e}", 'error')
-    return 0
-        v = API.get_candles(par, timeframe_atual, 1, time.time())
-    if v and isinstance(v, list) and len(v) > 0:
             return v[0]['from']
     except Exception as e:
         add_log(f"Erro ao pegar timestamp: {e}", 'error')
@@ -428,13 +536,6 @@ def verificar_resultado(saldo_antes, valor):
     except:
         pass
     return -valor
-        s = API.get_balance()
-        d = round(s - saldo_base, 2)
-    if d >= 1.0:
-            return d
-    except:
-        pass
-    return -valor
 
 def executar_ciclo(direcao):
     global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando
@@ -450,7 +551,7 @@ def executar_ciclo(direcao):
         add_log(f"💰 Banca: ${bi:.2f} | Payout: {payout*100:.0f}%", 'info')
         add_log(f"📐 E1:${entradas[0]:.2f} | E2:${entradas[1]:.2f} | E3:${entradas[2]:.2f}", 'info')
         
-    for i in range(MARTINGALE + 1):
+        for i in range(MARTINGALE + 1):
             if not bot_rodando:
                 break
             valor = entradas[i]
@@ -548,14 +649,14 @@ def bot_loop():
     global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO
     
     with bot_lock:
-    if not bot_rodando:
+        if not bot_rodando:
             return
         
         nome_est = ESTRATEGIAS.get(estrategia_atual, {}).get('nome', estrategia_atual)
         add_log(f'⚡ TESLA 369 v8.0.0 - INICIANDO...', 'sensitive')
         add_log(f'📊 Estratégia: {nome_est}', 'info')
         
-    if not API:
+        if not API:
             add_log('❌ API não conectada!', 'error')
             bot_rodando = False
             return
@@ -585,7 +686,7 @@ def bot_loop():
                     except:
                         pass
         
-    if not bot_rodando:
+        if not bot_rodando:
             add_log("⏹️ Bot parado.", 'info')
 
 # ==================================================================================
@@ -620,7 +721,7 @@ def gerar_pix_mercadopago(email, plano):
         # QR Code falso (mas com formato válido para teste)
         qr_code_falso = f"00020126360014BR.GOV.BCB.PIX0136{email}5204000053039865404{plano['preco']:.2f}5802BR5909Tesla3696009Sao Paulo62070503***6304E3F9"
         
-    return {
+        return {
             'sucesso': True,
             'simulacao': True,
             'pix_id': pix_id,
@@ -662,7 +763,7 @@ def gerar_pix_mercadopago(email, plano):
         data = response.json()
         
         # Verifica se o pagamento foi criado com sucesso
-    if response.status_code in [200, 201]:
+        if response.status_code in [200, 201]:
             pix_id = str(data['id'])
             
             # Extrai o QR Code da resposta
@@ -694,15 +795,15 @@ def gerar_pix_mercadopago(email, plano):
         # Erro na requisição
         erro_msg = data.get('message', 'Erro desconhecido ao gerar PIX')
         add_log(f"❌ Erro do Mercado Pago: {erro_msg}", "error")
-    return {'sucesso': False, 'erro': erro_msg}
+        return {'sucesso': False, 'erro': erro_msg}
         
     except requests.exceptions.Timeout:
         add_log("❌ Timeout na conexão com o Mercado Pago", "error")
-    return {'sucesso': False, 'erro': 'Timeout na conexão com o Mercado Pago'}
+        return {'sucesso': False, 'erro': 'Timeout na conexão com o Mercado Pago'}
         
     except Exception as erro:
         add_log(f"❌ Erro ao gerar PIX: {str(erro)[:100]}", "error")
-    return {'sucesso': False, 'erro': str(erro)[:100]}
+        return {'sucesso': False, 'erro': str(erro)[:100]}
 
 def verificar_pagamento_mp(pix_id):
     """
@@ -717,9 +818,9 @@ def verificar_pagamento_mp(pix_id):
     # Modo simulação
     if MODO_SIMULACAO:
         pago = pagamentos_pendentes.get(pix_id, {}).get('pago', False)
-    if pago:
+        if pago:
             add_log(f"💰 [SIMULAÇÃO] Pagamento PIX {pix_id[:8]} confirmado!", "win")
-    return pago
+        return pago
     
     # Modo real
     try:
@@ -732,14 +833,14 @@ def verificar_pagamento_mp(pix_id):
         status_pagamento = data.get('status')
         pago = status_pagamento == 'approved'
         
-    if pago:
+        if pago:
             add_log(f"💰 Pagamento PIX {pix_id[:8]} confirmado via API!", "win")
         
-    return pago
+        return pago
         
     except Exception as erro:
         add_log(f"⚠️ Erro ao verificar pagamento {pix_id[:8]}: {str(erro)[:50]}", "warning")
-    return False
+        return False
 
 def verificador_automatico_pix():
     """
@@ -793,10 +894,10 @@ def comprar_estrategia():
     estrategia_id = data.get('estrategia_id', '')
     
     if not email_usuario_atual:
-    return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+        return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
     
     if estrategia_id not in ESTRATEGIAS:
-    return jsonify({'ok': False, 'erro': 'Estratégia inválida!'})
+        return jsonify({'ok': False, 'erro': 'Estratégia inválida!'})
     
     estrategia = ESTRATEGIAS[estrategia_id]
     usuario = carregar_usuario(email_usuario_atual)
@@ -805,14 +906,14 @@ def comprar_estrategia():
         usuario = criar_usuario(email_usuario_atual)
     
     if estrategia.get('gratis', False):
-    if 'estrategias_compradas' not in usuario:
+        if 'estrategias_compradas' not in usuario:
             usuario['estrategias_compradas'] = []
         
-    if estrategia_id not in usuario['estrategias_compradas']:
+        if estrategia_id not in usuario['estrategias_compradas']:
             usuario['estrategias_compradas'].append(estrategia_id)
             salvar_usuario(email_usuario_atual, usuario)
         
-    return jsonify({
+        return jsonify({
             'ok': True,
             'msg': f'Estratégia {estrategia["nome"]} ativada gratuitamente!',
             'moedas': usuario.get('moedas', 0)
@@ -822,12 +923,12 @@ def comprar_estrategia():
         usuario = criar_usuario(email_usuario_atual)
     
     if estrategia_id in usuario.get('estrategias_compradas', []):
-    return jsonify({'ok': False, 'erro': 'Estratégia já comprada!'})
+        return jsonify({'ok': False, 'erro': 'Estratégia já comprada!'})
     
     preco = estrategia.get('preco_moedas', 3)
     
     if usuario['moedas'] < preco:
-    return jsonify({'ok': False, 'erro': f'VOLTS insuficientes! Precisa de {preco} ⚡'})
+        return jsonify({'ok': False, 'erro': f'VOLTS insuficientes! Precisa de {preco} ⚡'})
     
     usuario['moedas'] -= preco
     
@@ -858,7 +959,7 @@ def chat_enviar():
     msg = data.get('msg', '')[:200]
     
     if not msg:
-    return jsonify({'ok': False})
+        return jsonify({'ok': False})
     
     try:
         requests.post(
@@ -884,15 +985,15 @@ def chat_mensagens_route():
         url = f'{FB_URL}/tesla_369/chat.json?orderBy="$key"&limitToLast=50'
         response = requests.get(url, timeout=5)
         
-    if response.status_code == 200 and response.json():
+        if response.status_code == 200 and response.json():
             mensagens = list(response.json().values())
         else:
             mensagens = []
         
-    return jsonify({'mensagens': mensagens, 'online': 1})
+        return jsonify({'mensagens': mensagens, 'online': 1})
         
     except Exception:
-    return jsonify({'mensagens': [], 'online': 1})
+        return jsonify({'mensagens': [], 'online': 1})
 
 
 
@@ -1304,7 +1405,7 @@ function conectarIQ(){
     document.getElementById('btnConectar').textContent='Conectando...';
     fetch('/conectar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,senha:senha,tipo:tipo})})
     .then(r=>r.json()).then(d=>{
-    if(d.ok){
+        if(d.ok){
             conectadoIQ=true;
             setTimeout(function(){location.reload()},2000);
             document.getElementById('btnConectar').style.display='none';
@@ -1349,7 +1450,7 @@ function comecarOperar(){
     document.getElementById('btnOperar').textContent='...';
     fetch('/comecar_operar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})})
     .then(r=>r.json()).then(d=>{
-    if(d.ok){
+        if(d.ok){
             botAtivo=true;
             document.getElementById('btnOperar').style.display='none';
             document.getElementById('btnParar').style.display='inline-block';
@@ -1373,7 +1474,7 @@ function pararBot(){
         document.getElementById('btnParar').style.display='none';
         document.getElementById('statusTexto').textContent='🟢 Conectado';
         document.getElementById('statusDot').className='status-dot active';
-    if(intervalo)clearInterval(intervalo);
+        if(intervalo)clearInterval(intervalo);
         setTimeout(function(){ location.reload(); }, 500);
     });
 }
@@ -1381,12 +1482,12 @@ function renderEstrategias(){
     fetch('/status').then(r=>r.json()).then(d=>{
         var estrategiasCompradas = d.estrategias_compradas || ['v_sensitivo'];
         // Garantir que tesla_369 sempre aparece
-    if (!estrategiasCompradas.includes('v_sensitivo')) {
+        if (!estrategiasCompradas.includes('v_sensitivo')) {
             estrategiasCompradas.push('tesla_369');
         }
         var grid=document.getElementById('estrategiaGrid');
         var html='';
-    for(var key in estrategias){
+        for(var key in estrategias){
             if (estrategiasCompradas.includes(key)) {
                 var e=estrategias[key];
                 var ativa=key==estrategiaSel?' ativa':'';
@@ -1397,7 +1498,7 @@ function renderEstrategias(){
             }
         }
         grid.innerHTML=html || '<p style="color:#888;text-align:center">Nenhuma estratégia comprada</p>';
-    if (estrategias[estrategiaSel]) {
+        if (estrategias[estrategiaSel]) {
             document.getElementById('estrategiaAtiva').textContent=estrategias[estrategiaSel].nome;
         }
     });
@@ -1414,7 +1515,7 @@ function renderLojaCategoria(categoria) {
         var skinsStatus = d.skins_status || [];
         var gridId = categoria === 'basica' ? 'skinsGridBasicas' : (categoria === 'premium' ? 'skinsGridPremium' : 'skinsGridLendarias');
         var grid = document.getElementById(gridId);
-    if (!grid) return;
+        if (!grid) return;
         var html = '';
         var skinsFiltradas = skinsStatus.filter(function(s) { return s.categoria === categoria; });
         skinsFiltradas.forEach(function(skin){
@@ -1513,7 +1614,7 @@ function comprarEstrategia(estrategiaId) {
         body: JSON.stringify({estrategia_id: estrategiaId})
     })
     .then(r => r.json()).then(d => {
-    if (d.ok) {
+        if (d.ok) {
             alert(d.msg || 'Estratégia comprada!');
             document.getElementById('moedasSaldo').textContent = d.moedas;
             renderLojaEstrategias();
@@ -1526,16 +1627,16 @@ function comprarEstrategia(estrategiaId) {
 function renderLojaEstrategias(){
     fetch('/status').then(r=>r.json()).then(d=>{
         var grid = document.getElementById('estrategiasLojaGrid');
-    if (!grid) return;
+        if (!grid) return;
         var html = '';
         var estrategiasCompradas = d.estrategias_compradas || ['v_sensitivo'];
         // Garantir que tesla_369 sempre aparece
-    if (!estrategiasCompradas.includes('v_sensitivo')) {
+        if (!estrategiasCompradas.includes('v_sensitivo')) {
             estrategiasCompradas.push('tesla_369');
         }
         var estrategiasDisponiveis = d.estrategias_disponiveis || {};
                 // Se não houver estrategias_disponiveis, usar o objeto global estrategias
-    if (Object.keys(estrategiasDisponiveis).length === 0 && typeof estrategias !== 'undefined') {
+        if (Object.keys(estrategiasDisponiveis).length === 0 && typeof estrategias !== 'undefined') {
             for (var key in estrategias) {
                 // Pular tesla_369 no fallback
                 if (key === 'tesla_369') continue;
@@ -1591,7 +1692,7 @@ function renderLojaEstrategias(){
                 grid.innerHTML = html;
     }).catch(function(err) {
         var grid = document.getElementById('estrategiasLojaGrid');
-    if (grid) grid.innerHTML = '<p style="color:#ff4444;text-align:center">Erro ao carregar. Tente novamente.</p>';
+        if (grid) grid.innerHTML = '<p style="color:#ff4444;text-align:center">Erro ao carregar. Tente novamente.</p>';
     });
 }
 function comprarEstrategia(estrategiaId) {
@@ -1603,7 +1704,7 @@ function comprarEstrategia(estrategiaId) {
         body: JSON.stringify({estrategia_id: estrategiaId})
     })
     .then(r => r.json()).then(d => {
-    if (d.ok) {
+        if (d.ok) {
             alert(d.msg || 'Estratégia comprada!');
             document.getElementById('moedasSaldo').textContent = d.moedas;
             renderLojaEstrategias();
@@ -1618,14 +1719,14 @@ function comprarSkin(skinId){
     if(!confirm('Comprar esta skin?'))return;
     fetch('/comprar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId})})
     .then(r=>r.json()).then(d=>{
-    if(d.ok){alert(d.msg||'Skin comprada!');document.getElementById('moedasSaldo').textContent=d.moedas;renderLoja();setTimeout(function(){location.reload();},500);}
+        if(d.ok){alert(d.msg||'Skin comprada!');document.getElementById('moedasSaldo').textContent=d.moedas;renderLoja();setTimeout(function(){location.reload();},500);}
         else{alert('ERRO: '+d.erro);}
     });
 }
 function ativarSkin(skinId){
     fetch('/ativar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId})})
     .then(r=>r.json()).then(d=>{
-    if(d.ok){alert('Skin ativada!');location.reload();}
+        if(d.ok){alert('Skin ativada!');location.reload();}
         else{alert('ERRO: '+d.erro);}
     });
 }
@@ -1643,7 +1744,7 @@ function pagarComPix(planoId){
     document.getElementById('pixContent').innerHTML='<p style="color:#ffd700">Gerando QR Code PIX...</p>';
     fetch('/criar_pix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,plano_id:planoId})})
     .then(r=>r.json()).then(d=>{
-    if(d.sucesso){
+        if(d.sucesso){
             pixAtual=d;
             var html='<p style="font-size:18px;color:#ffd700">R$ '+d.valor.toFixed(2)+'</p>';
             html+='<p style="color:#00ff88">⚡ '+d.moedas+' VOLTS</p>';
@@ -1658,7 +1759,7 @@ function copiarPix(){navigator.clipboard.writeText(pixAtual.qr_code).then(()=>al
 function verificarPagamento(pixId){
     fetch('/verificar_pix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pix_id:pixId})})
     .then(r=>r.json()).then(d=>{
-    if(d.pago){alert('PAGO! +'+d.moedas+' VOLTS!');document.getElementById('moedasSaldo').textContent=d.saldo;fecharModal();}
+        if(d.pago){alert('PAGO! +'+d.moedas+' VOLTS!');document.getElementById('moedasSaldo').textContent=d.saldo;fecharModal();}
         else{alert('Ainda não confirmado.');}
     });
 }
@@ -1667,7 +1768,7 @@ function verRelatorio(){
     var email=document.getElementById('emailRelatorio').value.trim();
     if(!email){alert('Digite o email!');return}
     fetch('/relatorio?email='+email).then(r=>r.json()).then(d=>{
-    if(d.erro){alert(d.erro);return}
+        if(d.erro){alert(d.erro);return}
         var h='<div class="relatorio-grid">';
         h+='<div class="relatorio-card"><div class="rlabel">⚡ VOLTS</div><div class="rvalue">'+(d.moedas||0)+'</div></div>';
         h+='<div class="relatorio-card"><div class="rlabel">📈 LUCRO TOTAL</div><div class="rvalue" style="color:'+(d.lucro_total>=0?'#00ff88':'#ff4444')+'">$'+(d.lucro_total||0).toFixed(2)+'</div></div>';
@@ -1681,7 +1782,7 @@ function verRelatorio(){
         h+='<div class="relatorio-card"><div class="rlabel">💰 BANCA</div><div class="rvalue">$'+(d.banca_atual||0).toFixed(2)+'</div></div>';
         h+='<div class="relatorio-card"><div class="rlabel">📅 CADASTRO</div><div class="rvalue" style="font-size:10px">'+(d.data_cadastro||'--')+'</div></div>';
         h+='</div>';
-    if(d.historico_operacoes&&d.historico_operacoes.length>0){
+        if(d.historico_operacoes&&d.historico_operacoes.length>0){
             h+='<h4 style="margin-top:10px">📋 ÚLTIMAS</h4><table class="historico-table"><tr><th>Data</th><th>Res.</th><th>Valor</th><th>Lucro</th><th>Est.</th></tr>';
             d.historico_operacoes.slice(-15).reverse().forEach(op=>{
                 h+='<tr><td>'+op.data+'</td><td style="color:'+(op.resultado=='WIN'?'#00ff88':'#ff4444')+'">'+op.resultado+'</td><td>$'+op.valor.toFixed(2)+'</td><td style="color:'+(op.lucro>=0?'#00ff88':'#ff4444')+'">$'+op.lucro.toFixed(2)+'</td><td style="font-size:8px">'+(op.estrategia||'--')+'</td></tr>';
@@ -1739,7 +1840,7 @@ function resetarRelatorio(){
 }
 function atualizar(){
     fetch('/status').then(r=>r.json()).then(d=>{
-    if(!d.conectado&&conectadoIQ){
+        if(!d.conectado&&conectadoIQ){
             conectadoIQ=false;botAtivo=false;
             document.getElementById('btnConectar').style.display='inline-block';
             document.getElementById('btnConectar').disabled=false;
@@ -1755,7 +1856,7 @@ function atualizar(){
             document.getElementById('statusDot').className='status-dot inactive';
             if(intervalo)clearInterval(intervalo);
         }
-    if(!d.rodando&&botAtivo){
+        if(!d.rodando&&botAtivo){
             botAtivo=false;
             document.getElementById('btnOperar').style.display='inline-block';
             document.getElementById('btnOperar').disabled=false;
@@ -1763,13 +1864,13 @@ function atualizar(){
             document.getElementById('btnParar').style.display='none';
             document.getElementById('statusTexto').textContent='🟢 Conectado';
         }
-    if(d.banca)document.getElementById('banca').textContent='$'+d.banca.toFixed(2);
-    if(d.lucro!==undefined){var el=document.getElementById('lucro');el.textContent='$'+d.lucro.toFixed(2);el.style.color=d.lucro>=0?'#00ff88':'#ff4444';}
-    if(d.ops!==undefined)document.getElementById('ops').textContent=d.ops;
-    if(d.moedas!==undefined)document.getElementById('moedasSaldo').textContent=d.moedas;
-    if(d.sinal)document.getElementById('sinal').textContent=d.sinal;
-    if(d.estrategia_nome)document.getElementById('estrategiaAtiva').textContent=d.estrategia_nome;
-    if(d.analise){
+        if(d.banca)document.getElementById('banca').textContent='$'+d.banca.toFixed(2);
+        if(d.lucro!==undefined){var el=document.getElementById('lucro');el.textContent='$'+d.lucro.toFixed(2);el.style.color=d.lucro>=0?'#00ff88':'#ff4444';}
+        if(d.ops!==undefined)document.getElementById('ops').textContent=d.ops;
+        if(d.moedas!==undefined)document.getElementById('moedasSaldo').textContent=d.moedas;
+        if(d.sinal)document.getElementById('sinal').textContent=d.sinal;
+        if(d.estrategia_nome)document.getElementById('estrategiaAtiva').textContent=d.estrategia_nome;
+        if(d.analise){
             document.getElementById('rsi').textContent=d.analise.rsi?d.analise.rsi.toFixed(1):'--';
             document.getElementById('mm5').textContent=d.analise.mm5?d.analise.mm5.toFixed(5):'--';
             document.getElementById('mm10').textContent=d.analise.mm10?d.analise.mm10.toFixed(5):'--';
@@ -1778,16 +1879,16 @@ function atualizar(){
             document.getElementById('fase').textContent=d.analise.fase||'--';
             document.getElementById('preco').textContent=d.analise.preco?d.analise.preco.toFixed(5):'--';
         }
-    if(d.logs)document.getElementById('terminal').innerHTML=d.logs;
+        if(d.logs)document.getElementById('terminal').innerHTML=d.logs;
         document.getElementById('terminal').scrollTop=document.getElementById('terminal').scrollHeight;
     });
 }
 window.onload=function(){
     renderEstrategias();
     fetch('/status').then(r=>r.json()).then(d=>{
-    if(d.estrategia){estrategiaSel=d.estrategia;renderEstrategias();}
-    if(d.estrategia_nome)document.getElementById('estrategiaAtiva').textContent=d.estrategia_nome;
-    if(d.conectado&&d.email){
+        if(d.estrategia){estrategiaSel=d.estrategia;renderEstrategias();}
+        if(d.estrategia_nome)document.getElementById('estrategiaAtiva').textContent=d.estrategia_nome;
+        if(d.conectado&&d.email){
             conectadoIQ=true;emailLogado=d.email;
             document.getElementById('email').value=d.email;
             document.getElementById('btnConectar').style.display='none';
@@ -1808,7 +1909,7 @@ function iniciarChat() {
         localStorage.setItem('chatNome', nome);
     document.getElementById('chatInfo').textContent = '✅ Chat ativo: ' + nome;
     document.getElementById('chatInfo').style.color = '#00ff88';
-    if (chatIntervalo) clearInterval(chatIntervalo);
+        if (chatIntervalo) clearInterval(chatIntervalo);
     chatIntervalo = setInterval(atualizarChat, 3000);
     atualizarChat();
 }
@@ -1816,7 +1917,7 @@ var conectarIQOriginal = conectarIQ;
 conectarIQ = function() {
     conectarIQOriginal();
     setTimeout(function() {
-    if (conectadoIQ && emailLogado) iniciarChat();
+        if (conectadoIQ && emailLogado) iniciarChat();
     }, 2000);
 };
 setTimeout(function() {
@@ -1837,7 +1938,7 @@ function enviarChatMsg() {
 }
 function atualizarChat() {
     fetch('/chat_mensagens').then(r => r.json()).then(d => {
-    if (!d.mensagens) return;
+        if (!d.mensagens) return;
         var html = '';
         d.mensagens.forEach(function(m) {
             if (m.sistema) {
@@ -1869,7 +1970,7 @@ function initSkinEffects() {
         var fontSize = 14;
         var columns = Math.floor(matrixCanvas.width / fontSize);
         var drops = [];
-    for (var i = 0; i < columns; i++) drops[i] = Math.random() * -100;
+        for (var i = 0; i < columns; i++) drops[i] = Math.random() * -100;
         function drawMatrix() {
             mctx.fillStyle = 'rgba(0,0,0,0.05)';
             mctx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
@@ -1892,7 +1993,7 @@ function initSkinEffects() {
         sakuraCanvas.width = sakuraCanvas.parentElement.offsetWidth;
         sakuraCanvas.height = sakuraCanvas.parentElement.offsetHeight;
         var petals = [];
-    for (var i = 0; i < 20; i++) {
+        for (var i = 0; i < 20; i++) {
             petals.push({
                 x: Math.random() * sakuraCanvas.width,
                 y: Math.random() * sakuraCanvas.height,
@@ -1981,7 +2082,7 @@ function initSkinEffects() {
         sunsetCanvas.width = sunsetCanvas.parentElement.offsetWidth;
         sunsetCanvas.height = sunsetCanvas.parentElement.offsetHeight;
         var stars = [];
-    for (var i = 0; i < 30; i++) {
+        for (var i = 0; i < 30; i++) {
             stars.push({
                 x: Math.random() * sunsetCanvas.width,
                 y: Math.random() * sunsetCanvas.height * 0.5,
@@ -2012,14 +2113,14 @@ function initSkinEffects() {
         darkCanvas.height = darkCanvas.parentElement.offsetHeight;
         // Terminal
         var td = document.getElementById('terminal');
-    if(td){td.style.position='relative';td.style.overflow='hidden';
+        if(td){td.style.position='relative';td.style.overflow='hidden';
             var dc=document.createElement('canvas');dc.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.5';
             td.insertBefore(dc,td.firstChild);var d2=dc.getContext('2d');dc.width=td.offsetWidth;dc.height=td.offsetHeight;
             var pt=[];for(var i=0;i<20;i++)pt.push({x:Math.random()*dc.width,y:Math.random()*dc.height,r:Math.random()*3+1,vx:(Math.random()-0.5)*0.3,vy:-Math.random()*0.5-0.1,alpha:Math.random()*0.5+0.2});
             function dd(){d2.clearRect(0,0,dc.width,dc.height);pt.forEach(function(p){d2.beginPath();d2.arc(p.x,p.y,p.r,0,Math.PI*2);d2.fillStyle='rgba(153,51,255,'+p.alpha+')';d2.fill();p.x+=p.vx;p.y+=p.vy;if(p.y<-10){p.y=dc.height+10;p.x=Math.random()*dc.width}});requestAnimationFrame(dd)}dd();
         }
         var particles = [];
-    for (var i = 0; i < 25; i++) {
+        for (var i = 0; i < 25; i++) {
             particles.push({
                 x: Math.random() * darkCanvas.width,
                 y: Math.random() * darkCanvas.height,
@@ -2058,14 +2159,14 @@ function initSkinEffects() {
         fireCanvas.height = 80;
         // Terminal
         var tf=document.getElementById('terminal');
-    if(tf){tf.style.position='relative';tf.style.overflow='hidden';
+        if(tf){tf.style.position='relative';tf.style.overflow='hidden';
             var fc=document.createElement('canvas');fc.style.cssText='position:absolute;bottom:0;left:0;width:100%;height:60px;z-index:0;pointer-events:none;opacity:0.5';
             tf.insertBefore(fc,tf.firstChild);var f2=fc.getContext('2d');fc.width=tf.offsetWidth;fc.height=60;
             var fp=[];for(var i=0;i<30;i++)fp.push({x:Math.random()*fc.width,y:fc.height-Math.random()*20,vx:(Math.random()-0.5)*0.8,vy:-Math.random()*2-1,life:Math.random()*40+20,maxLife:60,size:Math.random()*4+2});
             function fd(){f2.clearRect(0,0,fc.width,fc.height);fp.forEach(function(p,i){var pr=p.life/p.maxLife;var g=f2.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*pr);g.addColorStop(0,'rgba(255,255,100,'+pr+')');g.addColorStop(0.4,'rgba(255,150,0,'+pr*0.8+')');g.addColorStop(1,'rgba(255,0,0,0)');f2.beginPath();f2.arc(p.x,p.y,p.size*pr,0,Math.PI*2);f2.fillStyle=g;f2.fill();p.x+=p.vx;p.y+=p.vy;p.life--;if(p.life<=0){fp[i]={x:Math.random()*fc.width,y:fc.height-Math.random()*10,vx:(Math.random()-0.5)*0.8,vy:-Math.random()*2-1,life:Math.random()*40+20,maxLife:60,size:Math.random()*4+2}}});requestAnimationFrame(fd)}fd();
         }
         var fireParticles = [];
-    for (var i = 0; i < 50; i++) {
+        for (var i = 0; i < 50; i++) {
             fireParticles.push({
                 x: Math.random() * fireCanvas.width,
                 y: fireCanvas.height - Math.random() * 30,
@@ -2112,7 +2213,7 @@ function initSkinEffects() {
     if (snowCanvas) {
         // Terminal
         var ts=document.getElementById('terminal');
-    if(ts){ts.style.position='relative';ts.style.overflow='hidden';
+        if(ts){ts.style.position='relative';ts.style.overflow='hidden';
             var sc=document.createElement('canvas');sc.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.5';
             ts.insertBefore(sc,ts.firstChild);var s2=sc.getContext('2d');sc.width=ts.offsetWidth;sc.height=ts.offsetHeight;
             var sf=[];for(var i=0;i<25;i++)sf.push({x:Math.random()*sc.width,y:Math.random()*sc.height,r:Math.random()*3+1,speed:Math.random()*0.8+0.2,wind:(Math.random()-0.5)*0.3,opacity:Math.random()*0.6+0.4});
@@ -2122,7 +2223,7 @@ function initSkinEffects() {
         snowCanvas.width = snowCanvas.parentElement.offsetWidth;
         snowCanvas.height = snowCanvas.parentElement.offsetHeight;
         var snowflakes = [];
-    for (var i = 0; i < 40; i++) {
+        for (var i = 0; i < 40; i++) {
             snowflakes.push({
                 x: Math.random() * snowCanvas.width,
                 y: Math.random() * snowCanvas.height,
@@ -2175,11 +2276,9 @@ def processar_html_com_skin():
     """
     Carrega o HTML da variável interna e aplica as cores da skin atual.
     """
-    from skins import get_skin_by_id
-    
     # Obtém a skin atual do usuário
     skin_id = skin_atual_global
-    skin = get_skin_by_id(skin_id)
+    skin = next((s for s in SKINS if s['id'] == skin_id), SKINS[0])
     
     # Aplica as cores da skin
     html_processado = HTML
@@ -2204,18 +2303,18 @@ def index():
 
 
 @app.route('/status')
-def status():    from skins import SKINS
+def status():
     global skin_atual_global, estrategia_atual
     if email_usuario_atual:
         u = carregar_usuario(email_usuario_atual)
-    if u:
+        if u:
             skin_atual_global = u.get('skin_atual', 'skin_padrao')
     u = carregar_usuario(email_usuario_atual) if email_usuario_atual else {}
     skins_status = []
     skins_compradas = u.get('skins_compradas', ['skin_padrao']) if u else ['skin_padrao']
     skin_atual = u.get('skin_atual', 'skin_padrao') if u else 'skin_padrao'
     for skin in SKINS:
-    skins_status.append({
+        skins_status.append({
             'id': skin['id'],
             'nome': skin['nome'],
             'desc': skin['desc'],
@@ -2260,41 +2359,41 @@ def conectar():
         email = d.get('email', '').strip()
         senha = d.get('senha', '').strip()
         tipo = d.get('tipo', 'PRACTICE')
-    if not email or not senha:
+        if not email or not senha:
             return jsonify({'ok': False, 'erro': 'Email e senha obrigatórios'})
         email_usuario_atual = email
         
         API = IQ_Option(email, senha)
         status_conn, reason = API.connect()
-    if not status_conn:
+        if not status_conn:
             return jsonify({'ok': False, 'erro': str(reason)[:100]})
         API.change_balance(tipo)
         conectado_iq = True
         usuario = carregar_usuario(email) or criar_usuario(email)
         hoje = str(datetime.now())[:10]
         
-    if usuario.get('moedas_ganhas_hoje') != hoje:
+        if usuario.get('moedas_ganhas_hoje') != hoje:
             usuario['moedas'] = usuario.get('moedas', 0) + 1
             usuario['moedas_ganhas_hoje'] = hoje
             salvar_usuario(email, usuario)
         skin_atual_global = usuario.get('skin_atual', 'skin_padrao')
-    if 'estrategias_compradas' not in usuario:
+        if 'estrategias_compradas' not in usuario:
             usuario['estrategias_compradas'] = ['v_sensitivo']
         salvar_usuario(email, usuario)
         par = ESTRATEGIAS.get(estrategia_atual, {}).get('pares', ['EURUSD-OTC'])[0]
         timeframe_atual = ESTRATEGIAS.get(estrategia_atual, {}).get('timeframe', 60)
         add_log('🔌 Conectando na IQ Option...', 'info')
         add_log(f'✅ Conectado! ${API.get_balance():.2f} | ⚡ {usuario.get("moedas", 0)} VOLTS', 'win')
-    return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0)})
+        return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0)})
     except Exception as e:
-    return jsonify({'ok': False, 'erro': str(e)[:100]})
+        return jsonify({'ok': False, 'erro': str(e)[:100]})
 
 # 🔧 CORREÇÃO: Proteção contra múltiplas threads do bot
 @app.route('/comecar_operar', methods=['POST'])
 def comecar_operar():
     global bot_rodando, bot_thread, lucro, NumDeOperacoes
     try:
-    if not conectado_iq:
+        if not conectado_iq:
             return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
         
         with bot_lock:
@@ -2324,9 +2423,9 @@ def comecar_operar():
             bot_thread.start()
             bots_ativos[email_usuario_atual] = bot_thread
         
-    return jsonify({'ok': True, 'moedas': usuario['moedas']})
+        return jsonify({'ok': True, 'moedas': usuario['moedas']})
     except Exception as e:
-    return jsonify({'ok': False, 'erro': str(e)[:100]})
+        return jsonify({'ok': False, 'erro': str(e)[:100]})
 
 @app.route('/parar', methods=['POST'])
 def parar():
@@ -2336,7 +2435,7 @@ def parar():
         bot_rodando = False
     if data.get('desconectar'):
         conectado_iq = False
-    if email_usuario_atual in bots_ativos:
+        if email_usuario_atual in bots_ativos:
             del bots_ativos[email_usuario_atual]
     return jsonify({'ok': True})
 
@@ -2349,7 +2448,7 @@ def selecionar_estrategia():
         estrategia_atual = est_key
         par = ESTRATEGIAS[est_key]['pares'][0]
         timeframe_atual = ESTRATEGIAS[est_key]['timeframe']
-    return jsonify({'ok': True})
+        return jsonify({'ok': True})
     return jsonify({'ok': False})
 
 @app.route('/comprar_skin', methods=['POST'])
@@ -2358,31 +2457,31 @@ def comprar_skin():
     d = request.get_json()
     skin_id = d.get('skin_id', '')
     if not email_usuario_atual:
-    return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+        return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
     skin = next((s for s in SKINS if s['id'] == skin_id), None)
     if not skin:
-    return jsonify({'ok': False, 'erro': 'Skin não encontrada'})
+        return jsonify({'ok': False, 'erro': 'Skin não encontrada'})
     usuario = carregar_usuario(email_usuario_atual)
     if not usuario:
-    return jsonify({'ok': False, 'erro': 'Usuário não encontrado'})
+        return jsonify({'ok': False, 'erro': 'Usuário não encontrado'})
     if skin['preco_moedas'] == 0:
-    if 'skins_compradas' not in usuario:
+        if 'skins_compradas' not in usuario:
             usuario['skins_compradas'] = ['skin_padrao']
-    if skin_id not in usuario['skins_compradas']:
+        if skin_id not in usuario['skins_compradas']:
             usuario['skins_compradas'].append(skin_id)
         usuario['skin_atual'] = skin_id
         salvar_usuario(email_usuario_atual, usuario)
         skin_atual_global = skin_id
-    return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0), 'msg': 'Skin grátis ativada!'})
+        return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0), 'msg': 'Skin grátis ativada!'})
     if 'skins_compradas' not in usuario:
         usuario['skins_compradas'] = ['skin_padrao']
     if skin_id in usuario['skins_compradas']:
         usuario['skin_atual'] = skin_id
         salvar_usuario(email_usuario_atual, usuario)
         skin_atual_global = skin_id
-    return jsonify({'ok': True, 'moedas': usuario['moedas'], 'msg': 'Skin já comprada! Ativada.'})
+        return jsonify({'ok': True, 'moedas': usuario['moedas'], 'msg': 'Skin já comprada! Ativada.'})
     if usuario.get('moedas', 0) < skin['preco_moedas']:
-    return jsonify({'ok': False, 'erro': f'VOLTS insuficientes! Precisa de {skin["preco_moedas"]} ⚡'})
+        return jsonify({'ok': False, 'erro': f'VOLTS insuficientes! Precisa de {skin["preco_moedas"]} ⚡'})
     usuario['moedas'] -= skin['preco_moedas']
     usuario['skins_compradas'].append(skin_id)
     usuario['skin_atual'] = skin_id
@@ -2395,17 +2494,17 @@ def ativar_skin():
     d = request.get_json()
     skin_id = d.get('skin_id', '')
     if not email_usuario_atual:
-    return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+        return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
     skin = next((s for s in SKINS if s['id'] == skin_id), None)
     if not skin:
-    return jsonify({'ok': False, 'erro': 'Skin não encontrada'})
+        return jsonify({'ok': False, 'erro': 'Skin não encontrada'})
     usuario = carregar_usuario(email_usuario_atual)
     if not usuario:
-    return jsonify({'ok': False, 'erro': 'Usuário não encontrado'})
+        return jsonify({'ok': False, 'erro': 'Usuário não encontrado'})
     if 'skins_compradas' not in usuario:
         usuario['skins_compradas'] = ['skin_padrao']
     if skin['preco_moedas'] > 0 and skin_id not in usuario['skins_compradas']:
-    return jsonify({'ok': False, 'erro': 'Compre a skin primeiro!'})
+        return jsonify({'ok': False, 'erro': 'Compre a skin primeiro!'})
     if skin_id not in usuario['skins_compradas']:
         usuario['skins_compradas'].append(skin_id)
     usuario['skin_atual'] = skin_id
@@ -2420,10 +2519,10 @@ def criar_pix():
     email = d.get('email', '')
     plano_id = int(d.get('plano_id') or 1)
     if not email:
-    return jsonify({'sucesso': False, 'erro': 'Email obrigatório'})
+        return jsonify({'sucesso': False, 'erro': 'Email obrigatório'})
     plano = next((p for p in PLANOS if p['id'] == plano_id), None)
     if not plano:
-    return jsonify({'sucesso': False, 'erro': 'Plano não encontrado'})
+        return jsonify({'sucesso': False, 'erro': 'Plano não encontrado'})
     return jsonify(gerar_pix_mercadopago(email, plano))
 
 @app.route('/verificar_pix', methods=['POST'])
@@ -2431,9 +2530,9 @@ def verificar_pix():
     d = request.get_json()
     pix_id = d.get('pix_id', '')
     if not pix_id:
-    return jsonify({'pago': False})
+        return jsonify({'pago': False})
     if verificar_pagamento_mp(pix_id):
-    if pix_id in pagamentos_pendentes and not pagamentos_pendentes[pix_id]['pago']:
+        if pix_id in pagamentos_pendentes and not pagamentos_pendentes[pix_id]['pago']:
             pagamentos_pendentes[pix_id]['pago'] = True
             email = pagamentos_pendentes[pix_id]['email']
             moedas = pagamentos_pendentes[pix_id]['moedas']
@@ -2441,7 +2540,7 @@ def verificar_pix():
             usuario['moedas'] = usuario.get('moedas', 0) + moedas
             salvar_usuario(email, usuario)
             return jsonify({'pago': True, 'moedas': moedas, 'saldo': usuario['moedas']})
-    return jsonify({'pago': True})
+        return jsonify({'pago': True})
     return jsonify({'pago': False})
 
 @app.route('/ranking')
@@ -2450,7 +2549,7 @@ def ranking():
     try:
         r = requests.get(f'{FB_URL}/tesla_369/usuarios.json')
         usuarios = r.json() if r.status_code == 200 else {}
-    if usuarios:
+        if usuarios:
             for key, user_data in usuarios.items():
                 if user_data:
                     ranking_list.append({
@@ -2482,7 +2581,7 @@ def ranking():
 def relatorio():
     email = request.args.get('email', '')
     if not email:
-    return jsonify({'erro': 'Email obrigatório'})
+        return jsonify({'erro': 'Email obrigatório'})
     u = carregar_usuario(email)
     return jsonify(u if u else {'erro': 'Não encontrado'})
 
@@ -2491,10 +2590,10 @@ def resetar():
     d = request.get_json()
     email = d.get('email', '')
     if not email:
-    return jsonify({'ok': False, 'msg': 'Email obrigatório'})
+        return jsonify({'ok': False, 'msg': 'Email obrigatório'})
     usuario = carregar_usuario(email)
     if not usuario:
-    return jsonify({'ok': False, 'msg': 'Usuário não encontrado'})
+        return jsonify({'ok': False, 'msg': 'Usuário não encontrado'})
     moedas = usuario.get('moedas', 0)
     skins_compradas = usuario.get('skins_compradas', ['skin_padrao'])
     skin_atual = usuario.get('skin_atual', 'skin_padrao')
@@ -2525,11 +2624,11 @@ def shutdown():
 @app.route('/admin369', methods=['GET','POST'])
 def admin_painel():
     if request.method == 'POST':
-    if request.form.get('senha') == '85133856':
+        if request.form.get('senha') == '85133856':
             return ADMIN_HTML
-    return '<center><h2 style="color:red;font-family:monospace">Senha incorreta!</h2></center>'
+        return '<center><h2 style="color:red;font-family:monospace">Senha incorreta!</h2></center>'
     if request.args.get('s') != '85133856':
-    return LOGIN_HTML
+        return LOGIN_HTML
     return ADMIN_HTML
 
 @app.route('/api/admin/buscar')
@@ -2537,7 +2636,7 @@ def admin_buscar():
     email = request.args.get('email', '')
     u = carregar_usuario(email)
     if u:
-    return jsonify(u)
+        return jsonify(u)
     return jsonify({'erro': 'Nao encontrado'})
 
 @app.route('/api/admin/salvar', methods=['POST'])
@@ -2546,7 +2645,7 @@ def admin_salvar():
     email = d.get('email', '')
     u = carregar_usuario(email)
     if not u:
-    return jsonify({'ok': False, 'msg': 'Nao encontrado'})
+        return jsonify({'ok': False, 'msg': 'Nao encontrado'})
     if 'moedas' in d:
         u['moedas'] = int(d['moedas'])
     if 'skin' in d:
@@ -2561,7 +2660,7 @@ def admin_resetar():
     email = request.json.get('email', '')
     u = carregar_usuario(email)
     if not u:
-    return jsonify({'ok': False, 'msg': 'Nao encontrado'})
+        return jsonify({'ok': False, 'msg': 'Nao encontrado'})
     u['total_wins'] = 0
     u['total_losses'] = 0
     u['total_ciclos'] = 0
