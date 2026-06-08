@@ -3,8 +3,9 @@
 
 # ⚡ TESLA 369 BOT v9.0.0 ⚡
 # MODO SINAL EXTERNO - Recebe sinais via API REST
+# HTML CARREGADO DINAMICAMENTE DO GITHUB
 
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template_string, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
 from datetime import datetime
 import threading
@@ -14,27 +15,24 @@ import os
 import warnings
 import requests
 import uuid
-import base64
 import hashlib as _hl
 
 warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
-def _hash_email(email):
-    return _hl.md5(email.encode()).hexdigest()[:12]
-
-# ============= CONFIGURAÇÕES FIXAS =============
+# ============= CONFIGURAÇÕES =============
 FB_URL = "https://nexos-40654-default-rtdb.firebaseio.com"
 print("✅ Firebase HTTP REST configurado!")
+
+# URL do HTML no GitHub (RAW)
+HTML_URL = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/refs/heads/main/tesla_369_bot/templates/index.html"
 
 MARTINGALE = 2
 PAYOUT_PADRAO = 0.85
 PERCENTUAL_BANCA = 15
-DRIVE_PATH = "vsens_users"
 
 # ⭐ CONFIGURAÇÃO DO MERCADO PAGO ⭐
 MERCADO_PAGO_ACCESS_TOKEN = os.environ.get("MP_ACCESS_TOKEN", "APP_USR-4548266140377032-050311-6589fc22b166e4cb2cfad0379b28dcdf-1059299796")
-MERCADO_PAGO_PUBLIC_KEY = os.environ.get("MP_PUBLIC_KEY", "APP_USR-39e1950e-420d-479a-8125-902009ca3445")
 MODO_SIMULACAO = False
 
 # ⭐ PLANOS DE VOLTS ⭐
@@ -57,7 +55,7 @@ ESTRATEGIAS_CONFIG = {
     'm5': {'nome': 'M5 Conservador', 'preco': 6, 'gratis': False}
 }
 
-# ⭐ SKINS DA LOJA ⭐
+# ⭐ SKINS DA LOJA (MANTIDAS IGUAL) ⭐
 SKINS = [
     {
         'id': 'skin_padrao', 'nome': '⚡ TESLA PADRÃO', 'desc': 'Tema escuro com raios dourados', 'preco_moedas': 0, 'categoria': 'basica',
@@ -164,6 +162,66 @@ SKINS = [
     },
 ]
 
+# Cache do HTML para evitar baixar a cada requisição
+html_cache = {"content": None, "timestamp": 0}
+HTML_CACHE_TTL = 60  # segundos
+
+def get_html_from_github():
+    """Baixa o HTML do GitHub e aplica as variáveis de skin"""
+    global html_cache
+    agora = time.time()
+    
+    # Verifica cache
+    if html_cache["content"] and (agora - html_cache["timestamp"]) < HTML_CACHE_TTL:
+        html_template = html_cache["content"]
+    else:
+        try:
+            response = requests.get(HTML_URL, timeout=10)
+            if response.status_code == 200:
+                html_template = response.text
+                html_cache["content"] = html_template
+                html_cache["timestamp"] = agora
+                print("✅ HTML carregado do GitHub e cacheado!")
+            else:
+                print(f"⚠️ Erro ao carregar HTML: status {response.status_code}")
+                html_template = html_cache["content"] if html_cache["content"] else "<h1>Erro ao carregar página</h1>"
+        except Exception as e:
+            print(f"⚠️ Erro ao baixar HTML: {e}")
+            html_template = html_cache["content"] if html_cache["content"] else "<h1>Erro ao carregar página</h1>"
+    
+    return html_template
+
+def processar_html_com_skin():
+    """Aplica as cores da skin ao HTML baixado"""
+    global skin_atual_global
+    skin = next((s for s in SKINS if s['id'] == skin_atual_global), SKINS[0])
+    
+    # Baixa o template HTML do GitHub
+    html_template = get_html_from_github()
+    
+    # Converte PLANOS para JSON
+    planos_json = []
+    for p in PLANOS:
+        planos_json.append(f'{{"id":{p["id"]},"moedas":{p["moedas"]},"preco":{p["preco"]},"nome":"{p["nome"]}","desc":"{p["desc"]}","tag":"{p.get("tag","")}","desconto":"{p.get("desconto","")}"}}')
+    
+    # Aplica as variáveis de template
+    html_template = html_template.replace('{{ COR_FUNDO }}', skin['cor_fundo'])
+    html_template = html_template.replace('{{ COR_PANEL }}', skin['cor_panel'])
+    html_template = html_template.replace('{{ COR_DESTAQUE }}', skin['cor_destaque'])
+    html_template = html_template.replace('{{ COR_TEXTO }}', skin['cor_texto'])
+    html_template = html_template.replace('{{ COR_BOTAO }}', skin['cor_botao'])
+    html_template = html_template.replace('{{ COR_TAB_ATIVA }}', skin['cor_tab_ativa'])
+    html_template = html_template.replace('{{ COR_HEADER_BG }}', skin['cor_header_bg'])
+    html_template = html_template.replace('{{ COR_HEADER_BORDA }}', skin['cor_header_borda'])
+    html_template = html_template.replace('{{ CSS_EXTRA }}', skin.get('css_extra', ''))
+    html_template = html_template.replace('{{ HEADER_EXTRA }}', skin.get('header_extra', '<div class="lightning"></div>'))
+    html_template = html_template.replace('{{ PLANOS_JSON | safe }}', ','.join(planos_json))
+    html_template = html_template.replace('{{ PLANOS_JSON }}', ','.join(planos_json))
+    
+    return html_template
+
+# ========== FUNÇÕES DE USUÁRIO (FIREBASE) ==========
+
 def _sanitizar_dados(dados):
     if 'historico_operacoes' in dados:
         if len(dados['historico_operacoes']) > 50:
@@ -172,7 +230,6 @@ def _sanitizar_dados(dados):
             for chave in list(op.keys()):
                 if isinstance(op[chave], float):
                     op[chave] = round(op[chave], 2)
-    # Garante listas base padrão caso não existam
     if 'estrategias_compradas' not in dados:
         dados['estrategias_compradas'] = ['v_sensitivo']
     return dados
@@ -242,21 +299,6 @@ def get_logs_html(limite=40):
         cor = {'win': '#00ff88', 'loss': '#ff4444', 'info': '#00ff88', 'sensitive': '#ff69b4', 'indicator': '#ffd700', 'error': '#ff4444'}.get(log['tipo'], '#00ff88')
         html += f'<span style="color:#666">{log["time"]}</span> <span style="color:{cor}">{log["msg"]}</span>\n'
     return html or '📡 Aguardando...'
-
-def conectar_api():
-    while bot_rodando:
-        try:
-            if API and API.check_connect():
-                return True
-        except:
-            pass
-        add_log('⏳ Reconectando...', 'warning')
-        time.sleep(5)
-        try:
-            if API:
-                API.connect()
-        except:
-            pass
 
 def Payout(p):
     try:
@@ -415,7 +457,7 @@ def executar_ciclo(direcao):
                     u['dias_ativos'] = u.get('dias_ativos', 0) + 1
                     salvar_usuario(email_usuario_atual, u)
                 STOP_GAIN_ATINGIDO = True
-                add_log("🎯 STOP GAIN! Vitória alcançada - Bot PARADO!", 'win')
+                add_log("🎯 STOP GAIN! Bot PARADO!", 'win')
                 break
             else:
                 add_log(f"💀 LOSS! -${valor:.2f}", 'loss')
@@ -448,7 +490,7 @@ def executar_ciclo(direcao):
         add_log(f"Erro na execução do ciclo: {e}", 'error')
     finally:
         bot_rodando = False
-        add_log("⏹️ Ciclo concluído! Clique em CONECTAR e depois COMEÇAR OPERAR para novo ciclo.", 'info')
+        add_log("⏹️ Ciclo concluído! Clique em COMEÇAR OPERAR para novo ciclo.", 'info')
 
 def bot_loop():
     global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, sinal_pendente, ultimo_sinal
@@ -457,8 +499,8 @@ def bot_loop():
         if not bot_rodando:
             return
         
-        add_log(f'⚡ TESLA 369 v9.0.0 - MODO: {estrategia_atual_global.upper()}', 'sensitive')
-        add_log(f'📡 Aguardando gatilho de sinal...', 'info')
+        add_log(f'⚡ TESLA 369 v9.0 - Estratégia: {estrategia_atual_global.upper()}', 'sensitive')
+        add_log(f'📡 Aguardando sinal via POST /sinal', 'info')
         
         if not API:
             add_log('❌ API não conectada!', 'error')
@@ -471,7 +513,7 @@ def bot_loop():
         NumDeOperacoes = 0
         ultimo_sinal = "Aguardando sinal..."
         add_log(f"📌 {par} | Timeframe: {timeframe_atual}s | 💰 ${BANCA_INICIAL_DO_BOT:.2f}")
-        add_log('🧿 SIGILOS ATIVADOS - AGUARDANDO DISPARO EXTERNO 🧿', 'win')
+        add_log('🧿 AGUARDANDO SINAL EXTERNO 🧿', 'win')
         
         while bot_rodando and not STOP_GAIN_ATINGIDO:
             try:
@@ -499,30 +541,30 @@ def bot_loop():
         if not bot_rodando:
             add_log("⏹️ Bot parado.", 'info')
 
-# Loop secundário para simular/gerar dados técnicos reais para os painéis
 def analise_mercado_loop():
     global ultima_analise
+    import random
     while True:
         if conectado_iq and API:
-            try:
-                # Simulador de dados técnicos rápidos para alimentar a interface v8.0.3
-                import random
-                ultima_analise = {
-                    'rsi': random.uniform(30, 70),
-                    'mm5': random.uniform(1.0810, 1.0890),
-                    'mm10': random.uniform(1.0810, 1.0890),
-                    'mm20': random.uniform(1.0810, 1.0890),
-                    'stoch': random.uniform(20, 80),
-                    'fase': random.choice(['ACUMULAÇÃO', 'TENDÊNCIA ALTA', 'TENDÊNCIA BAIXA', 'EXAUSTÃO']),
-                    'preco': random.uniform(1.08300, 1.08450)
-                }
-            except:
-                pass
+            ultima_analise = {
+                'rsi': random.uniform(30, 70),
+                'mm5': random.uniform(1.0810, 1.0890),
+                'mm10': random.uniform(1.0810, 1.0890),
+                'mm20': random.uniform(1.0810, 1.0890),
+                'stoch': random.uniform(20, 80),
+                'fase': random.choice(['ACUMULAÇÃO', 'TENDÊNCIA ALTA', 'TENDÊNCIA BAIXA', 'EXAUSTÃO']),
+                'preco': random.uniform(1.08300, 1.08450)
+            }
         time.sleep(2)
 
 threading.Thread(target=analise_mercado_loop, daemon=True).start()
 
-# ========== ROTA PARA RECEBER SINAL EXTERNO ==========
+# ========== ROTAS ==========
+
+@app.route('/')
+def index():
+    return render_template_string(processar_html_com_skin())
+
 @app.route('/sinal', methods=['POST'])
 def receber_sinal():
     global sinal_pendente
@@ -543,196 +585,7 @@ def receber_sinal():
         sinal_pendente = direcao
     
     add_log(f"📡 Sinal externo enfileirado: {direcao.upper()}", 'sensitive')
-    return jsonify({'ok': True, 'mensagem': f'Sinal {direcao} recebido e enfileirado'})
-
-# ========== FUNÇÕES DO MERCADO PAGO (PIX) ==========
-
-def gerar_pix_mercadopago(email, plano):
-    if MODO_SIMULACAO:
-        pix_id = str(uuid.uuid4())[:8]
-        pagamentos_pendentes[pix_id] = {
-            'email': email,
-            'plano_id': plano['id'],
-            'moedas': plano['moedas'],
-            'valor': plano['preco'],
-            'pago': False,
-            'criado_em': str(datetime.now())[:19]
-        }
-        add_log(f"🔰 [SIMULAÇÃO] PIX gerado para {email}: R$ {plano['preco']:.2f} - {plano['moedas']} VOLTS", "info")
-        qr_code_falso = f"00020126360014BR.GOV.BCB.PIX0136{email}5204000053039865404{plano['preco']:.2f}5802BR5909Tesla3696009Sao Paulo62070503***6304E3F9"
-        return {
-            'sucesso': True,
-            'simulacao': True,
-            'pix_id': pix_id,
-            'qr_code': qr_code_falso,
-            'qr_code_base64': '',
-            'valor': plano['preco'],
-            'moedas': plano['moedas']
-        }
-    
-    try:
-        url = "https://api.mercadopago.com/v1/payments"
-        headers = {
-            "Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}",
-            "Content-Type": "application/json",
-            "X-Idempotency-Key": str(uuid.uuid4())
-        }
-        
-        payment_data = {
-            "transaction_amount": float(plano['preco']),
-            "description": f"TESLA369 - {plano['nome']} - {plano['moedas']} VOLTS",
-            "payment_method_id": "pix",
-            "payer": {
-                "email": email,
-                "first_name": "Cliente",
-                "last_name": "Tesla369",
-                "identification": {"type": "CPF", "number": "00000000000"}
-            }
-        }
-        
-        add_log(f"💳 Gerando PIX para {email} - Valor: R$ {plano['preco']:.2f}", "info")
-        response = requests.post(url, json=payment_data, headers=headers, timeout=30)
-        data = response.json()
-        
-        if response.status_code in [200, 201]:
-            pix_id = str(data['id'])
-            qr_code = data.get('point_of_interaction', {}).get('transaction_data', {}).get('qr_code', '')
-            qr_code_base64 = data.get('point_of_interaction', {}).get('transaction_data', {}).get('qr_code_base64', '')
-            
-            pagamentos_pendentes[pix_id] = {
-                'email': email,
-                'plano_id': plano['id'],
-                'moedas': plano['moedas'],
-                'valor': plano['preco'],
-                'pago': False,
-                'criado_em': str(datetime.now())[:19]
-            }
-            
-            add_log(f"✅ PIX gerado com sucesso! ID: {pix_id[:8]}... Aguardando pagamento.", "win")
-            
-            return {
-                'sucesso': True,
-                'simulacao': False,
-                'pix_id': pix_id,
-                'qr_code': qr_code,
-                'qr_code_base64': qr_code_base64,
-                'valor': plano['preco'],
-                'moedas': plano['moedas']
-            }
-        
-        erro_msg = data.get('message', 'Erro desconhecido ao gerar PIX')
-        add_log(f"❌ Erro do Mercado Pago: {erro_msg}", "error")
-        return {'sucesso': False, 'erro': erro_msg}
-        
-    except Exception as erro:
-        add_log(f"❌ Erro ao gerar PIX: {str(erro)[:100]}", "error")
-        return {'sucesso': False, 'erro': str(erro)[:100]}
-
-def verificar_pagamento_mp(pix_id):
-    if MODO_SIMULACAO:
-        pago = pagamentos_pendentes.get(pix_id, {}).get('pago', False)
-        if pago:
-            add_log(f"💰 [SIMULAÇÃO] Pagamento PIX {pix_id[:8]} confirmado!", "win")
-        return pago
-    
-    try:
-        url = f"https://api.mercadopago.com/v1/payments/{pix_id}"
-        headers = {"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"}
-        response = requests.get(url, headers=headers, timeout=10)
-        data = response.json()
-        pago = data.get('status') == 'approved'
-        if pago:
-            add_log(f"💰 Pagamento PIX {pix_id[:8]} confirmado via API!", "win")
-        return pago
-    except Exception as erro:
-        add_log(f"⚠️ Erro ao verificar pagamento {pix_id[:8]}: {str(erro)[:50]}", "warning")
-        return False
-
-def verificador_automatico_pix():
-    add_log("🔍 Verificador automático de pagamentos PIX iniciado!", "info")
-    while True:
-        time.sleep(10)
-        try:
-            pagamentos_pendentes_nao_pagos = {
-                pid: dados for pid, dados in pagamentos_pendentes.items() 
-                if not dados.get('pago', False)
-            }
-            for pix_id, dados in list(pagamentos_pendentes_nao_pagos.items()):
-                if verificar_pagamento_mp(pix_id):
-                    pagamentos_pendentes[pix_id]['pago'] = True
-                    email_cliente = dados['email']
-                    quantidade_moedas = dados['moedas']
-                    usuario = carregar_usuario(email_cliente)
-                    if not usuario:
-                        usuario = criar_usuario(email_cliente)
-                    usuario['moedas'] = usuario.get('moedas', 0) + quantidade_moedas
-                    salvar_usuario(email_cliente, usuario)
-                    add_log(f"✅ PAGAMENTO CONFIRMADO! +{quantidade_moedas} VOLTS para {email_cliente}", "win")
-        except Exception as erro:
-            pass
-
-threading.Thread(target=verificador_automatico_pix, daemon=True).start()
-
-# ========== ROTAS DO CHAT ==========
-
-@app.route('/chat_enviar', methods=['POST'])
-def chat_enviar():
-    data = request.json
-    nome = data.get('nome', 'Anonimo')[:15]
-    msg = data.get('msg', '')[:200]
-    if not msg:
-        return jsonify({'ok': False})
-    try:
-        requests.post(f'{FB_URL}/tesla_369/chat.json', json={
-            'nome': nome, 'msg': msg, 'hora': datetime.now().strftime('%H:%M')
-        }, timeout=5)
-    except Exception:
-        pass
-    return jsonify({'ok': True})
-
-@app.route('/chat_mensagens')
-def chat_mensagens_route():
-    try:
-        url = f'{FB_URL}/tesla_369/chat.json?orderBy="$key"&limitToLast=50'
-        response = requests.get(url, timeout=5)
-        if response.status_code == 200 and response.json():
-            mensagens = list(response.json().values())
-        else:
-            mensagens = []
-        return jsonify({'mensagens': mensagens, 'online': 1})
-    except Exception:
-        return jsonify({'mensagens': [], 'online': 1})
-
-# ========== ROTAS PRINCIPAIS ==========
-
-@app.route('/')
-def index():
-    return processar_html_com_skin()
-
-def processar_html_com_skin():
-    global skin_atual_global
-    skin = next((s for s in SKINS if s['id'] == skin_atual_global), SKINS[0])
-    
-    # Converte PLANOS para string JSON estruturada para o motor do front-end externo
-    planos_json = []
-    for p in PLANOS:
-        planos_json.append(f'{{"id":{p["id"]},"moedas":{p["moedas"]},"preco":{p["preco"]},"nome":"{p["nome"]}","desc":"{p["desc"]}","tag":"{p.get("tag","")}","desconto":"{p.get("desconto","")}"}}')
-    
-    # Renderiza o index.html da pasta /templates usando o Jinja2 sem perder nenhuma estilização
-    return render_template(
-        'index.html',
-        COR_FUNDO=skin['cor_fundo'],
-        COR_PANEL=skin['cor_panel'],
-        COR_DESTAQUE=skin['cor_destaque'],
-        COR_TEXTO=skin['cor_texto'],
-        COR_BOTAO=skin['cor_botao'],
-        COR_TAB_ATIVA=skin['cor_tab_ativa'],
-        COR_HEADER_BG=skin['cor_header_bg'],
-        COR_HEADER_BORDA=skin['cor_header_borda'],
-        CSS_EXTRA=skin.get('css_extra', ''),
-        HEADER_EXTRA=skin.get('header_extra', '<div class="lightning"></div>'),
-        PLANOS_JSON=','.join(planos_json)
-    )
+    return jsonify({'ok': True, 'mensagem': f'Sinal {direcao} recebido'})
 
 @app.route('/status')
 def status():
@@ -741,15 +594,13 @@ def status():
     skins_compradas = u.get('skins_compradas', ['skin_padrao']) if u else ['skin_padrao']
     skin_atual = u.get('skin_atual', 'skin_padrao') if u else 'skin_padrao'
     
-    # Mapeia as skins para a resposta JSON
     for skin in SKINS:
         skins_status.append({
             'id': skin['id'], 'nome': skin['nome'], 'desc': skin['desc'],
             'preco_moedas': skin['preco_moedas'], 'categoria': skin.get('categoria', 'basica'),
             'comprado': skin['id'] in skins_compradas, 'ativo': skin['id'] == skin_atual
         })
-        
-    # Coleta as estratégias compradas e atual do usuário logado
+    
     estrategias_compradas = u.get('estrategias_compradas', ['v_sensitivo']) if u else ['v_sensitivo']
     estrategia_atual = u.get('estrategia_atual', 'v_sensitivo') if u else 'v_sensitivo'
     estrategia_nome = ESTRATEGIAS_CONFIG.get(estrategia_atual, {}).get('nome', 'V-Sensitivo Script')
@@ -773,8 +624,6 @@ def set_percentual():
     PERCENTUAL_BANCA = request.json.get('percentual', 15)
     return jsonify({'ok': True})
 
-# ========== NOVAS ROTAS DA LOJA DE ESTRATÉGIAS PREMIUM ==========
-
 @app.route('/selecionar_estrategia', methods=['POST'])
 def selecionar_estrategia():
     global estrategia_atual_global
@@ -790,12 +639,12 @@ def selecionar_estrategia():
         
     estrategias_compradas = u.get('estrategias_compradas', ['v_sensitivo'])
     if est_id not in estrategias_compradas:
-        return jsonify({'ok': False, 'erro': 'Você precisa comprar essa estratégia primeiro!'})
+        return jsonify({'ok': False, 'erro': 'Compre esta estratégia primeiro!'})
         
     u['estrategia_atual'] = est_id
     salvar_usuario(email_usuario_atual, u)
     estrategia_atual_global = est_id
-    add_log(f"🧠 Estratégia alterada para: {est_id.upper()}", 'indicator')
+    add_log(f"🧠 Estratégia alterada: {est_id.upper()}", 'indicator')
     return jsonify({'ok': True})
 
 @app.route('/comprar_estrategia', methods=['POST'])
@@ -819,11 +668,11 @@ def comprar_estrategia():
     if est_id in u['estrategias_compradas']:
         u['estrategia_atual'] = est_id
         salvar_usuario(email_usuario_atual, u)
-        return jsonify({'ok': True, 'moedas': u['moedas'], 'msg': 'Estratégia já adquirida! Ativada.'})
+        return jsonify({'ok': True, 'moedas': u['moedas'], 'msg': 'Estratégia já adquirida!'})
         
     preco = ESTRATEGIAS_CONFIG[est_id]['preco']
     if u.get('moedas', 0) < preco:
-        return jsonify({'ok': False, 'erro': f'VOLTS insuficientes! Você precisa de {preco} ⚡'})
+        return jsonify({'ok': False, 'erro': f'Precisa de {preco} ⚡'})
         
     u['moedas'] -= preco
     u['estrategias_compradas'].append(est_id)
@@ -832,8 +681,8 @@ def comprar_estrategia():
     
     global estrategia_atual_global
     estrategia_atual_global = est_id
-    add_log(f"🛒 Estratégia {ESTRATEGIAS_CONFIG[est_id]['nome']} comprada e ativada!", 'win')
-    return jsonify({'ok': True, 'moedas': u['moedas'], 'msg': f'Estratégia {ESTRATEGIAS_CONFIG[est_id]["nome"]} liberada!'})
+    add_log(f"🛒 Estratégia {ESTRATEGIAS_CONFIG[est_id]['nome']} comprada!", 'win')
+    return jsonify({'ok': True, 'moedas': u['moedas'], 'msg': 'Estratégia liberada!'})
 
 @app.route('/conectar', methods=['POST'])
 def conectar():
@@ -885,7 +734,7 @@ def comecar_operar():
                 return jsonify({'ok': False, 'erro': 'Usuário não encontrado!'})
             
             if usuario.get('moedas', 0) < 1:
-                return jsonify({'ok': False, 'erro': 'Sem VOLTS! Compre mais na loja.'})
+                return jsonify({'ok': False, 'erro': 'Sem VOLTS! Compre na loja.'})
             
             usuario['moedas'] -= 1
             usuario['total_ciclos'] += 1
@@ -941,16 +790,16 @@ def comprar_skin():
         skin_atual_global = skin_id
         return jsonify({'ok': True, 'moedas': usuario['moedas'], 'msg': 'Skin já comprada! Ativada.'})
     if usuario.get('moedas', 0) < skin['preco_moedas']:
-        return jsonify({'ok': False, 'erro': f'VOLTS insuficientes! Precisa de {skin["preco_moedas"]} ⚡'})
+        return jsonify({'ok': False, 'erro': f'Precisa de {skin["preco_moedas"]} ⚡'})
     usuario['moedas'] -= skin['preco_moedas']
     usuario['skins_compradas'].append(skin_id)
     usuario['skin_atual'] = skin_id
     salvar_usuario(email_usuario_atual, usuario)
     skin_atual_global = skin_id
-    return jsonify({'ok': True, 'moedas': usuario['moedas'], 'msg': f'Skin {skin["nome"]} comprada e ativada!'})
+    return jsonify({'ok': True, 'moedas': usuario['moedas'], 'msg': f'Skin {skin["nome"]} comprada!'})
 
 @app.route('/ativar_skin', methods=['POST'])
-def activar_skin():
+def ativar_skin():
     d = request.get_json()
     skin_id = d.get('skin_id', '')
     if not email_usuario_atual:
@@ -970,6 +819,130 @@ def activar_skin():
     global skin_atual_global
     skin_atual_global = skin_id
     return jsonify({'ok': True})
+
+# ========== FUNÇÕES PIX ==========
+
+def gerar_pix_mercadopago(email, plano):
+    if MODO_SIMULACAO:
+        pix_id = str(uuid.uuid4())[:8]
+        pagamentos_pendentes[pix_id] = {
+            'email': email,
+            'plano_id': plano['id'],
+            'moedas': plano['moedas'],
+            'valor': plano['preco'],
+            'pago': False,
+            'criado_em': str(datetime.now())[:19]
+        }
+        add_log(f"🔰 [SIMULAÇÃO] PIX gerado: R$ {plano['preco']:.2f} - {plano['moedas']} VOLTS", "info")
+        qr_code_falso = f"00020126360014BR.GOV.BCB.PIX0136{email}5204000053039865404{plano['preco']:.2f}5802BR5909Tesla3696009Sao Paulo62070503***6304E3F9"
+        return {
+            'sucesso': True,
+            'simulacao': True,
+            'pix_id': pix_id,
+            'qr_code': qr_code_falso,
+            'qr_code_base64': '',
+            'valor': plano['preco'],
+            'moedas': plano['moedas']
+        }
+    
+    try:
+        url = "https://api.mercadopago.com/v1/payments"
+        headers = {
+            "Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}",
+            "Content-Type": "application/json",
+            "X-Idempotency-Key": str(uuid.uuid4())
+        }
+        
+        payment_data = {
+            "transaction_amount": float(plano['preco']),
+            "description": f"TESLA369 - {plano['nome']} - {plano['moedas']} VOLTS",
+            "payment_method_id": "pix",
+            "payer": {
+                "email": email,
+                "first_name": "Cliente",
+                "last_name": "Tesla369",
+                "identification": {"type": "CPF", "number": "00000000000"}
+            }
+        }
+        
+        add_log(f"💳 Gerando PIX para {email} - R$ {plano['preco']:.2f}", "info")
+        response = requests.post(url, json=payment_data, headers=headers, timeout=30)
+        data = response.json()
+        
+        if response.status_code in [200, 201]:
+            pix_id = str(data['id'])
+            qr_code = data.get('point_of_interaction', {}).get('transaction_data', {}).get('qr_code', '')
+            qr_code_base64 = data.get('point_of_interaction', {}).get('transaction_data', {}).get('qr_code_base64', '')
+            
+            pagamentos_pendentes[pix_id] = {
+                'email': email,
+                'plano_id': plano['id'],
+                'moedas': plano['moedas'],
+                'valor': plano['preco'],
+                'pago': False,
+                'criado_em': str(datetime.now())[:19]
+            }
+            
+            add_log(f"✅ PIX gerado! ID: {pix_id[:8]}...", "win")
+            
+            return {
+                'sucesso': True,
+                'simulacao': False,
+                'pix_id': pix_id,
+                'qr_code': qr_code,
+                'qr_code_base64': qr_code_base64,
+                'valor': plano['preco'],
+                'moedas': plano['moedas']
+            }
+        
+        erro_msg = data.get('message', 'Erro ao gerar PIX')
+        add_log(f"❌ Erro: {erro_msg}", "error")
+        return {'sucesso': False, 'erro': erro_msg}
+        
+    except Exception as erro:
+        add_log(f"❌ Erro: {str(erro)[:100]}", "error")
+        return {'sucesso': False, 'erro': str(erro)[:100]}
+
+def verificar_pagamento_mp(pix_id):
+    if MODO_SIMULACAO:
+        pago = pagamentos_pendentes.get(pix_id, {}).get('pago', False)
+        if pago:
+            add_log(f"💰 [SIMULAÇÃO] Pagamento confirmado!", "win")
+        return pago
+    
+    try:
+        url = f"https://api.mercadopago.com/v1/payments/{pix_id}"
+        headers = {"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"}
+        response = requests.get(url, headers=headers, timeout=10)
+        data = response.json()
+        pago = data.get('status') == 'approved'
+        if pago:
+            add_log(f"💰 Pagamento confirmado!", "win")
+        return pago
+    except Exception as erro:
+        add_log(f"⚠️ Erro ao verificar: {str(erro)[:50]}", "warning")
+        return False
+
+def verificador_automatico_pix():
+    add_log("🔍 Verificador PIX iniciado!", "info")
+    while True:
+        time.sleep(10)
+        try:
+            for pix_id, dados in list(pagamentos_pendentes.items()):
+                if not dados.get('pago', False) and verificar_pagamento_mp(pix_id):
+                    pagamentos_pendentes[pix_id]['pago'] = True
+                    email_cliente = dados['email']
+                    quantidade_moedas = dados['moedas']
+                    usuario = carregar_usuario(email_cliente)
+                    if not usuario:
+                        usuario = criar_usuario(email_cliente)
+                    usuario['moedas'] = usuario.get('moedas', 0) + quantidade_moedas
+                    salvar_usuario(email_cliente, usuario)
+                    add_log(f"✅ +{quantidade_moedas} VOLTS para {email_cliente}", "win")
+        except Exception:
+            pass
+
+threading.Thread(target=verificador_automatico_pix, daemon=True).start()
 
 @app.route('/criar_pix', methods=['POST'])
 def criar_pix():
@@ -1000,6 +973,38 @@ def verificar_pix():
             return jsonify({'pago': True, 'moedas': moedas, 'saldo': usuario['moedas']})
         return jsonify({'pago': True})
     return jsonify({'pago': False})
+
+# ========== ROTAS DO CHAT ==========
+
+@app.route('/chat_enviar', methods=['POST'])
+def chat_enviar():
+    data = request.json
+    nome = data.get('nome', 'Anonimo')[:15]
+    msg = data.get('msg', '')[:200]
+    if not msg:
+        return jsonify({'ok': False})
+    try:
+        requests.post(f'{FB_URL}/tesla_369/chat.json', json={
+            'nome': nome, 'msg': msg, 'hora': datetime.now().strftime('%H:%M')
+        }, timeout=5)
+    except Exception:
+        pass
+    return jsonify({'ok': True})
+
+@app.route('/chat_mensagens')
+def chat_mensagens_route():
+    try:
+        url = f'{FB_URL}/tesla_369/chat.json?orderBy="$key"&limitToLast=50'
+        response = requests.get(url, timeout=5)
+        if response.status_code == 200 and response.json():
+            mensagens = list(response.json().values())
+        else:
+            mensagens = []
+        return jsonify({'mensagens': mensagens, 'online': 1})
+    except Exception:
+        return jsonify({'mensagens': [], 'online': 1})
+
+# ========== RELATÓRIO E RANKING ==========
 
 @app.route('/ranking')
 def ranking():
@@ -1073,13 +1078,8 @@ def resetar():
     salvar_usuario(email, usuario)
     return jsonify({'ok': True, 'msg': '✅ Estatísticas resetadas!'})
 
-@app.route('/shutdown')
-def shutdown():
-    import os, signal
-    os.kill(os.getpid(), signal.SIGTERM)
-    return jsonify({'ok': True})
+# ========== ADMIN ==========
 
-# Admin
 LOGIN_HTML = """<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Admin</title><style>body{background:#0a0a1a;display:flex;justify-content:center;align-items:center;height:100vh;font-family:monospace}.box{background:#1a1a3e;border:2px solid #ffd700;border-radius:15px;padding:25px;text-align:center}input{padding:14px;background:#111;border:1px solid #333;color:#fff;border-radius:10px;margin:10px 0}.btn{background:#ffd700;color:#000;padding:14px;border:none;border-radius:10px;cursor:pointer}</style></head><body><div class='box'><h2>🔐 Admin</h2><form method='POST'><input type='password' name='senha' placeholder='Senha'><br><button class='btn' type='submit'>Entrar</button></form></div></body></html>"""
 ADMIN_HTML = """<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Admin</title><style>body{background:#0a0a1a;color:#fff;font-family:monospace;padding:10px}.container{max-width:500px;margin:0 auto}h1{color:#ffd700}.card{background:#1a1a3e;border:1px solid #ffd700;border-radius:12px;padding:15px;margin:10px 0}input,select{width:100%;padding:12px;margin:8px 0;background:#111;border:1px solid #333;color:#fff;border-radius:8px}.btn{background:#ffd700;color:#000;padding:14px;border:none;border-radius:10px;cursor:pointer;width:100%;margin:5px 0}</style></head><body><div class='container'><h1>🔐 Admin</h1><div class='card'><h3>🔍 Buscar</h3><input type='email' id='emailBusca' placeholder='Email'><button class='btn' onclick='buscar()'>Buscar</button><div id='resultado' style='margin-top:10px;background:#000;padding:10px;border-radius:8px'></div></div><div class='card'><h3>✏️ Editar</h3><input type='email' id='emailEdit' placeholder='Email'><p>⚡ VOLTS: <input type='number' id='moedas'></p><p>🎨 Skin: <select id='skin'><option value='skin_padrao'>Padrao</option><option value='skin_dark'>Dark</option><option value='skin_neon'>Neon</option><option value='skin_matrix'>Matrix</option><option value='skin_sakura'>Sakura</option><option value='skin_thunder'>Thunder</option><option value='skin_ocean'>Ocean</option><option value='skin_sunset'>Sunset</option><option value='skin_magos'>Magos</option><option value='skin_brasil'>Brasil</option><option value='skin_fire'>Fire</option><option value='skin_ice'>Ice</option><option value='skin_princesa'>Princesa</option></select></p><button class='btn' onclick='salvar()'>💾 SALVAR</button><button class='btn' onclick='resetar()' style='background:#ff4444;color:#fff'>🔄 RESETAR</button><div id='resultadoEdit' style='margin-top:10px;background:#000;padding:10px;border-radius:8px'></div></div></div><script>function buscar(){fetch('/api/admin/buscar?email='+document.getElementById('emailBusca').value).then(r=>r.json()).then(d=>{if(d.erro)document.getElementById('resultado').innerHTML='<p style=color:#ff4444>'+d.erro+'</p>';else{document.getElementById('resultado').innerHTML='<p>✅ '+d.email+'<br>⚡ '+d.moedas+' VOLTS<br>💰 $'+d.lucro_total.toFixed(2)+'</p>';document.getElementById('emailEdit').value=d.email;document.getElementById('moedas').value=d.moedas;document.getElementById('skin').value=d.skin_atual;}})}function salvar(){fetch('/api/admin/salvar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:document.getElementById('emailEdit').value,moedas:parseInt(document.getElementById('moedas').value),skin:document.getElementById('skin').value})}).then(r=>r.json()).then(d=>{document.getElementById('resultadoEdit').innerHTML='<p style=color:#00ff88>'+d.msg+'</p>';});}function resetar(){fetch('/api/admin/resetar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:document.getElementById('emailEdit').value})}).then(r=>r.json()).then(d=>{document.getElementById('resultadoEdit').innerHTML='<p style=color:#00ff88>'+d.msg+'</p>';});}</script></body></html>"""
 
@@ -1130,9 +1130,18 @@ def admin_resetar():
     salvar_usuario(email, u)
     return jsonify({'ok': True, 'msg': 'Resetado!'})
 
+@app.route('/shutdown')
+def shutdown():
+    import os, signal
+    os.kill(os.getpid(), signal.SIGTERM)
+    return jsonify({'ok': True})
+
 if __name__ == '__main__':
     print("=" * 50)
-    print("⚡ TESLA 369 BOT v9.0.0 - MODO SINAL EXTERNO ⚡")
+    print("⚡ TESLA 369 BOT v9.0.0 ⚡")
+    print("HTML carregado dinamicamente do GitHub")
+    print(f"URL do HTML: {HTML_URL}")
+    print("")
     print("Envie sinais via POST para /sinal")
     print('Exemplo: curl -X POST http://localhost:5000/sinal -H "Content-Type: application/json" -d \'{"direcao":"call"}\'')
     print("=" * 50)
