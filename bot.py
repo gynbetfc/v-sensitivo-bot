@@ -175,6 +175,7 @@ SKINS = [
 ]
 
 # ⭐ ESTRATÉGIAS ⭐
+
 ESTRATEGIAS = {
     'v_sensitivo': {
         'nome': 'v_SENSITIVO',
@@ -183,7 +184,19 @@ ESTRATEGIAS = {
         'pares': ['EURUSD-OTC'],
         'preco_moedas': 0,
         'gratis': True
+    },
+    'estrategia_3_1': {
+        'nome': '⚡ 3=1 ESTRATÉGIA',
+        'desc': '3 velas consecutivas + RSI + MACD + Bandas de Bollinger | Alta precisão',
+        'timeframe': 60,
+        'pares': ['EURUSD-OTC'],
+        'preco_moedas': 12,
+        'gratis': False,
+        'destaque': True
     }
+}
+
+
 }
 
 def _sanitizar_dados(dados):
@@ -640,9 +653,165 @@ def executar_ciclo(direcao):
         bot_rodando = False
         add_log("⏹️ Ciclo concluído! Clique em CONECTAR e depois COMEÇAR OPERAR para novo ciclo.", 'info')
 
-MAPA_SINAIS = {
-    'v_sensitivo': sinal_v_sensitivo
+
+
+def sinal_3_1():
+    """
+    ESTRATÉGIA 3=1 - Análise baseada em 3 velas consecutivas com confirmação.
+    Preço: 12 VOLTS | R$7,99
+    
+    Lógica:
+    - Identifica 3 velas na mesma direção
+    - Analisa volume e momentum
+    - Usa bandas de Bollinger para confirmação
+    - MACD para confirmação de tendência
+    """
+    global ultimo_sinal, ultima_analise
+    try:
+        if not API:
+            return None
+        
+        # Obtém as últimas 30 velas
+        v = API.get_candles(par, timeframe_atual, 30, time.time())
+        if len(v) < 25:
+            return None
+        
+        # ===== REGRA 3=1: 3 velas consecutivas =====
+        # Verifica se as últimas 3 velas são todas verdes (alta)
+        ultimas_3_verdes = all(v[i]['close'] > v[i]['open'] for i in range(-3, 0))
+        
+        # Verifica se as últimas 3 velas são todas vermelhas (baixa)
+        ultimas_3_vermelhas = all(v[i]['close'] < v[i]['open'] for i in range(-3, 0))
+        
+        # ===== INDICADORES DE CONFIRMAÇÃO =====
+        rsi_valor = rsi(v, 14)  # RSI de 14 períodos
+        macd_valor = macd(v, 12, 26)  # MACD
+        banda_sup, media_bb, banda_inf = bollinger(v, 20, 2)  # Bandas de Bollinger
+        
+        # Preço atual
+        preco_atual = v[-1]['close']
+        
+        # Médias móveis
+        media_10 = sma(v, 10)
+        media_30 = sma(v, 30)
+        
+        # ===== ANÁLISE DE MOMENTUM =====
+        # Taxa de crescimento das últimas 3 velas (para alta)
+        if ultimas_3_verdes:
+            crescimento = (v[-1]['close'] - v[-4]['open']) / v[-4]['open'] * 100
+            momentum_forte = crescimento > 0.5  # Crescimento maior que 0.5%
+        else:
+            crescimento = 0
+            momentum_forte = False
+        
+        # Taxa de queda (para baixa)
+        if ultimas_3_vermelhas:
+            queda = (v[-4]['open'] - v[-1]['close']) / v[-4]['open'] * 100
+            momentum_forte_baixa = queda > 0.5
+        else:
+            queda = 0
+            momentum_forte_baixa = False
+        
+        # ===== CONFIANÇA DO SINAL =====
+        confianca_call = 0
+        confianca_put = 0
+        sinais = []
+        
+        # 1. REGRA PRINCIPAL: 3 velas consecutivas
+        if ultimas_3_verdes:
+            confianca_call += 40
+            sinais.append("3velasVERDE↑")
+        elif ultimas_3_vermelhas:
+            confianca_put += 40
+            sinais.append("3velasVERMELHA↓")
+        
+        # 2. RSI - Confirmar sobrecompra/sobrevenda
+        if rsi_valor:
+            if rsi_valor < 35 and ultimas_3_verdes:
+                confianca_call += 20
+                sinais.append(f"RSI={rsi_valor:.0f}↑")
+            elif rsi_valor > 65 and ultimas_3_vermelhas:
+                confianca_put += 20
+                sinais.append(f"RSI={rsi_valor:.0f}↓")
+            elif 40 <= rsi_valor <= 60:
+                if ultimas_3_verdes:
+                    confianca_call += 10
+                elif ultimas_3_vermelhas:
+                    confianca_put += 10
+        
+        # 3. Bandas de Bollinger
+        if banda_sup and banda_inf and preco_atual:
+            if preco_atual <= banda_inf * 1.02 and ultimas_3_verdes:
+                confianca_call += 20
+                sinais.append("BB↓+")
+            elif preco_atual >= banda_sup * 0.98 and ultimas_3_vermelhas:
+                confianca_put += 20
+                sinais.append("BB↑-")
+        
+        # 4. Médias Móveis (Golden Cross / Death Cross)
+        if media_10 and media_30:
+            if media_10 > media_30 and ultimas_3_verdes:
+                confianca_call += 15
+                sinais.append("MM10>MM30")
+            elif media_10 < media_30 and ultimas_3_vermelhas:
+                confianca_put += 15
+                sinais.append("MM10<MM30")
+        
+        # 5. MACD Confirmação
+        if macd_valor:
+            if macd_valor > 0 and ultimas_3_verdes:
+                confianca_call += 15
+                sinais.append("MACD+")
+            elif macd_valor < 0 and ultimas_3_vermelhas:
+                confianca_put += 15
+                sinais.append("MACD-")
+        
+        # 6. Momentum adicional
+        if momentum_forte and ultimas_3_verdes:
+            confianca_call += 10
+            sinais.append(f"MOM+{crescimento:.1f}%")
+        elif momentum_forte_baixa and ultimas_3_vermelhas:
+            confianca_put += 10
+            sinais.append(f"MOM-{queda:.1f}%")
+        
+        # Armazena análise para exibição
+        ultima_analise = {
+            'preco': preco_atual,
+            'rsi': rsi_valor,
+            'mm10': media_10,
+            'mm30': media_30,
+            'macd': macd_valor,
+            'sinal_3_1': 'CALL' if confianca_call > confianca_put else 'PUT' if confianca_put > confianca_call else 'NEUTRO',
+            'confianca_call': confianca_call,
+            'confianca_put': confianca_put,
+            'velas_verdes': ultimas_3_verdes,
+            'velas_vermelhas': ultimas_3_vermelhas
+        }
+        
+        add_log(f"🔮 3=1 | C={confianca_call} P={confianca_put} | {' '.join(sinais[:3])}", 'indicator')
+        
+        # DECISÃO FINAL - Necessita diferença mínima de 25 pontos
+        if confianca_call > confianca_put and (confianca_call - confianca_put) >= 25:
+            ultimo_sinal = f"🔮 3=1 CALL ({confianca_call}x{confianca_put})"
+            add_log(f"📈 SINAL 3=1: CALL!", 'sensitive')
+            return 'call'
+        
+        if confianca_put > confianca_call and (confianca_put - confianca_call) >= 25:
+            ultimo_sinal = f"🔮 3=1 PUT ({confianca_put}x{confianca_call})"
+            add_log(f"📉 SINAL 3=1: PUT!", 'sensitive')
+            return 'put'
+        
+        ultimo_sinal = "⏳ 3=1 Aguardando..."
+        return None
+        
+    except Exception as e:
+        add_log(f"Erro na estratégia 3=1: {e}", 'error')
+        return None
+\n\nMAPA_SINAIS = {
+    'v_sensitivo': sinal_v_sensitivo,
+    'estrategia_3_1': sinal_3_1
 }
+
 
 # 🔧 CORREÇÃO: bot_loop com lock para evitar concorrência
 def bot_loop():
@@ -1641,8 +1810,10 @@ function renderLojaEstrategias(){
                 // Pular tesla_369 no fallback
                 if (key === 'tesla_369') continue;
                 // Preços fixos para cada estratégia
+                
                 var precos = {
-                    'v_sensitivo': 6,
+                    'v_sensitivo': 0,
+                    'estrategia_3_1': 12,
                     'terceira_igual_primeira': 3,
                     'mhi_filtrado': 9,
                     'quadrante_de_7': 6,
@@ -1650,6 +1821,7 @@ function renderLojaEstrategias(){
                     'reversao': 3,
                     'm5': 6
                 };
+
                 estrategiasDisponiveis[key] = {
                     'nome': estrategias[key].nome,
                     'desc': estrategias[key].desc || '',
