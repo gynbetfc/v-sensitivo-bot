@@ -43,9 +43,9 @@ def _enc(s):
 
 def _dec(s):
     try:
-    return _b64.b64decode(s).decode()
+        return _b64.b64decode(s).decode()
     except:
-    return s
+        return s
 
 # ============= CONFIGURAÇÕES FIXAS =============
 FB_URL = "https://nexos-40654-default-rtdb.firebaseio.com"
@@ -86,10 +86,10 @@ ESTRATEGIAS = {
 }
 
 def _sanitizar_dados(dados):
-    if 'historico_operacoes' in dados:
-    if len(dados['historico_operacoes']) > 50:
-            dados['historico_operacoes'] = dados['historico_operacoes'][-50:]
-    for op in dados['historico_operacoes']:
+    if "historico_operacoes" in dados:
+        if len(dados["historico_operacoes"]) > 50:
+            dados["historico_operacoes"] = dados["historico_operacoes"][-50:]
+        for op in dados["historico_operacoes"]:
             for chave in list(op.keys()):
                 if isinstance(op[chave], float):
                     op[chave] = round(op[chave], 2)
@@ -107,7 +107,7 @@ def carregar_usuario(email):
     try:
         key = email.replace("@", "_").replace(".", "_").replace("#", "").replace("$", "").replace("[", "").replace("]", "").replace("/", "_")
         r = requests.get(f'{FB_URL}/tesla_369/usuarios/{key}.json')
-    if r.status_code == 200 and r.json():
+        if r.status_code == 200 and r.json():
             return r.json()
     except:
         pass
@@ -182,7 +182,7 @@ def conectar_api():
 
 def Payout(p):
     try:
-    if not API:
+        if not API:
             return PAYOUT_PADRAO
         API.subscribe_strike_list(p, 1)
         tentativas = 0
@@ -194,9 +194,9 @@ def Payout(p):
             time.sleep(0.5)
             tentativas += 1
         API.unsubscribe_strike_list(p, 1)
-    return PAYOUT_PADRAO
+        return PAYOUT_PADRAO
     except:
-    return PAYOUT_PADRAO
+        return PAYOUT_PADRAO
 
 def sma(v, p):
     if len(v) < p:
@@ -248,7 +248,7 @@ def estocastico(v, p=14):
 def sinal_v_sensitivo():
     global ultimo_sinal, ultima_analise
     try:
-    if not API:
+        if not API:
             return None
         s = datetime.now().second
         fase = "🌅NASCENDO" if s < 20 else ("☀️VIVA" if s < 45 else "🌇MORRENDO")
@@ -426,7 +426,7 @@ def verificar_resultado(saldo_antes, valor):
 def executar_ciclo(direcao):
     global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando
     try:
-    if not API:
+        if not API:
             add_log("❌ API desconectada!", 'error')
             bot_rodando = False
             return
@@ -2202,7 +2202,7 @@ def status():    from skins import SKINS
     skins_compradas = u.get('skins_compradas', ['skin_padrao']) if u else ['skin_padrao']
     skin_atual = u.get('skin_atual', 'skin_padrao') if u else 'skin_padrao'
     for skin in SKINS:
-        skins_status.append({
+    skins_status.append({
             'id': skin['id'],
             'nome': skin['nome'],
             'desc': skin['desc'],
