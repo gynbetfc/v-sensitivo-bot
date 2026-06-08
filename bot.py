@@ -86,10 +86,10 @@ ESTRATEGIAS = {
 }
 
 def _sanitizar_dados(dados):
-    if "historico_operacoes" in dados:
-        if len(dados["historico_operacoes"]) > 50:
-            dados["historico_operacoes"] = dados["historico_operacoes"][-50:]
-        for op in dados["historico_operacoes"]:
+    if 'historico_operacoes' in dados:
+        if len(dados['historico_operacoes']) > 50:
+            dados['historico_operacoes'] = dados['historico_operacoes'][-50:]
+        for op in dados['historico_operacoes']:
             for chave in list(op.keys()):
                 if isinstance(op[chave], float):
                     op[chave] = round(op[chave], 2)
@@ -200,7 +200,7 @@ def Payout(p):
 
 def sma(v, p):
     if len(v) < p:
-    return None
+        return None
     return round(sum(x['close'] for x in v[-p:]) / p, 6)
 
 def bollinger(v, p=20, d=2):
@@ -213,19 +213,19 @@ def bollinger(v, p=20, d=2):
 
 def rsi(v, p=9):
     if len(v) < p + 1:
-    return None
+        return None
     g, l = [], []
     for i in range(1, len(v)):
         d = v[i]['close'] - v[i-1]['close']
         g.append(d if d > 0 else 0)
         l.append(abs(d) if d < 0 else 0)
     if sum(l) == 0:
-    return 100
+        return 100
     return round(100 - (100 / (1 + sum(g[-p:]) / sum(l[-p:]))), 2)
 
 def macd(v, r=12, l=26):
     if len(v) < l:
-    return None
+        return None
     c = [x['close'] for x in v]
     er = c[0]
     el = c[0]
@@ -236,13 +236,13 @@ def macd(v, r=12, l=26):
 
 def estocastico(v, p=14):
     if len(v) < p:
-    return None
+        return None
     c = [x['close'] for x in v]
     h = [max(x['open'], x['close']) for x in v]
     l = [min(x['open'], x['close']) for x in v]
     hh, ll = max(h[-p:]), min(l[-p:])
     if hh == ll:
-    return 50
+        return 50
     return round(((c[-1] - ll) / (hh - ll)) * 100, 2)
 
 def sinal_v_sensitivo():
@@ -368,8 +368,14 @@ def calcular_entradas(b, p, g):
 # 🔧 CORREÇÃO: pegar_timestamp com proteção contra IndexError
 def pegar_timestamp():
     try:
-    if not API:
+        if not API:
             return 0
+        v = API.get_candles(par, timeframe_atual, 1, time.time())
+        if v and isinstance(v, list) and len(v) > 0:
+            return v[0]['from']
+    except Exception as e:
+        add_log(f"Erro ao pegar timestamp: {e}", 'error')
+    return 0
         v = API.get_candles(par, timeframe_atual, 1, time.time())
     if v and isinstance(v, list) and len(v) > 0:
             return v[0]['from']
@@ -380,26 +386,26 @@ def pegar_timestamp():
 def aguardar_inicio_vela():
     add_log("   ⏳ Aguardando início da vela...", 'info')
     while datetime.now().second > 5:
-    if not bot_rodando:
+        if not bot_rodando:
             return False
         time.sleep(0.3)
     while True:
-    if not bot_rodando:
+        if not bot_rodando:
             return False
         ts1 = pegar_timestamp()
         time.sleep(0.5)
         ts2 = pegar_timestamp()
-    if ts1 == ts2 and ts1 != 0:
+        if ts1 == ts2 and ts1 != 0:
             add_log("   ✅ Vela confirmada!", 'info')
             return True
-    if ts1 == 0 or ts2 == 0:
+        if ts1 == 0 or ts2 == 0:
             time.sleep(0.3)
             continue
 
 def aguardar_vela_fechar(ts_entrada):
     add_log(f"   ⏳ Aguardando vela fechar...", 'info')
     while True:
-    if not bot_rodando:
+        if not bot_rodando:
             return False
         try:
             ts_atual = pegar_timestamp()
@@ -413,8 +419,15 @@ def aguardar_vela_fechar(ts_entrada):
 def verificar_resultado(saldo_antes, valor):
     saldo_base = saldo_antes - valor
     try:
-    if not API:
+        if not API:
             return -valor
+        s = API.get_balance()
+        d = round(s - saldo_base, 2)
+        if d >= 1.0:
+            return d
+    except:
+        pass
+    return -valor
         s = API.get_balance()
         d = round(s - saldo_base, 2)
     if d >= 1.0:
