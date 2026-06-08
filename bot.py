@@ -197,7 +197,7 @@ ESTRATEGIAS = {
 }
 
 
-}
+
 
 def _sanitizar_dados(dados):
     if 'historico_operacoes' in dados:
