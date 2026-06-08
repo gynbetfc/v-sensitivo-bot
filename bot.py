@@ -194,7 +194,6 @@ ESTRATEGIAS = {
         'gratis': False,
         'destaque': True
     }
-}
 
 
 
@@ -807,7 +806,9 @@ def sinal_3_1():
     except Exception as e:
         add_log(f"Erro na estratégia 3=1: {e}", 'error')
         return None
-\n\nMAPA_SINAIS = {
+
+
+MAPA_SINAIS = {
     'v_sensitivo': sinal_v_sensitivo,
     'estrategia_3_1': sinal_3_1
 }
