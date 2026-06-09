@@ -1,327 +1,386 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ TESLA 369 BOT v9.1.0 CLOUD</title>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚡ TESLA 369 BOT v9.1.0 Cloud</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: {{ COR_FUNDO }}; color: {{ COR_TEXTO }}; font-family: 'Courier New', monospace; padding: 12px; transition: all 0.3s ease; }
-        .container { max-width: 950px; margin: 0 auto; }
-        
-        .header { background: {{ COR_HEADER_BG }}; padding: 20px; border-radius: 12px; border: 1px solid #333; margin-bottom: 12px; position: relative; overflow: hidden; }
-        .header h1 { font-size: 20px; letter-spacing: 2px; text-shadow: 0 0 10px rgba(255,255,255,0.2); }
-        
-        .tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
-        .tab { padding: 12px 18px; background: {{ COR_PANEL }}; border: 1px solid #2d3748; border-radius: 8px 8px 0 0; cursor: pointer; color: #a0aec0; font-size: 11px; font-weight: bold; text-transform: uppercase; }
-        .tab.active { background: {{ COR_TAB_ATIVA }}; color: #000; box-shadow: 0 0 12px rgba(255,255,255,0.1); }
-        
-        .panel { display: none; background: {{ COR_PANEL }}; padding: 20px; border-radius: 0 12px 12px 12px; border: 1px solid #2d3748; margin-bottom: 12px; }
-        .panel.active { display: block; }
-        
-        .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 15px; }
-        .stat-box { background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; border: 1px solid #333; text-align: center; }
-        .stat-box small { color: #718096; font-size: 10px; display: block; margin-bottom: 4px; }
-        .stat-box span { font-size: 16px; font-weight: bold; }
-        
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-size: 11px; color: #a0aec0; margin-bottom: 6px; text-transform: uppercase; }
-        .form-control { width: 100%; padding: 12px; background: rgba(0,0,0,0.4); border: 1px solid #4a5568; color: #fff; border-radius: 6px; font-family: monospace; font-size: 13px; }
-        
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 6px; font-weight: bold; font-family: monospace; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: transform 0.1s; }
-        .btn-success { background: #10b981; color: #fff; }
-        .btn-danger { background: #ef4444; color: #fff; }
-        .btn-accent { background: {{ COR_TAB_ATIVA }}; color: #000; }
-        .btn:active { transform: scale(0.98); }
-        
-        .log-area { background: #000; color: #00ff00; padding: 15px; border-radius: 8px; height: 220px; overflow-y: auto; font-size: 12px; border: 1px solid #2d3748; margin-top: 15px; line-height: 1.5; }
-        .log-line { margin-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 4px; }
-        .log-info { color: #00ffff; }
-        .log-win { color: #ffd700; font-weight: bold; text-shadow: 0 0 5px rgba(255,215,0,0.3); }
-        .log-loss { color: #ff4500; }
-        
-        .est-card { background: rgba(0,0,0,0.2); border: 1px solid #333; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .est-info h3 { font-size: 14px; color: #fff; margin-bottom: 4px; }
-        .est-info p { font-size: 11px; color: #718096; max-width: 70%; }
-        
-        .skin-selector { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
-        .skin-card { border: 1px solid #4a5568; padding: 15px; border-radius: 8px; cursor: pointer; background: rgba(0,0,0,0.2); text-align: center; }
-        .skin-card.selected { border-color: {{ COR_TAB_ATIVA }}; background: rgba(255,255,255,0.05); }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{background:{{ COR_FUNDO }};color:{{ COR_TEXTO }};font-family:'Courier New',monospace;padding:10px}
+        .container{max-width:950px;margin:0 auto}
+        .tabs{display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap}
+        .tab{padding:10px 14px;background:{{ COR_PANEL }};border:1px solid #333;border-radius:10px 10px 0 0;cursor:pointer;color:#888;font-size:10px}
+        .tab.active{background:{{ COR_TAB_ATIVA }};color:#000;font-weight:bold}
+        .panel{display:none;background:{{ COR_PANEL }};padding:15px;border-radius:0 10px 10px 10px;border:1px solid #333;margin-bottom:10px}
+        .panel.active{display:block}
+        .header{background:{{ COR_HEADER_BG }};padding:20px;border-radius:20px;text-align:center;border:3px solid {{ COR_HEADER_BORDA }};position:relative;overflow:hidden;margin-bottom:15px}
+        {{ CSS_EXTRA | safe }}
+        .header h1{color:{{ COR_DESTAQUE }};font-size:22px;text-shadow:0 0 30px {{ COR_TAB_ATIVA }};position:relative;z-index:3}
+        .header p{color:{{ COR_DESTAQUE }};font-size:10px;position:relative;z-index:3;opacity:0.8}
+        .mantra{color:{{ COR_DESTAQUE }};text-align:center;margin:8px 0;font-size:10px}
+        .config-section{margin-bottom:12px}
+        .config-section h3{color:{{ COR_DESTAQUE }};margin-bottom:8px;font-size:13px;border-bottom:1px solid #333;padding-bottom:5px}
+        .config-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+        .config-row label{color:#888;font-size:11px}
+        .config-row select,.config-row input{padding:8px;background:#111;border:1px solid #333;border-radius:8px;color:#fff;font-size:11px;font-family:'Courier New',monospace}
+        .btn{padding:10px 14px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:11px;font-family:'Courier New',monospace}
+        .btn-start{background:{{ COR_BOTAO }};color:#000;font-weight:bold}
+        .btn-stop{background:linear-gradient(135deg,#cc0000,#ff4444);color:#fff}
+        .btn-info{background:linear-gradient(135deg,#0066cc,#3399ff);color:#fff;font-size:11px;padding:8px 14px}
+        .btn-buy{background:linear-gradient(135deg,#00aa44,#00cc55);color:#fff;width:100%;padding:12px;font-size:13px}
+        .btn-reset{background:linear-gradient(135deg,#cc0000,#ff6600);color:#fff;font-size:11px;padding:8px 14px}
+        .dashboard{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:8px;margin-bottom:10px}
+        .card{background:{{ COR_PANEL }};padding:10px;border-radius:10px;border:1px solid #333;text-align:center}
+        .card .label{color:#888;font-size:9px}.card .value{color:{{ COR_DESTAQUE }};font-size:14px;font-weight:bold;margin-top:4px}
+        .indicators{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px;margin-bottom:10px}
+        .ind-card{background:#111;padding:6px;border-radius:8px;border:1px solid #222;text-align:center;font-size:10px}
+        .ind-card .ind-label{color:#666;font-size:9px}.ind-card .ind-value{color:{{ COR_DESTAQUE }};font-size:11px}
+        .terminal{background:#000;color:#00ff88;padding:12px;border-radius:10px;height:200px;overflow-y:auto;font-size:10px;line-height:1.4;white-space:pre-wrap;border:1px solid #333;position:relative;overflow:hidden}.terminal span{position:relative;z-index:1}
+        .barra-status{display:flex;justify-content:space-between;padding:8px;background:{{ COR_PANEL }};border-radius:10px;margin-top:10px;font-size:10px;flex-wrap:wrap;gap:5px}
+        .status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
+        .status-dot.active{background:#00ff88;animation:pulse 1s infinite}.status-dot.inactive{background:#888}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+        .planos-grid,.skins-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+        .plano-card,.skin-card{background:#111;padding:12px;border-radius:10px;border:2px solid #222;text-align:center;cursor:pointer;transition:all 0.3s ease}
+        .plano-card:hover,.skin-card:hover{border-color:{{ COR_DESTAQUE }};background:#1a1a2e}
+        .plano-card.selecionado,.skin-card.selecionado{border-color:{{ COR_DESTAQUE }};box-shadow:0 0 20px rgba(255,215,0,0.4)}
+        .skin-card.ativo{border-color:#00ff88;box-shadow:0 0 15px rgba(0,255,136,0.3)}
+        .plano-moedas,.skin-nome{font-size:20px;color:{{ COR_DESTAQUE }};font-weight:bold}
+        .plano-preco{font-size:14px;color:#00ff88;margin:5px 0}
+        .plano-desc,.skin-desc{font-size:9px;color:#888;margin-top:4px}
+        .plano-tag{background:{{ COR_DESTAQUE }}22;color:{{ COR_DESTAQUE }};font-size:9px;padding:2px 8px;border-radius:10px;display:inline-block;margin-top:4px}
+        .plano-desconto{background:#ff4444;color:#fff;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block;margin-left:4px}
+        .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:1000;justify-content:center;align-items:center}
+        .modal-overlay.active{display:flex}
+        .modal-pagamento{background:{{ COR_PANEL }};border:2px solid {{ COR_DESTAQUE }};border-radius:15px;padding:25px;max-width:400px;width:90%;text-align:center}
+        .modal-pagamento h3{color:{{ COR_DESTAQUE }};margin-bottom:15px}
+        .pix-qrcode{background:#fff;padding:15px;border-radius:10px;display:inline-block;margin:10px 0}
+        .pix-qrcode img{max-width:200px}
+        .pix-copiavel{background:#000;color:#00ff88;padding:10px;border-radius:8px;font-size:9px;word-break:break-all;margin:10px 0;max-height:60px;overflow-y:auto;cursor:pointer}
+        .btn-fechar{background:#444;color:#fff;padding:8px 20px;border-radius:8px;cursor:pointer;margin-top:10px;border:none;font-family:'Courier New',monospace}
+        .btn-confirmar{background:{{ COR_DESTAQUE }};color:#000;padding:8px 20px;border-radius:8px;cursor:pointer;margin-top:10px;font-weight:bold;border:none;font-family:'Courier New',monospace}
+        .relatorio-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:6px}
+        .relatorio-card{background:#111;padding:8px;border-radius:8px;border:1px solid #222;text-align:center}
+        .relatorio-card .rlabel{color:#666;font-size:9px}.relatorio-card .rvalue{color:{{ COR_DESTAQUE }};font-size:14px;font-weight:bold}
+        .historico-table{width:100%;font-size:9px;border-collapse:collapse;margin-top:10px}
+        .historico-table th{background:{{ COR_TAB_ATIVA }};color:#000;padding:4px}.historico-table td{padding:3px;border-bottom:1px solid #222;text-align:center}
+        .estrategia-card{background:#111;padding:12px;border-radius:10px;border:2px solid #222;cursor:pointer;transition:all 0.3s ease;text-align:center}
+        .estrategia-card:hover{border-color:{{ COR_DESTAQUE }}}
+        .estrategia-card.ativa{border-color:#00ff88;box-shadow:0 0 15px rgba(0,255,136,0.3);background:#0a1a0a}
+        .estrategia-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
+        .badge-gratis{background:#00ff88;color:#000;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block}
+        .badge-pago{background:#ffd700;color:#000;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block}
+        .sub-tabs{display:flex;gap:5px;margin-bottom:15px}.sub-tab{padding:8px 16px;background:#111;border:1px solid #333;border-radius:8px 8px 0 0;cursor:pointer;color:#888;font-size:11px}.sub-tab.active{background:linear-gradient(135deg,#cc8800,#ffd700);color:#000;font-weight:bold;border-color:#ffd700}.sub-tab:hover{background:#1a1a2e;color:#fff}.sub-panel{display:none}.sub-panel.active{display:block}
+        .btn-loja{padding:12px 18px;border:none;border-radius:12px;font-weight:bold;cursor:pointer;font-size:11px;width:100%;margin-top:10px;transition:all .25s ease;text-transform:uppercase;letter-spacing:1.5px}
+        .btn-comprar-volts{background:linear-gradient(135deg,#ff8c00,#ffd700);color:#000}
+        .btn-comprar-skin{background:linear-gradient(135deg,#6a0dad,#9933ff);color:#fff}
+        .btn-comprar-est{background:linear-gradient(135deg,#006644,#00aa55);color:#fff}
+        .btn-comprado{background:linear-gradient(135deg,#1a1a2e,#0d0d1a);color:#00ff88;border:1px solid #00ff8844;cursor:default}
+        .btn-usar{background:linear-gradient(135deg,#006699,#3399cc);color:#fff}
     </style>
 </head>
 <body>
-
 <div class="container">
     <div class="header">
-        <h1>⚡ TESLA 369 BOT v9.1.0</h1>
-        <p style="font-size: 11px; color: #718096; margin-top: 4px;">User Asset Profile: <span id="user-email" style="color: {{ COR_TAB_ATIVA }}">{{ email }}</span></p>
-        
-        <div class="grid-stats">
-            <div class="stat-box">
-                <small>⚡ CRÉDITOS</small>
-                <span id="stat-moedas" style="color: #ffd700;">{{ moedas }} 🪙</span>
-            </div>
-            <div class="stat-box">
-                <small>📈 LUCRO TOTAL</small>
-                <span style="color: #10b981;">R$ {{ lucro }}</span>
-            </div>
-            <div class="stat-box">
-                <small>🎯 HISTÓRICO</small>
-                <span><font color="#10b981">{{ wins }}W</font> / <font color="#ef4444">{{ losses }}L</font></span>
-            </div>
-        </div>
+        {{ HEADER_EXTRA | safe }}
+        <h1>⚡ TESLA 369 BOT ⚡</h1>
     </div>
-
+    <div class="mantra">🌀 O DINHEIRO VEM ATÉ MIM DE TODOS OS LADOS 🌀</div>
     <div class="tabs">
-        <div class="tab active" onclick="switchTab(this, 'panel-operacao')">🤖 Operar</div>
-        <div class="tab" onclick="switchTab(this, 'panel-estrategias')">🛒 Loja Scripts</div>
-        <div class="tab" onclick="switchTab(this, 'panel-skins')">🎨 Skins & Temas</div>
+        <div class="tab active" onclick="openTab('bot')">🤖 BOT</div>
+        <div class="tab" onclick="openTab('relatorio')">📊 RELATÓRIO</div>
+        <div class="tab" onclick="openTab('estrategias')">📊 ESTRATÉGIAS</div>
+        <div class="tab" onclick="openTab('loja')">🛍️ LOJA</div>
+        <div class="tab" onclick="openTab('chat')">💬 CHAT</div>
+        <div class="tab" onclick="openTab('leia-me')">📖 TUTORIAL & LEIA-ME</div>
+        <div class="tab" onclick="openTab('contato')">📞 CONTATO</div>
     </div>
-
-    <div id="panel-operacao" class="panel active">
-        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-            <div style="flex: 1;" class="form-group">
-                <label>Ativo</label>
-                <select id="cfg-par" class="form-control">
-                    <option value="EURUSD">EURUSD</option>
-                    <option value="GBPUSD">GBPUSD</option>
-                    <option value="EURJPY">EURJPY</option>
-                    <option value="BTCUSD">BTCUSD (Crypto)</option>
+    
+    <div class="panel active" id="panel-bot">
+        <div class="config-section"><h3>🔐 IQ OPTION</h3><div class="config-row">
+            <input type="email" id="email" placeholder="📧 Email IQ Option" style="flex:2">
+            <input type="password" id="senha" placeholder="🔒 Senha" style="flex:1">
+            <select id="tipo"><option value="PRACTICE">🧪</option><option value="REAL">💰</option></select>
+            <div style="margin-top:5px;display:flex;gap:8px;align-items:center">
+                <label style="color:#888;font-size:11px">% Banca:</label>
+                <select id="percentualBanca" onchange="atualizarPercentual()">
+                    <option value="15" selected>15%</option><option value="20">20%</option><option value="30">30%</option><option value="50">50%</option><option value="100">100%</option>
                 </select>
+                <span style="color:#ffd700;font-size:11px" id="valorEstimado">($0.00)</span>
+                <span style="color:#ff4444;font-size:10px" id="avisoMinimo"></span>
             </div>
-            <div style="flex: 1;" class="form-group">
-                <label>Conta</label>
-                <select id="cfg-conta" class="form-control">
-                    <option value="PRACTICE">Treinamento (Demo)</option>
-                    <option value="REAL">Conta Real</option>
-                </select>
+            <button class="btn btn-info" id="btnConectar" onclick="conectarIQ()">🔌 CONECTAR</button>
+            <button class="btn btn-stop" id="btnDesconectar" onclick="desconectarIQ()" style="display:none">🔌 DESCONECTAR</button>
+            <button class="btn btn-start" id="btnOperar" onclick="comecarOperar()" style="display:none">🚀 COMEÇAR OPERAR</button>
+            <button class="btn btn-stop" id="btnParar" onclick="pararBot()" style="display:none">⏹️ PARAR</button>
+        </div></div>
+        <div class="dashboard">
+            <div class="card"><div class="label">💰 BANCA</div><div class="value" id="banca" style="color:#00ff88">--</div></div>
+            <div class="card"><div class="label">📈 LUCRO</div><div class="value" id="lucro">$0.00</div></div>
+            <div class="card"><div class="label">🎯 OPS</div><div class="value" id="ops">0</div></div>
+            <div class="card"><div class="label">⚡ VOLTS</div><div class="value" id="moedasSaldo">0</div></div>
+            <div class="card"><div class="label">📊 ESTRATÉGIA</div><div class="value" id="estrategiaAtiva" style="font-size:10px">--</div></div>
+            <div class="card"><div class="label">🔮 SINAL</div><div class="value" id="sinal" style="font-size:11px">--</div></div>
+        </div>
+        <div class="indicators">
+            <div class="ind-card"><div class="ind-label">📊 RSI</div><div class="ind-value" id="rsi">--</div></div>
+            <div class="ind-card"><div class="ind-label">📈 MM5</div><div class="ind-value" id="mm5">--</div></div>
+            <div class="ind-card"><div class="ind-label">📈 MM10</div><div class="ind-value" id="mm10">--</div></div>
+            <div class="ind-card"><div class="ind-label">📉 MM20</div><div class="ind-value" id="mm20">--</div></div>
+            <div class="ind-card"><div class="ind-label">📊 ESTOC</div><div class="ind-value" id="stoch">--</div></div>
+            <div class="ind-card"><div class="ind-label">🌅 FASE</div><div class="ind-value" id="fase">--</div></div>
+            <div class="ind-card"><div class="ind-label">💵 PREÇO</div><div class="ind-value" id="preco">--</div></div>
+        </div>
+        <div class="terminal" id="terminal">📡 Aguardando...</div>
+        <div class="barra-status">
+            <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
+            <span>⚡ TESLA 369</span>
+            <span>v9.1.0 Cloud | GALE 2 | SG: 1 WIN | 🔄 Bot roda em background</span>
+        </div>
+    </div>
+    
+    <div class="panel" id="panel-estrategias">
+        <div class="config-section"><h3>📊 SELECIONAR ESTRATÉGIA</h3><p style="color:#888;font-size:10px">Escolha antes de clicar em COMEÇAR OPERAR</p></div>
+        <div class="estrategia-grid" id="estrategiaGrid"></div>
+    </div>
+    
+    <div class="panel" id="panel-loja">
+        <div class="sub-tabs">
+            <div class="sub-tab active" id="sub-tab-moedas" onclick="mostrarSubAba('moedas')">COMPRAR VOLTS</div>
+            <div class="sub-tab" id="sub-tab-skins" onclick="mostrarSubAba('skins')">LOJA DE SKINS</div>
+            <div class="sub-tab" id="sub-tab-estrategias" onclick="mostrarSubAba('estrategias')">LOJA DE ESTRATÉGIAS</div>
+        </div>
+        <div class="sub-panel active" id="sub-panel-moedas">
+            <div class="config-section"><h3>💳 COMPRAR VOLTS COM PIX</h3><p style="color:#888;font-size:10px">📧 <input type="email" id="emailCompra" placeholder="Seu email" style="width:220px;padding:6px;background:#111;border:1px solid #333;color:#fff;border-radius:5px"></p><div class="planos-grid" id="planosGridContainer"></div></div>
+        </div>
+        <div class="sub-panel" id="sub-panel-skins">
+            <div class="sub-tabs" style="margin-bottom:10px">
+                <div class="sub-tab active" id="sub-sub-tab-basica" onclick="mostrarCategoriaSkin('basica')">⚡ BÁSICAS</div>
+                <div class="sub-tab" id="sub-sub-tab-premium" onclick="mostrarCategoriaSkin('premium')">🔮 PREMIUM</div>
+                <div class="sub-tab" id="sub-sub-tab-lendaria" onclick="mostrarCategoriaSkin('lendaria')">💎 LENDÁRIAS</div>
             </div>
+            <div class="sub-panel active" id="sub-sub-panel-basica"><div class="skins-grid" id="skinsGridBasicas"></div></div>
+            <div class="sub-panel" id="sub-sub-panel-premium"><div class="skins-grid" id="skinsGridPremium"></div></div>
+            <div class="sub-panel" id="sub-sub-panel-lendaria"><div class="skins-grid" id="skinsGridLendarias"></div></div>
         </div>
-        
-        <div class="form-group">
-            <label>Banca Base de Cálculo (R$)</label>
-            <input type="number" id="cfg-banca" class="form-control" value="100">
-        </div>
-
-        <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 6px; border: 1px solid #333; margin-bottom: 15px; font-size: 11px;">
-            <strong>Estratégia Selecionada no Engine:</strong> 
-            <span id="label-estrategia-ativa" style="color: #ef4444; font-weight: bold; margin-left: 5px;">NENHUMA SELECIONADA</span>
-        </div>
-
-        <div style="display: flex; gap: 10px;">
-            <button id="btn-iniciar" class="btn btn-success" onclick="iniciarOperacao()">🚀 Começar Operar (-1 Moeda)</button>
-            <button id="btn-parar" class="btn btn-danger" onclick="pararOperacao()" style="display: none;">🛑 Parar Operação</button>
-        </div>
-
-        <div id="terminal-log" class="log-area">
-            <div class="log-line log-info">[SISTEMA] Aguardando definição de parâmetros operacionais.</div>
+        <div class="sub-panel" id="sub-panel-estrategias"><div class="skins-grid" id="estrategiasLojaGrid"></div></div>
+    </div>
+    
+    <div class="panel" id="panel-chat">
+        <div id="chatMensagens" style="background:#000;border:1px solid #333;border-radius:10px;height:300px;overflow-y:auto;padding:10px;margin-bottom:10px;font-size:10px"></div>
+        <div style="display:flex;gap:8px">
+            <input type="text" id="chatMsg" placeholder="Digite sua mensagem..." style="flex:1;padding:10px;background:#111;border:1px solid #333;border-radius:8px;color:#fff;" onkeypress="if(event.key==='Enter')enviarChatMsg()">
+            <button onclick="enviarChatMsg()" class="btn btn-info" style="padding:10px 20px; width:auto;">ENVIAR</button>
         </div>
     </div>
 
-    <div id="panel-estrategias" class="panel">
-        <h2 style="font-size: 14px; margin-bottom: 15px; text-transform: uppercase;">Scripts Cloud Disponíveis</h2>
-        <div id="lista-estrategias"></div>
+    <div class="panel" id="panel-leia-me">
+        <div class="config-section"><h3>📖 TUTORIAL & ⚠️ AVISOS IMPORTANTES</h3></div>
+        <div style="background:#0a0a1a;border:1px solid #00ff88;border-radius:15px;padding:20px;margin:10px 0">
+            <p style="color:#ffd700;font-size:14px;font-weight:bold;margin-bottom:10px">🤖 COMO O ROBÔ FUNCIONA</p>
+            <p style="color:#ccc;font-size:11px;line-height:1.8;">O Tesla 369 analisa padrões de velas em tempo real usando indicadores técnicos remotos.</p>
+        </div>
     </div>
 
-    <div id="panel-skins" class="panel">
-        <h2 style="font-size: 14px; margin-bottom: 15px; text-transform: uppercase;">Estilização e Personalização HUD</h2>
-        <div class="skin-selector">
-            <div class="skin-card" id="skin-default" onclick="selectSkin('default')">
-                <h4>Default Minimal</h4>
-                <small>Azul Clássico Tesla</small>
-            </div>
-            <div class="skin-card" id="skin-neon_matrix" onclick="selectSkin('neon_matrix')">
-                <h4>Neon Matrix</h4>
-                <small>Hackermode Verde</small>
-            </div>
-            <div class="skin-card" id="skin-tesla_gold" onclick="selectSkin('tesla_gold')">
-                <h4>Tesla Premium Gold</h4>
-                <small>Dourado Luxo Fino</small>
-            </div>
-            <div class="skin-card" id="skin-dr_stone" onclick="selectSkin('dr_stone')">
-                <h4>Dr. Stone</h4>
-                <small>Verde Esmeralda Técnico</small>
-            </div>
-            <div class="skin-card" id="skin-cyberpunk" onclick="selectSkin('cyberpunk')">
-                <h4>Cyberpunk Neon</h4>
-                <small>Rosa Pink e Ciano</small>
-            </div>
+    <div class="panel" id="panel-contato">
+        <div style="background:linear-gradient(135deg,#1a1a2e,#0d0d1a);border:2px solid #25D366;border-radius:15px;padding:20px;text-align:center">
+            <p style="color:#25D366;font-size:16px;font-weight:bold">💬 FALE COM O DESENVOLVEDOR</p>
+            <p style="color:#ccc;font-size:12px;margin:5px 0">📧 gyn.bet.fc@gmail.com</p>
         </div>
-        <button class="btn btn-accent" style="margin-top: 20px;" onclick="aplicarSkinSalva()">💾 Aplicar e Salvar Skin</button>
+    </div>
+    
+    <div class="panel" id="panel-relatorio">
+        <div class="config-section"><h3>📊 RELATÓRIO</h3><div class="config-row"><input type="email" id="emailRelatorio" placeholder="Email" style="flex:2"><button class="btn btn-info" onclick="verRelatorio()">🔍 BUSCAR</button><button class="btn btn-info" onclick="verRanking()" style="background:linear-gradient(135deg,#ff8c00,#ffd700);color:#000">🏆 RANKING</button></div></div>
+        <div id="relatorioContent"></div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modalPix">
+    <div class="modal-pagamento">
+        <h3>💳 Pagamento PIX</h3><div id="pixContent"></div><button class="btn-fechar" onclick="fecharModal()">❌ Fechar</button>
     </div>
 </div>
 
 <script>
-    const emailUsuario = document.getElementById('user-email').innerText;
-    let estrategiaSelecionadaId = null;
-    let skinSelecionadaLocal = 'default';
-    let logInterval = null;
+var PLANOS = [{{ PLANOS_JSON | safe }}];
+var intervalo=null,botAtivo=false,conectadoIQ=false,emailLogado='',planoSelecionado=0,pixAtual=null;
+var estrategiaSel='';  // 🔥 Inicia limpa para forçar a validação
 
-    function switchTab(element, panelId) {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-        element.classList.add('active');
-        document.getElementById(panelId).classList.add('active');
+function mostrarCategoriaSkin(categoria) {
+    document.querySelectorAll('[id^="sub-sub-tab-"]').forEach(function(t) { t.classList.remove('active'); });
+    var tabAtiva = document.getElementById('sub-sub-tab-' + categoria); if(tabAtiva) tabAtiva.classList.add('active');
+    document.querySelectorAll('[id^="sub-sub-panel-"]').forEach(function(p) { p.classList.remove('active'); });
+    var panelAtivo = document.getElementById('sub-sub-panel-' + categoria); if(panelAtivo) panelAtivo.classList.add('active');
+    renderLojaCategoria(categoria);
+}
+
+function mostrarSubAba(aba){
+    document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.sub-panel').forEach(p=>p.classList.remove('active'));
+    document.getElementById('sub-tab-'+aba).classList.add('active');
+    document.getElementById('sub-panel-'+aba).classList.add('active');
+    if(aba==='skins') { setTimeout(function() { mostrarCategoriaSkin('basica'); }, 100); }
+    if(aba==='estrategias') renderLojaEstrategias();
+    if(aba==='moedas') renderPlanos();
+}
+
+function openTab(tab){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    event.target.classList.add('active'); document.getElementById('panel-'+tab).classList.add('active');
+    if(tab=='relatorio'&&emailLogado){document.getElementById('emailRelatorio').value=emailLogado;verRelatorio()}
+    if(tab=='loja'){mostrarSubAba('moedas');}
+    if(tab=='estrategias') renderEstrategias();
+}
+
+function atualizarPercentual() { fetch('/set_percentual', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({percentual: parseInt(document.getElementById('percentualBanca').value)})}); }
+
+function conectarIQ(){
+    var email=document.getElementById('email').value.trim(), senha=document.getElementById('senha').value.trim(), tipo=document.getElementById('tipo').value;
+    if(!email||!senha){alert('Preencha email e senha!');return}
+    emailLogado=email; document.getElementById('btnConectar').textContent='Conectando...';
+    fetch('/conectar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,senha:senha,tipo:tipo})})
+    .then(r=>r.json()).then(d=>{
+        if(d.ok){ conectadoIQ=true; setTimeout(function(){location.reload()},1500); }
+        else { alert('ERRO: '+d.erro); document.getElementById('btnConectar').textContent='🔌 CONECTAR'; }
+    });
+}
+
+function comecarOperar(){
+    // 🚨 TRAVA DE UX CRÍTICA: Impede submissão sem estratégia selecionada
+    if(!estrategiaSel || estrategiaSel === '') {
+        alert("❌ OPERAÇÃO BLOQUEADA: Você deve selecionar uma Estratégia ativa na aba 'ESTRATEGIAS' antes de iniciar o robô!");
+        openTab('estrategias');
+        return;
     }
+    fetch('/comecar_operar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})})
+    .then(r=>r.json()).then(d=>{
+        if(d.ok){ botAtivo=true; document.getElementById('btnOperar').style.display='none'; document.getElementById('btnParar').style.display='inline-block'; document.getElementById('statusTexto').textContent='🤖 Operando'; }
+        else alert('ERRO: '+d.erro);
+    });
+}
 
-    function selectSkin(skinId) {
-        document.querySelectorAll('.skin-card').forEach(c => c.classList.remove('selected'));
-        document.getElementById('skin-' + skinId).classList.add('selected');
-        skinSelecionadaLocal = skinId;
-    }
+function pararBot(){ fetch('/parar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})}).then(()=>{location.reload()}); }
 
-    function carregarDadosIniciais() {
-        // Carrega Loja de Estratégias
-        fetch('/api/estrategias')
-            .then(r => r.json())
-            .then(estrategias => {
-                // Pega perfil atualizado do usuário
-                fetch(`/api/usuario?email=${emailUsuario}`)
-                    .then(r => r.json())
-                    .then(user => {
-                        const container = document.getElementById('lista-estrategias');
-                        container.innerHTML = '';
-                        
-                        // Marca a skin atual salva no banco
-                        if(user.skin_atual) {
-                            selectSkin(user.skin_atual);
-                        }
-
-                        for(let id in estrategias) {
-                            const est = estrategias[id];
-                            const comprada = user.estrategias_compradas && user.estrategias_compradas.includes(id);
-                            
-                            let acaoBtn = '';
-                            if (comprada) {
-                                acaoBtn = `<button class="btn btn-accent" style="width:140px; padding:8px;" onclick="ativarScript('${id}', '${est.nome}')">🔌 Selecionar</button>`;
-                            } else {
-                                acaoBtn = `<button class="btn btn-success" style="width:140px; padding:8px; background:#ffd700; color:#000;" onclick="comprarScript('${id}')">🛒 Comprar (${est.preco}🪙)</button>`;
-                            }
-
-                            container.innerHTML += `
-                                <div class="est-card">
-                                    <div class="est-info">
-                                        <h3>${est.nome} <small style="color:${comprada?'#10b981':'#ef4444'}">${comprada?'[Desbloqueada]':'[Bloqueada]'}</small></h3>
-                                        <p>${est.desc}</p>
-                                    </div>
-                                    <div>${acaoBtn}</div>
-                                </div>
-                            `;
-                        }
-                    });
-            });
-    }
-
-    function ativarScript(id, nome) {
-        fetch('/api/definir_estrategia', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ email: emailUsuario, estrategia_id: id })
-        }).then(r => r.json()).then(res => {
-            if(res.ok) {
-                estrategiaSelecionadaId = id;
-                const lbl = document.getElementById('label-estrategia-ativa');
-                lbl.innerText = nome.toUpperCase();
-                lbl.style.color = "#10b981";
-                alert(`Estratégia ${nome} acoplada com sucesso ao motor!`);
+function renderEstrategias(){
+    fetch('/status').then(r=>r.json()).then(d=>{
+        var eCompradas = d.estrategias_compradas || ['v_sensitivo'], disponiveis = d.estrategias_disponiveis || {}, grid=document.getElementById('estrategiaGrid');
+        if(!grid) return; var html='';
+        for(var key in disponiveis){
+            if (eCompradas.includes(key)) {
+                var e = disponiveis[key], ativa = key == estrategiaSel ? ' ativa' : '';
+                html+='<div class="estrategia-card'+ativa+'" onclick="selecionarEstrategia(\''+key+'\')" id="est_'+key+'"><div style="font-size:14px;font-weight:bold">'+e.nome+'</div><div style="font-size:9px;color:#888;margin-top:5px">'+e.desc+'</div></div>';
             }
-        });
-    }
-
-    function comprarScript(id) {
-        fetch('/api/comprar_estrategia', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ email: emailUsuario, estrategia_id: id })
-        }).then(r => r.json()).then(res => {
-            alert(res.msg);
-            carregarDadosIniciais();
-        });
-    }
-
-    function aplicarSkinSalva() {
-        fetch('/api/salvar_config', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ email: emailUsuario, skin: skinSelecionadaLocal })
-        }).then(r => r.json()).then(res => {
-            if(res.ok) {
-                alert("Skin salva com sucesso no Firebase! Atualizando visual...");
-                window.location.reload(); // Atualiza a página injetando o novo mapa de cores do Flask
-            }
-        });
-    }
-
-    function iniciarOperacao() {
-        // 🚨 BLOQUEIO CRÍTICO DE INTERFACE: Impede clique sem estratégia ativa
-        if(!estrategiaSelecionadaId) {
-            alert("❌ ERRO OPERACIONAL: Você não pode iniciar o robô sem escolher uma estratégia! Vá até a 'Loja de Scripts' ou selecione uma aba ativa.");
-            return;
         }
+        grid.innerHTML=html;
+        if(d.estrategia) { estrategiaSel = d.estrategia; document.getElementById('estrategiaAtiva').textContent=disponiveis[d.estrategia] ? disponiveis[d.estrategia].nome : '--'; }
+    });
+}
 
-        const par = document.getElementById('cfg-par').value;
-        const tipoConta = document.getElementById('cfg-conta').value;
-        const banca = document.getElementById('cfg-banca').value;
+function selecionarEstrategia(key){
+    estrategiaSel=key;
+    fetch('/selecionar_estrategia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estrategia:key})}).then(()=>renderEstrategias());
+}
 
-        fetch('/api/operacao/iniciar', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ email: emailUsuario, par: par, tipo_conta: tipoConta, banca: banca })
-        }).then(r => r.json()).then(res => {
-            if(res.ok) {
-                document.getElementById('btn-iniciar').style.display = 'none';
-                document.getElementById('btn-parar').style.display = 'block';
-                startLogPolling();
-            } else {
-                alert(res.msg);
-            }
+function renderLojaEstrategias(){
+    fetch('/status').then(r=>r.json()).then(d=>{
+        var grid = document.getElementById('estrategiasLojaGrid'), eCompradas = d.estrategias_compradas || ['v_sensitivo'], disponiveis = d.estrategias_disponiveis || {}, html = '';
+        for (var key in disponiveis) {
+            var est = disponiveis[key], comprado = eCompradas.includes(key);
+            html += '<div class="skin-card"><div class="skin-nome">'+est.nome+'</div><div class="skin-desc">'+est.desc+'</div>';
+            html += comprado ? '<button class="btn-loja btn-comprado">✅ ADQUIRIDO</button>' : '<button class="btn-loja btn-comprar-est" onclick="comprarEstrategia(\''+key+'\')">🛒 COMPRAR ('+est.preco_moedas+' ⚡)</button>';
+            html += '</div>';
+        }
+        grid.innerHTML = html;
+    });
+}
+
+function comprarEstrategia(id) { fetch('/comprar_estrategia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estrategia_id:id})}).then(r=>r.json()).then(d=>{ alert(d.msg||'Sucesso'); renderLojaEstrategias(); }); }
+
+function renderLojaCategoria(cat) {
+    fetch('/status').then(r=>r.json()).then(d=>{
+        var grid = document.getElementById(cat === 'basica' ? 'skinsGridBasicas' : (cat === 'premium' ? 'skinsGridPremium' : 'skinsGridLendarias')), html = '', filtradas = (d.skins_status || []).filter(s => s.categoria === cat);
+        filtradas.forEach(skin => {
+            var btn = skin.ativo ? '<button class="btn-loja btn-comprado">✅ EM USO</button>' : (skin.comprado ? '<button class="btn-loja btn-usar" onclick="ativarSkin(\''+skin.id+'\')">🎨 APLICAR</button>' : '<button class="btn-loja btn-comprar-skin" onclick="comprarSkin(\''+skin.id+'\')">🛒 COMPRAR ('+skin.preco_moedas+' ⚡)</button>');
+            html += '<div class="skin-card"><div class="skin-nome">'+skin.nome+'</div><div class="skin-desc">'+skin.desc+'</div>'+btn+'</div>';
         });
-    }
+        grid.innerHTML = html;
+    });
+}
 
-    function pararOperacao() {
-        fetch('/api/operacao/parar', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ email: emailUsuario })
-        }).then(r => r.json()).then(res => {
-            document.getElementById('btn-iniciar').style.display = 'block';
-            document.getElementById('btn-parar').style.display = 'none';
-            clearInterval(logInterval);
-        });
-    }
+function comprarSkin(id){ fetch('/comprar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:id})}).then(()=>location.reload()); }
 
-    function startLogPolling() {
-        if(logInterval) clearInterval(logInterval);
-        logInterval = setInterval(() => {
-            fetch(`/api/operacao/status?email=${emailUsuario}`)
-                .then(r => r.json())
-                .then(data => {
-                    const terminal = document.getElementById('terminal-log');
-                    terminal.innerHTML = '';
-                    
-                    if(data.logs) {
-                        data.logs.forEach(l => {
-                            terminal.innerHTML += `<div class="log-line">[${l.hora}] <span class="log-${l.tipo}">${l.msg}</span></div>`;
-                        });
-                        terminal.scrollTop = terminal.scrollHeight;
-                    }
-                    
-                    if(!data.rodando) {
-                        document.getElementById('btn-iniciar').style.display = 'block';
-                        document.getElementById('btn-parar').style.display = 'none';
-                        clearInterval(logInterval);
-                        // Atualiza saldo de moedas caso tenha ocorrido um reembolso em background
-                        fetch(`/api/usuario?email=${emailUsuario}`).then(r=>r.json()).then(u=>{
-                            document.getElementById('stat-moedas').innerText = u.moedas + " 🪙";
-                        });
-                    }
-                });
-        }, 1000);
-    }
+// 🔥 CORREÇÃO: Garante o processamento assíncrono antes do reload
+function ativarSkin(id){
+    fetch('/ativar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:id})})
+    .then(r=>r.json()).then(d=>{ if(d.ok) { alert('Skin aplicada com sucesso!'); location.reload(); } });
+}
 
-    // Inicialização ao carregar página
-    window.onload = carregarDadosIniciais;
+function renderPlanos(){
+    var grid = document.getElementById('planosGridContainer'), html = '';
+    PLANOS.forEach(p => { html += '<div class="plano-card" onclick="pagarComPix('+p.id+')"><div class="plano-nome">'+p.nome+'</div><div class="plano-moedas">⚡ '+p.moedas+'</div><div class="plano-preco">R$ '+p.preco.toFixed(2)+'</div></div>'; });
+    if(grid) grid.innerHTML = html;
+}
+
+function pagarComPix(id){
+    document.getElementById('modalPix').classList.add('active');
+    fetch('/criar_pix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:emailLogado,plano_id:id})})
+    .then(r=>r.json()).then(d=>{ document.getElementById('pixContent').innerHTML='<p>PIX COPIA E COLA:</p><div class="pix-copiavel">'+d.qr_code+'</div><button class="btn" onclick="verificarPagamento(\''+d.pix_id+'\')">VERIFICAR</button>'; });
+}
+function verificarPagamento(id){ fetch('/verificar_pix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pix_id:id})}).then(r=>r.json()).then(d=>{ if(d.pago){ alert('Pago!'); fecharModal(); location.reload(); } }); }
+function fecharModal(){ document.getElementById('modalPix').classList.remove('active'); }
+
+function verRelatorio(){
+    fetch('/relatorio?email='+document.getElementById('emailRelatorio').value.trim()).then(r=>r.json()).then(d=>{
+        var h='<div class="relatorio-grid"><div class="relatorio-card"><div class="rlabel">⚡ VOLTS</div><div class="rvalue">'+(d.moedas||0)+'</div></div><div class="relatorio-card"><div class="rlabel">📈 LUCRO</div><div class="rvalue">$'+(d.lucro_total||0).toFixed(2)+'</div></div><div class="relatorio-card"><div class="rlabel">🔄 CICLOS</div><div class="rvalue">'+(d.total_ciclos||0)+'</div></div></div>';
+        document.getElementById('relatorioContent').innerHTML=h;
+    });
+}
+
+function verRanking() {
+    fetch('/ranking').then(r => r.json()).then(d => {
+        var h = '<table class="historico-table"><tr><th>#</th><th>EMAIL</th><th>LUCRO</th><th>TAXA</th></tr>';
+        d.ranking.forEach((u, i) => { h += '<tr><td>'+(i+1)+'</td><td>'+u.email+'</td><td>$'+u.lucro_total.toFixed(2)+'</td><td>'+u.taxa+'%</td></tr>'; });
+        document.getElementById('relatorioContent').innerHTML = h + '</table>';
+    });
+}
+
+function atualizar(){
+    fetch('/status').then(r=>r.json()).then(d=>{
+        if(d.banca)document.getElementById('banca').textContent='$'+d.banca.toFixed(2);
+        if(d.lucro!==undefined)document.getElementById('lucro').textContent='$'+d.lucro.toFixed(2);
+        if(d.ops!==undefined)document.getElementById('ops').textContent=d.ops;
+        if(d.moedas!==undefined)document.getElementById('moedasSaldo').textContent=d.moedas;
+        if(d.sinal)document.getElementById('sinal').textContent=d.sinal;
+        if(d.estrategia_nome) document.getElementById('estrategiaAtiva').textContent=d.estrategia_nome;
+        if(d.analise){
+            document.getElementById('rsi').textContent=d.analise.rsi?d.analise.rsi.toFixed(1):'--';
+            document.getElementById('mm5').textContent=d.analise.mm5?d.analise.mm5.toFixed(5):'--';
+            document.getElementById('mm10').textContent=d.analise.mm10?d.analise.mm10.toFixed(5):'--';
+            document.getElementById('mm20').textContent=d.analise.mm20?d.analise.mm20.toFixed(5):'--';
+            document.getElementById('stoch').textContent=d.analise.stoch?d.analise.stoch.toFixed(1):'--';
+            document.getElementById('fase').textContent=d.analise.fase||'--';
+            document.getElementById('preco').textContent=d.analise.preco?d.analise.preco.toFixed(5):'--';
+        }
+        if(d.logs)document.getElementById('terminal').innerHTML=d.logs;
+    });
+}
+
+window.onload=function(){
+    renderPlanos();
+    fetch('/status').then(r=>r.json()).then(d=>{
+        if(d.conectado&&d.email){
+            conectadoIQ=true; emailLogado=d.email; document.getElementById('email').value=d.email;
+            document.getElementById('btnConectar').style.display='none'; document.getElementById('btnDesconectar').style.display='inline-block';
+            if(d.rodando){botAtivo=true; document.getElementById('btnOperar').style.display='none'; document.getElementById('btnParar').style.display='inline-block';}
+            else document.getElementById('btnOperar').style.display='inline-block';
+            document.getElementById('statusDot').className='status-dot active'; document.getElementById('statusTexto').textContent='🟢 Conectado';
+            intervalo=setInterval(atualizar,2000);
+        }
+    });
+}
+function enviarChatMsg() { fetch('/chat_enviar', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nome:emailLogado, msg:document.getElementById('chatMsg').value.trim()})}).then(()=>{document.getElementById('chatMsg').value='';}); }
+function atualizarChat() { fetch('/chat_mensagens').then(r=>r.json()).then(d=>{ var html=''; d.messages.forEach(m=>{ html+='<div><span>'+m.nome+'</span>: '+m.msg+'</div>'; }); document.getElementById('chatMensagens').innerHTML=html; }); }
+setInterval(atualizarChat, 4000);
 </script>
-
 </body>
 </html>
