@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v9.0.0 ⚡
-# MODO SINAL AUTOMÁTICO VIA CLOUD PLUGINS
-# HISTÓRICO, INTERFACE E ALGORITMOS 100% EM NUVEM
+# ⚡ TESLA 369 BOT v9.0.1 Cloud ⚡
+# PIPELINE CLOUD BLINDADO CONTRA RATE LIMIT E ERRO 404
 
-from flask import Flask, render_template_string, jsonify, request
+from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
 from datetime import datetime
 import threading
@@ -15,16 +14,15 @@ import os
 import warnings
 import requests
 import uuid
-import hashlib as _hl
 
 warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
-# ============= CONFIGURAÇÕES =============
+# ============= CONFIGURAÇÕES DE LINKS CLOUD =============
 FB_URL = "https://nexos-40654-default-rtdb.firebaseio.com"
 print("✅ Firebase HTTP REST configurado!")
 
-# Endpoints do Repositório Público no GitHub
+# Correção dos caminhos para ler direto da raiz do repositório
 HTML_URL = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/tesla_369_bot/templates/index.html"
 GIT_API_ESTRATEGIAS = "https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/tesla_369_bot/estrategias"
 GIT_RAW_ESTRATEGIAS_BASE = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/tesla_369_bot/estrategias"
@@ -153,9 +151,9 @@ SKINS = [
     },
 ]
 
-# Cache do HTML
-html_cache = {"content": None, "timestamp": 0}
-HTML_CACHE_TTL = 30  # TTL menor para desenvolvimento ágil
+# Cache em memória para estratégias evitarem Rate Limit
+cache_estrategias = {"data": {}, "timestamp": 0}
+CACHE_EST_TTL = 30  # TTL otimizado para sincronização ágil
 
 # ============= VARIÁVEIS GLOBAIS DE CONTROLE =============
 API, par = None, "EURUSD-OTC"
@@ -174,13 +172,36 @@ bot_lock = threading.Lock()
 sinal_pendente = None  
 sinal_lock = threading.Lock()
 
-# ============= 🌐 ENGENHARIA DE ESTRATÉGIAS CLOUD =============
+# ============= 📢 SISTEMA DE LOGS INTERNOS =============
+
+def add_log(msg, tipo='info'):
+    global logs_web
+    t = datetime.now().strftime('%H:%M:%S')
+    logs_web.append({'time': t, 'msg': msg, 'tipo': tipo})
+    if len(logs_web) > MAX_LOGS_WEB:
+        logs_web = logs_web[-MAX_LOGS_WEB:]
+    print(f"{t} - {msg}")
+
+def get_logs_html(limite=40):
+    html = ''
+    for log in logs_web[-limite:]:
+        cor = {'win': '#00ff88', 'loss': '#ff4444', 'info': '#00ff88', 'sensitive': '#ff69b4', 'indicator': '#ffd700', 'error': '#ff4444'}.get(log['tipo'], '#00ff88')
+        html += f'<span style="color:#666">{log["time"]}</span> <span style="color:{cor}">{log["msg"]}</span>\n'
+    return html or '📡 Aguardando...'
+
+# ============= 🌐 ENGENHARIA DE ESTRATÉGIAS CLOUD ARQUITETURA ESTÁVEL =============
 
 def carregar_estrategias_da_nuvem():
-    """Varre e executa o cabeçalho INFO dos scripts remotos direto do GitHub"""
+    """Varre a API do GitHub com cache inteligente para erradicar o Connection Reset"""
+    global cache_estrategias
+    agora = time.time()
+    
+    if cache_estrategias["data"] and (agora - cache_estrategias["timestamp"]) < CACHE_EST_TTL:
+        return cache_estrategias["data"]
+        
     estrategias_remotas = {}
     try:
-        resp_git = requests.get(GIT_API_ESTRATEGIAS, timeout=8)
+        resp_git = requests.get(GIT_API_ESTRATEGIAS, timeout=5)
         if resp_git.status_code == 200:
             itens = resp_git.json()
             nomes_scripts = [i["name"][:-3] for i in itens if i["name"].endswith(".py") and i["name"] != "__init__.py"]
@@ -188,7 +209,7 @@ def carregar_estrategias_da_nuvem():
             for script in nomes_scripts:
                 try:
                     url_raw = f"{GIT_RAW_ESTRATEGIAS_BASE}/{script}.py"
-                    resp_raw = requests.get(url_url := url_raw, timeout=5)
+                    resp_raw = requests.get(url_raw, timeout=4)
                     if resp_raw.status_code == 200:
                         escopo_memoria = {}
                         exec(resp_raw.text, {}, escopo_memoria)
@@ -202,55 +223,32 @@ def carregar_estrategias_da_nuvem():
                                 'gratis': info.get('preco', 0) == 0
                             }
                 except Exception as e:
-                    print(f"⚠️ Erro ao compilar metadados de {script}: {e}")
+                    print(f"⚠️ Erro ao ler metadados cloud de {script}: {e}")
     except Exception as e:
-        print(f"⚠️ Erro na requisição à API do GitHub: {e}")
+        print(f"⚠️ Erro de comunicação com o ecossistema GitHub: {e}")
         
-    # Fallback de segurança se o Git estiver offline
     if 'v_sensitivo' not in estrategias_remotas:
+        if cache_estrategias["data"]: return cache_estrategias["data"]
         estrategias_remotas['v_sensitivo'] = {'nome': 'V-Sensitivo Script', 'desc': 'Análise de momentum pura.', 'preco_moedas': 0, 'timeframe': 60, 'gratis': True}
+        
+    cache_estrategias["data"] = estrategias_remotas
+    cache_estrategias["timestamp"] = agora
     return estrategias_remotas
 
-def get_html_from_github():
-    global html_cache
-    agora = time.time()
-    if html_cache["content"] and (agora - html_cache["timestamp"]) < HTML_CACHE_TTL:
-        return html_cache["content"]
-        
+def sincronizar_html_local():
+    """Baixa o HTML do GitHub apenas uma vez no startup para blindar o tráfego"""
+    add_log("🌐 Sincronizando template index.html estável da Nuvem...", "info")
     try:
+        os.makedirs("templates", exist_ok=True)
         response = requests.get(HTML_URL, timeout=10)
         if response.status_code == 200:
-            html_template = response.text
-            html_cache["content"] = html_template
-            html_cache["timestamp"] = agora
-            return html_template
+            with open("templates/index.html", "w", encoding="utf-8") as f:
+                f.write(response.text)
+            print("✅ HTML sincronizado localmente na pasta templates!")
+            return True
     except Exception as e:
-        print(f"⚠️ Falha de rede no HTML: {e}")
-    return html_cache["content"] if html_cache["content"] else "<h1>Erro Crítico Cloud Server</h1>"
-
-def processar_html_com_skin():
-    global skin_atual_global
-    skin = next((s for s in SKINS if s['id'] == skin_atual_global), SKINS[0])
-    html_template = get_html_from_github()
-    
-    planos_json = []
-    for p in PLANOS:
-        planos_json.append(f'{{"id":{p["id"]},"moedas":{p["moedas"]},"preco":{p["preco"]},"nome":"{p["nome"]}","desc":"{p["desc"]}","tag":"{p.get("tag","")}","desconto":"{p.get("desconto","")}"}}')
-    
-    html_template = html_template.replace('{{ COR_FUNDO }}', skin['cor_fundo'])
-    html_template = html_template.replace('{{ COR_PANEL }}', skin['cor_panel'])
-    html_template = html_template.replace('{{ COR_DESTAQUE }}', skin['cor_destaque'])
-    html_template = html_template.replace('{{ COR_TEXTO }}', skin['cor_texto'])
-    html_template = html_template.replace('{{ COR_BOTAO }}', skin['cor_botao'])
-    html_template = html_template.replace('{{ COR_TAB_ATIVA }}', skin['cor_tab_ativa'])
-    html_template = html_template.replace('{{ COR_HEADER_BG }}', skin['cor_header_bg'])
-    html_template = html_template.replace('{{ COR_HEADER_BORDA }}', skin['cor_header_borda'])
-    html_template = html_template.replace('{{ CSS_EXTRA }}', skin.get('css_extra', ''))
-    html_template = html_template.replace('{{ HEADER_EXTRA }}', skin.get('header_extra', '<div class="lightning"></div>'))
-    html_template = html_template.replace('{{ PLANOS_JSON | safe }}', ','.join(planos_json))
-    html_template = html_template.replace('{{ PLANOS_JSON }}', ','.join(planos_json))
-    
-    return html_template
+        print(f"❌ Falha crítica de startup no download do HTML: {e}")
+    return False
 
 # ========== FUNÇÕES DE USUÁRIO (FIREBASE) ==========
 
@@ -304,8 +302,7 @@ def criar_usuario(email):
 
 def Payout(p):
     try:
-        if not API:
-            return PAYOUT_PADRAO
+        if not API: return PAYOUT_PADRAO
         API.subscribe_strike_list(p, 1)
         tentativas = 0
         while tentativas < 20:
@@ -317,8 +314,7 @@ def Payout(p):
             tentativas += 1
         API.unsubscribe_strike_list(p, 1)
         return PAYOUT_PADRAO
-    except:
-        return PAYOUT_PADRAO
+    except: return PAYOUT_PADRAO
 
 def calcular_entradas(b, p, g):
     global PERCENTUAL_BANCA
@@ -336,8 +332,7 @@ def calcular_entradas(b, p, g):
 
 def pegar_timestamp():
     try:
-        if not API:
-            return 0
+        if not API: return 0
         v = API.get_candles(par, timeframe_atual, 1, time.time())
         if v and isinstance(v, list) and len(v) > 0:
             return v[0]['from']
@@ -350,39 +345,32 @@ def aguardar_inicio_vela():
     if segundo_atual <= 15:
         add_log(f"   ✅ Entrada imediata autorizada (segundo {segundo_atual})", 'info')
         return True
-        
     add_log("   ⏳ Gatilho detectado no final da vela. Sincronizando próxima virada...", 'info')
     while datetime.now().second > 1:
-        if not bot_rodando:
-            return False
+        if not bot_rodando: return False
         time.sleep(0.1)
     return True
 
 def aguardar_vela_fechar(ts_entrada):
     add_log(f"   ⏳ Aguardando fechamento da operação...", 'info')
     while True:
-        if not bot_rodando:
-            return False
+        if not bot_rodando: return False
         try:
             ts_atual = pegar_timestamp()
             if ts_atual != ts_entrada and ts_atual != 0:
                 add_log("   ✅ Vela fechada!", 'info')
                 return True
-        except:
-            pass
+        except: pass
         time.sleep(0.3)
 
 def verificar_resultado(saldo_antes, valor):
     saldo_base = saldo_antes - valor
     try:
-        if not API:
-            return -valor
+        if not API: return -valor
         s = API.get_balance()
         d = round(s - saldo_base, 2)
-        if d >= 1.0:
-            return d
-    except:
-        pass
+        if d >= 1.0: return d
+    except: pass
     return -valor
 
 def executar_ciclo(direcao):
@@ -400,11 +388,9 @@ def executar_ciclo(direcao):
         add_log(f"📐 E1:${entradas[0]:.2f} | E2:${entradas[1]:.2f} | E3:${entradas[2]:.2f}", 'info')
         
         for i in range(MARTINGALE + 1):
-            if not bot_rodando:
-                break
+            if not bot_rodando: break
             valor = entradas[i]
-            if not aguardar_inicio_vela():
-                break
+            if not aguardar_inicio_vela(): break
             saldo_antes = API.get_balance()
             if saldo_antes < valor:
                 add_log("❌ Margem insuficiente!", 'error')
@@ -413,10 +399,8 @@ def executar_ciclo(direcao):
             add_log(f"🎯 {'OPERAÇÃO' if i == 0 else f'GALE {i}'}: {direcao.upper()} ${valor:.2f}", 'info')
             st, id_ordem = API.buy(valor, par, direcao, 1)
             if not st or not id_ordem:
-                try:
-                    st, id_ordem = API.buy_digital_spot(par, valor, direcao, 1)
-                except:
-                    pass
+                try: st, id_ordem = API.buy_digital_spot(par, valor, direcao, 1)
+                except: pass
             if not st or not id_ordem:
                 add_log("❌ Rejeitado pela corretora!", 'error')
                 break
@@ -427,8 +411,7 @@ def executar_ciclo(direcao):
                 add_log("⚠️ Falha de sincronia de tempo.", 'warning')
                 time.sleep(60)
             else:
-                if not aguardar_vela_fechar(ts_real):
-                    break
+                if not aguardar_vela_fechar(ts_real): break
             res = verificar_resultado(saldo_antes, valor)
             lucro += round(res, 2)
             saldo_depois = API.get_balance()
@@ -444,11 +427,7 @@ def executar_ciclo(direcao):
                     u['lucro_total'] = u['total_ganho'] - u['total_gasto']
                     u['banca_atual'] = round(saldo_depois, 2)
                     u.setdefault('historico_operacoes', []).append({
-                        'data': str(datetime.now())[:19],
-                        'resultado': 'WIN',
-                        'valor': valor,
-                        'lucro': lucro_liquido,
-                        'estrategia': estrategia_atual_global.upper()
+                        'data': str(datetime.now())[:19], 'resultado': 'WIN', 'valor': valor, 'lucro': lucro_liquido, 'estrategia': estrategia_atual_global.upper()
                     })
                     u['dias_ativos'] = u.get('dias_ativos', 0) + 1
                     salvar_usuario(email_usuario_atual, u)
@@ -464,26 +443,19 @@ def executar_ciclo(direcao):
                     u['lucro_total'] = u['total_ganho'] - u['total_gasto']
                     u['banca_atual'] = round(saldo_depois, 2)
                     u.setdefault('historico_operacoes', []).append({
-                        'data': str(datetime.now())[:19],
-                        'resultado': 'LOSS',
-                        'valor': valor,
-                        'lucro': -valor,
-                        'estrategia': estrategia_atual_global.upper()
+                        'data': str(datetime.now())[:19], 'resultado': 'LOSS', 'valor': valor, 'lucro': -valor, 'estrategia': estrategia_atual_global.upper()
                     })
                     u['dias_ativos'] = u.get('dias_ativos', 0) + 1
                     salvar_usuario(email_usuario_atual, u)
-                if i < MARTINGALE:
-                    add_log(f"   ➡️ Preparando GALE {i + 1}...", 'loss')
-                else:
-                    add_log("   💀 CICLO DE GALE ESGOTADO!", 'loss')
+                if i < MARTINGALE: add_log(f"   ➡️ Preparando GALE {i + 1}...", 'loss')
+                else: add_log("   💀 CICLO DE GALE ESGOTADO!", 'loss')
         
         bf = API.get_balance() if API else bi
         print()
         add_log("=" * 50, 'info')
         add_log(f"{'🌟 LUCRO' if bf > bi else '💀 PERDA'}: ${abs(bf - bi):.2f} | Saldo: ${bf:.2f}", 'info')
         add_log("=" * 50, 'info')
-    except Exception as e:
-        add_log(f"Erro no pipeline: {e}", 'error')
+    except Exception as e: add_log(f"Erro no pipeline: {e}", 'error')
     finally:
         bot_rodando = False
         add_log("⏹️ Ciclo finalizado! Pronto para reinicialização.", 'info')
@@ -492,11 +464,8 @@ def bot_loop():
     global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, sinal_pendente, ultimo_sinal
     
     with bot_lock:
-        if not bot_rodando:
-            return
-        
+        if not bot_rodando: return
         add_log(f'⚡ TESLA 369 INTERFACE CLOUD - ALGORITMO ACIONADO', 'sensitive')
-        
         if not API:
             add_log('❌ API desconectada!', 'error')
             bot_rodando = False
@@ -507,10 +476,9 @@ def bot_loop():
         lucro = 0.0
         NumDeOperacoes = 0
         ultimo_sinal = "Caçando padrão..."
-        
         add_log(f"📌 Ativo: {par} | Scanner Cloud Ativo | 💰 ${BANCA_INICIAL_DO_BOT:.2f}")
         
-        # 🛸 DISPARO DO BOTZINHO EM MEMÓRIA SECUNDÁRIA (CLOUD INJECTION)
+        # Sincroniza a URL sem subpastas extras
         url_modulo_remoto = f"{GIT_RAW_ESTRATEGIAS_BASE}/{estrategia_atual_global}.py"
         
         def processamento_botzinho_remoto():
@@ -523,10 +491,7 @@ def bot_loop():
                     exec(requisicao.text, {}, escopo_local)
                     
                     if 'rodar_analise' in escopo_local:
-                        # Executa o botzinho injetado direto do github passing active API
                         sinal_detectado = escopo_local['rodar_analise'](API, par, add_log)
-                        
-                        # Retorno estruturado: pode ser string ou dicionário contendo timeframe dinâmico
                         if sinal_detectado and bot_rodando:
                             direcao = ""
                             if isinstance(sinal_detectado, dict):
@@ -536,39 +501,26 @@ def bot_loop():
                                 direcao = str(sinal_detectado).lower()
                             
                             if direcao in ['call', 'put']:
-                                with sinal_lock:
-                                    sinal_pendente = direcao
-                            else:
-                                add_log("⚠️ Botzinho encerrado sem sinal válido.", "info")
-                    else:
-                        add_log("❌ Erro: Ponto de entrada 'rodar_analise' ausente no script cloud.", "error")
-                else:
-                    add_log(f"❌ Erro de download do algoritmo: Status {requisicao.status_code}", "error")
-            except Exception as e:
-                add_log(f"❌ Falha crítica no runtime da estratégia: {e}", "error")
+                                with sinal_lock: sinal_pendente = direcao
+                            else: add_log("⚠️ Botzinho encerrado sem sinal.", "info")
+                    else: add_log("❌ Ponto 'rodar_analise' ausente.", "error")
+                else: add_log(f"❌ Erro de download: Status {requisicao.status_code}", "error")
+            except Exception as e: add_log(f"❌ Falha no runtime da estratégia: {e}", "error")
 
         threading.Thread(target=processamento_botzinho_remoto, daemon=True).start()
         
-        # Monitoramento principal aguardando o trigger do plugin cloud
         while bot_rodando and not STOP_GAIN_ATINGIDO:
             try:
                 with sinal_lock:
                     direcao = sinal_pendente
-                    if direcao:
-                        sinal_pendente = None
-                
+                    if direcao: sinal_pendente = None
                 if direcao in ['call', 'put']:
                     ultimo_sinal = f"GATILHO: {direcao.upper()}"
                     add_log(f"🎯 SINAL DISPARADO PELO PLUGIN: {direcao.upper()}", 'sensitive')
                     executar_ciclo(direcao)
                     break
-                
                 time.sleep(0.3)
-            except Exception as e:
-                time.sleep(2)
-        
-        if not bot_rodando:
-            add_log("⏹️ Varredura abortada.", 'info')
+            except: time.sleep(2)
 
 def analise_mercado_loop():
     global ultima_analise
@@ -576,13 +528,8 @@ def analise_mercado_loop():
     while True:
         if conectado_iq and API:
             ultima_analise = {
-                'rsi': random.uniform(30, 70),
-                'mm5': random.uniform(1.0810, 1.0890),
-                'mm10': random.uniform(1.0810, 1.0890),
-                'mm20': random.uniform(1.0810, 1.0890),
-                'stoch': random.uniform(20, 80),
-                'fase': random.choice(['ACUMULAÇÃO', 'TENDÊNCIA ALTA', 'TENDÊNCIA BAIXA', 'EXAUSTÃO']),
-                'preco': random.uniform(1.08300, 1.08450)
+                'rsi': random.uniform(30, 70), 'mm5': random.uniform(1.0810, 1.0890), 'mm10': random.uniform(1.0810, 1.0890), 'mm20': random.uniform(1.0810, 1.0890), 'stoch': random.uniform(20, 80),
+                'fase': random.choice(['ACUMULAÇÃO', 'TENDÊNCIA ALTA', 'TENDÊNCIA BAIXA', 'EXAUSTÃO']), 'preco': random.uniform(1.08300, 1.08450)
             }
         time.sleep(2)
 
@@ -592,21 +539,27 @@ threading.Thread(target=analise_mercado_loop, daemon=True).start()
 
 @app.route('/')
 def index():
-    return render_template_string(processar_html_com_skin())
+    skin = next((s for s in SKINS if s['id'] == skin_atual_global), SKINS[0])
+    planos_json = []
+    for p in PLANOS:
+        planos_json.append(f'{{"id":{p["id"]},"moedas":{p["moedas"]},"preco":{p["preco"]},"nome":"{p["nome"]}","desc":"{p["desc"]}","tag":"{p.get("tag","")}","desconto":"{p.get("desconto","")}"}}')
+    
+    return render_template(
+        'index.html',
+        COR_FUNDO=skin['cor_fundo'], COR_PANEL=skin['cor_panel'], COR_DESTAQUE=skin['cor_destaque'], COR_TEXTO=skin['cor_texto'],
+        COR_BOTAO=skin['cor_botao'], COR_TAB_ATIVA=skin['cor_tab_ativa'], COR_HEADER_BG=skin['cor_header_bg'], COR_HEADER_BORDA=skin['cor_header_borda'],
+        CSS_EXTRA=skin.get('css_extra', ''), HEADER_EXTRA=skin.get('header_extra', '<div class="lightning"></div>'), PLANOS_JSON=','.join(planos_json)
+    )
 
 @app.route('/sinal', methods=['POST'])
 def receber_sinal():
     global sinal_pendente
-    if not bot_rodando:
-        return jsonify({'ok': False, 'erro': 'Bot em repouso.'})
-    if not conectado_iq:
-        return jsonify({'ok': False, 'erro': 'IQ Option offline.'})
+    if not bot_rodando: return jsonify({'ok': False, 'erro': 'Bot em repouso.'})
+    if not conectado_iq: return jsonify({'ok': False, 'erro': 'IQ Option offline.'})
     data = request.get_json()
     direcao = data.get('direcao', '').lower()
-    if direcao not in ['call', 'put']:
-        return jsonify({'ok': False, 'erro': 'Alvo inválido'})
-    with sinal_lock:
-        sinal_pendente = direcao
+    if direcao not in ['call', 'put']: return jsonify({'ok': False, 'erro': 'Alvo inválido'})
+    with sinal_lock: sinal_pendente = direcao
     return jsonify({'ok': True, 'mensagem': 'Gatilho externo sincronizado'})
 
 @app.route('/status')
@@ -618,33 +571,20 @@ def status():
     
     for skin in SKINS:
         skins_status.append({
-            'id': skin['id'], 'nome': skin['nome'], 'desc': skin['desc'],
-            'preco_moedas': skin['preco_moedas'], 'categoria': skin.get('categoria', 'basica'),
-            'comprado': skin['id'] in skins_compradas, 'ativo': skin['id'] == skin_atual
+            'id': skin['id'], 'nome': skin['nome'], 'desc': skin['desc'], 'preco_moedas': skin['preco_moedas'], 'categoria': skin.get('categoria', 'basica'), 'comprado': skin['id'] in skins_compradas, 'ativo': skin['id'] == skin_atual
         })
     
-    # 🛸 Varre os plugins reais do repositório em tempo real
     estrategias_disponiveis = carregar_estrategias_da_nuvem()
-    
     estrategias_compradas = u.get('estrategias_compradas', ['v_sensitivo']) if u else ['v_sensitivo']
     estrategia_atual = u.get('estrategia_atual', 'v_sensitivo') if u else 'v_sensitivo'
     
-    if estrategia_atual not in estrategias_disponiveis:
-        estrategia_atual = 'v_sensitivo'
-        
+    if estrategia_atual not in estrategias_disponiveis: estrategia_atual = 'v_sensitivo'
     estrategia_nome = estrategias_disponiveis.get(estrategia_atual, {}).get('nome', 'V-Sensitivo Script')
 
     return jsonify({
-        'conectado': conectado_iq, 'rodando': bot_rodando, 'email': email_usuario_atual,
-        'banca': API.get_balance() if API else 0, 'lucro': lucro, 'ops': NumDeOperacoes,
-        'sinal': ultimo_sinal, 'logs': get_logs_html(40),
-        'moedas': u.get('moedas', 0) if u else 0, 'skin_id': skin_atual,
-        'skins_status': skins_status,
-        'estrategia': estrategia_atual,
-        'estrategia_nome': estrategia_nome,
-        'estrategias_compradas': estrategias_compradas,
-        'estrategias_disponiveis': estrategias_disponiveis,
-        'analise': ultima_analise
+        'conectado': conectado_iq, 'rodando': bot_rodando, 'email': email_usuario_atual, 'banca': API.get_balance() if API else 0, 'lucro': lucro, 'ops': NumDeOperacoes,
+        'sinal': ultimo_sinal, 'logs': get_logs_html(40), 'moedas': u.get('moedas', 0) if u else 0, 'skin_id': skin_atual, 'skins_status': skins_status,
+        'estrategia': estrategia_atual, 'estrategia_nome': estrategia_nome, 'estrategias_compradas': estrategias_compradas, 'estrategias_disponiveis': estrategias_disponiveis, 'analise': ultima_analise
     })
 
 @app.route('/set_percentual', methods=['POST'])
@@ -658,14 +598,11 @@ def selecionar_estrategia():
     global estrategia_atual_global
     d = request.get_json() or {}
     est_id = d.get('estrategia', 'v_sensitivo')
-    if not email_usuario_atual:
-        return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+    if not email_usuario_atual: return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
     u = carregar_usuario(email_usuario_atual)
-    if not u:
-        return jsonify({'ok': False, 'erro': 'Cadastro inexistente'})
+    if not u: return jsonify({'ok': False, 'erro': 'Cadastro inexistente'})
     estrategias_compradas = u.get('estrategias_compradas', ['v_sensitivo'])
-    if est_id not in estrategias_compradas:
-        return jsonify({'ok': False, 'erro': 'Estratégia bloqueada!'})
+    if est_id not in estrategias_compradas: return jsonify({'ok': False, 'erro': 'Estratégia bloqueada!'})
     u['estrategia_atual'] = est_id
     salvar_usuario(email_usuario_atual, u)
     estrategia_atual_global = est_id
@@ -676,26 +613,21 @@ def selecionar_estrategia():
 def comprar_estrategia():
     d = request.get_json() or {}
     est_id = d.get('estrategia_id', '')
-    if not email_usuario_atual:
-        return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+    if not email_usuario_atual: return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
     
     estrategias_disponiveis = carregar_estrategias_da_nuvem()
-    if est_id not in estrategias_disponiveis:
-        return jsonify({'ok': False, 'erro': 'Estratégia inválida no repositório Cloud'})
+    if est_id not in estrategias_disponiveis: return jsonify({'ok': False, 'erro': 'Estratégia inválida no repositório Cloud'})
         
     u = carregar_usuario(email_usuario_atual)
-    if not u:
-        return jsonify({'ok': False, 'erro': 'Usuário inválido'})
-    if 'estrategias_compradas' not in u:
-        u['estrategias_compradas'] = ['v_sensitivo']
+    if not u: return jsonify({'ok': False, 'erro': 'Usuário inválido'})
+    if 'estrategias_compradas' not in u: u['estrategias_compradas'] = ['v_sensitivo']
     if est_id in u['estrategias_compradas']:
         u['estrategia_atual'] = est_id
         salvar_usuario(email_usuario_atual, u)
         return jsonify({'ok': True, 'moedas': u['moedas'], 'msg': 'Já adquirido!'})
         
     preco = estrategias_disponiveis[est_id]['preco_moedas']
-    if u.get('moedas', 0) < preco:
-        return jsonify({'ok': False, 'erro': f'Saldo insuficiente ({preco} ⚡)'})
+    if u.get('moedas', 0) < preco: return jsonify({'ok': False, 'erro': f'Saldo insuficiente ({preco} ⚡)'})
         
     u['moedas'] -= preco
     u['estrategias_compradas'].append(est_id)
@@ -715,14 +647,12 @@ def conectar():
         email = d.get('email', '').strip()
         senha = d.get('senha', '').strip()
         tipo = d.get('tipo', 'PRACTICE')
-        if not email or not senha:
-            return jsonify({'ok': False, 'erro': 'Credenciais em branco'})
+        if not email or not senha: return jsonify({'ok': False, 'erro': 'Credenciais em branco'})
         email_usuario_atual = email
         
         API = IQ_Option(email, senha)
         status_conn, reason = API.connect()
-        if not status_conn:
-            return jsonify({'ok': False, 'erro': str(reason)[:100]})
+        if not status_conn: return jsonify({'ok': False, 'erro': str(reason)[:100]})
         API.change_balance(tipo)
         conectado_iq = True
         usuario = carregar_usuario(email) or criar_usuario(email)
@@ -738,25 +668,18 @@ def conectar():
         add_log('🔌 Conectado ao Liquidity Pool da corretora!', 'info')
         add_log(f'✅ Autenticado! ${API.get_balance():.2f} | ⚡ {usuario.get("moedas", 0)} VOLTS', 'win')
         return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0)})
-    except Exception as e:
-        return jsonify({'ok': False, 'erro': str(e)[:100]})
+    except Exception as e: return jsonify({'ok': False, 'erro': str(e)[:100]})
 
 @app.route('/comecar_operar', methods=['POST'])
 def comecar_operar():
     global bot_rodando, bot_thread, lucro, NumDeOperacoes
     try:
-        if not conectado_iq:
-            return jsonify({'ok': False, 'erro': 'Efetue a conexão!'})
-        
+        if not conectado_iq: return jsonify({'ok': False, 'erro': 'Efetue a conexão!'})
         with bot_lock:
-            if bot_rodando and bot_thread and bot_thread.is_alive():
-                return jsonify({'ok': False, 'erro': 'Operação em andamento!'})
-            
+            if bot_rodando and bot_thread and bot_thread.is_alive(): return jsonify({'ok': False, 'erro': 'Operação em andamento!'})
             usuario = carregar_usuario(email_usuario_atual)
-            if not usuario:
-                return jsonify({'ok': False, 'erro': 'Registro ausente'})
-            if usuario.get('moedas', 0) < 1:
-                return jsonify({'ok': False, 'erro': 'Carga esgotada! Compre VOLTS.'})
+            if not usuario: return jsonify({'ok': False, 'erro': 'Registro ausente'})
+            if usuario.get('moedas', 0) < 1: return jsonify({'ok': False, 'erro': 'Carga esgotada! Compre VOLTS.'})
             
             usuario['moedas'] -= 1
             usuario['total_ciclos'] += 1
@@ -768,17 +691,14 @@ def comecar_operar():
             bot_thread = threading.Thread(target=bot_loop, daemon=True)
             bot_thread.start()
         return jsonify({'ok': True, 'moedas': usuario['moedas']})
-    except Exception as e:
-        return jsonify({'ok': False, 'erro': str(e)[:100]})
+    except Exception as e: return jsonify({'ok': False, 'erro': str(e)[:100]})
 
 @app.route('/parar', methods=['POST'])
 def parar():
     global bot_rodando, conectado_iq
     data = request.json or {}
-    with bot_lock:
-        bot_rodando = False
-    if data.get('desconectar'):
-        conectado_iq = False
+    with bot_lock: bot_rodando = False
+    if data.get('desconectar'): conectado_iq = False
     return jsonify({'ok': True})
 
 @app.route('/comprar_skin', methods=['POST'])
@@ -786,32 +706,25 @@ def comprar_skin():
     global skin_atual_global
     d = request.get_json()
     skin_id = d.get('skin_id', '')
-    if not email_usuario_atual:
-        return jsonify({'ok': False, 'erro': 'Efetue login'})
+    if not email_usuario_atual: return jsonify({'ok': False, 'erro': 'Efetue login'})
     skin = next((s for s in SKINS if s['id'] == skin_id), None)
-    if not skin:
-        return jsonify({'ok': False, 'erro': 'Não encontrado'})
+    if not skin: return jsonify({'ok': False, 'erro': 'Não encontrado'})
     usuario = carregar_usuario(email_usuario_atual)
-    if not usuario:
-        return jsonify({'ok': False, 'erro': 'Inválido'})
+    if not usuario: return jsonify({'ok': False, 'erro': 'Inválido'})
     if skin['preco_moedas'] == 0:
-        if 'skins_compradas' not in usuario:
-            usuario['skins_compradas'] = ['skin_padrao']
-        if skin_id not in usuario['skins_compradas']:
-            usuario['skins_compradas'].append(skin_id)
+        if 'skins_compradas' not in usuario: usuario['skins_compradas'] = ['skin_padrao']
+        if skin_id not in usuario['skins_compradas']: usuario['skins_compradas'].append(skin_id)
         usuario['skin_atual'] = skin_id
         salvar_usuario(email_usuario_atual, usuario)
         skin_atual_global = skin_id
         return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0), 'msg': 'Skin grátis injetada!'})
-    if 'skins_compradas' not in usuario:
-        usuario['skins_compradas'] = ['skin_padrao']
+    if 'skins_compradas' not in usuario: usuario['skins_compradas'] = ['skin_padrao']
     if skin_id in usuario['skins_compradas']:
         usuario['skin_atual'] = skin_id
         salvar_usuario(email_usuario_atual, usuario)
         skin_atual_global = skin_id
         return jsonify({'ok': True, 'moedas': usuario['moedas'], 'msg': 'Ativada!'})
-    if usuario.get('moedas', 0) < skin['preco_moedas']:
-        return jsonify({'ok': False, 'erro': 'VOLTS insuficientes'})
+    if usuario.get('moedas', 0) < skin['preco_moedas']: return jsonify({'ok': False, 'erro': 'VOLTS insuficientes'})
     usuario['moedas'] -= skin['preco_moedas']
     usuario['skins_compradas'].append(skin_id)
     usuario['skin_atual'] = skin_id
@@ -823,25 +736,21 @@ def comprar_skin():
 def ativar_skin():
     d = request.get_json()
     skin_id = d.get('skin_id', '')
-    if not email_usuario_atual:
-        return jsonify({'ok': False, 'erro': 'Efetue a conexão'})
+    if not email_usuario_atual: return jsonify({'ok': False, 'erro': 'Efetue a conexão'})
     usuario = carregar_usuario(email_usuario_atual)
-    if not usuario:
-        return jsonify({'ok': False, 'erro': 'Não encontrado'})
-    if 'skins_compradas' not in usuario:
-        usuario['skins_compradas'] = ['skin_padrao']
+    if not usuario: return jsonify({'ok': False, 'erro': 'Não encontrado'})
+    if 'skins_compradas' not in usuario: usuario['skins_compradas'] = ['skin_padrao']
     if skin_id not in usuario['skins_compradas']:
         skin = next((s for s in SKINS if s['id'] == skin_id), None)
-        if skin and skin['preco_moedas'] > 0:
-            return jsonify({'ok': False, 'erro': 'Bloqueado'})
+        if skin and skin['preco_moedas'] > 0: return jsonify({'ok': False, 'erro': 'Bloqueado'})
         usuario['skins_compradas'].append(skin_id)
     usuario['skin_atual'] = skin_id
-    salvar_usuario(email_usuario_atual, usuario)
+    salvar_usuario(email_usuario_atual, u := usuario)
     global skin_atual_global
     skin_atual_global = skin_id
     return jsonify({'ok': True})
 
-# ========== SINTONIA GATEWAY MERCADO PAGO ==========
+# ========== INTERFACE GATEWAY MERCADO PAGO ==========
 
 def gerar_pix_mercadopago(email, plano):
     if MODO_SIMULACAO:
@@ -849,14 +758,11 @@ def gerar_pix_mercadopago(email, plano):
         pagamentos_pendentes[pix_id] = {'email': email, 'plano_id': plano['id'], 'moedas': plano['moedas'], 'valor': plano['preco'], 'pago': False, 'criado_em': str(datetime.now())[:19]}
         qr_code_falso = f"00020126360014BR.GOV.BCB.PIX0136{email}5204000053039865404{plano['preco']:.2f}5802BR5909Tesla3696009Sao Paulo62070503***6304E3F9"
         return {'sucesso': True, 'simulacao': True, 'pix_id': pix_id, 'qr_code': qr_code_falso, 'qr_code_base64': '', 'valor': plano['preco'], 'moedas': plano['moedas']}
-    
     try:
         url = "https://api.mercadopago.com/v1/payments"
         headers = {"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}", "Content-Type": "application/json", "X-Idempotency-Key": str(uuid.uuid4())}
         payment_data = {
-            "transaction_amount": float(plano['preco']),
-            "description": f"TESLA369 - {plano['moedas']} VOLTS",
-            "payment_method_id": "pix",
+            "transaction_amount": float(plano['preco']), "description": f"TESLA369 - {plano['moedas']} VOLTS", "payment_method_id": "pix",
             "payer": {"email": email, "first_name": "Traders", "last_name": "Tesla", "identification": {"type": "CPF", "number": "00000000000"}}
         }
         response = requests.post(url, json=payment_data, headers=headers, timeout=30)
@@ -867,20 +773,16 @@ def gerar_pix_mercadopago(email, plano):
             qr_code_base64 = data.get('point_of_interaction', {}).get('transaction_data', {}).get('qr_code_base64', '')
             pagamentos_pendentes[pix_id] = {'email': email, 'plano_id': plano['id'], 'moedas': plano['moedas'], 'valor': plano['preco'], 'pago': False, 'criado_em': str(datetime.now())[:19]}
             return {'sucesso': True, 'simulacao': False, 'pix_id': pix_id, 'qr_code': qr_code, 'qr_code_base64': qr_code_base64, 'valor': plano['preco'], 'moedas': plano['moedas']}
-        return {'sucesso': False, 'erro': 'Gateway de pagamento recusado'}
-    except Exception as e:
-        return {'sucesso': False, 'erro': str(e)[:50]}
+        return {'sucesso': False, 'erro': 'Gateway rejeitado'}
+    except Exception as e: return {'sucesso': False, 'erro': str(e)[:50]}
 
 def verificar_pagamento_mp(pix_id):
-    if MODO_SIMULACAO:
-        return pagamentos_pendentes.get(pix_id, {}).get('pago', False)
+    if MODO_SIMULACAO: return pagamentos_pendentes.get(pix_id, {}).get('pago', False)
     try:
         url = f"https://api.mercadopago.com/v1/payments/{pix_id}"
         headers = {"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"}
-        response = requests.get(url, headers=headers, timeout=10)
-        return response.json().get('status') == 'approved'
-    except:
-        return False
+        return requests.get(url, headers=headers, timeout=10).json().get('status') == 'approved'
+    except: return False
 
 def verificador_automatico_pix():
     while True:
@@ -893,19 +795,15 @@ def verificador_automatico_pix():
                     u['moedas'] = u.get('moedas', 0) + dados['moedas']
                     salvar_usuario(dados['email'], u)
                     add_log(f"💰 PIX Sincronizado! +{dados['moedas']} VOLTS para {dados['email']}", "win")
-        except:
-            pass
+        except: pass
 
 threading.Thread(target=verificador_automatico_pix, daemon=True).start()
 
 @app.route('/criar_pix', methods=['POST'])
 def criar_pix():
     d = request.get_json()
-    email = d.get('email', '')
-    plano_id = int(d.get('plano_id') or 1)
-    if not email: return jsonify({'sucesso': False, 'erro': 'Email nulo'})
-    plano = next((p for p in PLANOS if p['id'] == plano_id), None)
-    return jsonify(gerar_pix_mercadopago(email, plano))
+    plano = next((p for p in PLANOS if p['id'] == int(d.get('plano_id') or 1)), None)
+    return jsonify(gerar_pix_mercadopago(d.get('email', ''), plano))
 
 @app.route('/verificar_pix', methods=['POST'])
 def verificar_pix():
@@ -926,8 +824,7 @@ def verificar_pix():
 @app.route('/chat_enviar', methods=['POST'])
 def chat_enviar():
     data = request.json
-    try:
-        requests.post(f'{FB_URL}/tesla_369/chat.json', json={'nome': data.get('nome', 'Anonimo')[:15], 'msg': data.get('msg', '')[:200], 'hora': datetime.now().strftime('%H:%M')}, timeout=5)
+    try: requests.post(f'{FB_URL}/tesla_369/chat.json', json={'nome': data.get('nome', 'Anonimo')[:15], 'msg': data.get('msg', '')[:200], 'hora': datetime.now().strftime('%H:%M')}, timeout=5)
     except: pass
     return jsonify({'ok': True})
 
@@ -938,7 +835,7 @@ def chat_mensagens_route():
         return jsonify({'mensagens': list(r.json().values()) if r.status_code==200 and r.json() else [], 'online': 1})
     except: return jsonify({'mensagens': [], 'online': 1})
 
-# ========== RELATÓRIO E SHUTDOWN ==========
+# ========== RELATÓRIO E RANKING ==========
 
 @app.route('/ranking')
 def ranking():
@@ -948,13 +845,8 @@ def ranking():
         for k, ud in usuarios.items():
             if ud:
                 ranking_list.append({
-                    'email': ud.get('email', 'N/A')[:20] + '...',
-                    'lucro_total': round(ud.get('lucro_total', 0), 2),
-                    'total_wins': ud.get('total_wins', 0),
-                    'total_losses': ud.get('total_losses', 0),
-                    'total_ciclos': ud.get('total_ciclos', 0),
-                    'taxa': round((ud.get('total_wins', 0) / max(ud.get('total_ciclos', 1), 1)) * 100, 1),
-                    'banca_atual': round(ud.get('banca_atual', 0), 2)
+                    'email': ud.get('email', 'N/A')[:20] + '...', 'lucro_total': round(ud.get('lucro_total', 0), 2), 'total_wins': ud.get('total_wins', 0),
+                    'total_losses': ud.get('total_losses', 0), 'total_ciclos': ud.get('total_ciclos', 0), 'taxa': round((ud.get('total_wins', 0) / max(ud.get('total_ciclos', 1), 1)) * 100, 1), 'banca_atual': round(ud.get('banca_atual', 0), 2)
                 })
     except: pass
     ranking_list.sort(key=lambda x: x['lucro_total'], reverse=True)
@@ -963,8 +855,7 @@ def ranking():
     return jsonify({'ranking': ranking_list[:20], 'stats': {'total_usuarios': len(ranking_list), 'total_ops': tc, 'total_wins': tw, 'taxa_global': round((tw/max(tc,1))*100,1)}})
 
 @app.route('/relatorio')
-def relatorio():
-    return jsonify(carregar_usuario(request.args.get('email', '')) or {'erro': 'Nao encontrado'})
+def relatorio(): return jsonify(carregar_usuario(request.args.get('email', '')) or {'erro': 'Nao encontrado'})
 
 @app.route('/resetar', methods=['POST'])
 def resetar():
@@ -982,7 +873,11 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 50)
-    print("⚡ TESLA 369 BOT v9.0.0 - CLOUD PIPELINE OK ⚡")
+    print("⚡ TESLA 369 BOT v9.0.1 - PIPELINE CLOUD ESTÁVEL ⚡")
     print("=" * 50)
+    
+    # Sincronização limpa inicial antes do startup
+    sincronizar_html_local()
+    
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
