@@ -71,48 +71,7 @@
         .badge-gratis{background:#00ff88;color:#000;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block}
         .badge-pago{background:#ffd700;color:#000;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block}
         .sub-tabs{display:flex;gap:5px;margin-bottom:15px}.sub-tab{padding:8px 16px;background:#111;border:1px solid #333;border-radius:8px 8px 0 0;cursor:pointer;color:#888;font-size:11px}.sub-tab.active{background:linear-gradient(135deg,#cc8800,#ffd700);color:#000;font-weight:bold;border-color:#ffd700}.sub-tab:hover{background:#1a1a2e;color:#fff}.sub-panel{display:none}.sub-panel.active{display:block}
-        /* 🎨 LOJA PREMIUM - NOVO DESIGN */
-        .loja-container{padding:10px 0}
-        .loja-titulo{text-align:center;color:{{ COR_DESTAQUE }};font-size:16px;margin-bottom:15px;text-shadow:0 0 20px {{ COR_TAB_ATIVA }};letter-spacing:2px}
-        .planos-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;padding:5px}
-        .plano-card{background:linear-gradient(180deg,#1a1a2e 0%,#0d0d1a 100%);padding:15px 10px;border-radius:16px;border:1px solid #333;text-align:center;cursor:pointer;transition:all .3s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden;animation:fadeInUp .5s ease backwards}
-        .plano-card:nth-child(1){animation-delay:.1s}
-        .plano-card:nth-child(2){animation-delay:.2s}
-        .plano-card:nth-child(3){animation-delay:.3s}
-        .plano-card:nth-child(4){animation-delay:.4s}
-        .plano-card:nth-child(5){animation-delay:.5s}
-        .plano-card:hover{transform:translateY(-6px);border-color:{{ COR_DESTAQUE }};box-shadow:0 12px 30px rgba(255,215,0,.2),0 0 60px rgba(255,215,0,.05)}
-        .plano-card.selecionado{border-color:#ffd700!important;box-shadow:0 0 30px rgba(255,215,0,.5),inset 0 0 30px rgba(255,215,0,.05);background:linear-gradient(180deg,#2a2a1e 0%,#1a1a0d 100%)}
-        .plano-card.selecionado::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle,rgba(255,215,0,.1) 0%,transparent 70%);animation:rotate 4s linear infinite}
-        .plano-icone{font-size:28px;margin-bottom:6px;filter:drop-shadow(0 0 8px {{ COR_DESTAQUE }})}
-        .plano-nome{color:{{ COR_DESTAQUE }};font-weight:bold;font-size:12px;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px}
-        .plano-moedas{font-size:28px;font-weight:bold;background:linear-gradient(180deg,#ffd700,#ff8c00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:5px 0}
-        .plano-preco{font-size:16px;color:#00ff88;font-weight:bold}
-        .plano-badge{position:absolute;top:10px;right:10px;background:linear-gradient(135deg,#ff4444,#ff6600);color:#fff;font-size:8px;padding:3px 8px;border-radius:12px;font-weight:bold;animation:pulse 2s infinite}
-        .skin-card{background:linear-gradient(180deg,#1a102a 0%,#0d0a1a 100%);padding:15px 10px;border-radius:16px;border:1px solid #333;text-align:center;cursor:pointer;transition:all .3s ease;position:relative;overflow:hidden;animation:fadeInUp .4s ease backwards}
-        .skin-card:hover{transform:translateY(-5px);border-color:#9933ff;box-shadow:0 10px 25px rgba(153,51,255,.2)}
-        .skin-card.ativo{border-color:#00ff88!important;box-shadow:0 0 25px rgba(0,255,136,.3),inset 0 0 20px rgba(0,255,136,.03)}
-        .skin-icone{font-size:30px;margin-bottom:5px}
-        .skin-nome{color:#cc66ff;font-weight:bold;font-size:13px;margin-bottom:4px}
-        .skin-desc{color:#888;font-size:9px;margin-bottom:8px;line-height:1.3}
-        .btn-loja{padding:10px 16px;border:none;border-radius:10px;font-weight:bold;cursor:pointer;font-size:11px;width:100%;transition:all .2s ease;text-transform:uppercase;letter-spacing:1px}
-        .btn-comprar-volts{background:linear-gradient(135deg,#ff8c00,#ffd700);color:#000;box-shadow:0 4px 15px rgba(255,215,0,.3)}
-        .btn-comprar-volts:hover{transform:scale(1.03);box-shadow:0 6px 20px rgba(255,215,0,.5)}
-        .btn-comprar-skin{background:linear-gradient(135deg,#6600cc,#9933ff);color:#fff;box-shadow:0 4px 15px rgba(153,51,255,.3)}
-        .btn-comprar-skin:hover{transform:scale(1.03);box-shadow:0 6px 20px rgba(153,51,255,.5)}
-        .btn-comprar-est{background:linear-gradient(135deg,#006644,#00aa55);color:#fff;box-shadow:0 4px 15px rgba(0,170,85,.3)}
-        .btn-comprar-est:hover{transform:scale(1.03);box-shadow:0 6px 20px rgba(0,170,85,.5)}
-        .btn-comprado{background:linear-gradient(135deg,#222,#333);color:#00ff88;border:1px solid #00ff88;cursor:default;box-shadow:0 0 10px rgba(0,255,136,.1)}
-        .badge-preco{display:inline-block;padding:4px 10px;border-radius:10px;font-size:9px;font-weight:bold;margin:5px 0}
-        .badge-gratis{background:#00ff8822;color:#00ff88;border:1px solid #00ff8844}
-        .badge-pago{background:#ffd70022;color:#ffd700;border:1px solid #ffd70044}
-        .badge-pago{background:#ffd70022;color:#ffd700;border:1px solid #ffd70044}
-        .badge-destaque{position:absolute;top:8px;left:8px;background:linear-gradient(135deg,#ffd700,#ff8c00);color:#000;font-size:7px;padding:3px 8px;border-radius:8px;font-weight:bold}
-        @keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes rotate{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
-        @keyframes brilho{0%,100%{box-shadow:0 0 5px {{ COR_DESTAQUE }}}50%{box-shadow:0 0 20px {{ COR_DESTAQUE }},0 0 40px {{ COR_TAB_ATIVA }}}}
-        /* ═══════════════ LOJA PREMIUM V5 ═══════════════ */
+        /* 🎨 LOJA PREMIUM - DESIGN AVANÇADO V5 */
         .planos-grid,.skins-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;padding:8px}
         .plano-card,.skin-card{background:linear-gradient(180deg,#111122 0%,#0a0a15 100%);padding:18px 14px;border-radius:18px;border:2px solid #1a1a2e;text-align:center;cursor:pointer;transition:all .35s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden}
         .plano-card::before,.skin-card::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,215,0,.03),transparent);transition:left .6s ease}
@@ -264,7 +223,7 @@
             <button onclick="enviarChatMsg()" class="btn btn-info" style="padding:10px 20px">ENVIAR</button>
         </div>
         <div style="text-align:center;margin-top:5px">
-            <span style="color:#888;font-size:9px" id="chatOnline">0 online</span>
+            <span style="color:#888;font-size:9px;chatOnline" id="chatOnline">0 online</span>
         </div>
     </div>
     
@@ -286,27 +245,6 @@
                 O Tesla 369 analisa <span style="color:#00ff88">padrões de velas</span> em tempo real usando indicadores técnicos. Cada estratégia tem seu próprio <span style="color:#ffd700">timeframe e gatilho</span> de entrada. Quando encontra um padrão com alta probabilidade, ele <span style="color:#ffd700">abre uma ordem automaticamente</span>. O robô busca <span style="color:#ffd700;font-weight:bold">+10% de retorno</span> sobre o valor que você definir como entrada. Se perder, ele aplica <span style="color:#ff4444">Martingale (Gale 2)</span> dobrando o valor por até 2 vezes. <span style="color:#00ff88;font-weight:bold">Stop Gain:</span> 1 WIN = bot para automaticamente (você precisa clicar novamente).
             </p>
         </div>
-        <div style="background:#0a1a0a;border:1px solid #00ff88;border-radius:15px;padding:20px;margin:10px 0">
-            <p style="color:#00ff88;font-size:14px;font-weight:bold;margin-bottom:10px">💰 RISCOS REAIS</p>
-            <p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify">
-                <span style="color:#ff4444">• Você pode PERDER TODO seu dinheiro.</span><br>
-                • Opções binárias são proibidas em vários países.<br>
-                • O Martingale é perigoso: 3 perdas seguidas consomem 7x o valor inicial.<br>
-                • <span style="color:#ffd700">NUNCA invista dinheiro que você não pode perder.</span><br>
-                • Resultados passados não garantem resultados futuros.<br>
-                • O robô é uma ferramenta de <span style="color:#ffd700">análise automatizada</span>, não uma garantia de lucro.
-            </p>
-        </div>
-        <div style="background:#1a0000;border:2px solid #ff4444;border-radius:15px;padding:20px;margin:10px 0">
-            <p style="color:#ff4444;font-size:16px;text-align:center;font-weight:bold;margin-bottom:15px">⚠️ A VERDADE SOBRE A IQ OPTION</p>
-            <p style="color:#ff8888;font-size:12px;line-height:1.8;text-align:justify">
-                A <span style="color:#ffd700;font-weight:bold">IQ Option</span> <span style="color:#ff4444;font-weight:bold">NÃO É</span> o mercado financeiro real. Ela é uma <span style="color:#ffd700;font-weight:bold">corretora de opções binárias</span> - um modelo onde você aposta se o preço vai subir ou descer. Não há compra real de ativos. É uma <span style="color:#ff4444;font-weight:bold">aposta</span> contra a própria corretora.
-            </p>
-        </div>
-        <div style="text-align:center;margin-top:15px">
-            <p style="color:#ffd700;font-size:12px;font-weight:bold">🎯 A INTENÇÃO É GANHAR DINHEIRO - MAS COM CONSCIÊNCIA</p>
-            <p style="color:#888;font-size:10px;margin-top:5px">Use com responsabilidade. Conheça os riscos. Comece pela conta PRACTICE.</p>
-        </div>
     </div>
     
     <div class="panel" id="panel-contato">
@@ -314,26 +252,8 @@
         <div style="background:linear-gradient(135deg,#1a1a2e,#0d0d1a);border:2px solid #ffd700;border-radius:15px;padding:20px;margin:10px 0;text-align:center">
             <p style="color:#ffd700;font-size:18px;font-weight:bold;margin-bottom:10px">⚡ POR QUE ESCOLHER O TESLA 369?</p>
             <p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify">
-                🔹 <span style="color:#ffd700">Automatizacao real:</span> Enquanto outros bots dependem de sinais manuais ou estrategias duvidosas, o Tesla 369 opera com <span style="color:#00ff88">inteligencia automatizada</span> baseada em multiplos indicadores tecnicos.<br><br>
-                🔹 <span style="color:#ffd700">Custo-beneficio imbativel:</span> Bots similares custam <span style="color:#ff4444">R$50 a R$200 por mes</span>. O Tesla 369 e <span style="color:#00ff88">GRATIS para comecar</span>, com planos a partir de <span style="color:#00ff88">R$0,99</span>.<br><br>
-                🔹 <span style="color:#ffd700">Personalizacao total:</span> <span style="color:#00ff88">15 skins</span> exclusivas para deixar o bot com a sua cara. Nenhum outro bot oferece isso.<br><br>
-                🔹 <span style="color:#ffd700">Suporte direto:</span> Diferente de bots abandonados, aqui voce <span style="color:#00ff88">fala direto com o desenvolvedor</span>.<br><br>
-                🔹 <span style="color:#ffd700">Seguranca:</span> Seus dados salvos na nuvem. <span style="color:#00ff88">Nunca perde suas skins ou estrategias</span>.
+                🔹 <span style="color:#ffd700">Automatizacao real:</span> Enquanto outros bots dependem de sinais manuais ou estrategias duvidosas, o Tesla 369 opera com <span style="color:#00ff88">inteligencia automatizada</span> baseada em multiplos indicadores tecnicos.
             </p>
-        </div>
-        <div style="background:linear-gradient(135deg,#1a0000,#0d0000);border:2px solid #ff4444;border-radius:15px;padding:20px;margin:10px 0;text-align:center">
-            <p style="color:#ff4444;font-size:14px;font-weight:bold;margin-bottom:10px">⚠️ CUIDADO COM BOTS GRATUITOS!</p>
-            <p style="color:#ff8888;font-size:11px;line-height:1.8;text-align:justify">
-                Muitos bots gratuitos por ai sao <span style="color:#ffd700">abandonados pelos desenvolvedores</span>, contem <span style="color:#ffd700">virus</span> ou simplesmente <span style="color:#ffd700">nao funcionam</span>. O Tesla 369 e <span style="color:#00ff88">atualizado constantemente</span> e tem uma comunidade activa. Invista em uma ferramenta que <span style="color:#00ff88">realmente traz resultados</span>.
-            </p>
-        </div>
-        <div style="background:linear-gradient(135deg,#1a1a2e,#0d0d1a);border:2px solid #25D366;border-radius:15px;padding:20px;margin:15px 0;text-align:center">
-            <p style="color:#25D366;font-size:16px;font-weight:bold;margin-bottom:10px">💬 FALE COM O DESENVOLVEDOR</p>
-            <p style="color:#ccc;font-size:12px;margin:5px 0">📧 <span style="color:#00ff88">gyn.bet.fc@gmail.com</span></p>
-            <a href="https://wa.me/5562981728653?text=Ola!%20Vim%20do%20Tesla%20369%20Bot%20v7.0.3%20e%20gostaria%20de%20saber%20mais!" target="_blank" style="text-decoration:none">
-                <button style="background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;padding:14px 28px;border-radius:12px;font-size:15px;font-weight:bold;cursor:pointer;margin-top:10px;font-family:monospace;box-shadow:0 4px 15px rgba(37,211,102,0.3);transition:all 0.3s ease" onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 6px 20px rgba(37,211,102,0.5)'" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 4px 15px rgba(37,211,102,0.3)'">💬 WHATSAPP</button>
-            </a>
-            <p style="color:#888;font-size:10px;margin-top:10px">Duvidas, sugestoes ou interesse em recursos premium? Fale comigo!</p>
         </div>
     </div>
     
@@ -352,17 +272,9 @@
 </div>
 
 <script>
-// PLANOS e ESTRATÉGIAS injetados diretamente pelo backend via Flask Jinja2
 var PLANOS = [{{ PLANOS_JSON | safe }}];
-var estrategias = {
-    'v_sensitivo': { 'nome': 'V-Sensitivo Script', 'desc': 'Análise profunda de momentum de velas com RSI, Estocástico e cruzamento de Médias Móveis.' },
-    'terceira_igual_primeira': { 'nome': '3ª Igual à 1ª', 'desc': 'Estratégia probabilística de ciclos de cores de velas para o mesmo quadrante.' },
-    'mhi_filtrado': { 'nome': 'MHI Filtrado Premium', 'desc': 'Famosa estratégia baseada nas minorias ou maiorias das últimas 3 velas com filtro de tendência.' },
-    'quadrante_de_7': { 'nome': 'Quadrante de 7', 'desc': 'Gatilho técnico acionado após a leitura sequencial de blocos de 7 velas seguidas.' },
-    'fluxo_de_velas': { 'nome': 'Fluxo de Velas', 'desc': 'Entradas a favor da continuação da força motriz do mercado após rompimentos.' },
-    'reversao': { 'nome': 'Reversão M1', 'desc': 'Identificação exata de exaustão de preço em regiões de suporte e resistência elásticos.' },
-    'm5': { 'nome': 'M5 Conservador', 'desc': 'Operações de maior tempo de expiração mitigando falsos rompimentos de ruído.' }
-};
+var intervalo=null,botAtivo=false,conectadoIQ=false,emailLogado='',planoSelecionado=0,pixAtual=null;
+var estrategiaSel='v_sensitivo';
 
 function mostrarCategoriaSkin(categoria) {
     document.querySelectorAll('[id^="sub-sub-tab-"]').forEach(function(t) { t.classList.remove('active'); });
@@ -385,9 +297,6 @@ function mostrarSubAba(aba){
     if(aba==='estrategias') renderLojaEstrategias();
     if(aba==='moedas') renderPlanos();
 }
-
-var intervalo=null,botAtivo=false,conectadoIQ=false,emailLogado='',planoSelecionado=0,pixAtual=null;
-var estrategiaSel='v_sensitivo';
 
 function openTab(tab){
     document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -440,16 +349,6 @@ function conectarIQ(){
         if(d.ok){
             conectadoIQ=true;
             setTimeout(function(){location.reload()},2000);
-            document.getElementById('btnConectar').style.display='none';
-            document.getElementById('btnDesconectar').style.display='inline-block';
-            document.getElementById('btnOperar').style.display='inline-block';
-            document.getElementById('btnParar').style.display='none';
-            document.getElementById('statusTexto').textContent='🟢 Conectado';
-            document.getElementById('statusDot').className='status-dot active';
-            document.getElementById('moedasSaldo').textContent=d.moedas||0;
-            if(intervalo)clearInterval(intervalo);
-            intervalo=setInterval(atualizar,2000);
-            atualizar();
         }else{
             alert('ERRO: '+d.erro);
             document.getElementById('btnConectar').disabled=false;
@@ -458,29 +357,9 @@ function conectarIQ(){
     });
 }
 
-function desconectarIQ(){
-    if(botAtivo){alert('⚠️ Pare o bot primeiro!');return;}
-    if(confirm('Desconectar da IQ Option?')){
-        fetch('/parar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({desconectar:true})}).then(function(){fetch('/shutdown');setTimeout(function(){location.reload()},2000)})
-        .then(r=>r.json()).then(d=>{
-            conectadoIQ=false;
-            document.getElementById('btnConectar').style.display='inline-block';
-            document.getElementById('btnConectar').disabled=false;
-            document.getElementById('btnConectar').textContent='🔌 CONECTAR';
-            document.getElementById('btnDesconectar').style.display='none';
-            document.getElementById('btnOperar').style.display='none';
-            document.getElementById('btnParar').style.display='none';
-            document.getElementById('statusTexto').textContent='⏸️ Desconectado';
-            document.getElementById('statusDot').className='status-dot inactive';
-            if(intervalo)clearInterval(intervalo);
-        });
-    }
-}
-
 function comecarOperar(){
     if(!conectadoIQ){alert('Conecte primeiro!');return}
     document.getElementById('btnOperar').disabled=true;
-    document.getElementById('btnOperar').textContent='...';
     fetch('/comecar_operar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})})
     .then(r=>r.json()).then(d=>{
         if(d.ok){
@@ -492,7 +371,6 @@ function comecarOperar(){
         }else{
             alert('ERRO: '+d.erro);
             document.getElementById('btnOperar').disabled=false;
-            document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
         }
     });
 }
@@ -500,29 +378,23 @@ function comecarOperar(){
 function pararBot(){
     if(!confirm('Parar o bot?'))return;
     fetch('/parar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})})
-    .then(r=>r.json()).then(d=>{
-        botAtivo=false;
-        document.getElementById('btnOperar').style.display='inline-block';
-        document.getElementById('btnOperar').disabled=false;
-        document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
-        document.getElementById('btnParar').style.display='none';
-        document.getElementById('statusTexto').textContent='🟢 Conectado';
-        document.getElementById('statusDot').className='status-dot active';
-        if(intervalo)clearInterval(intervalo);
-        setTimeout(function(){ location.reload(); }, 500);
-    });
+    .then(()=>{location.reload()});
 }
+
+// 🛸 COMPILADORES DINÂMICOS - SE ALIMENTAM DO BACKEND DA NUVEM (SEM ESTRUTURAS FIXAS)
 
 function renderEstrategias(){
     fetch('/status').then(r=>r.json()).then(d=>{
         var estrategiasCompradas = d.estrategias_compradas || ['v_sensitivo'];
+        var disponiveis = d.estrategias_disponiveis || {};
         var grid=document.getElementById('estrategiaGrid');
         if(!grid) return;
         var html='';
-        for(var key in estrategias){
+        
+        for(var key in disponiveis){
             if (estrategiasCompradas.includes(key)) {
-                var e=estrategias[key];
-                var ativa=key==estrategiaSel?' ativa':'';
+                var e = disponiveis[key];
+                var ativa = key == estrategiaSel ? ' ativa' : '';
                 html+='<div class="estrategia-card'+ativa+'" onclick="selecionarEstrategia(\''+key+'\')" id="est_'+key+'">';
                 html+='<div style="font-size:14px;font-weight:bold">'+e.nome+'</div>';
                 html+='<div style="font-size:9px;color:#888;margin-top:5px">'+e.desc+'</div>';
@@ -530,19 +402,71 @@ function renderEstrategias(){
             }
         }
         grid.innerHTML=html || '<p style="color:#888;text-align:center">Nenhuma estratégia liberada</p>';
-        if (estrategias[estrategiaSel]) {
-            document.getElementById('estrategiaAtiva').textContent=estrategias[estrategiaSel].nome;
+        if (disponiveis[estrategiaSel]) {
+            document.getElementById('estrategiaAtiva').textContent=disponiveis[estrategiaSel].nome;
         }
     });
 }
 
 function selecionarEstrategia(key){
     estrategiaSel=key;
-    document.getElementById('estrategiaAtiva').textContent=estrategias[key].nome;
     document.querySelectorAll('.estrategia-card').forEach(c=>c.classList.remove('ativa'));
     var card=document.getElementById('est_'+key);
     if(card) card.classList.add('ativa');
-    fetch('/selecionar_estrategia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estrategia:key})});
+    fetch('/selecionar_estrategia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estrategia:key})}).then(()=>renderEstrategias());
+}
+
+function renderLojaEstrategias(){
+    fetch('/status').then(r=>r.json()).then(d=>{
+        var grid = document.getElementById('estrategiasLojaGrid');
+        if (!grid) return;
+        var html = '';
+        var estrategiasCompradas = d.estrategias_compradas || ['v_sensitivo'];
+        var disponiveis = d.estrategias_disponiveis || {};
+        
+        for (var key in disponiveis) {
+            var est = disponiveis[key];
+            var comprado = estrategiasCompradas.includes(key);
+            var btnHtml = '';
+            
+            if (comprado) {
+                btnHtml = '<button class="btn-loja btn-comprado" style="width:100%;margin-top:8px;cursor:default">✅ COMPRADO</button>';
+            } else if (est.gratis) {
+                btnHtml = '<button class="btn-loja btn-comprar-est" style="width:100%;margin-top:8px" onclick="comprarEstrategia(\''+key+'\')">🆓 ATIVAR GRÁTIS</button>';
+            } else {
+                btnHtml = '<button class="btn-loja btn-comprar-est" style="width:100%;margin-top:8px" onclick="comprarEstrategia(\''+key+'\')">🛒 COMPRAR ('+est.preco_moedas+' ⚡)</button>';
+            }
+            
+            html += '<div class="skin-card'+(comprado?' ativo':'')+'">';
+            html += '<div class="skin-nome">'+est.nome+'</div>';
+            html += '<div class="skin-desc">'+est.desc+'</div>';
+            html += '<div style="margin-top:5px">';
+            if (est.gratis) {
+                html += '<span class="badge-gratis">GRÁTIS</span>';
+            } else if (comprado) {
+                html += '<span class="badge-gratis">✅ COMPRADO</span>';
+            } else {
+                html += '<span class="badge-pago">⚡ '+est.preco_moedas+' VOLTS</span>';
+            }
+            html += '</div>';
+            html += btnHtml;
+            html += '</div>';
+        }
+        grid.innerHTML = html;
+    });
+}
+
+function comprarEstrategia(estrategiaId) {
+    if (!emailLogado) { alert('Conecte primeiro!'); return; }
+    if (!confirm('Comprar esta estratégia com VOLTS?')) return;
+    fetch('/comprar_estrategia', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({estrategia_id: estrategiaId})})
+    .then(r => r.json()).then(d => {
+        if (d.ok) {
+            alert(d.msg || 'Adquirida com sucesso!');
+            document.getElementById('moedasSaldo').textContent = d.moedas;
+            renderLojaEstrategias();
+        } else { alert('ERRO: ' + d.erro); }
+    });
 }
 
 function renderPlanos(){
@@ -596,110 +520,20 @@ function renderLojaCategoria(categoria) {
             html += btnHtml;
             html += '</div>';
         });
-        grid.innerHTML = html || '<p style="color:#888;text-align:center">Nenhuma skin nesta categoria</p>';
-    });
-}
-
-function renderLojaEstrategias(){
-    fetch('/status').then(r=>r.json()).then(d=>{
-        var grid = document.getElementById('estrategiasLojaGrid');
-        if (!grid) return;
-        var html = '';
-        var estrategiasCompradas = d.estrategias_compradas || ['v_sensitivo'];
-        var estrategiasDisponiveis = d.estrategias_disponiveis || {};
-        
-        if (Object.keys(estrategiasDisponiveis).length === 0) {
-            var precos = {
-                'v_sensitivo': 0,
-                'terceira_igual_primeira': 3,
-                'mhi_filtrado': 9,
-                'quadrante_de_7': 6,
-                'fluxo_de_velas': 3,
-                'reversao': 3,
-                'm5': 6
-            };
-            for (var key in estrategias) {
-                estrategiasDisponiveis[key] = {
-                    'nome': estrategias[key].nome,
-                    'desc': estrategias[key].desc || '',
-                    'preco_moedas': precos[key] || 5,
-                    'gratis': precos[key] === 0
-                };
-            }
-        }
-        
-        for (var key in estrategiasDisponiveis) {
-            if (estrategiasDisponiveis[key].fixa === true) continue;
-            var est = estrategiasDisponiveis[key];
-            var comprado = estrategiasCompradas.includes(key);
-            var btnHtml = '';
-            
-            if (comprado) {
-                btnHtml = '<button class="btn-loja btn-comprado" style="width:100%;margin-top:8px;cursor:default">✅ COMPRADO</button>';
-            } else if (est.preco_moedas == 0 || est.gratis) {
-                btnHtml = '<button class="btn-loja btn-comprar-est" style="width:100%;margin-top:8px" onclick="comprarEstrategia(\''+key+'\')">🆓 ATIVAR GRÁTIS</button>';
-            } else {
-                btnHtml = '<button class="btn-loja btn-comprar-est" style="width:100%;margin-top:8px" onclick="comprarEstrategia(\''+key+'\')">🛒 COMPRAR ('+est.preco_moedas+' ⚡)</button>';
-            }
-            
-            html += '<div class="skin-card'+(comprado?' ativo':'')+'">';
-            html += '<div class="skin-nome">'+est.nome+'</div>';
-            html += '<div class="skin-desc">'+est.desc+'</div>';
-            html += '<div style="margin-top:5px">';
-            if (est.preco_moedas == 0 || est.gratis) {
-                html += '<span class="badge-gratis">GRÁTIS</span>';
-            } else if (comprado) {
-                html += '<span class="badge-gratis">✅ COMPRADO</span>';
-            } else {
-                html += '<span class="badge-pago">⚡ '+est.preco_moedas+' VOLTS</span>';
-            }
-            html += '</div>';
-            html += btnHtml;
-            html += '</div>';
-        }
-        grid.innerHTML = html;
-    }).catch(function(err) {
-        var grid = document.getElementById('estrategiasLojaGrid');
-        if (grid) grid.innerHTML = '<p style="color:#ff4444;text-align:center">Erro ao carregar loja de estratégias.</p>';
-    });
-}
-
-function comprarEstrategia(estrategiaId) {
-    if (!emailLogado) { alert('Conecte primeiro!'); return; }
-    if (!confirm('Comprar esta estratégia com VOLTS?')) return;
-    fetch('/comprar_estrategia', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({estrategia_id: estrategiaId})
-    })
-    .then(r => r.json()).then(d => {
-        if (d.ok) {
-            alert(d.msg || 'Estratégia adquirida com sucesso!');
-            document.getElementById('moedasSaldo').textContent = d.moedas;
-            renderLojaEstrategias();
-            renderEstrategias();
-        } else {
-            alert('ERRO: ' + d.erro);
-        }
+        grid.innerHTML = html || '<p style="color:#888;text-align:center">Nenhuma skin</p>';
     });
 }
 
 function comprarSkin(skinId){
     if(!emailLogado){alert('Conecte primeiro!');return}
-    if(!confirm('Comprar esta skin?'))return;
     fetch('/comprar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId})})
     .then(r=>r.json()).then(d=>{
-        if(d.ok){alert(d.msg||'Skin comprada!');document.getElementById('moedasSaldo').textContent=d.moedas;mostrarCategoriaSkin('basica');setTimeout(function(){location.reload();},500);}
-        else{alert('ERRO: '+d.erro);}
+        if(d.ok){alert('Adquirida!');renderLojaCategoria('basica');}
     });
 }
 
 function ativarSkin(skinId){
-    fetch('/ativar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId})})
-    .then(r=>r.json()).then(d=>{
-        if(d.ok){alert('Skin ativada!');location.reload();}
-        else{alert('ERRO: '+d.erro);}
-    });
+    fetch('/ativar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId})}).then(()=>location.reload());
 }
 
 function selecionarPlano(id){
@@ -714,29 +548,24 @@ function pagarComPix(planoId){
     var email=document.getElementById('emailCompra').value.trim()||emailLogado;
     if(!email){alert('Digite seu email!');return}
     document.getElementById('modalPix').classList.add('active');
-    document.getElementById('pixContent').innerHTML='<p style="color:#ffd700">Gerando QR Code PIX...</p>';
     fetch('/criar_pix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,plano_id:planoId})})
     .then(r=>r.json()).then(d=>{
         if(d.sucesso){
             pixAtual=d;
-            var html='<p style="font-size:18px;color:#ffd700">R$ '+d.valor.toFixed(2)+'</p>';
-            html+='<p style="color:#00ff88">⚡ '+d.moedas+' VOLTS</p>';
-            if(d.qr_code_base64)html+='<div class="pix-qrcode"><img src="data:image/png;base64,'+d.qr_code_base64+'" alt="QR Code PIX"></div>';
-            if(d.qr_code){html+='<p style="color:#888;font-size:10px;margin-top:8px">📋 Copie o código:</p><div class="pix-copiavel" onclick="copiarPix()">'+d.qr_code+'</div>';}
+            var html='<p style="font-size:18px;color:#ffd700">R$ '+d.valor.toFixed(2)+'</p><p style="color:#00ff88">⚡ '+d.moedas+' VOLTS</p>';
+            if(d.qr_code_base64)html+='<div class="pix-qrcode"><img src="data:image/png;base64,'+d.qr_code_base64+'"></div>';
+            if(d.qr_code)html+='<div class="pix-copiavel" onclick="copiarPix()">'+d.qr_code+'</div>';
             html+='<button class="btn-confirmar" onclick="verificarPagamento(\''+d.pix_id+'\')">🔄 VERIFICAR PAGAMENTO</button>';
             document.getElementById('pixContent').innerHTML=html;
-        }else{document.getElementById('pixContent').innerHTML='<p style="color:#ff4444">Erro: '+(d.erro||'Falha')+'</p>';}
+        }
     });
 }
 
-function copiarPix(){navigator.clipboard.writeText(pixAtual.qr_code).then(()=>alert('Código PIX copiado!'));}
+function copiarPix(){navigator.clipboard.writeText(pixAtual.qr_code).then(()=>alert('Copiado!'));}
 
 function verificarPagamento(pixId){
     fetch('/verificar_pix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pix_id:pixId})})
-    .then(r=>r.json()).then(d=>{
-        if(d.pago){alert('PAGO! +'+d.moedas+' VOLTS!');document.getElementById('moedasSaldo').textContent=d.saldo;fecharModal();}
-        else{alert('Ainda não confirmado.');}
-    });
+    .then(r=>r.json()).then(d=>{if(d.pago){alert('Confirmado!');fecharModal();location.reload();}});
 }
 
 function fecharModal(){document.getElementById('modalPix').classList.remove('active');pixAtual=null;}
@@ -746,23 +575,12 @@ function verRelatorio(){
     if(!email){alert('Digite o email!');return}
     fetch('/relatorio?email='+email).then(r=>r.json()).then(d=>{
         if(d.erro){alert(d.erro);return}
-        var h='<div class="relatorio-grid">';
-        h+='<div class="relatorio-card"><div class="rlabel">⚡ VOLTS</div><div class="rvalue">'+(d.moedas||0)+'</div></div>';
-        h+='<div class="relatorio-card"><div class="rlabel">📈 LUCRO TOTAL</div><div class="rvalue" style="color:'+(d.lucro_total>=0?'#00ff88':'#ff4444')+'">$'+(d.lucro_total||0).toFixed(2)+'</div></div>';
-        h+='<div class="relatorio-card"><div class="rlabel">✅ WINS</div><div class="rvalue" style="color:#00ff88">'+(d.total_wins||0)+'</div></div>';
-        h+='<div class="relatorio-card"><div class="rlabel">❌ LOSSES</div><div class="rvalue" style="color:#ff4444">'+(d.total_losses||0)+'</div></div>';
-        h+='<div class="relatorio-card"><div class="rlabel">🔄 CICLOS</div><div class="rvalue">'+(d.total_ciclos||0)+'</div></div>';
-        h+='<div class="relatorio-card"><div class="rlabel">💵 GASTO</div><div class="rvalue">$'+(d.total_gasto||0).toFixed(2)+'</div></div>';
-        h+='<div class="relatorio-card"><div class="rlabel">💰 GANHO</div><div class="rvalue">$'+(d.total_ganho||0).toFixed(2)+'</div></div>';
-        h+='<div class="relatorio-card"><div class="rlabel">📅 DIAS</div><div class="rvalue">'+(d.dias_ativos || 0)+'</div></div>';
-        h+='<div class="relatorio-card"><div class="rlabel">🎯 TAXA</div><div class="rvalue">'+(d.total_ciclos>0?((d.total_wins/d.total_ciclos)*100).toFixed(1):0)+'%</div></div>';
-        h+='<div class="relatorio-card"><div class="rlabel">💰 BANCA</div><div class="rvalue">$'+(d.banca_atual||0).toFixed(2)+'</div></div>';
-        h+='<div class="relatorio-card"><div class="rlabel">📅 CADASTRO</div><div class="rvalue" style="font-size:10px">'+(d.data_cadastro||'--')+'</div></div>';
-        h+='</div>';
-        if(d.historico_operacoes&&d.historico_operacoes.length>0){
-            h+='<h4 style="margin-top:10px">📋 ÚLTIMAS</h4><table class="historico-table"><tr><th>Data</th><th>Res.</th><th>Valor</th><th>Lucro</th><th>Est.</th></tr>';
-            d.historico_operacoes.slice(-15).reverse().forEach(op=>{
-                h+='<tr><td>'+op.data+'</td><td style="color:'+(op.resultado=='WIN'?'#00ff88':'#ff4444')+'">'+op.resultado+'</td><td>$'+op.valor.toFixed(2)+'</td><td style="color:'+(op.lucro>=0?'#00ff88':'#ff4444')+'">$'+op.lucro.toFixed(2)+'</td><td style="font-size:8px">'+(op.estrategia||'--')+'</td></tr>';
+        var h='<div class="relatorio-grid"><div class="relatorio-card"><div class="rlabel">⚡ VOLTS</div><div class="rvalue">'+(d.moedas||0)+'</div></div>';
+        h+='<div class="relatorio-card"><div class="rlabel">📈 LUCRO TOTAL</div><div class="rvalue" style="color:'+(d.lucro_total>=0?'#00ff88':'#ff4444')+'">$'+(d.lucro_total||0).toFixed(2)+'</div></div></div>';
+        if(d.historico_operacoes){
+            h+='<table class="historico-table">';
+            d.historico_operacoes.slice(-10).reverse().forEach(op=>{
+                h+='<tr><td>'+op.data+'</td><td style="color:'+(op.resultado=='WIN'?'#00ff88':'#ff4444')+'">'+op.resultado+'</td><td>$'+op.valor.toFixed(2)+'</td><td>$'+op.lucro.toFixed(2)+'</td></tr>';
             });
             h+='</table>';
         }
@@ -771,79 +589,27 @@ function verRelatorio(){
 }
 
 function verRanking() {
-    document.getElementById('relatorioContent').innerHTML = '<p style="color:#ffd700;text-align:center">🏆 Carregando ranking...</p>';
     fetch('/ranking').then(r => r.json()).then(d => {
-        var h = '';
-        h += '<div style="background:#1a1a0a;border:2px solid #ffd700;border-radius:15px;padding:15px;margin-bottom:15px">';
-        h += '<p style="color:#ffd700;font-size:14px;font-weight:bold;text-align:center;margin-bottom:10px">📊 ESTATÍSTICAS GLOBAIS</p>';
-        h += '<div class="relatorio-grid">';
-        h += '<div class="relatorio-card"><div class="rlabel">👥 USUÁRIOS</div><div class="rvalue" style="color:#ffd700">' + d.stats.total_usuarios + '</div></div>';
-        h += '<div class="relatorio-card"><div class="rlabel">🔄 TOTAL OPS</div><div class="rvalue" style="color:#ffd700">' + d.stats.total_ops + '</div></div>';
-        h += '<div class="relatorio-card"><div class="rlabel">✅ WINS</div><div class="rvalue" style="color:#00ff88">' + d.stats.total_wins + '</div></div>';
-        h += '<div class="relatorio-card"><div class="rlabel">🎯 TAXA GLOBAL</div><div class="rvalue" style="color:#ffd700">' + d.stats.taxa_global + '%</div></div>';
-        h += '</div></div>';
-        
-        h += '<p style="color:#ffd700;font-size:14px;font-weight:bold;text-align:center;margin-bottom:10px">🏆 TOP TRADERS</p>';
-        h += '<div style="background:#000;border:1px solid #333;border-radius:10px;overflow:hidden">';
-        h += '<table class="historico-table">';
-        h += '<tr><th>#</th><th>EMAIL</th><th>LUCRO</th><th>WINS</th><th>LOSS</th><th>TAXA</th><th>BANCA</th></tr>';
+        var h = '<table class="historico-table"><tr><th>#</th><th>EMAIL</th><th>LUCRO</th><th>TAXA</th></tr>';
         d.ranking.forEach(function(u, i) {
-            var cor = i === 0 ? '#ffd700' : (i === 1 ? '#c0c0c0' : (i === 2 ? '#cd7f32' : '#fff'));
-            var medalha = i === 0 ? '🥇' : (i === 1 ? '🥈' : (i === 2 ? '🥉' : (i + 1)));
-            
-            h += '<tr>';
-            h += '<td style="color:' + cor + ';font-weight:bold">' + medalha + '</td>';
-            h += '<td style="color:#ccc;font-size:8px">' + u.email + '</td>';
-            h += '<td style="color:' + (u.lucro_total >= 0 ? '#00ff88' : '#ff4444') + '">$' + u.lucro_total.toFixed(2) + '</td>';
-            h += '<td style="color:#00ff88">' + u.total_wins + '</td>';
-            h += '<td style="color:#ff4444">' + u.total_losses + '</td>';
-            h += '<td style="color:#ffd700">' + u.taxa + '%</td>';
-            h += '<td style="color:#00ff88">$' + u.banca_atual.toFixed(2) + '</td>';
-            h += '</tr>';
+            h += '<tr><td>'+(i+1)+'</td><td>'+u.email+'</td><td>$'+u.lucro_total.toFixed(2)+'</td><td>'+u.taxa+'%</td></tr>';
         });
-        h += '</table></div>';
+        h += '</table>';
         document.getElementById('relatorioContent').innerHTML = h;
-    }).catch(function() {
-        document.getElementById('relatorioContent').innerHTML = '<p style="color:#ff4444;text-align:center">Erro ao carregar ranking</p>';
     });
-}
-
-function resetarRelatorio(){
-    var email=document.getElementById('emailRelatorio').value.trim();
-    if(!email){alert('Digite o email!');return}
-    if(!confirm('Resetar estatísticas do usuário?'))return;
-    fetch('/resetar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email})})
-    .then(r=>r.json()).then(d=>{alert(d.msg);if(d.ok)verRelatorio()});
 }
 
 function atualizar(){
     fetch('/status').then(r=>r.json()).then(d=>{
-        if(!d.conectado&&conectadoIQ){
-            conectadoIQ=false;botAtivo=false;
-            document.getElementById('btnConectar').style.display='inline-block';
-            document.getElementById('btnConectar').disabled=false;
-            document.getElementById('btnConectar').textContent='🔌 CONECTAR';
-            document.getElementById('btnOperar').style.display='none';
-            document.getElementById('btnParar').style.display='none';
-            document.getElementById('btnDesconectar').style.display='none';
-            document.getElementById('statusTexto').textContent='⏸️ Desconectado';
-            document.getElementById('statusDot').className='status-dot inactive';
-            if(intervalo)clearInterval(intervalo);
-        }
-        if(!d.rodando&&botAtivo){
-            botAtivo=false;
-            document.getElementById('btnOperar').style.display='inline-block';
-            document.getElementById('btnOperar').disabled=false;
-            document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
-            document.getElementById('btnParar').style.display='none';
-            document.getElementById('statusTexto').textContent='🟢 Conectado';
-        }
         if(d.banca)document.getElementById('banca').textContent='$'+d.banca.toFixed(2);
         if(d.lucro!==undefined){var el=document.getElementById('lucro');el.textContent='$'+d.lucro.toFixed(2);el.style.color=d.lucro>=0?'#00ff88':'#ff4444';}
         if(d.ops!==undefined)document.getElementById('ops').textContent=d.ops;
         if(d.moedas!==undefined)document.getElementById('moedasSaldo').textContent=d.moedas;
         if(d.sinal)document.getElementById('sinal').textContent=d.sinal;
-        if(d.estrategia_nome)document.getElementById('estrategiaAtiva').textContent=d.estrategia_nome;
+        if(d.estrategia_nome) {
+            document.getElementById('estrategiaAtiva').textContent=d.estrategia_nome;
+            estrategiaSel = d.estrategia;
+        }
         if(d.analise){
             document.getElementById('rsi').textContent=d.analise.rsi?d.analise.rsi.toFixed(1):'--';
             document.getElementById('mm5').textContent=d.analise.mm5?d.analise.mm5.toFixed(5):'--';
@@ -854,394 +620,65 @@ function atualizar(){
             document.getElementById('preco').textContent=d.analise.preco?d.analise.preco.toFixed(5):'--';
         }
         if(d.logs)document.getElementById('terminal').innerHTML=d.logs;
-        document.getElementById('terminal').scrollTop=document.getElementById('terminal').scrollHeight;
     });
 }
 
 window.onload=function(){
     renderPlanos();
     fetch('/status').then(r=>r.json()).then(d=>{
-        if(d.estrategia){estrategiaSel=d.estrategia;renderEstrategias();}
-        if(d.estrategia_nome)document.getElementById('estrategiaAtiva').textContent=d.estrategia_nome;
         if(d.conectado&&d.email){
             conectadoIQ=true;emailLogado=d.email;
             document.getElementById('email').value=d.email;
             document.getElementById('btnConectar').style.display='none';
-            if(d.rodando){botAtivo=true;document.getElementById('btnOperar').style.display='none';document.getElementById('btnParar').style.display='inline-block';document.getElementById('statusTexto').textContent='🤖 Operando';}
-            else{document.getElementById('btnOperar').style.display='inline-block';
-            document.getElementById('btnDesconectar').style.display='inline-block';document.getElementById('statusTexto').textContent='🟢 Conectado';}
+            document.getElementById('btnDesconectar').style.display='inline-block';
+            if(d.rodando){botAtivo=true;document.getElementById('btnOperar').style.display='none';document.getElementById('btnParar').style.display='inline-block';}
+            else{document.getElementById('btnOperar').style.display='inline-block';}
             document.getElementById('statusDot').className='status-dot active';
-            if(intervalo)clearInterval(intervalo);
-            intervalo=setInterval(atualizar,2000);atualizar();
+            document.getElementById('statusTexto').textContent='🟢 Conectado';
+            intervalo=setInterval(atualizar,2000);
+            iniciarChat();
         }
     });
-    setInterval(atualizarChat,3000);
 }
 
-var chatIntervalo = null;
-function iniciarChat() {
-    var nome = emailLogado || localStorage.getItem('chatNome') || '';
-    if (!nome) return;
-    localStorage.setItem('chatNome', nome);
-    document.getElementById('chatInfo').textContent = '✅ Chat ativo: ' + nome;
-    document.getElementById('chatInfo').style.color = '#00ff88';
-    if (chatIntervalo) clearInterval(chatIntervalo);
-    chatIntervalo = setInterval(atualizarChat, 3000);
-    atualizarChat();
-}
-
-var deOndeVemConectar = conectarIQ;
-conectarIQ = function() {
-    deOndeVemConectar();
-    setTimeout(function() {
-        if (conectadoIQ && emailLogado) iniciarChat();
-    }, 2000);
-};
-
+// CHAT ENGINE
+function iniciarChat() { if (emailLogado) setInterval(atualizarChat, 3000); }
 function enviarChatMsg() {
-    var nome = emailLogado || localStorage.getItem('chatNome') || 'Anônimo';
     var msg = document.getElementById('chatMsg').value.trim();
-    if (!msg) return;
-    fetch('/chat_enviar', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({nome: nome, msg: msg})
-    }).then(function() {
-        document.getElementById('chatMsg').value = '';
-        atualizarChat();
-    });
+    if(msg) fetch('/chat_enviar', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nome:emailLogado, msg:msg})}).then(()=>{document.getElementById('chatMsg').value=''; atualizarChat();});
 }
-
 function atualizarChat() {
-    fetch('/chat_mensagens').then(r => r.json()).then(d => {
-        if (!d.mensagens) return;
-        var html = '';
-        d.mensagens.forEach(function(m) {
-            if (m.sistema) {
-                html += '<div style="text-align:center;color:#555;font-size:9px;margin:5px 0">' + m.nome + ' ' + m.msg + ' <span style="color:#555;font-size:8px">' + m.hora + '</span></div>';
-            } else {
-                var avatar = m.nome.charAt(0).toUpperCase();
-                html += '<div style="display:flex;margin-bottom:8px">';
-                html += '<div style="width:28px;height:28px;border-radius:50%;background:#1a1a2e;display:flex;align-items:center;justify-content:center;font-size:12px;margin-right:8px;border:1px solid #333">' + avatar + '</div>';
-                html += '<div style="flex:1">';
-                html += '<div style="color:#ffd700;font-size:9px;font-weight:bold;margin-bottom:2px">' + m.nome + '<span style="color:#555;font-size:8px;margin-left:5px">' + m.hora + '</span></div>';
-                html += '<div style="color:#ccc;font-size:11px">' + m.msg + '</div>';
-                html += '</div></div>';
-            }
-        });
-        document.getElementById('chatMensagens').innerHTML = html || '<p style="color:#888;text-align:center">Nenhuma mensagem</p>';
-        document.getElementById('chatMensagens').scrollTop = document.getElementById('chatMensagens').scrollHeight;
-        document.getElementById('chatOnline').textContent = '🟢 ' + (d.online || 1) + ' online';
+    fetch('/chat_mensagens').then(r=>r.json()).then(d=>{
+        var html='';
+        d.mensagens.forEach(m=>{ html+='<div><span style="color:#ffd700">'+m.nome+'</span>: '+m.msg+'</div>'; });
+        document.getElementById('chatMensagens').innerHTML=html;
     });
 }
 
 function initSkinEffects() {
     var matrixCanvas = document.getElementById('matrixCanvas');
     if (matrixCanvas) {
-        var mctx = matrixCanvas.getContext('2d');
-        matrixCanvas.width = matrixCanvas.parentElement.offsetWidth;
-        matrixCanvas.height = matrixCanvas.parentElement.offsetHeight;
-        var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*()';
-        var fontSize = 14;
-        var columns = Math.floor(matrixCanvas.width / fontSize);
-        var drops = [];
+        var mctx = matrixCanvas.getContext('2d'); matrixCanvas.width = matrixCanvas.parentElement.offsetWidth; matrixCanvas.height = matrixCanvas.parentElement.offsetHeight;
+        var chars = '0123456789⚡369'; var fontSize = 14; var columns = Math.floor(matrixCanvas.width / fontSize); var drops = [];
         for (var i = 0; i < columns; i++) drops[i] = Math.random() * -100;
         function drawMatrix() {
-            mctx.fillStyle = 'rgba(0,0,0,0.05)';
-            mctx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
-            mctx.fillStyle = '#00ff00';
-            mctx.font = fontSize + 'px monospace';
-            for (var i = 0; i < drops.length; i++) {
-                var text = chars[Math.floor(Math.random() * chars.length)];
-                mctx.fillText(text, i * fontSize, drops[i] * fontSize);
-                if (drops[i] * fontSize > matrixCanvas.height && Math.random() > 0.975) drops[i] = 0;
-                drops[i]++;
-            }
+            mctx.fillStyle = 'rgba(0,0,0,0.05)'; mctx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height); mctx.fillStyle = '#00ff00'; mctx.font = fontSize + 'px monospace';
+            for (var i = 0; i < drops.length; i++) { var text = chars[Math.floor(Math.random() * chars.length)]; mctx.fillText(text, i * fontSize, drops[i] * fontSize); if (drops[i] * fontSize > matrixCanvas.height && Math.random() > 0.975) drops[i] = 0; drops[i]++; }
             requestAnimationFrame(drawMatrix);
-        }
-        drawMatrix();
+        } drawMatrix();
     }
-    
-    var sakuraCanvas = document.getElementById('sakuraCanvas');
-    if (sakuraCanvas) {
-        var skctx = sakuraCanvas.getContext('2d');
-        sakuraCanvas.width = sakuraCanvas.parentElement.offsetWidth;
-        sakuraCanvas.height = sakuraCanvas.parentElement.offsetHeight;
-        var petals = [];
-        for (var i = 0; i < 20; i++) {
-            petals.push({
-                x: Math.random() * sakuraCanvas.width,
-                y: Math.random() * sakuraCanvas.height,
-                r: Math.random() * 4 + 2,
-                speed: Math.random() * 0.5 + 0.3,
-                wind: (Math.random() - 0.5) * 0.4,
-                rotation: Math.random() * Math.PI * 2,
-                rotSpeed: (Math.random() - 0.5) * 0.02
-            });
-        }
-        function drawSakura() {
-            skctx.clearRect(0, 0, sakuraCanvas.width, sakuraCanvas.height);
-            petals.forEach(function(p) {
-                skctx.save();
-                skctx.translate(p.x, p.y);
-                skctx.rotate(p.rotation);
-                skctx.fillStyle = 'rgba(255,105,180,0.6)';
-                skctx.beginPath();
-                skctx.ellipse(0, 0, p.r, p.r * 0.6, 0, 0, Math.PI * 2);
-                skctx.fill();
-                skctx.restore();
-                p.y += p.speed;
-                p.x += p.wind;
-                p.rotation += p.rotSpeed;
-                if (p.y > sakuraCanvas.height + 10) { p.y = -10; p.x = Math.random() * sakuraCanvas.width; }
-            });
-            requestAnimationFrame(drawSakura);
-        }
-        drawSakura();
-    }
-    
-    var thunderCanvas = document.getElementById('thunderCanvas');
-    if (thunderCanvas) {
-        var tctx = thunderCanvas.getContext('2d');
-        thunderCanvas.width = thunderCanvas.parentElement.offsetWidth;
-        thunderCanvas.height = thunderCanvas.parentElement.offsetHeight;
-        function drawThunder() {
-            tctx.clearRect(0, 0, thunderCanvas.width, thunderCanvas.height);
-            if (Math.random() < 0.02) {
-                tctx.strokeStyle = 'rgba(255,255,100,0.8)';
-                tctx.lineWidth = 2;
-                tctx.beginPath();
-                var x = Math.random() * thunderCanvas.width;
-                tctx.moveTo(x, 0);
-                for (var y = 0; y < thunderCanvas.height; y += 20) {
-                    x += (Math.random() - 0.5) * 60;
-                    tctx.lineTo(x, y);
-                }
-                tctx.stroke();
-                tctx.strokeStyle = 'rgba(255,255,255,0.5)';
-                tctx.lineWidth = 1;
-                tctx.stroke();
-            }
-            requestAnimationFrame(drawThunder);
-        }
-        drawThunder();
-    }
-    
-    var oceanCanvas = document.getElementById('oceanCanvas');
-    if (oceanCanvas) {
-        var octx = oceanCanvas.getContext('2d');
-        oceanCanvas.width = oceanCanvas.parentElement.offsetWidth;
-        oceanCanvas.height = 100;
-        var offset = 0;
-        function drawOcean() {
-            octx.clearRect(0, 0, oceanCanvas.width, oceanCanvas.height);
-            octx.beginPath();
-            octx.moveTo(0, oceanCanvas.height);
-            for (var x = 0; x < oceanCanvas.width; x += 5) {
-                var y = oceanCanvas.height / 2 + Math.sin(x * 0.02 + offset) * 15 + Math.sin(x * 0.05 + offset * 1.3) * 10;
-                octx.lineTo(x, y);
-            }
-            octx.lineTo(oceanCanvas.width, oceanCanvas.height);
-            octx.closePath();
-            octx.fillStyle = 'rgba(0,170,204,0.3)';
-            octx.fill();
-            offset += 0.03;
-            requestAnimationFrame(drawOcean);
-        }
-        drawOcean();
-    }
-    
-    var sunsetCanvas = document.getElementById('sunsetCanvas');
-    if (sunsetCanvas) {
-        var sctx2 = sunsetCanvas.getContext('2d');
-        sunsetCanvas.width = sunsetCanvas.parentElement.offsetWidth;
-        sunsetCanvas.height = sunsetCanvas.parentElement.offsetHeight;
-        var stars = [];
-        for (var i = 0; i < 30; i++) {
-            stars.push({
-                x: Math.random() * sunsetCanvas.width,
-                y: Math.random() * sunsetCanvas.height * 0.5,
-                r: Math.random() * 2 + 0.5,
-                twinkle: Math.random() * Math.PI * 2,
-                speed: Math.random() * 0.02 + 0.01
-            });
-        }
-        function drawSunset() {
-            sctx2.clearRect(0, 0, sunsetCanvas.width, sunsetCanvas.height);
-            stars.forEach(function(s) {
-                s.twinkle += s.speed;
-                var alpha = 0.3 + Math.sin(s.twinkle) * 0.5;
-                sctx2.fillStyle = 'rgba(255,200,100,' + alpha + ')';
-                sctx2.beginPath();
-                sctx2.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-                sctx2.fill();
-            });
-            requestAnimationFrame(drawSunset);
-        }
-        drawSunset();
-    }
-    
-    var darkCanvas = document.getElementById('darkCanvas');
-    if (darkCanvas) {
-        var dctx = darkCanvas.getContext('2d');
-        darkCanvas.width = darkCanvas.parentElement.offsetWidth;
-        darkCanvas.height = darkCanvas.parentElement.offsetHeight;
-        
-        var td = document.getElementById('terminal');
-        if(td && !document.getElementById('canvasTerminalDark')){
-            td.style.position='relative';td.style.overflow='hidden';
-            var dc=document.createElement('canvas');
-            dc.id = 'canvasTerminalDark';
-            dc.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.5';
-            td.insertBefore(dc,td.firstChild);var d2=dc.getContext('2d');dc.width=td.offsetWidth;dc.height=td.offsetHeight;
-            var pt=[];for(var i=0;i<20;i++)pt.push({x:Math.random()*dc.width,y:Math.random()*dc.height,r:Math.random()*3+1,vx:(Math.random()-0.5)*0.3,vy:-Math.random()*0.5-0.1,alpha:Math.random()*0.5+0.2});
-            function dd(){d2.clearRect(0,0,dc.width,dc.height);pt.forEach(function(p){d2.beginPath();d2.arc(p.x,p.y,p.r,0,Math.PI*2);d2.fillStyle='rgba(153,51,255,'+p.alpha+')';d2.fill();p.x+=p.vx;p.y+=p.vy;if(p.y<-10){p.y=dc.height+10;p.x=Math.random()*dc.width}});requestAnimationFrame(dd)}dd();
-        }
-        var particles = [];
-        for (var i = 0; i < 25; i++) {
-            particles.push({
-                x: Math.random() * darkCanvas.width,
-                y: Math.random() * darkCanvas.height,
-                r: Math.random() * 3 + 1,
-                vx: (Math.random() - 0.5) * 0.3,
-                vy: -Math.random() * 0.5 - 0.1,
-                alpha: Math.random() * 0.5 + 0.2
-            });
-        }
-        function drawDark() {
-            dctx.clearRect(0, 0, darkCanvas.width, darkCanvas.height);
-            particles.forEach(function(p) {
-                dctx.beginPath();
-                dctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-                dctx.fillStyle = 'rgba(153,51,255,' + p.alpha + ')';
-                dctx.fill();
-                dctx.shadowColor = '#9933ff';
-                dctx.shadowBlur = 6;
-                dctx.fill();
-                dctx.shadowBlur = 0;
-                p.x += p.vx;
-                p.y += p.vy;
-                if (p.y < -10) { p.y = darkCanvas.height + 10; p.x = Math.random() * darkCanvas.width; }
-                if (p.x < -10) p.x = darkCanvas.width + 10;
-                if (p.x > darkCanvas.width + 10) p.x = -10;
-            });
-            requestAnimationFrame(drawDark);
-        }
-        drawDark();
-    }
-    
     var fireCanvas = document.getElementById('fireCanvas');
     if (fireCanvas) {
-        var fctx = fireCanvas.getContext('2d');
-        fireCanvas.width = fireCanvas.parentElement.offsetWidth;
-        fireCanvas.height = 80;
-        
-        var tf=document.getElementById('terminal');
-        if(tf && !document.getElementById('canvasTerminalFire')){
-            tf.style.position='relative';tf.style.overflow='hidden';
-            var fc=document.createElement('canvas');
-            fc.id = 'canvasTerminalFire';
-            fc.style.cssText='position:absolute;bottom:0;left:0;width:100%;height:60px;z-index:0;pointer-events:none;opacity:0.5';
-            tf.insertBefore(fc,tf.firstChild);var f2=fc.getContext('2d');fc.width=tf.offsetWidth;fc.height=60;
-            var fp=[];for(var i=0;i<30;i++)fp.push({x:Math.random()*fc.width,y:fc.height-Math.random()*20,vx:(Math.random()-0.5)*0.8,vy:-Math.random()*2-1,life:Math.random()*40+20,maxLife:60,size:Math.random()*4+2});
-            function fd(){f2.clearRect(0,0,fc.width,fc.height);fp.forEach(function(p,i){var pr=p.life/p.maxLife;var g=f2.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*pr);g.addColorStop(0,'rgba(255,255,100,'+pr+')');g.addColorStop(0.4,'rgba(255,150,0,'+pr*0.8+')');g.addColorStop(1,'rgba(255,0,0,0)');f2.beginPath();f2.arc(p.x,p.y,p.size*pr,0,Math.PI*2);f2.fillStyle=g;f2.fill();p.x+=p.vx;p.y+=p.vy;p.life--;if(p.life<=0){fp[i]={x:Math.random()*fc.width,y:fc.height-Math.random()*10,vx:(Math.random()-0.5)*0.8,vy:-Math.random()*2-1,life:Math.random()*40+20,maxLife:60,size:Math.random()*4+2}}});requestAnimationFrame(fd)}fd();
-        }
-        var fireParticles = [];
-        for (var i = 0; i < 50; i++) {
-            fireParticles.push({
-                x: Math.random() * fireCanvas.width,
-                y: fireCanvas.height - Math.random() * 30,
-                vx: (Math.random() - 0.5) * 0.8,
-                vy: -Math.random() * 2.5 - 1,
-                life: Math.random() * 40 + 20,
-                maxLife: 60,
-                size: Math.random() * 5 + 2
-            });
-        }
+        var fctx = fireCanvas.getContext('2d'); fireCanvas.width = fireCanvas.parentElement.offsetWidth; fireCanvas.height = 80;
+        var fireParticles = []; for (var i = 0; i < 40; i++) fireParticles.push({x: Math.random() * fireCanvas.width, y: fireCanvas.height, vy: -Math.random() * 2 - 1, life: Math.random() * 30 + 10});
         function drawFire() {
-            fctx.clearRect(0, 0, fireCanvas.width, fireCanvas.height);
-            fireParticles.forEach(function(p, i) {
-                var progress = p.life / p.maxLife;
-                var gradient = fctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * progress);
-                gradient.addColorStop(0, 'rgba(255,255,100,' + progress + ')');
-                gradient.addColorStop(0.4, 'rgba(255,150,0,' + progress * 0.8 + ')');
-                gradient.addColorStop(1, 'rgba(255,0,0,0)');
-                fctx.beginPath();
-                fctx.arc(p.x, p.y, p.size * progress, 0, Math.PI * 2);
-                fctx.fillStyle = gradient;
-                fctx.fill();
-                p.x += p.vx;
-                p.y += p.vy;
-                p.life--;
-                if (p.life <= 0) {
-                    fireParticles[i] = {
-                        x: Math.random() * fireCanvas.width,
-                        y: fireCanvas.height - Math.random() * 10,
-                        vx: (Math.random() - 0.5) * 0.8,
-                        vy: -Math.random() * 2.5 - 1,
-                        life: Math.random() * 40 + 20,
-                        maxLife: 60,
-                        size: Math.random() * 5 + 2
-                    };
-                }
-            });
+            fctx.clearRect(0,0,fireCanvas.width,fireCanvas.height);
+            fireParticles.forEach(p=>{ fctx.fillStyle='rgba(255,68,0,'+(p.life/40)+')'; fctx.beginPath(); fctx.arc(p.x,p.y,3,0,Math.PI*2); fctx.fill(); p.y+=p.vy; p.life--; if(p.life<=0){p.y=fireCanvas.height; p.life=40;} });
             requestAnimationFrame(drawFire);
-        }
-        drawFire();
-    }
-    
-    var snowCanvas = document.getElementById('snowCanvas');
-    if (snowCanvas) {
-        var ts=document.getElementById('terminal');
-        if(ts && !document.getElementById('canvasTerminalSnow')){
-            ts.style.position='relative';ts.style.overflow='hidden';
-            var sc=document.createElement('canvas');
-            sc.id = 'canvasTerminalSnow';
-            sc.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.5';
-            ts.insertBefore(sc,ts.firstChild);var s2=sc.getContext('2d');sc.width=ts.offsetWidth;sc.height=ts.offsetHeight;
-            var sf=[];for(var i=0;i<25;i++)sf.push({x:Math.random()*sc.width,y:Math.random()*sc.height,r:Math.random()*3+1,speed:Math.random()*0.8+0.2,wind:(Math.random()-0.5)*0.3,opacity:Math.random()*0.6+0.4});
-            function sd(){s2.clearRect(0,0,sc.width,sc.height);sf.forEach(function(f){s2.beginPath();s2.arc(f.x,f.y,f.r,0,Math.PI*2);s2.fillStyle='rgba(255,255,255,'+f.opacity+')';s2.fill();f.y+=f.speed;f.x+=f.wind;if(f.y>sc.height+10){f.y=-10;f.x=Math.random()*sc.width}});requestAnimationFrame(sd)}sd();
-        }
-        var sctx = snowCanvas.getContext('2d');
-        snowCanvas.width = snowCanvas.parentElement.offsetWidth;
-        snowCanvas.height = snowCanvas.parentElement.offsetHeight;
-        var snowflakes = [];
-        for (var i = 0; i < 40; i++) {
-            snowflakes.push({
-                x: Math.random() * snowCanvas.width,
-                y: Math.random() * snowCanvas.height,
-                r: Math.random() * 3 + 1,
-                speed: Math.random() * 0.8 + 0.2,
-                wind: (Math.random() - 0.5) * 0.3,
-                opacity: Math.random() * 0.6 + 0.4
-            });
-        }
-        function drawSnow() {
-            sctx.clearRect(0, 0, snowCanvas.width, snowCanvas.height);
-            snowflakes.forEach(function(f) {
-                sctx.beginPath();
-                sctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
-                sctx.fillStyle = 'rgba(255,255,255,' + f.opacity + ')';
-                sctx.fill();
-                sctx.shadowColor = 'rgba(100,180,255,0.5)';
-                sctx.shadowBlur = 4;
-                sctx.fill();
-                sctx.shadowBlur = 0;
-                f.y += f.speed;
-                f.x += f.wind;
-                if (f.y > snowCanvas.height + 10) { f.y = -10; f.x = Math.random() * snowCanvas.width; }
-                if (f.x > snowCanvas.width + 10) f.x = -10;
-                if (f.x < -10) f.x = snowCanvas.width + 10;
-            });
-            requestAnimationFrame(drawSnow);
-        }
-        drawSnow();
+        } drawFire();
     }
 }
-
-window.addEventListener('load', function() {
-    setTimeout(initSkinEffects, 300);
-});
+window.addEventListener('load', function() { setTimeout(initSkinEffects, 300); });
 </script>
 </body>
 </html>
