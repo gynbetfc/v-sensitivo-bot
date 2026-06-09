@@ -15,6 +15,7 @@ import os
 import warnings
 import requests
 import uuid
+import signal
 
 warnings.filterwarnings("ignore")
 app = Flask(__name__)
@@ -27,7 +28,7 @@ HTML_URL = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/tesl
 GIT_API_ESTRATEGIAS = "https://api.github.com/repos/gynbetfc/v-sensitivo-bot/contents/tesla_369_bot/estrategias"
 GIT_RAW_ESTRATEGIAS_BASE = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/tesla_369_bot/estrategias"
 
-# ⭐ NOVO: URL para o módulo de skins no GitHub
+# ⭐ URL para o módulo de skins no GitHub
 GIT_RAW_SKINS = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/tesla_369_bot/skins/skins.py"
 
 MARTINGALE = 2
@@ -51,7 +52,7 @@ PLANOS = [
 cache_estrategias = {"data": {}, "timestamp": 0}
 cache_skins = {"data": None, "timestamp": 0, "version": None}
 CACHE_EST_TTL = 60
-CACHE_SKINS_TTL = 300  # 5 minutos de cache para skins
+CACHE_SKINS_TTL = 300
 
 # ============= VARIÁVEIS GLOBAIS DE CONTROLE =============
 API, par = None, "EURUSD-OTC"
@@ -111,28 +112,14 @@ def get_skins_fallback():
             'cor_header_borda': '#9933ff',
             'header_extra': '<canvas id="darkCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>',
             'css_extra': 'body{background:#000000!important}.header{border-color:#9933ff!important;box-shadow:0 0 40px rgba(153,51,255,0.3)}'
-        },
-        {
-            'id': 'skin_neon', 'nome': '💜 TESLA NEON', 'desc': 'Brilho neon roxo pulsante', 
-            'preco_moedas': 6, 'categoria': 'basica',
-            'cor_fundo': '#0a0015', 'cor_panel': '#150025', 'cor_destaque': '#cc00ff', 'cor_texto': '#e0c0ff',
-            'cor_botao': 'linear-gradient(135deg,#8800cc,#cc00ff)', 'cor_tab_ativa': '#cc00ff',
-            'cor_header_bg': 'linear-gradient(135deg,#0a0015,#150030,#200050,#150030,#0a0015)', 
-            'cor_header_borda': '#cc00ff',
-            'header_extra': '<div class="neon-glow"></div>',
-            'css_extra': '.neon-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:200px;background:radial-gradient(circle,rgba(204,0,255,0.2) 0%,transparent 70%);border-radius:50%;z-index:0;animation:neonPulse 2s ease-in-out infinite;pointer-events:none}@keyframes neonPulse{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:0.5}50%{transform:translate(-50%,-50%) scale(1.3);opacity:0.8}}body{background:#0a0015!important}.header{border-color:#cc00ff!important;box-shadow:0 0 30px rgba(204,0,255,0.4)}'
         }
     ]
 
 def carregar_skins_da_nuvem():
-    """
-    Carrega o módulo skins.py diretamente do GitHub via RAW URL.
-    Retorna a lista de skins ou a lista padrão em caso de falha.
-    """
+    """Carrega o módulo skins.py diretamente do GitHub via RAW URL"""
     global cache_skins
     agora = time.time()
     
-    # Verifica se o cache ainda é válido
     if cache_skins["data"] and (agora - cache_skins["timestamp"]) < CACHE_SKINS_TTL:
         print("✅ Skins carregadas do cache")
         return cache_skins["data"]
@@ -142,16 +129,13 @@ def carregar_skins_da_nuvem():
         response = requests.get(GIT_RAW_SKINS, timeout=10)
         
         if response.status_code == 200:
-            # Cria um ambiente seguro para executar o módulo
             skin_module_globals = {}
             exec(response.text, skin_module_globals)
             
-            # Verifica se o módulo tem a lista de skins
             if 'SKINS_LIST' in skin_module_globals:
                 skins_lista = skin_module_globals['SKINS_LIST']
                 print(f"✅ {len(skins_lista)} skins carregadas com sucesso da nuvem!")
                 
-                # Atualiza o cache
                 cache_skins["data"] = skins_lista
                 cache_skins["timestamp"] = agora
                 cache_skins["version"] = skin_module_globals.get('SKINS_MODULE_VERSION', 'desconhecida')
@@ -165,7 +149,6 @@ def carregar_skins_da_nuvem():
     except Exception as e:
         print(f"⚠️ Erro ao carregar skins da nuvem: {e}")
     
-    # Fallback: Retorna a lista de skins padrão
     print("🔄 Usando lista de skins padrão (fallback local)")
     return get_skins_fallback()
 
@@ -206,7 +189,6 @@ def carregar_estrategias_da_nuvem():
     except Exception as e:
         print(f"⚠️ Erro de comunicação com o ecossistema GitHub: {e}")
         
-    # Fallback: Se a pasta no Git estiver vazia, injeta as info locais
     if 'v_sensitivo' not in estrategias_remotas:
         estrategias_remotas['v_sensitivo'] = {'nome': 'V-Sensitivo Script', 'desc': 'Análise de momentum de velas com RSI, Estocástico e Médias Móveis.', 'preco_moedas': 0, 'timeframe': 60, 'gratis': True}
         estrategias_remotas['terceira_igual_primeira'] = {'nome': '3ª Igual à 1ª', 'desc': 'Estratégia probabilística de ciclos de cores de velas para o mesmo quadrante.', 'preco_moedas': 3, 'timeframe': 60, 'gratis': False}
@@ -688,7 +670,9 @@ def conectar():
         salvar_usuario(email, usuario)
         add_log('🔌 Conectado ao Liquidity Pool da corretora!', 'info')
         add_log(f'✅ Autenticado! ${API.get_balance():.2f} | ⚡ {usuario.get("moedas", 0)} VOLTS', 'win')
-        return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0)})
+        
+        # ⭐ Retorna com refresh=true para atualizar a página e carregar a skin atual
+        return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0), 'refresh': True})
     except Exception as e: return jsonify({'ok': False, 'erro': str(e)[:100]})
 
 @app.route('/comecar_operar', methods=['POST'])
@@ -719,8 +703,14 @@ def parar():
     global bot_rodando, conectado_iq
     data = request.json or {}
     with bot_lock: bot_rodando = False
-    if data.get('desconectar'): conectado_iq = False
-    return jsonify({'ok': True})
+    if data.get('desconectar'): 
+        conectado_iq = False
+        # ⭐ Se for desconectar, vamos matar o servidor após a resposta
+        def shutdown_server():
+            time.sleep(0.5)
+            os.kill(os.getpid(), signal.SIGTERM)
+        threading.Thread(target=shutdown_server, daemon=True).start()
+    return jsonify({'ok': True, 'shutdown': data.get('desconectar', False)})
 
 @app.route('/comprar_skin', methods=['POST'])
 def comprar_skin():
@@ -744,7 +734,7 @@ def comprar_skin():
         usuario['skin_atual'] = skin_id
         salvar_usuario(email_usuario_atual, usuario)
         skin_atual_global = skin_id
-        return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0), 'msg': 'Skin grátis ativada!'})
+        return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0), 'msg': 'Skin grátis ativada!', 'refresh': True})
     
     if 'skins_compradas' not in usuario: 
         usuario['skins_compradas'] = ['skin_padrao']
@@ -752,7 +742,7 @@ def comprar_skin():
         usuario['skin_atual'] = skin_id
         salvar_usuario(email_usuario_atual, usuario)
         skin_atual_global = skin_id
-        return jsonify({'ok': True, 'moedas': usuario['moedas'], 'msg': 'Skin já comprada! Ativada.'})
+        return jsonify({'ok': True, 'moedas': usuario['moedas'], 'msg': 'Skin já comprada! Ativada.', 'refresh': True})
     
     if usuario.get('moedas', 0) < skin.get('preco_moedas', 0):
         return jsonify({'ok': False, 'erro': f'VOLTS insuficientes! Precisa de {skin.get("preco_moedas")} ⚡'})
@@ -763,7 +753,7 @@ def comprar_skin():
     salvar_usuario(email_usuario_atual, usuario)
     skin_atual_global = skin_id
     add_log(f"🎨 Skin comprada: {skin.get('nome')} por {skin.get('preco_moedas')} VOLTS", 'win')
-    return jsonify({'ok': True, 'moedas': usuario['moedas'], 'msg': f'Skin {skin.get("nome")} adquirida!'})
+    return jsonify({'ok': True, 'moedas': usuario['moedas'], 'msg': f'Skin {skin.get("nome")} adquirida!', 'refresh': True})
 
 @app.route('/ativar_skin', methods=['POST'])
 def ativar_skin():
@@ -789,7 +779,7 @@ def ativar_skin():
     global skin_atual_global
     skin_atual_global = skin_id
     add_log(f"🎨 Skin ativada: {skin_id}", 'indicator')
-    return jsonify({'ok': True})
+    return jsonify({'ok': True, 'refresh': True})
 
 # ========== INTERFACE GATEWAY MERCADO PAGO ==========
 
