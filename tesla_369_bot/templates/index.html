@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>⚡ TESLA 369 BOT v9.0.1 Cloud</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
@@ -132,7 +133,7 @@
         <div class="config-section"><h3>🔐 IQ OPTION</h3><div class="config-row">
             <input type="email" id="email" placeholder="📧 Email IQ Option" style="flex:2">
             <input type="password" id="senha" placeholder="🔒 Senha" style="flex:1">
-            <select id="tipo"><option value="PRACTICE">🧪</option><option value="REAL">💰</option></select>
+            <select id="tipo"><option value="PRACTICE">🧪 PRACTICE</option><option value="REAL">💰 REAL</option></select>
             <div style="margin-top:5px;display:flex;gap:8px;align-items:center">
                 <label style="color:#888;font-size:9px">% Banca:</label>
                 <select id="percentualBanca" onchange="atualizarPercentual()" style="padding:5px;background:#111;border:1px solid #333;border-radius:5px;color:#fff;font-size:10px;width:70px">
@@ -250,7 +251,7 @@
                 <span style="color:#ff4444">• Você pode PERDER TODO seu dinheiro.</span><br>
                 • Opções binárias são proibidas em vários países.<br>
                 • O Martingale é perigoso: 3 perdas seguidas consomem 7x o valor inicial.<br>
-                • <span style="color:#ffd700">NUNCA invista dinheiro que você não can pode perder.</span><br>
+                • <span style="color:#ffd700">NUNCA invista dinheiro que você não pode perder.</span><br>
                 • Resultados passados não garantem resultados futuros.<br>
                 • O robô é uma ferramenta de <span style="color:#ffd700">análise automatizada</span>, não uma garantia de lucro.
             </p>
@@ -258,7 +259,7 @@
         <div style="background:#1a0000;border:2px solid #ff4444;border-radius:15px;padding:20px;margin:10px 0">
             <p style="color:#ff4444;font-size:16px;text-align:center;font-weight:bold;margin-bottom:15px">⚠️ A VERDADE SOBRE A IQ OPTION</p>
             <p style="color:#ff8888;font-size:12px;line-height:1.8;text-align:justify">
-                A <span style="color:#ffd700;font-weight:bold">IQ Option</span> <span style="color:#ff4444;font-weight:bold">NÃO É</span> o mercado financeiro real. Ela é uma <span style="color:#ffd700;font-weight:bold">corretora de opções binárias</span> - um modelo onde você aposta se o preço vai subir ou descer. Não há compra real of ativos. É uma <span style="color:#ff4444;font-weight:bold">aposta</span> contra a própria corretora.
+                A <span style="color:#ffd700;font-weight:bold">IQ Option</span> <span style="color:#ff4444;font-weight:bold">NÃO É</span> o mercado financeiro real. Ela é uma <span style="color:#ffd700;font-weight:bold">corretora de opções binárias</span> - um modelo onde você aposta se o preço vai subir ou descer. Não há compra real de ativos. É uma <span style="color:#ff4444;font-weight:bold">aposta</span> contra a própria corretora.
             </p>
         </div>
         <div style="text-align:center;margin-top:15px">
@@ -288,7 +289,7 @@
         <div style="background:linear-gradient(135deg,#1a1a2e,#0d0d1a);border:2px solid #25D366;border-radius:15px;padding:20px;margin:15px 0;text-align:center">
             <p style="color:#25D366;font-size:16px;font-weight:bold;margin-bottom:10px">💬 FALE COM O DESENVOLVEDOR</p>
             <p style="color:#ccc;font-size:12px;margin:5px 0">📧 <span style="color:#00ff88">gyn.bet.fc@gmail.com</span></p>
-            <a href="https://wa.me/5562981728653?text=Ola!%20Vim%20do%20Tesla%20369%20Bot%20v7.0.3%20e%20gostaria%20de%20saber%20mais!" target="_blank" style="text-decoration:none">
+            <a href="https://wa.me/5562981728653?text=Ola!%20Vim%20do%20Tesla%20369%20Bot%20v9.0.1%20e%20gostaria%20de%20saber%20mais!" target="_blank" style="text-decoration:none">
                 <button style="background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;padding:14px 28px;border-radius:12px;font-size:15px;font-weight:bold;cursor:pointer;margin-top:10px;font-family:monospace;box-shadow:0 4px 15px rgba(37,211,102,0.3);transition:all 0.3s ease" onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 6px 20px rgba(37,211,102,0.5)'" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 4px 15px rgba(37,211,102,0.3)'">💬 WHATSAPP</button>
             </a>
             <p style="color:#888;font-size:10px;margin-top:10px">Duvidas, sugestoes ou interesse em recursos premium? Fale comigo!</p>
@@ -296,7 +297,7 @@
     </div>
     
     <div class="panel" id="panel-relatorio">
-        <div class="config-section"><h3>📊 RELATÓRIO</h3><div class="config-row"><input type="email" id="emailRelatorio" placeholder="Email" style="flex:2"><button class="btn btn-info" onclick="verRelatorio()">🔍 BUSCAR</button>            <button class="btn btn-info" onclick="verRanking()" style="background:linear-gradient(135deg,#ff8c00,#ffd700);color:#000">🏆 RANKING</button></div></div>
+        <div class="config-section"><h3>📊 RELATÓRIO</h3><div class="config-row"><input type="email" id="emailRelatorio" placeholder="Email" style="flex:2"><button class="btn btn-info" onclick="verRelatorio()">🔍 BUSCAR</button><button class="btn btn-info" onclick="verRanking()" style="background:linear-gradient(135deg,#ff8c00,#ffd700);color:#000">🏆 RANKING</button></div></div>
         <div id="relatorioContent"></div>
     </div>
 </div>
@@ -311,40 +312,82 @@
 
 <script>
 var PLANOS = [{{ PLANOS_JSON | safe }}];
-var intervalo=null,botAtivo=false,conectadoIQ=false,emailLogado='',planoSelecionado=0,pixAtual=null;
-var estrategiaSel='v_sensitivo';
+var intervalo = null;
+var botAtivo = false;
+var conectadoIQ = false;
+var emailLogado = '';
+var planoSelecionado = 0;
+var pixAtual = null;
+var estrategiaSel = 'v_sensitivo';
 
 function mostrarCategoriaSkin(categoria) {
-    document.querySelectorAll('[id^="sub-sub-tab-"]').forEach(function(t) { t.classList.remove('active'); });
+    var tabs = document.querySelectorAll('[id^="sub-sub-tab-"]');
+    for(var i = 0; i < tabs.length; i++) {
+        tabs[i].classList.remove('active');
+    }
     var tabAtiva = document.getElementById('sub-sub-tab-' + categoria);
-    if(tabAtiva) tabAtiva.classList.add('active');
+    if(tabAtiva) {
+        tabAtiva.classList.add('active');
+    }
     
-    document.querySelectorAll('[id^="sub-sub-panel-"]').forEach(function(p) { p.classList.remove('active'); });
+    var panels = document.querySelectorAll('[id^="sub-sub-panel-"]');
+    for(var i = 0; i < panels.length; i++) {
+        panels[i].classList.remove('active');
+    }
     var panelAtivo = document.getElementById('sub-sub-panel-' + categoria);
-    if(panelAtivo) panelAtivo.classList.add('active');
+    if(panelAtivo) {
+        panelAtivo.classList.add('active');
+    }
     
     renderLojaCategoria(categoria);
 }
 
-function mostrarSubAba(aba){
-    document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('active'));
-    document.querySelectorAll('.sub-panel').forEach(p=>p.classList.remove('active'));
-    document.getElementById('sub-tab-'+aba).classList.add('active');
-    document.getElementById('sub-panel-'+aba).classList.add('active');
-    if(aba==='skins') { setTimeout(function() { mostrarCategoriaSkin('basica'); }, 100); }
-    if(aba==='estrategias') renderLojaEstrategias();
-    if(aba==='moedas') renderPlanos();
+function mostrarSubAba(aba) {
+    var tabs = document.querySelectorAll('.sub-tab');
+    for(var i = 0; i < tabs.length; i++) {
+        tabs[i].classList.remove('active');
+    }
+    var panels = document.querySelectorAll('.sub-panel');
+    for(var i = 0; i < panels.length; i++) {
+        panels[i].classList.remove('active');
+    }
+    document.getElementById('sub-tab-' + aba).classList.add('active');
+    document.getElementById('sub-panel-' + aba).classList.add('active');
+    if(aba === 'skins') {
+        setTimeout(function() { mostrarCategoriaSkin('basica'); }, 100);
+    }
+    if(aba === 'estrategias') {
+        renderLojaEstrategias();
+    }
+    if(aba === 'moedas') {
+        renderPlanos();
+    }
 }
 
-function openTab(tab){
-    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+function openTab(tab) {
+    var tabs = document.querySelectorAll('.tab');
+    for(var i = 0; i < tabs.length; i++) {
+        tabs[i].classList.remove('active');
+    }
+    var panels = document.querySelectorAll('.panel');
+    for(var i = 0; i < panels.length; i++) {
+        panels[i].classList.remove('active');
+    }
     event.target.classList.add('active');
-    document.getElementById('panel-'+tab).classList.add('active');
-    if(tab=='relatorio'&&emailLogado){document.getElementById('emailRelatorio').value=emailLogado;verRelatorio()}
-    if(tab=='loja'){mostrarSubAba('moedas');}
-    if(tab=='estrategias'){
-        if(botAtivo){alert('⚠️ Pare o bot antes de trocar de estratégia!');openTab('bot');return;}
+    document.getElementById('panel-' + tab).classList.add('active');
+    if(tab == 'relatorio' && emailLogado) {
+        document.getElementById('emailRelatorio').value = emailLogado;
+        verRelatorio();
+    }
+    if(tab == 'loja') {
+        mostrarSubAba('moedas');
+    }
+    if(tab == 'estrategias') {
+        if(botAtivo) {
+            alert('⚠️ Pare o bot antes de trocar de estratégia!');
+            openTab('bot');
+            return;
+        }
         renderEstrategias();
     }
 }
@@ -374,115 +417,234 @@ function calcularMinimo() {
     }
 }
 
-function conectarIQ(){
-    var email=document.getElementById('email').value.trim();
-    var senha=document.getElementById('senha').value.trim();
-    var tipo=document.getElementById('tipo').value;
-    if(!email||!senha){alert('Preencha email e senha!');return}
-    emailLogado=email;
-    document.getElementById('btnConectar').disabled=true;
-    document.getElementById('btnConectar').textContent='Conectando...';
-    fetch('/conectar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,senha:senha,tipo:tipo})})
-    .then(r=>r.json()).then(d=>{
-        if(d.ok){
-            conectadoIQ=true;
-            setTimeout(function(){location.reload()},2000);
-        }else{
-            alert('ERRO: '+d.erro);
-            document.getElementById('btnConectar').disabled=false;
-            document.getElementById('btnConectar').textContent='🔌 CONECTAR';
+function conectarIQ() {
+    var email = document.getElementById('email').value.trim();
+    var senha = document.getElementById('senha').value.trim();
+    var tipo = document.getElementById('tipo').value;
+    if(!email || !senha) {
+        alert('Preencha email e senha!');
+        return;
+    }
+    emailLogado = email;
+    var btnConectar = document.getElementById('btnConectar');
+    btnConectar.disabled = true;
+    btnConectar.textContent = 'Conectando...';
+    fetch('/conectar', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({email: email, senha: senha, tipo: tipo})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if(d.ok) {
+            conectadoIQ = true;
+            btnConectar.style.display = 'none';
+            document.getElementById('btnDesconectar').style.display = 'inline-block';
+            document.getElementById('btnOperar').style.display = 'inline-block';
+            document.getElementById('statusTexto').textContent = '🟢 Conectado';
+            document.getElementById('statusDot').className = 'status-dot active';
+            document.getElementById('moedasSaldo').textContent = d.moedas || 0;
+            if(intervalo) clearInterval(intervalo);
+            intervalo = setInterval(atualizar, 2000);
+            atualizar();
+            iniciarChat();
+            alert('✅ Conectado com sucesso!');
+        } else {
+            alert('ERRO: ' + d.erro);
+            btnConectar.disabled = false;
+            btnConectar.textContent = '🔌 CONECTAR';
         }
+    })
+    .catch(function(err) {
+        alert('Erro de conexão: ' + err.message);
+        btnConectar.disabled = false;
+        btnConectar.textContent = '🔌 CONECTAR';
     });
 }
 
-function comecarOperar(){
-    if(!conectadoIQ){alert('Conecte primeiro!');return}
-    document.getElementById('btnOperar').disabled=true;
-    fetch('/comecar_operar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})})
-    .then(r=>r.json()).then(d=>{
-        if(d.ok){
-            botAtivo=true;
-            document.getElementById('btnOperar').style.display='none';
-            document.getElementById('btnParar').style.display='inline-block';
-            document.getElementById('statusTexto').textContent='🤖 Operando';
-            document.getElementById('moedasSaldo').textContent=d.moedas;
-        }else{
-            alert('ERRO: '+d.erro);
-            document.getElementById('btnOperar').disabled=false;
-        }
+function desconectarIQ() {
+    if(botAtivo) {
+        alert('⚠️ Pare o bot primeiro antes de desconectar!');
+        return;
+    }
+    if(!confirm('Deseja realmente desconectar da IQ Option?')) return;
+    
+    fetch('/parar', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({desconectar: true})
+    })
+    .then(function() {
+        conectadoIQ = false;
+        botAtivo = false;
+        
+        document.getElementById('btnConectar').style.display = 'inline-block';
+        document.getElementById('btnConectar').disabled = false;
+        document.getElementById('btnConectar').textContent = '🔌 CONECTAR';
+        document.getElementById('btnDesconectar').style.display = 'none';
+        document.getElementById('btnOperar').style.display = 'none';
+        document.getElementById('btnParar').style.display = 'none';
+        document.getElementById('statusTexto').textContent = '⏸️ Desconectado';
+        document.getElementById('statusDot').className = 'status-dot inactive';
+        
+        if(intervalo) clearInterval(intervalo);
+        
+        alert('🔌 Desconectado da IQ Option');
+        setTimeout(function() { location.reload(); }, 500);
+    })
+    .catch(function(err) {
+        alert('Erro ao desconectar: ' + err.message);
     });
 }
 
-function pararBot(){
-    if(!confirm('Parar o bot?'))return;
-    fetch('/parar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})})
-    .then(()=>{location.reload()});
+function comecarOperar() {
+    if(!conectadoIQ) {
+        alert('Conecte primeiro!');
+        return;
+    }
+    var btnOperar = document.getElementById('btnOperar');
+    btnOperar.disabled = true;
+    btnOperar.textContent = 'Iniciando...';
+    fetch('/comecar_operar', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if(d.ok) {
+            botAtivo = true;
+            btnOperar.style.display = 'none';
+            document.getElementById('btnParar').style.display = 'inline-block';
+            document.getElementById('statusTexto').textContent = '🤖 Operando';
+            document.getElementById('moedasSaldo').textContent = d.moedas;
+            alert('🚀 Bot iniciado! Aguardando sinais...');
+        } else {
+            alert('ERRO: ' + d.erro);
+            btnOperar.disabled = false;
+            btnOperar.textContent = '🚀 COMEÇAR OPERAR';
+        }
+    })
+    .catch(function(err) {
+        alert('Erro: ' + err.message);
+        btnOperar.disabled = false;
+        btnOperar.textContent = '🚀 COMEÇAR OPERAR';
+    });
 }
 
-function renderEstrategias(){
-    fetch('/status').then(r=>r.json()).then(d=>{
+function pararBot() {
+    if(!confirm('Parar o bot? O ciclo atual será interrompido.')) return;
+    
+    var btnParar = document.getElementById('btnParar');
+    btnParar.disabled = true;
+    btnParar.textContent = 'Parando...';
+    
+    fetch('/parar', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        botAtivo = false;
+        document.getElementById('btnOperar').style.display = 'inline-block';
+        document.getElementById('btnOperar').disabled = false;
+        document.getElementById('btnOperar').textContent = '🚀 COMEÇAR OPERAR';
+        document.getElementById('btnParar').style.display = 'none';
+        document.getElementById('statusTexto').textContent = '🟢 Conectado';
+        btnParar.disabled = false;
+        btnParar.textContent = '⏹️ PARAR';
+        alert('⏹️ Bot parado com sucesso!');
+        atualizar();
+    })
+    .catch(function(err) {
+        alert('Erro ao parar: ' + err.message);
+        btnParar.disabled = false;
+        btnParar.textContent = '⏹️ PARAR';
+    });
+}
+
+function renderEstrategias() {
+    fetch('/status')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
         var estrategiasCompradas = d.estrategias_compradas || ['v_sensitivo'];
         var disponiveis = d.estrategias_disponiveis || {};
-        var grid=document.getElementById('estrategiaGrid');
+        var grid = document.getElementById('estrategiaGrid');
         if(!grid) return;
-        var html='';
+        var html = '';
         
-        for(var key in disponiveis){
-            if (estrategiasCompradas.includes(key)) {
+        for(var key in disponiveis) {
+            if(estrategiasCompradas.includes(key)) {
                 var e = disponiveis[key];
                 var ativa = key == estrategiaSel ? ' ativa' : '';
-                html+='<div class="estrategia-card'+ativa+'" onclick="selecionarEstrategia(\''+key+'\')" id="est_'+key+'">';
-                html+='<div style="font-size:14px;font-weight:bold">'+e.nome+'</div>';
-                html+='<div style="font-size:9px;color:#888;margin-top:5px">'+e.desc+'</div>';
-                html+='</div>';
+                html += '<div class="estrategia-card' + ativa + '" onclick="selecionarEstrategia(\'' + key + '\')" id="est_' + key + '">';
+                html += '<div style="font-size:14px;font-weight:bold">' + e.nome + '</div>';
+                html += '<div style="font-size:9px;color:#888;margin-top:5px">' + e.desc + '</div>';
+                html += '</div>';
             }
         }
-        grid.innerHTML=html || '<p style="color:#888;text-align:center">Nenhuma estratégia liberada</p>';
-        if (disponiveis[estrategiaSel]) {
-            document.getElementById('estrategiaAtiva').textContent=disponiveis[estrategiaSel].nome;
+        grid.innerHTML = html || '<p style="color:#888;text-align:center">Nenhuma estratégia liberada</p>';
+        if(disponiveis[estrategiaSel]) {
+            document.getElementById('estrategiaAtiva').textContent = disponiveis[estrategiaSel].nome;
         }
     });
 }
 
-function selecionarEstrategia(key){
-    estrategiaSel=key;
-    document.querySelectorAll('.estrategia-card').forEach(c=>c.classList.remove('ativa'));
-    var card=document.getElementById('est_'+key);
-    if(card) card.classList.add('ativa');
-    fetch('/selecionar_estrategia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estrategia:key})}).then(()=>renderEstrategias());
+function selecionarEstrategia(key) {
+    estrategiaSel = key;
+    var cards = document.querySelectorAll('.estrategia-card');
+    for(var i = 0; i < cards.length; i++) {
+        cards[i].classList.remove('ativa');
+    }
+    var card = document.getElementById('est_' + key);
+    if(card) {
+        card.classList.add('ativa');
+    }
+    fetch('/selecionar_estrategia', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({estrategia: key})
+    })
+    .then(function() {
+        document.getElementById('estrategiaAtiva').textContent = key.toUpperCase();
+        alert('✅ Estratégia alterada para: ' + key);
+    });
 }
 
-function renderLojaEstrategias(){
-    fetch('/status').then(r=>r.json()).then(d=>{
+function renderLojaEstrategias() {
+    fetch('/status')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
         var grid = document.getElementById('estrategiasLojaGrid');
-        if (!grid) return;
+        if(!grid) return;
         var html = '';
         var estrategiasCompradas = d.estrategias_compradas || ['v_sensitivo'];
         var disponiveis = d.estrategias_disponiveis || {};
         
-        for (var key in disponiveis) {
+        for(var key in disponiveis) {
             var est = disponiveis[key];
             var comprado = estrategiasCompradas.includes(key);
             var btnHtml = '';
             
-            if (comprado) {
+            if(comprado) {
                 btnHtml = '<button class="btn-loja btn-comprado" style="width:100%;margin-top:8px;cursor:default">✅ COMPRADO</button>';
-            } else if (est.gratis) {
-                btnHtml = '<button class="btn-loja btn-comprar-est" style="width:100%;margin-top:8px" onclick="comprarEstrategia(\''+key+'\')">🆓 ATIVAR GRÁTIS</button>';
+            } else if(est.gratis) {
+                btnHtml = '<button class="btn-loja btn-comprar-est" style="width:100%;margin-top:8px" onclick="comprarEstrategia(\'' + key + '\')">🆓 ATIVAR GRÁTIS</button>';
             } else {
-                btnHtml = '<button class="btn-loja btn-comprar-est" style="width:100%;margin-top:8px" onclick="comprarEstrategia(\''+key+'\')">🛒 COMPRAR ('+est.preco_moedas+' ⚡)</button>';
+                btnHtml = '<button class="btn-loja btn-comprar-est" style="width:100%;margin-top:8px" onclick="comprarEstrategia(\'' + key + '\')">🛒 COMPRAR (' + est.preco_moedas + ' ⚡)</button>';
             }
             
-            html += '<div class="skin-card'+(comprado?' ativo':'')+'">';
-            html += '<div class="skin-nome">'+est.nome+'</div>';
-            html += '<div class="skin-desc">'+est.desc+'</div>';
+            html += '<div class="skin-card' + (comprado ? ' ativo' : '') + '">';
+            html += '<div class="skin-nome">' + est.nome + '</div>';
+            html += '<div class="skin-desc">' + est.desc + '</div>';
             html += '<div style="margin-top:5px">';
-            if (est.gratis) {
+            if(est.gratis) {
                 html += '<span class="badge-gratis">GRÁTIS</span>';
-            } else if (comprado) {
+            } else if(comprado) {
                 html += '<span class="badge-gratis">✅ COMPRADO</span>';
             } else {
-                html += '<span class="badge-pago">⚡ '+est.preco_moedas+' VOLTS</span>';
+                html += '<span class="badge-pago">⚡ ' + est.preco_moedas + ' VOLTS</span>';
             }
             html += '</div>';
             html += btnHtml;
@@ -493,161 +655,271 @@ function renderLojaEstrategias(){
 }
 
 function comprarEstrategia(estrategiaId) {
-    if (!emailLogado) { alert('Conecte primeiro!'); return; }
-    if (!confirm('Comprar esta estratégia com VOLTS?')) return;
-    fetch('/comprar_estrategia', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({estrategia_id: estrategiaId})})
-    .then(r => r.json()).then(d => {
-        if (d.ok) {
+    if(!emailLogado) {
+        alert('Conecte primeiro!');
+        return;
+    }
+    if(!confirm('Comprar esta estratégia com VOLTS?')) return;
+    fetch('/comprar_estrategia', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({estrategia_id: estrategiaId})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if(d.ok) {
             alert(d.msg || 'Adquirida com sucesso!');
             document.getElementById('moedasSaldo').textContent = d.moedas;
             renderLojaEstrategias();
-        } else { alert('ERRO: ' + d.erro); }
+            renderEstrategias();
+        } else {
+            alert('ERRO: ' + d.erro);
+        }
     });
 }
 
-function renderPlanos(){
+function renderPlanos() {
     var grid = document.getElementById('planosGridContainer');
     if(!grid) return;
     var html = '';
-    PLANOS.forEach(function(p){
-        html += '<div class="plano-card" id="plano'+p.id+'" onclick="selecionarPlano('+p.id+')">';
-        html += '<div class="plano-nome">'+p.nome+'</div>';
-        html += '<div class="plano-moedas">⚡ '+p.moedas+'</div>';
-        html += '<div class="plano-preco">R$ '+p.preco.toFixed(2)+'</div>';
-        html += '<div class="plano-desc">'+p.desc+'</div>';
-        if(p.desconto) html += '<div><span class="plano-desconto">'+p.desconto+'</span></div>';
-        if(p.tag) html += '<div class="plano-tag">'+p.tag+'</div>';
-        html += '<button class="btn-loja btn-comprar-volts" style="display:none;margin-top:10px" id="btnPlano'+p.id+'" onclick="event.stopPropagation();pagarComPix('+p.id+')">💳 PAGAR COM PIX</button>';
+    for(var i = 0; i < PLANOS.length; i++) {
+        var p = PLANOS[i];
+        html += '<div class="plano-card" id="plano' + p.id + '" onclick="selecionarPlano(' + p.id + ')">';
+        html += '<div class="plano-nome">' + p.nome + '</div>';
+        html += '<div class="plano-moedas">⚡ ' + p.moedas + '</div>';
+        html += '<div class="plano-preco">R$ ' + p.preco.toFixed(2) + '</div>';
+        html += '<div class="plano-desc">' + p.desc + '</div>';
+        if(p.desconto) html += '<div><span class="plano-desconto">' + p.desconto + '</span></div>';
+        if(p.tag) html += '<div class="plano-tag">' + p.tag + '</div>';
+        html += '<button class="btn-loja btn-comprar-volts" style="display:none;margin-top:10px" id="btnPlano' + p.id + '" onclick="event.stopPropagation();pagarComPix(' + p.id + ')">💳 PAGAR COM PIX</button>';
         html += '</div>';
-    });
+    }
     grid.innerHTML = html;
 }
 
 function renderLojaCategoria(categoria) {
-    fetch('/status').then(r=>r.json()).then(d=>{
+    fetch('/status')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
         var skinsStatus = d.skins_status || [];
         var gridId = categoria === 'basica' ? 'skinsGridBasicas' : (categoria === 'premium' ? 'skinsGridPremium' : 'skinsGridLendarias');
         var grid = document.getElementById(gridId);
-        if (!grid) return;
+        if(!grid) return;
         var html = '';
-        var skinsFiltradas = skinsStatus.filter(function(s) { return s.categoria === categoria; });
-        skinsFiltradas.forEach(function(skin){
+        var skinsFiltradas = [];
+        for(var i = 0; i < skinsStatus.length; i++) {
+            if(skinsStatus[i].categoria === categoria) {
+                skinsFiltradas.push(skinsStatus[i]);
+            }
+        }
+        for(var i = 0; i < skinsFiltradas.length; i++) {
+            var skin = skinsFiltradas[i];
             var ativa = skin.ativo ? ' ativo' : '';
             var btnHtml = '';
-            if(skin.ativo){
+            if(skin.ativo) {
                 btnHtml = '<button class="btn-loja btn-comprado" style="width:100%;cursor:default">✅ EM USO</button>';
-            } else if(skin.comprado){
-                btnHtml = '<button class="btn-loja btn-usar" style="width:100%" onclick="ativarSkin(\''+skin.id+'\')">🎨 USAR</button>';
+            } else if(skin.comprado) {
+                btnHtml = '<button class="btn-loja btn-usar" style="width:100%" onclick="ativarSkin(\'' + skin.id + '\')">🎨 USAR</button>';
             } else {
-                if(skin.preco_moedas == 0){
-                    btnHtml = '<button class="btn-loja btn-usar" style="width:100%" onclick="ativarSkin(\''+skin.id+'\')">🆓 ATIVAR</button>';
+                if(skin.preco_moedas == 0) {
+                    btnHtml = '<button class="btn-loja btn-usar" style="width:100%" onclick="ativarSkin(\'' + skin.id + '\')">🆓 ATIVAR</button>';
                 } else {
-                    btnHtml = '<button class="btn-loja btn-comprar-skin" style="width:100%;margin-top:8px" onclick="comprarSkin(\''+skin.id+'\')">🛒 COMPRAR ('+skin.preco_moedas+' ⚡)</button>';
+                    btnHtml = '<button class="btn-loja btn-comprar-skin" style="width:100%;margin-top:8px" onclick="comprarSkin(\'' + skin.id + '\')">🛒 COMPRAR (' + skin.preco_moedas + ' ⚡)</button>';
                 }
             }
-            html += '<div class="skin-card'+ativa+'">';
-            html += '<div class="skin-nome">'+skin.nome+'</div>';
-            html += '<div class="skin-desc">'+skin.desc+'</div>';
+            html += '<div class="skin-card' + ativa + '">';
+            html += '<div class="skin-nome">' + skin.nome + '</div>';
+            html += '<div class="skin-desc">' + skin.desc + '</div>';
             html += '<div style="margin-top:5px">';
-            if(skin.preco_moedas == 0){ html += '<span class="badge-gratis">GRÁTIS</span>'; }
-            else if(skin.comprado){ html += '<span class="badge-gratis">✅ COMPRADO</span>'; }
-            else { html += '<span class="badge-pago">⚡ '+skin.preco_moedas+' VOLTS</span>'; }
+            if(skin.preco_moedas == 0) {
+                html += '<span class="badge-gratis">GRÁTIS</span>';
+            } else if(skin.comprado) {
+                html += '<span class="badge-gratis">✅ COMPRADO</span>';
+            } else {
+                html += '<span class="badge-pago">⚡ ' + skin.preco_moedas + ' VOLTS</span>';
+            }
             html += '</div>';
             html += btnHtml;
             html += '</div>';
-        });
+        }
         grid.innerHTML = html || '<p style="color:#888;text-align:center">Nenhuma skin nesta categoria</p>';
     });
 }
 
-function comprarSkin(skinId){
-    if(!emailLogado){alert('Conecte primeiro!');return}
-    fetch('/comprar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId})})
-    .then(r=>r.json()).then(d=>{
-        if(d.ok){alert('Adquirida!');renderLojaCategoria('basica');}
+function comprarSkin(skinId) {
+    if(!emailLogado) {
+        alert('Conecte primeiro!');
+        return;
+    }
+    if(!confirm('Comprar esta skin?')) return;
+    fetch('/comprar_skin', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({skin_id: skinId})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if(d.ok) {
+            alert('✅ ' + (d.msg || 'Skin adquirida com sucesso!'));
+            document.getElementById('moedasSaldo').textContent = d.moedas;
+            var categoriaAtiva = document.querySelector('[id^="sub-sub-tab-"].active');
+            var categoria = categoriaAtiva ? categoriaAtiva.id.replace('sub-sub-tab-', '') : 'basica';
+            renderLojaCategoria(categoria);
+        } else {
+            alert('❌ ERRO: ' + d.erro);
+        }
     });
 }
 
-// 🔥 CORREÇÃO: Garante que a página só atualize após a API retornar sucesso (assíncrono controlado)
-function activarSkin(skinId){
-    fetch('/ativar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId})})
-    .then(r=>r.json()).then(d=>{
-        if(d.ok){
-            alert('Skin ativada!');
+function ativarSkin(skinId) {
+    if(!emailLogado) {
+        alert('Conecte primeiro!');
+        return;
+    }
+    if(!confirm('Ativar esta skin? O visual será atualizado.')) return;
+    
+    fetch('/ativar_skin', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({skin_id: skinId})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if(d.ok) {
+            alert('🎨 Skin ativada! A página será recarregada.');
+            setTimeout(function() { location.reload(); }, 500);
+        } else {
+            alert('❌ ERRO: ' + d.erro);
+        }
+    });
+}
+
+function selecionarPlano(id) {
+    var cards = document.querySelectorAll('.plano-card');
+    for(var i = 0; i < cards.length; i++) {
+        cards[i].classList.remove('selecionado');
+    }
+    var btns = document.querySelectorAll('[id^="btnPlano"]');
+    for(var i = 0; i < btns.length; i++) {
+        btns[i].style.display = 'none';
+    }
+    document.getElementById('plano' + id).classList.add('selecionado');
+    document.getElementById('btnPlano' + id).style.display = 'block';
+    planoSelecionado = id;
+}
+
+function pagarComPix(planoId) {
+    var email = document.getElementById('emailCompra').value.trim() || emailLogado;
+    if(!email) {
+        alert('Digite seu email!');
+        return;
+    }
+    document.getElementById('modalPix').classList.add('active');
+    document.getElementById('pixContent').innerHTML = '<p style="color:#ffd700">⏳ Gerando QR Code...</p>';
+    
+    fetch('/criar_pix', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({email: email, plano_id: planoId})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if(d.sucesso) {
+            pixAtual = d;
+            var html = '<p style="font-size:18px;color:#ffd700">R$ ' + d.valor.toFixed(2) + '</p>';
+            html += '<p style="color:#00ff88">⚡ ' + d.moedas + ' VOLTS</p>';
+            if(d.qr_code_base64) {
+                html += '<div class="pix-qrcode"><img src="data:image/png;base64,' + d.qr_code_base64 + '" style="max-width:200px"></div>';
+            }
+            if(d.qr_code) {
+                html += '<div class="pix-copiavel" onclick="copiarPix()" style="cursor:pointer;background:#000;padding:10px;border-radius:8px;word-break:break-all;font-size:9px">📋 ' + d.qr_code.substring(0,50) + '...</div>';
+            }
+            html += '<button class="btn-confirmar" style="margin-top:15px" onclick="verificarPagamento(\'' + d.pix_id + '\')">🔄 VERIFICAR PAGAMENTO</button>';
+            document.getElementById('pixContent').innerHTML = html;
+        } else {
+            document.getElementById('pixContent').innerHTML = '<p style="color:#ff4444">❌ Erro: ' + (d.erro || 'Falha ao gerar PIX') + '</p>';
+        }
+    });
+}
+
+function copiarPix() {
+    if(pixAtual && pixAtual.qr_code) {
+        navigator.clipboard.writeText(pixAtual.qr_code).then(function() {
+            alert('📋 Código PIX copiado!');
+        });
+    }
+}
+
+function verificarPagamento(pixId) {
+    document.getElementById('pixContent').innerHTML += '<p style="color:#ffd700">⏳ Verificando...</p>';
+    fetch('/verificar_pix', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({pix_id: pixId})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if(d.pago) {
+            alert('✅ PAGAMENTO CONFIRMADO! +' + d.moedas + ' VOLTS adicionados!');
+            document.getElementById('moedasSaldo').textContent = d.saldo;
+            fecharModal();
             location.reload();
         } else {
-            alert('Erro ao ativar skin');
+            alert('⏰ Ainda não confirmado. Aguarde alguns minutos e tente novamente.');
         }
     });
 }
 
-function selecionarPlano(id){
-    document.querySelectorAll('.plano-card').forEach(c=>c.classList.remove('selecionado'));
-    document.querySelectorAll('[id^="btnPlano"]').forEach(b=>b.style.display='none');
-    document.getElementById('plano'+id).classList.add('selecionado');
-    document.getElementById('btnPlano'+id).style.display='block';
-    planoSelecionado=id;
+function fecharModal() {
+    document.getElementById('modalPix').classList.remove('active');
+    pixAtual = null;
 }
 
-function pagarComPix(planoId){
-    var email=document.getElementById('emailCompra').value.trim()||emailLogado;
-    if(!email){alert('Digite seu email!');return}
-    document.getElementById('modalPix').classList.add('active');
-    fetch('/criar_pix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,plano_id:planoId})})
-    .then(r=>r.json()).then(d=>{
-        if(d.sucesso){
-            pixAtual=d;
-            var html='<p style="font-size:18px;color:#ffd700">R$ '+d.valor.toFixed(2)+'</p><p style="color:#00ff88">⚡ '+d.moedas+' VOLTS</p>';
-            if(d.qr_code_base64)html+='<div class="pix-qrcode"><img src="data:image/png;base64,'+d.qr_code_base64+'"></div>';
-            if(d.qr_code)html+='<div class="pix-copiavel" onclick="copiarPix()">'+d.qr_code+'</div>';
-            html+='<button class="btn-confirmar" onclick="verificarPagamento(\''+d.pix_id+'\')">🔄 VERIFICAR PAGAMENTO</button>';
-            document.getElementById('pixContent').innerHTML=html;
+function verRelatorio() {
+    var email = document.getElementById('emailRelatorio').value.trim();
+    if(!email) {
+        alert('Digite o email!');
+        return;
+    }
+    document.getElementById('relatorioContent').innerHTML = '<p style="color:#ffd700">⏳ Carregando...</p>';
+    fetch('/relatorio?email=' + email)
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if(d.erro) {
+            alert(d.erro);
+            return;
         }
-    });
-}
-
-function copiarPix(){navigator.clipboard.writeText(pixAtual.qr_code).then(()=>alert('Copiado!'));}
-
-function verificarPagamento(pixId){
-    fetch('/verificar_pix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pix_id:pixId})})
-    .then(r=>r.json()).then(d=>{if(d.pago){alert('Confirmado!');fecharModal();location.reload();}});
-}
-
-function fecharModal(){document.getElementById('modalPix').classList.remove('active');pixAtual=null;}
-
-// 🏆 RESTAURAÇÃO: Funções originais completas da aba de relatório
-function verRelatorio(){
-    var email=document.getElementById('emailRelatorio').value.trim();
-    if(!email){alert('Digite o email!');return}
-    fetch('/relatorio?email='+email).then(r=>r.json()).then(d=>{
-        if(d.erro){alert(d.erro);return}
-        var h='<div class="relatorio-grid">';
-        h+='<div class="relatorio-card"><div class="rlabel">⚡ VOLTS</div><div class="rvalue">'+(d.moedas||0)+'</div></div>';
-        h+='<div class="relatorio-card"><div class="rlabel">📈 LUCRO TOTAL</div><div class="rvalue" style="color:'+(d.lucro_total>=0?'#00ff88':'#ff4444')+'">$'+(d.lucro_total||0).toFixed(2)+'</div></div>';
-        h+='<div class="relatorio-card"><div class="rlabel">✅ WINS</div><div class="rvalue" style="color:#00ff88">'+(d.total_wins||0)+'</div></div>';
-        h+='<div class="relatorio-card"><div class="rlabel">❌ LOSSES</div><div class="rvalue" style="color:#ff4444">'+(d.total_losses||0)+'</div></div>';
-        h+='<div class="relatorio-card"><div class="rlabel">🔄 CICLOS</div><div class="rvalue">'+(d.total_ciclos||0)+'</div></div>';
-        h+='<div class="relatorio-card"><div class="rlabel">💵 GASTO</div><div class="rvalue">$'+(d.total_gasto||0).toFixed(2)+'</div></div>';
-        h+='<div class="relatorio-card"><div class="rlabel">💰 GANHO</div><div class="rvalue">$'+(d.total_ganho||0).toFixed(2)+'</div></div>';
-        h+='<div class="relatorio-card"><div class="rlabel">📅 DIAS</div><div class="rvalue">'+(d.dias_ativos || 0)+'</div></div>';
-        h+='<div class="relatorio-card"><div class="rlabel">🎯 TAXA</div><div class="rvalue">'+(d.total_ciclos>0?((d.total_wins/d.total_ciclos)*100).toFixed(1):0)+'%</div></div>';
-        h+='<div class="relatorio-card"><div class="rlabel">💰 BANCA</div><div class="rvalue">$'+(d.banca_atual||0).toFixed(2)+'</div></div>';
-        h+='<div class="relatorio-card"><div class="rlabel">📅 CADASTRO</div><div class="rvalue" style="font-size:10px">'+(d.data_cadastro||'--')+'</div></div>';
-        h+='</div>';
-        if(d.historico_operacoes&&d.historico_operacoes.length>0){
-            h+='<h4 style="margin-top:10px">📋 ÚLTIMAS</h4><table class="historico-table"><tr><th>Data</th><th>Res.</th><th>Valor</th><th>Lucro</th><th>Est.</th></tr>';
-            d.historico_operacoes.slice(-15).reverse().forEach(op=>{
-                h+='<tr><td>'+op.data+'</td><td style="color:'+(op.resultado=='WIN'?'#00ff88':'#ff4444')+'">'+op.resultado+'</td><td>$'+op.valor.toFixed(2)+'</td><td style="color:'+(op.lucro>=0?'#00ff88':'#ff4444')+'">$'+op.lucro.toFixed(2)+'</td><td style="font-size:8px">'+(op.estrategia||'--')+'</td></tr>';
-            });
-            h+='</table>';
+        var h = '<div class="relatorio-grid">';
+        h += '<div class="relatorio-card"><div class="rlabel">⚡ VOLTS</div><div class="rvalue">' + (d.moedas || 0) + '</div></div>';
+        h += '<div class="relatorio-card"><div class="rlabel">📈 LUCRO TOTAL</div><div class="rvalue" style="color:' + (d.lucro_total >= 0 ? '#00ff88' : '#ff4444') + '">$' + (d.lucro_total || 0).toFixed(2) + '</div></div>';
+        h += '<div class="relatorio-card"><div class="rlabel">✅ WINS</div><div class="rvalue" style="color:#00ff88">' + (d.total_wins || 0) + '</div></div>';
+        h += '<div class="relatorio-card"><div class="rlabel">❌ LOSSES</div><div class="rvalue" style="color:#ff4444">' + (d.total_losses || 0) + '</div></div>';
+        h += '<div class="relatorio-card"><div class="rlabel">🔄 CICLOS</div><div class="rvalue">' + (d.total_ciclos || 0) + '</div></div>';
+        h += '<div class="relatorio-card"><div class="rlabel">💵 GASTO</div><div class="rvalue">$' + (d.total_gasto || 0).toFixed(2) + '</div></div>';
+        h += '<div class="relatorio-card"><div class="rlabel">💰 GANHO</div><div class="rvalue">$' + (d.total_ganho || 0).toFixed(2) + '</div></div>';
+        h += '<div class="relatorio-card"><div class="rlabel">📅 DIAS</div><div class="rvalue">' + (d.dias_ativos || 0) + '</div></div>';
+        h += '<div class="relatorio-card"><div class="rlabel">🎯 TAXA</div><div class="rvalue">' + (d.total_ciclos > 0 ? ((d.total_wins / d.total_ciclos) * 100).toFixed(1) : 0) + '%</div></div>';
+        h += '<div class="relatorio-card"><div class="rlabel">💰 BANCA</div><div class="rvalue">$' + (d.banca_atual || 0).toFixed(2) + '</div></div>';
+        h += '<div class="relatorio-card"><div class="rlabel">📅 CADASTRO</div><div class="rvalue" style="font-size:10px">' + (d.data_cadastro || '--') + '</div></div>';
+        h += '</div>';
+        if(d.historico_operacoes && d.historico_operacoes.length > 0) {
+            h += '<h4 style="margin-top:10px">📋 ÚLTIMAS</h4><table class="historico-table"><tr><th>Data</th><th>Res.</th><th>Valor</th><th>Lucro</th><th>Est.</th></tr>';
+            var historico = d.historico_operacoes.slice(-15).reverse();
+            for(var i = 0; i < historico.length; i++) {
+                var op = historico[i];
+                h += '<tr><td>' + op.data + '</td><td style="color:' + (op.resultado == 'WIN' ? '#00ff88' : '#ff4444') + '">' + op.resultado + '</td><td>$' + op.valor.toFixed(2) + '</td><td style="color:' + (op.lucro >= 0 ? '#00ff88' : '#ff4444') + '">$' + op.lucro.toFixed(2) + '</td><td style="font-size:8px">' + (op.estrategia || '--') + '</td></tr>';
+            }
+            h += '</table>';
         }
-        document.getElementById('relatorioContent').innerHTML=h;
+        document.getElementById('relatorioContent').innerHTML = h;
     });
 }
 
 function verRanking() {
     document.getElementById('relatorioContent').innerHTML = '<p style="color:#ffd700;text-align:center">🏆 Carregando ranking...</p>';
-    fetch('/ranking').then(r => r.json()).then(d => {
+    fetch('/ranking')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
         var h = '';
         h += '<div style="background:#1a1a0a;border:2px solid #ffd700;border-radius:15px;padding:15px;margin-bottom:15px">';
         h += '<p style="color:#ffd700;font-size:14px;font-weight:bold;text-align:center;margin-bottom:10px">📊 ESTATÍSTICAS GLOBAIS</p>';
@@ -657,223 +929,435 @@ function verRanking() {
         h += '<div class="relatorio-card"><div class="rlabel">✅ WINS</div><div class="rvalue" style="color:#00ff88">' + d.stats.total_wins + '</div></div>';
         h += '<div class="relatorio-card"><div class="rlabel">🎯 TAXA GLOBAL</div><div class="rvalue" style="color:#ffd700">' + d.stats.taxa_global + '%</div></div>';
         h += '</div></div>';
-        
         h += '<p style="color:#ffd700;font-size:14px;font-weight:bold;text-align:center;margin-bottom:10px">🏆 TOP TRADERS</p>';
         h += '<div style="background:#000;border:1px solid #333;border-radius:10px;overflow:hidden">';
-        h += '<table class="historico-table">';
-        h += '<tr><th>#</th><th>EMAIL</th><th>LUCRO</th><th>WINS</th><th>LOSS</th><th>TAXA</th><th>BANCA</th></tr>';
-        d.ranking.forEach(function(u, i) {
+        h += '<table class="historico-table"><tr><th>#</th><th>EMAIL</th><th>LUCRO</th><th>WINS</th><th>LOSS</th><th>TAXA</th><th>BANCA</th></tr>';
+        for(var i = 0; i < d.ranking.length; i++) {
+            var u = d.ranking[i];
             var cor = i === 0 ? '#ffd700' : (i === 1 ? '#c0c0c0' : (i === 2 ? '#cd7f32' : '#fff'));
             var medalha = i === 0 ? '🥇' : (i === 1 ? '🥈' : (i === 2 ? '🥉' : (i + 1)));
-            
             h += '<tr>';
             h += '<td style="color:' + cor + ';font-weight:bold">' + medalha + '</td>';
-            h += '<td style="color:#ccc;font-size:8px">' + u.email + '</td>';
+            h += '<td style="color:#ccc;font-size:8px">' + (u.email || '---').substring(0,20) + '</td>';
             h += '<td style="color:' + (u.lucro_total >= 0 ? '#00ff88' : '#ff4444') + '">$' + u.lucro_total.toFixed(2) + '</td>';
             h += '<td style="color:#00ff88">' + u.total_wins + '</td>';
             h += '<td style="color:#ff4444">' + u.total_losses + '</td>';
             h += '<td style="color:#ffd700">' + u.taxa + '%</td>';
             h += '<td style="color:#00ff88">$' + u.banca_atual.toFixed(2) + '</td>';
             h += '</tr>';
-        });
+        }
         h += '</table></div>';
         document.getElementById('relatorioContent').innerHTML = h;
-    }).catch(function() {
-        document.getElementById('relatorioContent').innerHTML = '<p style="color:#ff4444;text-align:center">Erro ao carregar ranking</p>';
     });
 }
 
-function resetarRelatorio(){
-    var email=document.getElementById('emailRelatorio').value.trim();
-    if(!email){alert('Digite o email!');return}
-    if(!confirm('Resetar estatísticas do usuário?'))return;
-    fetch('/resetar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email})})
-    .then(r=>r.json()).then(d=>{alert(d.msg);if(d.ok)verRelatorio()});
-}
-
-function atualizar(){
-    fetch('/status').then(r=>r.json()).then(d=>{
-        if(!d.conectado&&conectadoIQ){
-            conectadoIQ=false;botAtivo=false;
-            document.getElementById('btnConectar').style.display='inline-block';
-            document.getElementById('btnConectar').disabled=false;
-            document.getElementById('btnConectar').textContent='🔌 CONECTAR';
-            document.getElementById('btnOperar').style.display='none';
-            document.getElementById('btnParar').style.display='none';
-            document.getElementById('btnDesconectar').style.display='none';
-            document.getElementById('statusTexto').textContent='⏸️ Desconectado';
-            document.getElementById('statusDot').className='status-dot inactive';
-            if(intervalo)clearInterval(intervalo);
+function atualizar() {
+    fetch('/status')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if(d.banca) document.getElementById('banca').textContent = '$' + d.banca.toFixed(2);
+        if(d.lucro !== undefined) {
+            var el = document.getElementById('lucro');
+            el.textContent = '$' + d.lucro.toFixed(2);
+            el.style.color = d.lucro >= 0 ? '#00ff88' : '#ff4444';
         }
-        if(!d.rodando&&botAtivo){
-            botAtivo=false;
-            document.getElementById('btnOperar').style.display='inline-block';
-            document.getElementById('btnOperar').disabled=false;
-            document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR';
-            document.getElementById('btnParar').style.display='none';
-            document.getElementById('statusTexto').textContent='🟢 Conectado';
-        }
-        if(d.banca)document.getElementById('banca').textContent='$'+d.banca.toFixed(2);
-        if(d.lucro!==undefined){var el=document.getElementById('lucro');el.textContent='$'+d.lucro.toFixed(2);el.style.color=d.lucro>=0?'#00ff88':'#ff4444';}
-        if(d.ops!==undefined)document.getElementById('ops').textContent=d.ops;
-        if(d.moedas!==undefined)document.getElementById('moedasSaldo').textContent=d.moedas;
-        if(d.sinal)document.getElementById('sinal').textContent=d.sinal;
+        if(d.ops !== undefined) document.getElementById('ops').textContent = d.ops;
+        if(d.moedas !== undefined) document.getElementById('moedasSaldo').textContent = d.moedas;
+        if(d.sinal) document.getElementById('sinal').textContent = d.sinal;
         if(d.estrategia_nome) {
-            document.getElementById('estrategiaAtiva').textContent=d.estrategia_nome;
+            document.getElementById('estrategiaAtiva').textContent = d.estrategia_nome;
             estrategiaSel = d.estrategia;
         }
-        if(d.analise){
-            document.getElementById('rsi').textContent=d.analise.rsi?d.analise.rsi.toFixed(1):'--';
-            document.getElementById('mm5').textContent=d.analise.mm5?d.analise.mm5.toFixed(5):'--';
-            document.getElementById('mm10').textContent=d.analise.mm10?d.analise.mm10.toFixed(5):'--';
-            document.getElementById('mm20').textContent=d.analise.mm20?d.analise.mm20.toFixed(5):'--';
-            document.getElementById('stoch').textContent=d.analise.stoch?d.analise.stoch.toFixed(1):'--';
-            document.getElementById('fase').textContent=d.analise.fase||'--';
-            document.getElementById('preco').textContent=d.analise.preco?d.analise.preco.toFixed(5):'--';
+        if(d.analise) {
+            document.getElementById('rsi').textContent = d.analise.rsi ? d.analise.rsi.toFixed(1) : '--';
+            document.getElementById('mm5').textContent = d.analise.mm5 ? d.analise.mm5.toFixed(5) : '--';
+            document.getElementById('mm10').textContent = d.analise.mm10 ? d.analise.mm10.toFixed(5) : '--';
+            document.getElementById('mm20').textContent = d.analise.mm20 ? d.analise.mm20.toFixed(5) : '--';
+            document.getElementById('stoch').textContent = d.analise.stoch ? d.analise.stoch.toFixed(1) : '--';
+            document.getElementById('fase').textContent = d.analise.fase || '--';
+            document.getElementById('preco').textContent = d.analise.preco ? d.analise.preco.toFixed(5) : '--';
         }
-        if(d.logs)document.getElementById('terminal').innerHTML=d.logs;
-        document.getElementById('terminal').scrollTop=document.getElementById('terminal').scrollHeight;
+        if(d.logs) {
+            var terminal = document.getElementById('terminal');
+            terminal.innerHTML = d.logs;
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+        if(d.rodando && !botAtivo) {
+            botAtivo = true;
+            document.getElementById('btnOperar').style.display = 'none';
+            document.getElementById('btnParar').style.display = 'inline-block';
+            document.getElementById('statusTexto').textContent = '🤖 Operando';
+        } else if(!d.rodando && botAtivo) {
+            botAtivo = false;
+            document.getElementById('btnOperar').style.display = 'inline-block';
+            document.getElementById('btnOperar').disabled = false;
+            document.getElementById('btnParar').style.display = 'none';
+            document.getElementById('statusTexto').textContent = '🟢 Conectado';
+        }
     });
 }
 
-window.onload=function(){
-    renderPlanos();
-    fetch('/status').then(r=>r.json()).then(d=>{
-        if(d.conectado&&d.email){
-            conectadoIQ=true;emailLogado=d.email;
-            document.getElementById('email').value=d.email;
-            document.getElementById('btnConectar').style.display='none';
-            document.getElementById('btnDesconectar').style.display='inline-block';
-            if(d.rodando){botAtivo=true;document.getElementById('btnOperar').style.display='none';document.getElementById('btnParar').style.display='inline-block';}
-            else{document.getElementById('btnOperar').style.display='inline-block';}
-            document.getElementById('statusDot').className='status-dot active';
-            document.getElementById('statusTexto').textContent='🟢 Conectado';
-            intervalo=setInterval(atualizar,2000);
-            iniciarChat();
-        }
-    });
-    setInterval(atualizarChat,3000);
+function iniciarChat() {
+    if(emailLogado) {
+        atualizarChat();
+        setInterval(atualizarChat, 5000);
+    }
 }
 
-function iniciarChat() { if (emailLogado) setInterval(atualizarChat, 3000); }
 function enviarChatMsg() {
     var msg = document.getElementById('chatMsg').value.trim();
-    if(msg) fetch('/chat_enviar', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nome:emailLogado, msg:msg})}).then(()=>{document.getElementById('chatMsg').value=''; atualizarChat();});
+    if(!msg) return;
+    if(!emailLogado) {
+        alert('Conecte-se primeiro para enviar mensagens!');
+        return;
+    }
+    var nome = emailLogado.split('@')[0];
+    fetch('/chat_enviar', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({nome: nome, msg: msg})
+    })
+    .then(function() {
+        document.getElementById('chatMsg').value = '';
+        atualizarChat();
+    });
 }
+
 function atualizarChat() {
-    fetch('/chat_mensagens').then(r=>r.json()).then(d=>{
-        var html='';
-        if(d.messages){
-            d.messages.forEach(m=>{ html+='<div><span style="color:#ffd700">'+m.nome+'</span>: '+m.msg+'</div>'; });
-            document.getElementById('chatMensagens').innerHTML=html;
+    fetch('/chat_mensagens')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        var html = '';
+        if(d.messages && d.messages.length > 0) {
+            var mensagens = d.messages.slice(-30);
+            for(var i = 0; i < mensagens.length; i++) {
+                var m = mensagens[i];
+                html += '<div style="margin-bottom:8px;border-bottom:1px solid #222;padding-bottom:5px">';
+                html += '<span style="color:#ffd700;font-weight:bold">' + (m.nome || 'Anon') + '</span> ';
+                html += '<span style="color:#888;font-size:9px">' + (m.hora || '') + '</span><br>';
+                html += '<span style="color:#ccc;font-size:11px">' + (m.msg || '') + '</span>';
+                html += '</div>';
+            }
+        } else {
+            html = '<p style="color:#888;text-align:center">💬 Nenhuma mensagem ainda. Seja o primeiro!</p>';
         }
+        var chatDiv = document.getElementById('chatMensagens');
+        if(chatDiv) {
+            chatDiv.innerHTML = html;
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        }
+        document.getElementById('chatOnline').textContent = '🟢 ' + (d.online || 1) + ' online';
     });
 }
 
 function initSkinEffects() {
     var matrixCanvas = document.getElementById('matrixCanvas');
-    if (matrixCanvas) {
-        var mctx = matrixCanvas.getContext('2d'); matrixCanvas.width = matrixCanvas.parentElement.offsetWidth; matrixCanvas.height = matrixCanvas.parentElement.offsetHeight;
-        var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*()'; var fontSize = 14; var columns = Math.floor(matrixCanvas.width / fontSize); var drops = [];
-        for (var i = 0; i < columns; i++) drops[i] = Math.random() * -100;
+    if(matrixCanvas) {
+        var mctx = matrixCanvas.getContext('2d');
+        matrixCanvas.width = matrixCanvas.parentElement.offsetWidth;
+        matrixCanvas.height = matrixCanvas.parentElement.offsetHeight;
+        var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*()';
+        var fontSize = 14;
+        var columns = Math.floor(matrixCanvas.width / fontSize);
+        var drops = [];
+        for(var i = 0; i < columns; i++) {
+            drops[i] = Math.random() * -100;
+        }
         function drawMatrix() {
-            mctx.fillStyle = 'rgba(0,0,0,0.05)'; mctx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height); mctx.fillStyle = '#00ff00'; mctx.font = fontSize + 'px monospace';
-            for (var i = 0; i < drops.length; i++) { var text = chars[Math.floor(Math.random() * chars.length)]; mctx.fillText(text, i * fontSize, drops[i] * fontSize); if (drops[i] * fontSize > matrixCanvas.height && Math.random() > 0.975) drops[i] = 0; drops[i]++; }
+            mctx.fillStyle = 'rgba(0,0,0,0.05)';
+            mctx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
+            mctx.fillStyle = '#00ff00';
+            mctx.font = fontSize + 'px monospace';
+            for(var i = 0; i < drops.length; i++) {
+                var text = chars[Math.floor(Math.random() * chars.length)];
+                mctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if(drops[i] * fontSize > matrixCanvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
             requestAnimationFrame(drawMatrix);
-        } drawMatrix();
+        }
+        drawMatrix();
     }
     
     var sakuraCanvas = document.getElementById('sakuraCanvas');
-    if (sakuraCanvas) {
-        var skctx = sakuraCanvas.getContext('2d'); sakuraCanvas.width = sakuraCanvas.parentElement.offsetWidth; sakuraCanvas.height = sakuraCanvas.parentElement.offsetHeight;
+    if(sakuraCanvas) {
+        var skctx = sakuraCanvas.getContext('2d');
+        sakuraCanvas.width = sakuraCanvas.parentElement.offsetWidth;
+        sakuraCanvas.height = sakuraCanvas.parentElement.offsetHeight;
         var petals = [];
-        for (var i = 0; i < 20; i++) {
+        for(var i = 0; i < 20; i++) {
             petals.push({
-                x: Math.random() * sakuraCanvas.width, y: Math.random() * sakuraCanvas.height, r: Math.random() * 4 + 2, speed: Math.random() * 0.5 + 0.3,
-                wind: (Math.random() - 0.5) * 0.4, rotation: Math.random() * Math.PI * 2, rotSpeed: (Math.random() - 0.5) * 0.02
+                x: Math.random() * sakuraCanvas.width,
+                y: Math.random() * sakuraCanvas.height,
+                r: Math.random() * 4 + 2,
+                speed: Math.random() * 0.5 + 0.3,
+                wind: (Math.random() - 0.5) * 0.4,
+                rotation: Math.random() * Math.PI * 2,
+                rotSpeed: (Math.random() - 0.5) * 0.02
             });
         }
         function drawSakura() {
             skctx.clearRect(0, 0, sakuraCanvas.width, sakuraCanvas.height);
-            petals.forEach(function(p) {
-                skctx.save(); skctx.translate(p.x, p.y); skctx.rotate(p.rotation); skctx.fillStyle = 'rgba(255,105,180,0.6)'; skctx.beginPath(); skctx.ellipse(0, 0, p.r, p.r * 0.6, 0, 0, Math.PI * 2); skctx.fill(); skctx.restore();
-                p.y += p.speed; p.x += p.wind; p.rotation += p.rotSpeed; if (p.y > sakuraCanvas.height + 10) { p.y = -10; p.x = Math.random() * sakuraCanvas.width; }
-            });
+            for(var i = 0; i < petals.length; i++) {
+                var p = petals[i];
+                skctx.save();
+                skctx.translate(p.x, p.y);
+                skctx.rotate(p.rotation);
+                skctx.fillStyle = 'rgba(255,105,180,0.6)';
+                skctx.beginPath();
+                skctx.ellipse(0, 0, p.r, p.r * 0.6, 0, 0, Math.PI * 2);
+                skctx.fill();
+                skctx.restore();
+                p.y += p.speed;
+                p.x += p.wind;
+                p.rotation += p.rotSpeed;
+                if(p.y > sakuraCanvas.height + 10) {
+                    p.y = -10;
+                    p.x = Math.random() * sakuraCanvas.width;
+                }
+            }
             requestAnimationFrame(drawSakura);
-        } drawSakura();
+        }
+        drawSakura();
     }
     
     var thunderCanvas = document.getElementById('thunderCanvas');
-    if (thunderCanvas) {
-        var tctx = thunderCanvas.getContext('2d'); thunderCanvas.width = thunderCanvas.parentElement.offsetWidth; thunderCanvas.height = thunderCanvas.parentElement.offsetHeight;
+    if(thunderCanvas) {
+        var tctx = thunderCanvas.getContext('2d');
+        thunderCanvas.width = thunderCanvas.parentElement.offsetWidth;
+        thunderCanvas.height = thunderCanvas.parentElement.offsetHeight;
         function drawThunder() {
             tctx.clearRect(0, 0, thunderCanvas.width, thunderCanvas.height);
-            if (Math.random() < 0.02) {
-                tctx.strokeStyle = 'rgba(255,255,100,0.8)'; tctx.lineWidth = 2; tctx.beginPath(); var x = Math.random() * thunderCanvas.width; tctx.moveTo(x, 0);
-                for (var y = 0; y < thunderCanvas.height; y += 20) { x += (Math.random() - 0.5) * 60; tctx.lineTo(x, y); }
-                tctx.stroke(); tctx.strokeStyle = 'rgba(255,255,255,0.5)'; tctx.lineWidth = 1; tctx.stroke();
-            } requestAnimationFrame(drawThunder);
-        } requestAnimationFrame(drawThunder);
+            if(Math.random() < 0.02) {
+                tctx.strokeStyle = 'rgba(255,255,100,0.8)';
+                tctx.lineWidth = 2;
+                tctx.beginPath();
+                var x = Math.random() * thunderCanvas.width;
+                tctx.moveTo(x, 0);
+                for(var y = 0; y < thunderCanvas.height; y += 20) {
+                    x += (Math.random() - 0.5) * 60;
+                    tctx.lineTo(x, y);
+                }
+                tctx.stroke();
+                tctx.strokeStyle = 'rgba(255,255,255,0.5)';
+                tctx.lineWidth = 1;
+                tctx.stroke();
+            }
+            requestAnimationFrame(drawThunder);
+        }
+        requestAnimationFrame(drawThunder);
     }
     
     var oceanCanvas = document.getElementById('oceanCanvas');
-    if (oceanCanvas) {
-        var octx = oceanCanvas.getContext('2d'); oceanCanvas.width = oceanCanvas.parentElement.offsetWidth; oceanCanvas.height = 100; var offset = 0;
+    if(oceanCanvas) {
+        var octx = oceanCanvas.getContext('2d');
+        oceanCanvas.width = oceanCanvas.parentElement.offsetWidth;
+        oceanCanvas.height = 100;
+        var offset = 0;
         function drawOcean() {
-            octx.clearRect(0, 0, oceanCanvas.width, oceanCanvas.height); octx.beginPath(); octx.moveTo(0, oceanCanvas.height);
-            for (var x = 0; x < oceanCanvas.width; x += 5) { var y = oceanCanvas.height / 2 + Math.sin(x * 0.02 + offset) * 15 + Math.sin(x * 0.05 + offset * 1.3) * 10; octx.lineTo(x, y); }
-            octx.lineTo(oceanCanvas.width, oceanCanvas.height); octx.closePath(); octx.fillStyle = 'rgba(0,170,204,0.3)'; octx.fill(); offset += 0.03; requestAnimationFrame(drawOcean);
-        } drawOcean();
+            octx.clearRect(0, 0, oceanCanvas.width, oceanCanvas.height);
+            octx.beginPath();
+            octx.moveTo(0, oceanCanvas.height);
+            for(var x = 0; x < oceanCanvas.width; x += 5) {
+                var y = oceanCanvas.height / 2 + Math.sin(x * 0.02 + offset) * 15 + Math.sin(x * 0.05 + offset * 1.3) * 10;
+                octx.lineTo(x, y);
+            }
+            octx.lineTo(oceanCanvas.width, oceanCanvas.height);
+            octx.closePath();
+            octx.fillStyle = 'rgba(0,170,204,0.3)';
+            octx.fill();
+            offset += 0.03;
+            requestAnimationFrame(drawOcean);
+        }
+        drawOcean();
     }
     
     var sunsetCanvas = document.getElementById('sunsetCanvas');
-    if (sunsetCanvas) {
-        var sctx2 = sunsetCanvas.getContext('2d'); sunsetCanvas.width = sunsetCanvas.parentElement.offsetWidth; sunsetCanvas.height = sunsetCanvas.parentElement.offsetHeight;
-        var stars = []; for (var i = 0; i < 30; i++) stars.push({x: Math.random() * sunsetCanvas.width, y: Math.random() * sunsetCanvas.height * 0.5, r: Math.random() * 2 + 0.5, twinkle: Math.random() * Math.PI * 2, speed: Math.random() * 0.02 + 0.01});
+    if(sunsetCanvas) {
+        var sctx2 = sunsetCanvas.getContext('2d');
+        sunsetCanvas.width = sunsetCanvas.parentElement.offsetWidth;
+        sunsetCanvas.height = sunsetCanvas.parentElement.offsetHeight;
+        var stars = [];
+        for(var i = 0; i < 30; i++) {
+            stars.push({
+                x: Math.random() * sunsetCanvas.width,
+                y: Math.random() * sunsetCanvas.height * 0.5,
+                r: Math.random() * 2 + 0.5,
+                twinkle: Math.random() * Math.PI * 2,
+                speed: Math.random() * 0.02 + 0.01
+            });
+        }
         function drawSunset() {
             sctx2.clearRect(0, 0, sunsetCanvas.width, sunsetCanvas.height);
-            stars.forEach(function(s) { s.twinkle += s.speed; var alpha = 0.3 + Math.sin(s.twinkle) * 0.5; sctx2.fillStyle = 'rgba(255,200,100,' + alpha + ')'; sctx2.beginPath(); sctx2.arc(s.x, s.y, s.r, 0, Math.PI * 2); sctx2.fill(); });
+            for(var i = 0; i < stars.length; i++) {
+                var s = stars[i];
+                s.twinkle += s.speed;
+                var alpha = 0.3 + Math.sin(s.twinkle) * 0.5;
+                sctx2.fillStyle = 'rgba(255,200,100,' + alpha + ')';
+                sctx2.beginPath();
+                sctx2.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                sctx2.fill();
+            }
             requestAnimationFrame(drawSunset);
-        } drawSunset();
+        }
+        drawSunset();
     }
     
     var darkCanvas = document.getElementById('darkCanvas');
-    if (darkCanvas) {
-        var dctx = darkCanvas.getContext('2d'); darkCanvas.width = darkCanvas.parentElement.offsetWidth; darkCanvas.height = darkCanvas.parentElement.offsetHeight;
-        var td = document.getElementById('terminal');
-        if(td && !document.getElementById('canvasTerminalDark')){
-            td.style.position='relative';td.style.overflow='hidden'; var dc=document.createElement('canvas'); dc.id = 'canvasTerminalDark'; dc.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.5';
-            td.insertBefore(dc,td.firstChild); var d2=dc.getContext('2d'); dc.width=td.offsetWidth; dc.height=td.offsetHeight;
-            var pt=[]; for(var i=0;i<20;i++)pt.push({x:Math.random()*dc.width,y:Math.random()*dc.height,r:Math.random()*3+1,vx:(Math.random()-0.5)*0.3,vy:-Math.random()*0.5-0.1,alpha:Math.random()*0.5+0.2});
-            function dd(){d2.clearRect(0,0,dc.width,dc.height); pt.forEach(function(p){d2.beginPath();d2.arc(p.x,p.y,p.r,0,Math.PI*2);d2.fillStyle='rgba(153,51,255,'+p.alpha+')';d2.fill();p.x+=p.vx;p.y+=p.vy;if(p.y<-10){p.y=dc.height+10;p.x=Math.random()*dc.width}});requestAnimationFrame(dd)}dd();
+    if(darkCanvas) {
+        var dctx = darkCanvas.getContext('2d');
+        darkCanvas.width = darkCanvas.parentElement.offsetWidth;
+        darkCanvas.height = darkCanvas.parentElement.offsetHeight;
+        var particles = [];
+        for(var i = 0; i < 25; i++) {
+            particles.push({
+                x: Math.random() * darkCanvas.width,
+                y: Math.random() * darkCanvas.height,
+                r: Math.random() * 3 + 1,
+                vx: (Math.random() - 0.5) * 0.3,
+                vy: -Math.random() * 0.5 - 0.1,
+                alpha: Math.random() * 0.5 + 0.2
+            });
         }
-        var particles = []; for (var i = 0; i < 25; i++) particles.push({x: Math.random() * darkCanvas.width, y: Math.random() * darkCanvas.height, r: Math.random() * 3 + 1, vx: (Math.random()-0.5)*0.3, vy: -Math.random()*0.5-0.1, alpha: Math.random()*0.5+0.2});
         function drawDark() {
             dctx.clearRect(0, 0, darkCanvas.width, darkCanvas.height);
-            particles.forEach(function(p) { dctx.beginPath(); dctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); dctx.fillStyle = 'rgba(153,51,255,' + p.alpha + ')'; dctx.fill(); p.x += p.vx; p.y += p.vy; if (p.y < -10) { p.y = darkCanvas.height + 10; p.x = Math.random() * darkCanvas.width; } });
+            for(var i = 0; i < particles.length; i++) {
+                var p = particles[i];
+                dctx.beginPath();
+                dctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                dctx.fillStyle = 'rgba(153,51,255,' + p.alpha + ')';
+                dctx.fill();
+                p.x += p.vx;
+                p.y += p.vy;
+                if(p.y < -10) {
+                    p.y = darkCanvas.height + 10;
+                    p.x = Math.random() * darkCanvas.width;
+                }
+            }
             requestAnimationFrame(drawDark);
-        } drawDark();
+        }
+        drawDark();
     }
     
     var fireCanvas = document.getElementById('fireCanvas');
-    if (fireCanvas) {
-        var fctx = fireCanvas.getContext('2d'); fireCanvas.width = fireCanvas.parentElement.offsetWidth; fireCanvas.height = 80;
-        var tf=document.getElementById('terminal');
-        if(tf && !document.getElementById('canvasTerminalFire')){
-            tf.style.position='relative';tf.style.overflow='hidden'; var fc=document.createElement('canvas'); fc.id = 'canvasTerminalFire'; fc.style.cssText='position:absolute;bottom:0;left:0;width:100%;height:60px;z-index:0;pointer-events:none;opacity:0.5';
-            tf.insertBefore(fc,tf.firstChild); var f2=fc.getContext('2d'); fc.width=tf.offsetWidth; fc.height=60;
-            var fp=[]; for(var i=0;i<30;i++)fp.push({x:Math.random()*fc.width,y:fc.height-Math.random()*20,vx:(Math.random()-0.5)*0.8,vy:-Math.random()*2-1,life:Math.random()*40+20,maxLife:60,size:Math.random()*4+2});
-            function fd(){f2.clearRect(0,0,fc.width,fc.height); fp.forEach(function(p,i){var pr=p.life/p.maxLife;var g=f2.createRadialGradient(p.x,p.y,0,p.x,p.y,p.size*pr);g.addColorStop(0,'rgba(255,255,100,'+pr+')');g.addColorStop(0.4,'rgba(255,150,0,'+pr*0.8+')');g.addColorStop(1,'rgba(255,0,0,0)');f2.beginPath();f2.arc(p.x,p.y,p.size*pr,0,Math.PI*2);f2.fillStyle=g;f2.fill();p.x+=p.vx;p.y+=p.vy;p.life--;if(p.life<=0){fp[i]={x:Math.random()*fc.width,y:fc.height-Math.random()*10,vx:(Math.random()-0.5)*0.8,vy:-Math.random()*2-1,life:Math.random()*40+20,maxLife:60,size:Math.random()*4+2}}});requestAnimationFrame(fd)}fd();
+    if(fireCanvas) {
+        var fctx = fireCanvas.getContext('2d');
+        fireCanvas.width = fireCanvas.parentElement.offsetWidth;
+        fireCanvas.height = 80;
+        var fireParticles = [];
+        for(var i = 0; i < 50; i++) {
+            fireParticles.push({
+                x: Math.random() * fireCanvas.width,
+                y: fireCanvas.height - Math.random() * 30,
+                vx: (Math.random() - 0.5) * 0.8,
+                vy: -Math.random() * 2.5 - 1,
+                life: Math.random() * 40 + 20,
+                maxLife: 60,
+                size: Math.random() * 5 + 2
+            });
         }
-        var fireParticles = []; for (var i = 0; i < 50; i++) fireParticles.push({x: Math.random() * fireCanvas.width, y: fireCanvas.height - Math.random() * 30, vx: (Math.random()-0.5)*0.8, vy: -Math.random()*2.5-1, life: Math.random()*40+20, maxLife: 60, size: Math.random()*5+2});
         function drawFire() {
             fctx.clearRect(0, 0, fireCanvas.width, fireCanvas.height);
-            fireParticles.forEach(function(p, i) { var progress = p.life / p.maxLife; var gradient = fctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * progress); gradient.addColorStop(0, 'rgba(255,255,100,' + progress + ')'); gradient.addColorStop(0.4, 'rgba(255,150,0,' + progress * 0.8 + ')'); gradient.addColorStop(1, 'rgba(255,0,0,0)'); fctx.beginPath(); fctx.arc(p.x, p.y, p.size * progress, 0, Math.PI * 2); fctx.fillStyle = gradient; fctx.fill(); p.x += p.vx; p.y += p.vy; p.life--; if (p.life <= 0) { fireParticles[i] = {x: Math.random() * fireCanvas.width, y: fireCanvas.height - Math.random() * 10, vx: (Math.random()-0.5)*0.8, vy: -Math.random()*2.5-1, life: Math.random()*40+20, maxLife: 60, size: Math.random()*5+2}; } });
+            for(var i = 0; i < fireParticles.length; i++) {
+                var p = fireParticles[i];
+                var progress = p.life / p.maxLife;
+                var gradient = fctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * progress);
+                gradient.addColorStop(0, 'rgba(255,255,100,' + progress + ')');
+                gradient.addColorStop(0.4, 'rgba(255,150,0,' + progress * 0.8 + ')');
+                gradient.addColorStop(1, 'rgba(255,0,0,0)');
+                fctx.beginPath();
+                fctx.arc(p.x, p.y, p.size * progress, 0, Math.PI * 2);
+                fctx.fillStyle = gradient;
+                fctx.fill();
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+                if(p.life <= 0) {
+                    fireParticles[i] = {
+                        x: Math.random() * fireCanvas.width,
+                        y: fireCanvas.height - Math.random() * 10,
+                        vx: (Math.random() - 0.5) * 0.8,
+                        vy: -Math.random() * 2.5 - 1,
+                        life: Math.random() * 40 + 20,
+                        maxLife: 60,
+                        size: Math.random() * 5 + 2
+                    };
+                }
+            }
             requestAnimationFrame(drawFire);
-        } drawFire();
+        }
+        drawFire();
+    }
+    
+    var snowCanvas = document.getElementById('snowCanvas');
+    if(snowCanvas) {
+        var sctx3 = snowCanvas.getContext('2d');
+        snowCanvas.width = snowCanvas.parentElement.offsetWidth;
+        snowCanvas.height = snowCanvas.parentElement.offsetHeight;
+        var snowflakes = [];
+        for(var i = 0; i < 40; i++) {
+            snowflakes.push({
+                x: Math.random() * snowCanvas.width,
+                y: Math.random() * snowCanvas.height,
+                r: Math.random() * 3 + 1,
+                speed: Math.random() * 0.8 + 0.2,
+                wind: (Math.random() - 0.5) * 0.3,
+                opacity: Math.random() * 0.6 + 0.4
+            });
+        }
+        function drawSnow() {
+            sctx3.clearRect(0, 0, snowCanvas.width, snowCanvas.height);
+            for(var i = 0; i < snowflakes.length; i++) {
+                var f = snowflakes[i];
+                sctx3.beginPath();
+                sctx3.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+                sctx3.fillStyle = 'rgba(255,255,255,' + f.opacity + ')';
+                sctx3.fill();
+                f.y += f.speed;
+                f.x += f.wind;
+                if(f.y > snowCanvas.height + 10) {
+                    f.y = -10;
+                    f.x = Math.random() * snowCanvas.width;
+                }
+            }
+            requestAnimationFrame(drawSnow);
+        }
+        drawSnow();
     }
 }
-window.addEventListener('load', function() { setTimeout(initSkinEffects, 300); });
+
+window.onload = function() {
+    renderPlanos();
+    fetch('/status')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if(d.conectado && d.email) {
+            conectadoIQ = true;
+            emailLogado = d.email;
+            document.getElementById('email').value = d.email;
+            document.getElementById('btnConectar').style.display = 'none';
+            document.getElementById('btnDesconectar').style.display = 'inline-block';
+            if(d.rodando) {
+                botAtivo = true;
+                document.getElementById('btnOperar').style.display = 'none';
+                document.getElementById('btnParar').style.display = 'inline-block';
+                document.getElementById('statusTexto').textContent = '🤖 Operando';
+            } else {
+                document.getElementById('btnOperar').style.display = 'inline-block';
+                document.getElementById('statusTexto').textContent = '🟢 Conectado';
+            }
+            document.getElementById('statusDot').className = 'status-dot active';
+            document.getElementById('moedasSaldo').textContent = d.moedas || 0;
+            intervalo = setInterval(atualizar, 2000);
+            atualizar();
+            iniciarChat();
+        }
+    });
+    setInterval(atualizarChat, 5000);
+    setTimeout(initSkinEffects, 300);
+};
 </script>
 </body>
-</html>
+            </html>
