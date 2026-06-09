@@ -15,6 +15,7 @@ import os
 import warnings
 import requests
 import uuid
+import base64
 import hashlib as _hl
 
 warnings.filterwarnings("ignore")
@@ -155,7 +156,7 @@ SKINS = [
 
 # Cache do HTML
 html_cache = {"content": None, "timestamp": 0}
-HTML_CACHE_TTL = 30  # TTL menor para desenvolvimento ágil
+HTML_CACHE_TTL = 15  # TTL menor para desenvolvimento ágil
 
 # ============= VARIÁVEIS GLOBAIS DE CONTROLE =============
 API, par = None, "EURUSD-OTC"
@@ -174,6 +175,23 @@ bot_lock = threading.Lock()
 sinal_pendente = None  
 sinal_lock = threading.Lock()
 
+# ============= 📢 SISTEMA DE LOGS INTERNOS (CORRIGIDO) =============
+
+def add_log(msg, tipo='info'):
+    global logs_web
+    t = datetime.now().strftime('%H:%M:%S')
+    logs_web.append({'time': t, 'msg': msg, 'tipo': tipo})
+    if len(logs_web) > MAX_LOGS_WEB:
+        logs_web = logs_web[-MAX_LOGS_WEB:]
+    print(f"{t} - {msg}")
+
+def get_logs_html(limite=40):
+    html = ''
+    for log in logs_web[-limite:]:
+        cor = {'win': '#00ff88', 'loss': '#ff4444', 'info': '#00ff88', 'sensitive': '#ff69b4', 'indicator': '#ffd700', 'error': '#ff4444'}.get(log['tipo'], '#00ff88')
+        html += f'<span style="color:#666">{log["time"]}</span> <span style="color:{cor}">{log["msg"]}</span>\n'
+    return html or '📡 Aguardando...'
+
 # ============= 🌐 ENGENHARIA DE ESTRATÉGIAS CLOUD =============
 
 def carregar_estrategias_da_nuvem():
@@ -188,7 +206,7 @@ def carregar_estrategias_da_nuvem():
             for script in nomes_scripts:
                 try:
                     url_raw = f"{GIT_RAW_ESTRATEGIAS_BASE}/{script}.py"
-                    resp_raw = requests.get(url_url := url_raw, timeout=5)
+                    resp_raw = requests.get(url_raw, timeout=5)
                     if resp_raw.status_code == 200:
                         escopo_memoria = {}
                         exec(resp_raw.text, {}, escopo_memoria)
@@ -523,10 +541,8 @@ def bot_loop():
                     exec(requisicao.text, {}, escopo_local)
                     
                     if 'rodar_analise' in escopo_local:
-                        # Executa o botzinho injetado direto do github passing active API
                         sinal_detectado = escopo_local['rodar_analise'](API, par, add_log)
                         
-                        # Retorno estruturado: pode ser string ou dicionário contendo timeframe dinâmico
                         if sinal_detectado and bot_rodando:
                             direcao = ""
                             if isinstance(sinal_detectado, dict):
@@ -549,7 +565,6 @@ def bot_loop():
 
         threading.Thread(target=processamento_botzinho_remoto, daemon=True).start()
         
-        # Monitoramento principal aguardando o trigger do plugin cloud
         while bot_rodando and not STOP_GAIN_ATINGIDO:
             try:
                 with sinal_lock:
@@ -623,9 +638,7 @@ def status():
             'comprado': skin['id'] in skins_compradas, 'ativo': skin['id'] == skin_atual
         })
     
-    # 🛸 Varre os plugins reais do repositório em tempo real
     estrategias_disponiveis = carregar_estrategias_da_nuvem()
-    
     estrategias_compradas = u.get('estrategias_compradas', ['v_sensitivo']) if u else ['v_sensitivo']
     estrategia_atual = u.get('estrategia_atual', 'v_sensitivo') if u else 'v_sensitivo'
     
@@ -938,7 +951,7 @@ def chat_mensagens_route():
         return jsonify({'mensagens': list(r.json().values()) if r.status_code==200 and r.json() else [], 'online': 1})
     except: return jsonify({'mensagens': [], 'online': 1})
 
-# ========== RELATÓRIO E SHUTDOWN ==========
+# ========== RELATÓRIO E RANKING ==========
 
 @app.route('/ranking')
 def ranking():
