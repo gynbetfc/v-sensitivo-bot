@@ -355,16 +355,13 @@ var planoSelecionado = 0;
 var pixAtual = null;
 var estrategiaSel = 'v_sensitivo';
 
-// ========== FUNÇÕES DE NAVEGAÇÃO ==========
 function mostrarLojaCategoria(categoria) {
     var botoes = document.querySelectorAll('.loja-cat-btn');
     for(var i = 0; i < botoes.length; i++) botoes[i].classList.remove('active');
     event.target.classList.add('active');
-    
     var paineis = document.querySelectorAll('.loja-sub-panel');
     for(var i = 0; i < paineis.length; i++) paineis[i].classList.remove('active');
     document.getElementById('loja-' + categoria).classList.add('active');
-    
     if(categoria === 'volts') renderPlanos();
     if(categoria === 'skins') mostrarSubCategoriaSkin('basica', null);
     if(categoria === 'estrategias') renderLojaEstrategias();
@@ -376,11 +373,9 @@ function mostrarSubCategoriaSkin(categoria, evento) {
         for(var i = 0; i < botoes.length; i++) botoes[i].classList.remove('active');
         evento.target.classList.add('active');
     }
-    
     document.getElementById('skinsGridBasicas').style.display = categoria === 'basica' ? 'grid' : 'none';
     document.getElementById('skinsGridPremium').style.display = categoria === 'premium' ? 'grid' : 'none';
     document.getElementById('skinsGridLendarias').style.display = categoria === 'lendaria' ? 'grid' : 'none';
-    
     renderLojaCategoria(categoria);
 }
 
@@ -391,7 +386,6 @@ function openTab(tab) {
     for(var i = 0; i < panels.length; i++) panels[i].classList.remove('active');
     event.target.classList.add('active');
     document.getElementById('panel-' + tab).classList.add('active');
-    
     if(tab == 'relatorio' && emailLogado) {
         document.getElementById('emailRelatorio').value = emailLogado;
         verRelatorio();
@@ -432,7 +426,6 @@ function calcularMinimo() {
     }
 }
 
-// ========== CONEXÃO IQ OPTION ==========
 function conectarIQ() {
     var email = document.getElementById('email').value.trim();
     var senha = document.getElementById('senha').value.trim();
@@ -445,7 +438,6 @@ function conectarIQ() {
     var btnConectar = document.getElementById('btnConectar');
     btnConectar.disabled = true;
     btnConectar.textContent = 'Conectando...';
-    
     fetch('/conectar', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -488,7 +480,6 @@ function desconectarIQ() {
         return;
     }
     if(!confirm('Deseja realmente desconectar da IQ Option?')) return;
-    
     fetch('/parar', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -522,7 +513,6 @@ function comecarOperar() {
     var btnOperar = document.getElementById('btnOperar');
     btnOperar.disabled = true;
     btnOperar.textContent = 'Iniciando...';
-    
     fetch('/comecar_operar', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -555,7 +545,6 @@ function pararBot() {
     var btnParar = document.getElementById('btnParar');
     btnParar.disabled = true;
     btnParar.textContent = 'Parando...';
-    
     fetch('/parar', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -582,30 +571,32 @@ function pararBot() {
     });
 }
 
-// ========== ESTRATÉGIAS ==========
 function renderEstrategias() {
     fetch('/status')
     .then(function(r) { return r.json(); })
     .then(function(d) {
         var estrategiasCompradas = d.estrategias_compradas || ['v_sensitivo'];
         var disponiveis = d.estrategias_disponiveis || {};
+        var estrategiaAtual = d.estrategia || 'v_sensitivo';
         var grid = document.getElementById('estrategiaGrid');
         if(!grid) return;
         var html = '';
-        
         for(var key in disponiveis) {
             if(estrategiasCompradas.includes(key)) {
                 var e = disponiveis[key];
-                var ativa = key == estrategiaSel ? ' ativa' : '';
+                var ativa = key == estrategiaAtual ? ' ativa' : '';
                 html += '<div class="estrategia-card' + ativa + '" onclick="selecionarEstrategia(\'' + key + '\')" id="est_' + key + '">';
                 html += '<div style="font-size:14px;font-weight:bold">' + e.nome + '</div>';
                 html += '<div style="font-size:9px;color:#888;margin-top:5px">' + e.desc + '</div>';
                 html += '</div>';
             }
         }
-        grid.innerHTML = html || '<p style="color:#888;text-align:center">Nenhuma estratégia liberada</p>';
-        if(disponiveis[estrategiaSel]) {
-            document.getElementById('estrategiaAtiva').textContent = disponiveis[estrategiaSel].nome;
+        if(html === '') {
+            html = '<p style="color:#ff4444;text-align:center">⚠️ NENHUMA ESTRATÉGIA ADQUIRIDA! Vá na LOJA e compre uma estratégia.</p>';
+        }
+        grid.innerHTML = html;
+        if(disponiveis[estrategiaAtual]) {
+            document.getElementById('estrategiaAtiva').textContent = disponiveis[estrategiaAtual].nome;
         }
     });
 }
@@ -616,7 +607,6 @@ function selecionarEstrategia(key) {
     for(var i = 0; i < cards.length; i++) cards[i].classList.remove('ativa');
     var card = document.getElementById('est_' + key);
     if(card) card.classList.add('ativa');
-    
     fetch('/selecionar_estrategia', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -628,7 +618,6 @@ function selecionarEstrategia(key) {
     });
 }
 
-// ========== LOJA ESTRATÉGIAS ==========
 function renderLojaEstrategias() {
     fetch('/status')
     .then(function(r) { return r.json(); })
@@ -638,7 +627,6 @@ function renderLojaEstrategias() {
         var html = '';
         var estrategiasCompradas = d.estrategias_compradas || ['v_sensitivo'];
         var disponiveis = d.estrategias_disponiveis || {};
-        
         for(var key in disponiveis) {
             var est = disponiveis[key];
             var comprado = estrategiasCompradas.includes(key);
@@ -657,7 +645,10 @@ function renderLojaEstrategias() {
                 html += '</div>';
             }
         }
-        grid.innerHTML = html || '<p style="color:#888;text-align:center">Todas as estratégias adquiridas!</p>';
+        if(html === '') {
+            html = '<p style="color:#00ff88;text-align:center">✅ Você já possui todas as estratégias disponíveis!</p>';
+        }
+        grid.innerHTML = html;
     });
 }
 
@@ -667,7 +658,6 @@ function comprarEstrategia(estrategiaId) {
         return;
     }
     if(!confirm('Comprar esta estratégia com VOLTS?')) return;
-    
     fetch('/comprar_estrategia', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -686,12 +676,10 @@ function comprarEstrategia(estrategiaId) {
     });
 }
 
-// ========== PLANOS E SKINS ==========
 function renderPlanos() {
     var grid = document.getElementById('planosGridContainer');
     if(!grid) return;
     var html = '';
-    
     for(var i = 0; i < PLANOS.length; i++) {
         var p = PLANOS[i];
         html += '<div class="plano-card" id="plano' + p.id + '" onclick="selecionarPlano(' + p.id + ')">';
@@ -717,16 +705,13 @@ function renderLojaCategoria(categoria) {
         if(!grid) return;
         var html = '';
         var skinsFiltradas = [];
-        
         for(var i = 0; i < skinsStatus.length; i++) {
             if(skinsStatus[i].categoria === categoria) skinsFiltradas.push(skinsStatus[i]);
         }
-        
         for(var i = 0; i < skinsFiltradas.length; i++) {
             var skin = skinsFiltradas[i];
             var ativa = skin.ativo ? ' ativo' : '';
             var btnHtml = '';
-            
             if(skin.ativo) {
                 btnHtml = '<button class="btn-loja btn-comprado" style="width:100%;cursor:default">✅ EM USO</button>';
             } else if(skin.comprado) {
@@ -738,7 +723,6 @@ function renderLojaCategoria(categoria) {
                     btnHtml = '<button class="btn-loja btn-comprar-skin" onclick="comprarSkin(\'' + skin.id + '\')">🛒 COMPRAR (' + skin.preco_moedas + ' ⚡)</button>';
                 }
             }
-            
             html += '<div class="skin-card' + ativa + '">';
             html += '<div class="skin-nome">' + skin.nome + '</div>';
             html += '<div class="skin-desc">' + skin.desc + '</div>';
@@ -764,7 +748,6 @@ function comprarSkin(skinId) {
         return;
     }
     if(!confirm('Comprar esta skin?')) return;
-    
     fetch('/comprar_skin', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -793,7 +776,6 @@ function ativarSkin(skinId) {
         return;
     }
     if(!confirm('Ativar esta skin? O visual será atualizado.')) return;
-    
     fetch('/ativar_skin', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -828,7 +810,6 @@ function pagarComPix(planoId) {
     }
     document.getElementById('modalPix').classList.add('active');
     document.getElementById('pixContent').innerHTML = '<p style="color:#ffd700">⏳ Gerando QR Code...</p>';
-    
     fetch('/criar_pix', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -856,9 +837,7 @@ function pagarComPix(planoId) {
 
 function copiarPix() {
     if(pixAtual && pixAtual.qr_code) {
-        navigator.clipboard.writeText(pixAtual.qr_code).then(function() {
-            alert('📋 Código PIX copiado!');
-        });
+        navigator.clipboard.writeText(pixAtual.qr_code).then(function() { alert('📋 Código PIX copiado!'); });
     }
 }
 
@@ -887,7 +866,6 @@ function fecharModal() {
     pixAtual = null;
 }
 
-// ========== RELATÓRIO E RANKING ==========
 function verRelatorio() {
     var email = document.getElementById('emailRelatorio').value.trim();
     if(!email) {
@@ -895,7 +873,6 @@ function verRelatorio() {
         return;
     }
     document.getElementById('relatorioContent').innerHTML = '<p style="color:#ffd700">⏳ Carregando...</p>';
-    
     fetch('/relatorio?email=' + email)
     .then(function(r) { return r.json(); })
     .then(function(d) {
@@ -903,7 +880,6 @@ function verRelatorio() {
             alert(d.erro);
             return;
         }
-        
         var h = '<div class="relatorio-grid">';
         h += '<div class="relatorio-card"><div class="rlabel">⚡ VOLTS</div><div class="rvalue">' + (d.moedas || 0) + '</div></div>';
         h += '<div class="relatorio-card"><div class="rlabel">📈 LUCRO TOTAL</div><div class="rvalue" style="color:' + (d.lucro_total >= 0 ? '#00ff88' : '#ff4444') + '">$' + (d.lucro_total || 0).toFixed(2) + '</div></div>';
@@ -917,7 +893,6 @@ function verRelatorio() {
         h += '<div class="relatorio-card"><div class="rlabel">💰 BANCA</div><div class="rvalue">$' + (d.banca_atual || 0).toFixed(2) + '</div></div>';
         h += '<div class="relatorio-card"><div class="rlabel">📅 CADASTRO</div><div class="rvalue" style="font-size:10px">' + (d.data_cadastro || '--') + '</div></div>';
         h += '</div>';
-        
         if(d.historico_operacoes && d.historico_operacoes.length > 0) {
             h += '<h4 style="margin-top:10px">📋 ÚLTIMAS OPERAÇÕES</h4>';
             h += '<table class="historico-table">';
@@ -943,7 +918,6 @@ function verRelatorio() {
 
 function verRanking() {
     document.getElementById('relatorioContent').innerHTML = '<p style="color:#ffd700;text-align:center">🏆 Carregando ranking...</p>';
-    
     fetch('/ranking')
     .then(function(r) { return r.json(); })
     .then(function(d) {
@@ -956,17 +930,14 @@ function verRanking() {
         h += '<div class="relatorio-card"><div class="rlabel">✅ WINS</div><div class="rvalue" style="color:#00ff88">' + d.stats.total_wins + '</div></div>';
         h += '<div class="relatorio-card"><div class="rlabel">🎯 TAXA GLOBAL</div><div class="rvalue" style="color:#ffd700">' + d.stats.taxa_global + '%</div></div>';
         h += '</div></div>';
-        
         h += '<p style="color:#ffd700;font-size:14px;font-weight:bold;text-align:center;margin-bottom:10px">🏆 TOP TRADERS</p>';
         h += '<div style="background:#000;border:1px solid #333;border-radius:10px;overflow:hidden">';
         h += '<table class="historico-table">';
         h += '<tr><th>#</th><th>EMAIL</th><th>LUCRO</th><th>WINS</th><th>LOSS</th><th>TAXA</th><th>BANCA</th></tr>';
-        
         for(var i = 0; i < d.ranking.length && i < 20; i++) {
             var u = d.ranking[i];
             var cor = i === 0 ? '#ffd700' : (i === 1 ? '#c0c0c0' : (i === 2 ? '#cd7f32' : '#fff'));
             var medalha = i === 0 ? '🥇' : (i === 1 ? '🥈' : (i === 2 ? '🥉' : (i + 1)));
-            
             h += '<tr>';
             h += '<td style="color:' + cor + ';font-weight:bold">' + medalha + '</td>';
             h += '<td style="color:#ccc;font-size:8px">' + (u.email || '---').substring(0,20) + '</td>';
@@ -985,7 +956,6 @@ function verRanking() {
     });
 }
 
-// ========== ATUALIZAÇÃO EM TEMPO REAL ==========
 function atualizar() {
     fetch('/status')
     .then(function(r) { return r.json(); })
@@ -1003,7 +973,6 @@ function atualizar() {
             document.getElementById('estrategiaAtiva').textContent = d.estrategia_nome;
             estrategiaSel = d.estrategia;
         }
-        
         if(d.analise) {
             document.getElementById('rsi').textContent = d.analise.rsi ? d.analise.rsi.toFixed(1) : '--';
             document.getElementById('mm5').textContent = d.analise.mm5 ? d.analise.mm5.toFixed(5) : '--';
@@ -1013,13 +982,11 @@ function atualizar() {
             document.getElementById('fase').textContent = d.analise.fase || '--';
             document.getElementById('preco').textContent = d.analise.preco ? d.analise.preco.toFixed(5) : '--';
         }
-        
         if(d.logs) {
             var terminal = document.getElementById('terminal');
             terminal.innerHTML = d.logs;
             terminal.scrollTop = terminal.scrollHeight;
         }
-        
         if(d.rodando && !botAtivo) {
             botAtivo = true;
             document.getElementById('btnOperar').style.display = 'none';
@@ -1035,7 +1002,6 @@ function atualizar() {
     });
 }
 
-// ========== CHAT ==========
 function iniciarChat() {
     if(emailLogado) {
         atualizarChat();
@@ -1051,7 +1017,6 @@ function enviarChatMsg() {
         return;
     }
     var nome = emailLogado.split('@')[0];
-    
     fetch('/chat_enviar', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -1090,7 +1055,6 @@ function atualizarChat() {
     });
 }
 
-// ========== EFEITOS DAS SKINS ==========
 function initSkinEffects() {
     var matrixCanvas = document.getElementById('matrixCanvas');
     if(matrixCanvas && matrixCanvas.getContext) {
@@ -1104,7 +1068,6 @@ function initSkinEffects() {
         var columns = Math.floor(width / fontSize);
         var drops = [];
         for(var i = 0; i < columns; i++) drops[i] = Math.random() * -100;
-        
         function drawMatrix() {
             if(!matrixCanvas || !matrixCanvas.getContext) return;
             ctx.fillStyle = 'rgba(0,0,0,0.04)';
@@ -1121,7 +1084,6 @@ function initSkinEffects() {
         }
         drawMatrix();
     }
-    
     var sakuraCanvas = document.getElementById('sakuraCanvas');
     if(sakuraCanvas && sakuraCanvas.getContext) {
         var sCtx = sakuraCanvas.getContext('2d');
@@ -1131,15 +1093,8 @@ function initSkinEffects() {
         sakuraCanvas.height = sHeight;
         var petals = [];
         for(var i = 0; i < 25; i++) {
-            petals.push({
-                x: Math.random() * sWidth,
-                y: Math.random() * sHeight,
-                r: Math.random() * 4 + 2,
-                speed: Math.random() * 1 + 0.5,
-                angle: Math.random() * Math.PI * 2
-            });
+            petals.push({x: Math.random() * sWidth, y: Math.random() * sHeight, r: Math.random() * 4 + 2, speed: Math.random() * 1 + 0.5, angle: Math.random() * Math.PI * 2});
         }
-        
         function drawSakura() {
             if(!sakuraCanvas || !sakuraCanvas.getContext) return;
             sCtx.clearRect(0, 0, sWidth, sHeight);
@@ -1150,16 +1105,12 @@ function initSkinEffects() {
                 sCtx.ellipse(p.x, p.y, p.r, p.r * 0.6, p.angle, 0, Math.PI * 2);
                 sCtx.fill();
                 p.y += p.speed;
-                if(p.y > sHeight) {
-                    p.y = -10;
-                    p.x = Math.random() * sWidth;
-                }
+                if(p.y > sHeight) { p.y = -10; p.x = Math.random() * sWidth; }
             }
             requestAnimationFrame(drawSakura);
         }
         drawSakura();
     }
-    
     var darkCanvas = document.getElementById('darkCanvas');
     if(darkCanvas && darkCanvas.getContext) {
         var dCtx = darkCanvas.getContext('2d');
@@ -1169,15 +1120,8 @@ function initSkinEffects() {
         darkCanvas.height = dHeight;
         var particles = [];
         for(var i = 0; i < 40; i++) {
-            particles.push({
-                x: Math.random() * dWidth,
-                y: Math.random() * dHeight,
-                r: Math.random() * 3 + 1,
-                vx: (Math.random() - 0.5) * 0.5,
-                vy: Math.random() * 0.5 + 0.2
-            });
+            particles.push({x: Math.random() * dWidth, y: Math.random() * dHeight, r: Math.random() * 3 + 1, vx: (Math.random() - 0.5) * 0.5, vy: Math.random() * 0.5 + 0.2});
         }
-        
         function drawDark() {
             if(!darkCanvas || !darkCanvas.getContext) return;
             dCtx.clearRect(0, 0, dWidth, dHeight);
@@ -1199,10 +1143,8 @@ function initSkinEffects() {
     }
 }
 
-// ========== INICIALIZAÇÃO ==========
 window.onload = function() {
     renderPlanos();
-    
     fetch('/status')
     .then(function(r) { return r.json(); })
     .then(function(d) {
@@ -1212,7 +1154,6 @@ window.onload = function() {
             document.getElementById('email').value = d.email;
             document.getElementById('btnConectar').style.display = 'none';
             document.getElementById('btnDesconectar').style.display = 'inline-block';
-            
             if(d.rodando) {
                 botAtivo = true;
                 document.getElementById('btnOperar').style.display = 'none';
@@ -1229,10 +1170,9 @@ window.onload = function() {
             iniciarChat();
         }
     });
-    
     setInterval(atualizarChat, 5000);
     setTimeout(initSkinEffects, 300);
 };
 </script>
 </body>
-    </html>
+                                                                                                                                         </html>
