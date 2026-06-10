@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # TESLA 369 BOT - MÓDULO DE SKINS v5.0
 # TODAS as skins com efeitos NO BANNER E NA TELA CHEIA
+# IDs dos canvases CORRESPONDEM ao que o JavaScript do HTML espera
 
 SKINS_MODULE_VERSION = "5.0.0"
 
@@ -37,7 +38,7 @@ SKINS_LIST = [
         'cor_tab_ativa': '#9933ff',
         'cor_header_bg': 'linear-gradient(135deg,#000000,#110022,#220044,#110022,#000000)',
         'cor_header_borda': '#9933ff',
-        'header_extra': '<canvas id="darkCanvasBanner" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas><canvas id="darkCanvasFull" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none"></canvas>',
+        'header_extra': '<canvas id="darkCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas>',
         'css_extra': 'body{background:#000000!important}.header{border-color:#9933ff!important;box-shadow:0 0 40px rgba(153,51,255,0.3)}'
     },
     {
@@ -71,7 +72,7 @@ SKINS_LIST = [
         'cor_tab_ativa': '#ffd700',
         'cor_header_bg': 'linear-gradient(135deg,#001a0a,#003315,#004d20,#003315,#001a0a)',
         'cor_header_borda': '#ffd700',
-        'header_extra': '<canvas id="brasilBanner" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas><canvas id="brasilFull" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none"></canvas>',
+        'header_extra': '<canvas id="brasilCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas>',
         'css_extra': 'body{background:#001a0a!important}.header{border-color:#ffd700!important}'
     },
     {
@@ -88,7 +89,7 @@ SKINS_LIST = [
         'cor_tab_ativa': '#ff69b4',
         'cor_header_bg': 'linear-gradient(135deg,#1a0010,#2a0a20,#3a1530,#2a0a20,#1a0010)',
         'cor_header_borda': '#ff69b4',
-        'header_extra': '<div class="coroa-banner">👑</div><canvas id="princesaBanner" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas><canvas id="princesaFull" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none"></canvas>',
+        'header_extra': '<div class="coroa-banner">👑</div><canvas id="princesaSparkles" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas>',
         'css_extra': '.coroa-banner{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:40px;animation:flutuarBanner 2s ease-in-out infinite;z-index:2}@keyframes flutuarBanner{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-10px)}}.header h1{color:#ff69b4!important;text-shadow:0 0 30px #ff1493!important}'
     },
     {
@@ -105,7 +106,7 @@ SKINS_LIST = [
         'cor_tab_ativa': '#ff3366',
         'cor_header_bg': 'linear-gradient(135deg,#0a0a0a,#1a1a2a,#2a2a3a,#1a1a2a,#0a0a0a)',
         'cor_header_borda': '#ff3366',
-        'header_extra': '<div class="scanline-banner"></div><div class="scanline-full"></div><canvas id="cyberBanner" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas>',
+        'header_extra': '<div class="scanline-banner"></div><div class="scanline-full"></div><canvas id="cyberCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas>',
         'css_extra': '.scanline-banner{position:absolute;top:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,rgba(255,51,102,0) 0%,rgba(255,51,102,0.6) 50%,rgba(255,51,102,0) 100%);animation:scanBanner 4s linear infinite;pointer-events:none;z-index:2}.scanline-full{position:fixed;top:0;left:0;width:100%;height:5px;background:linear-gradient(180deg,rgba(255,51,102,0) 0%,rgba(255,51,102,0.3) 50%,rgba(255,51,102,0) 100%);animation:scanFull 8s linear infinite;pointer-events:none;z-index:100}@keyframes scanBanner{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}@keyframes scanFull{0%{transform:translateY(0)}100%{transform:translateY(100vh)}}body{background:#0a0a0a!important}.header{border-color:#ff3366!important;box-shadow:0 0 30px rgba(255,51,102,0.5)}.header h1{font-family:monospace;letter-spacing:5px;text-shadow:0 0 20px #ff3366}'
     },
 
@@ -124,7 +125,7 @@ SKINS_LIST = [
         'cor_tab_ativa': '#ff69b4',
         'cor_header_bg': 'linear-gradient(135deg,#1a0020,#330033,#4d004d,#330033,#1a0020)',
         'cor_header_borda': '#ff69b4',
-        'header_extra': '<canvas id="sakuraBanner" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas><canvas id="sakuraFull" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none"></canvas>',
+        'header_extra': '<canvas id="sakuraCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas>',
         'css_extra': 'body{background:linear-gradient(180deg,#1a0a1a 0%,#0d001a 100%)!important}.header{border-color:#ff69b4!important;box-shadow:0 0 40px rgba(255,105,180,0.3)}'
     },
     {
@@ -141,7 +142,7 @@ SKINS_LIST = [
         'cor_tab_ativa': '#00aacc',
         'cor_header_bg': 'linear-gradient(135deg,#001020,#002040,#003060,#002040,#001020)',
         'cor_header_borda': '#00aacc',
-        'header_extra': '<canvas id="oceanBanner" style="position:absolute;bottom:0;left:0;width:100%;height:60px;z-index:1"></canvas><canvas id="oceanFull" style="position:fixed;bottom:0;left:0;width:100%;height:120px;z-index:-1"></canvas>',
+        'header_extra': '<canvas id="oceanCanvas" style="position:absolute;bottom:0;left:0;width:100%;height:60px;z-index:1"></canvas>',
         'css_extra': 'body{background:linear-gradient(180deg,#001020 0%,#000810 100%)!important}.header{border-color:#00aacc!important;box-shadow:0 0 30px rgba(0,170,204,0.3)}'
     },
     {
@@ -158,7 +159,7 @@ SKINS_LIST = [
         'cor_tab_ativa': '#ff4400',
         'cor_header_bg': 'linear-gradient(135deg,#1a0000,#330000,#551100,#330000,#1a0000)',
         'cor_header_borda': '#ff4400',
-        'header_extra': '<canvas id="fireBanner" style="position:absolute;bottom:0;left:0;width:100%;height:50px;z-index:1"></canvas><canvas id="fireFull" style="position:fixed;bottom:0;left:0;width:100%;height:100px;z-index:-1"></canvas>',
+        'header_extra': '<canvas id="fireCanvas" style="position:absolute;bottom:0;left:0;width:100%;height:50px;z-index:1"></canvas>',
         'css_extra': 'body{background:radial-gradient(ellipse at bottom,#1a0000 0%,#000000 100%)!important}.header{border-color:#ff4400!important;box-shadow:0 0 30px rgba(255,68,0,0.4)}'
     },
     {
@@ -175,7 +176,7 @@ SKINS_LIST = [
         'cor_tab_ativa': '#3399ff',
         'cor_header_bg': 'linear-gradient(135deg,#000a1a,#001133,#002255,#001133,#000a1a)',
         'cor_header_borda': '#3399ff',
-        'header_extra': '<canvas id="snowBanner" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas><canvas id="snowFull" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none"></canvas>',
+        'header_extra': '<canvas id="snowCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas>',
         'css_extra': 'body{background:linear-gradient(180deg,#000a1a 0%,#001133 100%)!important}.header{border-color:#3399ff!important;box-shadow:0 0 40px rgba(51,153,255,0.3)}'
     },
     {
@@ -192,11 +193,11 @@ SKINS_LIST = [
         'cor_tab_ativa': '#d4a574',
         'cor_header_bg': 'linear-gradient(135deg,#2a1a0a,#3a2a1a,#4a3a2a,#3a2a1a,#2a1a0a)',
         'cor_header_borda': '#d4a574',
-        'header_extra': '<canvas id="coffeeBanner" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas><canvas id="coffeeFull" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none"></canvas>',
+        'header_extra': '<canvas id="coffeeCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas>',
         'css_extra': 'body{background:linear-gradient(180deg,#2a1a0a 0%,#1a0a00 100%)!important}.header{border-color:#d4a574!important;box-shadow:0 0 40px rgba(212,165,116,0.3)}'
     },
 
-    # ============= SKINS LENDÁRIAS (BANNER + TELA CHEIA) =============
+    # ============= SKINS LENDÁRIAS =============
     {
         'id': 'skin_matrix',
         'nome': '🧬 MATRIX',
@@ -211,7 +212,7 @@ SKINS_LIST = [
         'cor_tab_ativa': '#00ff00',
         'cor_header_bg': 'linear-gradient(135deg,#000000,#001100,#003300,#001100,#000000)',
         'cor_header_borda': '#00ff00',
-        'header_extra': '<canvas id="matrixBanner" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas><canvas id="matrixFull" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none"></canvas>',
+        'header_extra': '<canvas id="matrixCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas>',
         'css_extra': 'body{background:#000000!important}.header{border-color:#00ff00!important;box-shadow:0 0 30px rgba(0,255,0,0.6)}.terminal{color:#00ff00!important;font-family:monospace!important}'
     },
     {
@@ -228,7 +229,7 @@ SKINS_LIST = [
         'cor_tab_ativa': '#ffff00',
         'cor_header_bg': 'linear-gradient(135deg,#000011,#111122,#222244,#111122,#000011)',
         'cor_header_borda': '#ffff00',
-        'header_extra': '<canvas id="thunderBanner" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas><div class="flash-banner"></div><canvas id="thunderFull" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none"></canvas><div class="flash-full"></div>',
+        'header_extra': '<canvas id="thunderCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas><div class="flash-banner"></div><div class="flash-full"></div>',
         'css_extra': 'body{background:#000011!important}.flash-banner{position:absolute;top:0;left:0;width:100%;height:100%;background:white;opacity:0;pointer-events:none;animation:flashBanner 5s infinite;z-index:2}.flash-full{position:fixed;top:0;left:0;width:100%;height:100%;background:white;opacity:0;pointer-events:none;animation:flashFull 5s infinite;z-index:999}@keyframes flashBanner{0%,95%,100%{opacity:0}96%{opacity:0.2}97%{opacity:0.5}}@keyframes flashFull{0%,95%,100%{opacity:0}96%{opacity:0.15}97%{opacity:0.3}}.header{border-color:#ffff00!important;box-shadow:0 0 50px rgba(255,255,0,0.4)}'
     },
     {
@@ -245,8 +246,8 @@ SKINS_LIST = [
         'cor_tab_ativa': '#9933ff',
         'cor_header_bg': 'linear-gradient(135deg,#0d001a,#1a0033,#2d0055,#1a0033,#0d001a)',
         'cor_header_borda': '#9933ff',
-        'header_extra': '<div class="cristal-banner"></div><div class="mago-banner-esq">🧙‍♂️</div><div class="mago-banner-dir">🧙‍♀️</div><div class="magic-banner"></div><div class="cristal-full"></div><div class="magic-full"></div>',
-        'css_extra': '.cristal-banner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100px;height:100px;background:radial-gradient(circle at 30% 30%,rgba(200,150,255,0.5) 0%,rgba(153,51,255,0.3) 30%,transparent 70%);border-radius:50%;z-index:1;animation:cristalBrilhoBanner 3s ease-in-out infinite;pointer-events:none}.cristal-full{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:300px;height:300px;background:radial-gradient(circle at 30% 30%,rgba(200,150,255,0.15) 0%,rgba(153,51,255,0.08) 30%,transparent 80%);border-radius:50%;z-index:-1;animation:cristalBrilhoFull 5s ease-in-out infinite;pointer-events:none}.mago-banner-esq{position:absolute;top:50%;left:15px;font-size:28px;z-index:2;animation:magoFlutuarBanner 2s ease-in-out infinite;pointer-events:none}.mago-banner-dir{position:absolute;top:50%;right:15px;font-size:28px;z-index:2;animation:magoFlutuarBanner 2s ease-in-out infinite 0.5s;pointer-events:none}.magic-banner{position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at 50% 50%,rgba(153,51,255,0.1) 0%,transparent 70%);z-index:0;pointer-events:none}.magic-full{position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at 50% 50%,rgba(153,51,255,0.05) 0%,transparent 80%);z-index:-2;pointer-events:none}@keyframes cristalBrilhoBanner{0%,100%{box-shadow:0 0 20px rgba(153,51,255,0.4)}50%{box-shadow:0 0 50px rgba(200,100,255,0.6)}}@keyframes cristalBrilhoFull{0%,100%{opacity:0.2}50%{opacity:0.5}}@keyframes magoFlutuarBanner{0%,100%{transform:translateY(-50%)}50%{transform:translateY(-60%)}}.cristal-banner::after{content:"🔮";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:40px;animation:cristalFlutuarBanner 3s ease-in-out infinite}@keyframes cristalFlutuarBanner{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-60%) scale(1.1)}}'
+        'header_extra': '<div class="cristal-banner"></div><div class="mago-banner-esq">🧙‍♂️</div><div class="mago-banner-dir">🧙‍♀️</div><div class="magic-banner"></div>',
+        'css_extra': '.cristal-banner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100px;height:100px;background:radial-gradient(circle at 30% 30%,rgba(200,150,255,0.5) 0%,rgba(153,51,255,0.3) 30%,transparent 70%);border-radius:50%;z-index:1;animation:cristalBrilhoBanner 3s ease-in-out infinite;pointer-events:none}.mago-banner-esq{position:absolute;top:50%;left:15px;font-size:28px;z-index:2;animation:magoFlutuarBanner 2s ease-in-out infinite;pointer-events:none}.mago-banner-dir{position:absolute;top:50%;right:15px;font-size:28px;z-index:2;animation:magoFlutuarBanner 2s ease-in-out infinite 0.5s;pointer-events:none}.magic-banner{position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at 50% 50%,rgba(153,51,255,0.1) 0%,transparent 70%);z-index:0;pointer-events:none}@keyframes cristalBrilhoBanner{0%,100%{box-shadow:0 0 20px rgba(153,51,255,0.4)}50%{box-shadow:0 0 50px rgba(200,100,255,0.6)}}@keyframes magoFlutuarBanner{0%,100%{transform:translateY(-50%)}50%{transform:translateY(-60%)}}.cristal-banner::after{content:"🔮";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:40px;animation:cristalFlutuarBanner 3s ease-in-out infinite}@keyframes cristalFlutuarBanner{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-60%) scale(1.1)}}'
     },
     {
         'id': 'skin_cosmic',
@@ -262,8 +263,8 @@ SKINS_LIST = [
         'cor_tab_ativa': '#aa66ff',
         'cor_header_bg': 'linear-gradient(135deg,#050510,#0a0a2a,#151545,#0a0a2a,#050510)',
         'cor_header_borda': '#aa66ff',
-        'header_extra': '<div class="estrela-banner-1"></div><div class="estrela-banner-2"></div><div class="estrela-banner-3"></div><div class="nebulosa-banner"></div><canvas id="cosmicFull" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none"></canvas><div class="nebulosa-full"></div>',
-        'css_extra': 'body{background:#050510!important}.estrela-banner-1,.estrela-banner-2,.estrela-banner-3{position:absolute;width:2px;height:2px;background:white;border-radius:50%;box-shadow:0 0 10px white,0 0 20px #aa66ff;opacity:0;pointer-events:none;z-index:2}.estrela-banner-1{top:10%;right:10%;animation:estrelaCairBanner 4s linear infinite}.estrela-banner-2{top:20%;right:30%;animation:estrelaCairBanner 5s linear infinite 2s}.estrela-banner-3{top:5%;right:50%;animation:estrelaCairBanner 6s linear infinite 4s}.nebulosa-banner{position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at 30% 40%,rgba(170,102,255,0.2) 0%,rgba(100,50,200,0.1) 30%,transparent 70%);z-index:0;pointer-events:none;animation:nebulosaPulsarBanner 8s ease-in-out infinite}.nebulosa-full{position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at 30% 40%,rgba(170,102,255,0.1) 0%,rgba(100,50,200,0.05) 30%,transparent 80%);z-index:-2;pointer-events:none;animation:nebulosaPulsarFull 8s ease-in-out infinite}@keyframes estrelaCairBanner{0%{transform:translate(0,0);opacity:1}100%{transform:translate(-200px,200px);opacity:0}}@keyframes nebulosaPulsarBanner{0%,100%{opacity:0.4}50%{opacity:0.8}}@keyframes nebulosaPulsarFull{0%,100%{opacity:0.2}50%{opacity:0.5}}.header{border-color:#aa66ff!important;box-shadow:0 0 60px rgba(170,102,255,0.4)}.header h1{text-shadow:0 0 30px #aa66ff,0 0 60px #6600cc}'
+        'header_extra': '<canvas id="cosmicCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas><div class="nebulosa-full"></div>',
+        'css_extra': 'body{background:#050510!important}.nebulosa-full{position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at 30% 40%,rgba(170,102,255,0.1) 0%,rgba(100,50,200,0.05) 30%,transparent 80%);z-index:-2;pointer-events:none;animation:nebulosaPulsarFull 8s ease-in-out infinite}@keyframes nebulosaPulsarFull{0%,100%{opacity:0.2}50%{opacity:0.5}}.header{border-color:#aa66ff!important;box-shadow:0 0 60px rgba(170,102,255,0.4)}.header h1{text-shadow:0 0 30px #aa66ff,0 0 60px #6600cc}'
     },
     {
         'id': 'skin_aurora',
@@ -279,11 +280,11 @@ SKINS_LIST = [
         'cor_tab_ativa': '#00ffaa',
         'cor_header_bg': 'linear-gradient(135deg,#0a0a2a,#1a1a4a,#2a2a6a,#1a1a4a,#0a0a2a)',
         'cor_header_borda': '#00ffaa',
-        'header_extra': '<div class="aurora-banner-1"></div><div class="aurora-banner-2"></div><div class="aurora-banner-3"></div><div class="aurora-full-1"></div><div class="aurora-full-2"></div><div class="aurora-full-3"></div>',
-        'css_extra': 'body{background:linear-gradient(180deg,#0a0a2a 0%,#0f0f3a 50%,#0a0a2a 100%)!important}.aurora-banner-1,.aurora-banner-2,.aurora-banner-3{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0}.aurora-banner-1{background:linear-gradient(45deg,transparent,rgba(0,255,170,0.15),rgba(0,200,255,0.1),transparent);animation:auroraWaveBanner1 6s ease-in-out infinite}.aurora-banner-2{background:linear-gradient(135deg,transparent,rgba(100,50,255,0.12),rgba(0,255,200,0.08),transparent);animation:auroraWaveBanner2 8s ease-in-out infinite 2s}.aurora-banner-3{background:linear-gradient(225deg,transparent,rgba(0,255,150,0.1),rgba(50,100,255,0.06),transparent);animation:auroraWaveBanner3 10s ease-in-out infinite 4s}.aurora-full-1,.aurora-full-2,.aurora-full-3{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:-1}.aurora-full-1{background:linear-gradient(45deg,transparent,rgba(0,255,170,0.08),rgba(0,200,255,0.05),transparent);animation:auroraWaveFull1 8s ease-in-out infinite}.aurora-full-2{background:linear-gradient(135deg,transparent,rgba(100,50,255,0.06),rgba(0,255,200,0.04),transparent);animation:auroraWaveFull2 10s ease-in-out infinite 2s}.aurora-full-3{background:linear-gradient(225deg,transparent,rgba(0,255,150,0.05),rgba(50,100,255,0.03),transparent);animation:auroraWaveFull3 12s ease-in-out infinite 4s}@keyframes auroraWaveBanner1{0%{transform:translateX(-100%)}50%{transform:translateX(100%)}100%{transform:translateX(-100%)}}@keyframes auroraWaveBanner2{0%{transform:translateX(100%)}50%{transform:translateX(-100%)}100%{transform:translateX(100%)}}@keyframes auroraWaveBanner3{0%{transform:translateY(-100%)}50%{transform:translateY(100%)}100%{transform:translateY(-100%)}}@keyframes auroraWaveFull1{0%{transform:translateX(-100%)}50%{transform:translateX(100%)}100%{transform:translateX(-100%)}}@keyframes auroraWaveFull2{0%{transform:translateX(100%)}50%{transform:translateX(-100%)}100%{transform:translateX(100%)}}@keyframes auroraWaveFull3{0%{transform:translateY(-100%)}50%{transform:translateY(100%)}100%{transform:translateY(-100%)}}.header{border-color:#00ffaa!important;box-shadow:0 0 60px rgba(0,255,170,0.4)}'
+        'header_extra': '<canvas id="auroraCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas>',
+        'css_extra': 'body{background:linear-gradient(180deg,#0a0a2a 0%,#0f0f3a 50%,#0a0a2a 100%)!important}.header{border-color:#00ffaa!important;box-shadow:0 0 60px rgba(0,255,170,0.4)}'
     },
 
-    # ============= SKINS LENDÁRIAS DOS HERÓIS (BANNER + TELA CHEIA) =============
+    # ============= SKINS LENDÁRIAS DOS HERÓIS =============
     {
         'id': 'skin_batman',
         'nome': '🦇 BATMAN',
@@ -298,8 +299,8 @@ SKINS_LIST = [
         'cor_tab_ativa': '#f5c518',
         'cor_header_bg': 'linear-gradient(135deg,#0a0a0a,#111111,#1a1a1a,#111111,#0a0a0a)',
         'cor_header_borda': '#f5c518',
-        'header_extra': '<div class="bat-sinal-banner"></div><div class="morcego-banner-1">🦇</div><div class="morcego-banner-2">🦇</div><div class="morcego-banner-3">🦇</div><div class="gotham-banner"></div><div class="bat-sinal-full"></div><div class="gotham-full"></div>',
-        'css_extra': 'body{background:#0a0a0a!important}.bat-sinal-banner{position:absolute;top:20%;left:50%;transform:translateX(-50%);width:120px;height:120px;background:radial-gradient(circle,rgba(245,197,24,0.2) 0%,transparent 70%);border-radius:50%;animation:batSinalPulsarBanner 3s ease-in-out infinite;pointer-events:none;z-index:1}.bat-sinal-full{position:fixed;top:20%;left:50%;transform:translateX(-50%);width:300px;height:300px;background:radial-gradient(circle,rgba(245,197,24,0.1) 0%,transparent 80%);border-radius:50%;animation:batSinalPulsarFull 4s ease-in-out infinite;pointer-events:none;z-index:-1}.morcego-banner-1,.morcego-banner-2,.morcego-banner-3{position:absolute;font-size:35px;opacity:0.2;pointer-events:none;z-index:2}.morcego-banner-1{top:10%;left:10%;animation:voarMorcegoBanner1 10s ease-in-out infinite}.morcego-banner-2{top:20%;right:15%;animation:voarMorcegoBanner2 8s ease-in-out infinite 3s}.morcego-banner-3{bottom:15%;left:20%;animation:voarMorcegoBanner3 12s ease-in-out infinite 5s}.gotham-banner{position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at 50% 50%,rgba(245,197,24,0.05) 0%,transparent 70%);pointer-events:none;z-index:0}.gotham-full{position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at 50% 50%,rgba(245,197,24,0.03) 0%,transparent 80%);z-index:-2;pointer-events:none}@keyframes voarMorcegoBanner1{0%{transform:translate(0,0) rotate(0deg)}25%{transform:translate(20px,-25px) rotate(-8deg)}75%{transform:translate(-15px,15px) rotate(5deg)}100%{transform:translate(0,0) rotate(0deg)}}@keyframes voarMorcegoBanner2{0%{transform:translate(0,0) rotate(0deg)}25%{transform:translate(-20px,-20px) rotate(6deg)}75%{transform:translate(15px,15px) rotate(-4deg)}100%{transform:translate(0,0) rotate(0deg)}}@keyframes voarMorcegoBanner3{0%{transform:translate(0,0)}50%{transform:translate(-25px,-20px) rotate(-6deg)}100%{transform:translate(0,0)}}@keyframes batSinalPulsarBanner{0%,100%{opacity:0.3;transform:translateX(-50%) scale(1)}50%{opacity:0.7;transform:translateX(-50%) scale(1.15)}}@keyframes batSinalPulsarFull{0%,100%{opacity:0.1;transform:translateX(-50%) scale(1)}50%{opacity:0.3;transform:translateX(-50%) scale(1.2)}}.header{border-color:#f5c518!important;box-shadow:0 0 40px rgba(245,197,24,0.4)}'
+        'header_extra': '<canvas id="batmanCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas><div class="bat-sinal-full"></div>',
+        'css_extra': 'body{background:#0a0a0a!important}.bat-sinal-full{position:fixed;top:20%;left:50%;transform:translateX(-50%);width:300px;height:300px;background:radial-gradient(circle,rgba(245,197,24,0.1) 0%,transparent 80%);border-radius:50%;animation:batSinalPulsarFull 4s ease-in-out infinite;pointer-events:none;z-index:-1}@keyframes batSinalPulsarFull{0%,100%{opacity:0.1;transform:translateX(-50%) scale(1)}50%{opacity:0.3;transform:translateX(-50%) scale(1.2)}}.header{border-color:#f5c518!important;box-shadow:0 0 40px rgba(245,197,24,0.4)}'
     },
     {
         'id': 'skin_capitao',
@@ -315,8 +316,8 @@ SKINS_LIST = [
         'cor_tab_ativa': '#ff0000',
         'cor_header_bg': 'linear-gradient(135deg,#0a1a3a,#1a2a4a,#2a3a5a,#1a2a4a,#0a1a3a)',
         'cor_header_borda': '#ff0000',
-        'header_extra': '<div class="escudo-banner">🛡️</div><div class="estrela-banner-cap-1">⭐</div><div class="estrela-banner-cap-2">⭐</div><div class="estrela-banner-cap-3">⭐</div><div class="bandeira-banner"></div><div class="escudo-full"></div><div class="bandeira-full"></div>',
-        'css_extra': 'body{background:linear-gradient(135deg,#0a1a3a 0%,#1a2a4a 50%,#0a1a3a 100%)!important}.escudo-banner{position:absolute;bottom:10%;left:50%;transform:translateX(-50%);font-size:70px;opacity:0.15;animation:escudoGirarBanner 15s linear infinite;pointer-events:none;z-index:1}.escudo-full{position:fixed;bottom:20%;left:50%;transform:translateX(-50%);font-size:200px;opacity:0.05;animation:escudoGirarFull 25s linear infinite;pointer-events:none;z-index:-1}.estrela-banner-cap-1,.estrela-banner-cap-2,.estrela-banner-cap-3{position:absolute;font-size:20px;opacity:0.2;pointer-events:none;z-index:2}.estrela-banner-cap-1{top:15%;left:20%;animation:estrelaBrilharBanner 2s ease-in-out infinite}.estrela-banner-cap-2{top:25%;right:25%;animation:estrelaBrilharBanner 2.5s ease-in-out infinite 1s}.estrela-banner-cap-3{top:40%;left:30%;animation:estrelaBrilharBanner 3s ease-in-out infinite 2s}.bandeira-banner{position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(90deg,rgba(0,40,104,0.08) 0%,rgba(191,10,48,0.05) 50%,rgba(0,40,104,0.08) 100%);pointer-events:none;z-index:0}.bandeira-full{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(90deg,rgba(0,40,104,0.05) 0%,rgba(191,10,48,0.03) 50%,rgba(0,40,104,0.05) 100%);z-index:-2;pointer-events:none}@keyframes escudoGirarBanner{0%{transform:translateX(-50%) rotate(0deg)}100%{transform:translateX(-50%) rotate(360deg)}}@keyframes escudoGirarFull{0%{transform:translateX(-50%) rotate(0deg)}100%{transform:translateX(-50%) rotate(360deg)}}@keyframes estrelaBrilharBanner{0%,100%{opacity:0.1;text-shadow:0 0 0px #ff0000}50%{opacity:0.3;text-shadow:0 0 10px #ff0000}}.header{border-color:#ff0000!important;box-shadow:0 0 40px rgba(255,0,0,0.4)}'
+        'header_extra': '<canvas id="capitaoCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas>',
+        'css_extra': 'body{background:linear-gradient(135deg,#0a1a3a 0%,#1a2a4a 50%,#0a1a3a 100%)!important}.header{border-color:#ff0000!important;box-shadow:0 0 40px rgba(255,0,0,0.4)}'
     },
     {
         'id': 'skin_superman',
@@ -332,8 +333,8 @@ SKINS_LIST = [
         'cor_tab_ativa': '#ffcc00',
         'cor_header_bg': 'linear-gradient(135deg,#0a1a5a,#1a2a6a,#2a3a7a,#1a2a6a,#0a1a5a)',
         'cor_header_borda': '#ffcc00',
-        'header_extra': '<div class="simbolo-super-banner">🦸</div><div class="sol-banner"></div><div class="capa-banner"></div><div class="simbolo-super-full">🦸</div><div class="sol-full"></div>',
-        'css_extra': 'body{background:radial-gradient(ellipse at 50% 0%,#0a1a5a 0%,#1a2a6a 100%)!important}.simbolo-super-banner{position:absolute;top:15px;right:15px;font-size:40px;opacity:0.2;animation:superVoarBanner 4s ease-in-out infinite;pointer-events:none;z-index:2}.simbolo-super-full{position:fixed;top:30px;right:30px;font-size:80px;opacity:0.06;animation:superVoarFull 6s ease-in-out infinite;pointer-events:none;z-index:-1}.sol-banner{position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at 50% 10%,rgba(255,204,0,0.12) 0%,transparent 60%);pointer-events:none;z-index:0;animation:solPulsarBanner 4s infinite}.sol-full{position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at 50% 10%,rgba(255,204,0,0.06) 0%,transparent 70%);z-index:-2;animation:solPulsarFull 5s infinite}.capa-banner{position:absolute;bottom:0;left:0;width:100%;height:60px;background:linear-gradient(90deg,rgba(255,0,0,0) 0%,rgba(255,0,0,0.08) 50%,rgba(255,0,0,0) 100%);animation:capaOndularBanner 4s ease-in-out infinite;pointer-events:none}@keyframes superVoarBanner{0%{transform:translate(0,0)}50%{transform:translate(10px,-15px)}100%{transform:translate(0,0)}}@keyframes superVoarFull{0%{transform:translate(0,0)}50%{transform:translate(20px,-30px)}100%{transform:translate(0,0)}}@keyframes capaOndularBanner{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.2)}}@keyframes solPulsarBanner{0%,100%{opacity:0.2}50%{opacity:0.5}}@keyframes solPulsarFull{0%,100%{opacity:0.1}50%{opacity:0.3}}.header{border-color:#ffcc00!important;box-shadow:0 0 50px rgba(255,204,0,0.5)}'
+        'header_extra': '<canvas id="supermanCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas>',
+        'css_extra': 'body{background:radial-gradient(ellipse at 50% 0%,#0a1a5a 0%,#1a2a6a 100%)!important}.header{border-color:#ffcc00!important;box-shadow:0 0 50px rgba(255,204,0,0.5)}'
     },
     {
         'id': 'skin_spider',
@@ -349,8 +350,8 @@ SKINS_LIST = [
         'cor_tab_ativa': '#ff0000',
         'cor_header_bg': 'linear-gradient(135deg,#1a0a1a,#2a0a2a,#3a0a3a,#2a0a2a,#1a0a1a)',
         'cor_header_borda': '#ff0000',
-        'header_extra': '<div class="teia-banner-1"></div><div class="teia-banner-2"></div><div class="aranha-banner">🕷️</div><div class="teia-full-1"></div><div class="teia-full-2"></div><div class="aranha-full">🕷️</div>',
-        'css_extra': 'body{background:linear-gradient(180deg,#1a0a1a 0%,#0a000a 100%)!important}.teia-banner-1{position:absolute;top:0;left:0;width:150px;height:150px;background:radial-gradient(circle at 0% 0%,rgba(255,0,0,0.15) 0%,transparent 70%);animation:teiaBrilharBanner 3s ease-in-out infinite;pointer-events:none;z-index:1}.teia-banner-2{position:absolute;top:0;right:0;width:150px;height:150px;background:radial-gradient(circle at 100% 0%,rgba(255,0,0,0.15) 0%,transparent 70%);animation:teiaBrilharBanner 3s ease-in-out infinite 1.5s;pointer-events:none;z-index:1}.teia-full-1{position:fixed;top:0;left:0;width:300px;height:300px;background:radial-gradient(circle at 0% 0%,rgba(255,0,0,0.08) 0%,transparent 80%);animation:teiaBrilharFull 4s ease-in-out infinite;pointer-events:none;z-index:-1}.teia-full-2{position:fixed;top:0;right:0;width:300px;height:300px;background:radial-gradient(circle at 100% 0%,rgba(255,0,0,0.08) 0%,transparent 80%);animation:teiaBrilharFull 4s ease-in-out infinite 2s;pointer-events:none;z-index:-1}.aranha-banner{position:absolute;bottom:10%;right:10%;font-size:35px;opacity:0.2;animation:aranhaAndarBanner 6s ease-in-out infinite;pointer-events:none;z-index:2}.aranha-full{position:fixed;bottom:15%;right:15%;font-size:80px;opacity:0.06;animation:aranhaAndarFull 8s ease-in-out infinite;pointer-events:none;z-index:-1}@keyframes teiaBrilharBanner{0%,100%{opacity:0.2}50%{opacity:0.5}}@keyframes teiaBrilharFull{0%,100%{opacity:0.1}50%{opacity:0.3}}@keyframes aranhaAndarBanner{0%{transform:translate(0,0)}25%{transform:translate(-15px,-10px)}75%{transform:translate(-30px,0)}100%{transform:translate(0,0)}}@keyframes aranhaAndarFull{0%{transform:translate(0,0)}25%{transform:translate(-30px,-20px)}75%{transform:translate(-60px,0)}100%{transform:translate(0,0)}}.header{border-color:#ff0000!important;box-shadow:0 0 40px rgba(255,0,0,0.5)}'
+        'header_extra': '<canvas id="spiderCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas>',
+        'css_extra': 'body{background:linear-gradient(180deg,#1a0a1a 0%,#0a000a 100%)!important}.header{border-color:#ff0000!important;box-shadow:0 0 40px rgba(255,0,0,0.5)}'
     },
     {
         'id': 'skin_ironman',
@@ -366,8 +367,8 @@ SKINS_LIST = [
         'cor_tab_ativa': '#ff6600',
         'cor_header_bg': 'linear-gradient(135deg,#1a0a0a,#2a1a1a,#3a2a1a,#2a1a1a,#1a0a0a)',
         'cor_header_borda': '#ff6600',
-        'header_extra': '<div class="reator-banner"></div><div class="feixe-banner-1"></div><div class="feixe-banner-2"></div><div class="armadura-banner">🤖</div><div class="reator-full"></div><div class="feixe-full-1"></div><div class="feixe-full-2"></div>',
-        'css_extra': 'body{background:linear-gradient(135deg,#1a0a0a 0%,#2a1515 50%,#1a0a0a 100%)!important}.reator-banner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:80px;height:80px;background:radial-gradient(circle,rgba(255,102,0,0.2) 0%,rgba(255,102,0,0.1) 50%,transparent 80%);border-radius:50%;animation:reatorPulsarBanner 2s ease-in-out infinite;pointer-events:none;z-index:1}.reator-full{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:250px;height:250px;background:radial-gradient(circle,rgba(255,102,0,0.1) 0%,rgba(255,102,0,0.05) 50%,transparent 90%);border-radius:50%;animation:reatorPulsarFull 3s ease-in-out infinite;pointer-events:none;z-index:-1}.feixe-banner-1{position:absolute;bottom:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,transparent,rgba(255,102,0,0.6),rgba(255,102,0,0.2),transparent);animation:feixeVarrerBanner1 4s linear infinite;pointer-events:none;z-index:2}.feixe-banner-2{position:absolute;bottom:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,transparent,rgba(255,102,0,0.4),rgba(255,102,0,0.1),transparent);animation:feixeVarrerBanner2 5s linear infinite 2s;pointer-events:none;z-index:2}.feixe-full-1{position:fixed;bottom:0;left:0;width:100%;height:4px;background:linear-gradient(90deg,transparent,rgba(255,102,0,0.4),rgba(255,102,0,0.15),transparent);animation:feixeVarrerFull1 6s linear infinite;pointer-events:none;z-index:-1}.feixe-full-2{position:fixed;bottom:0;left:0;width:100%;height:4px;background:linear-gradient(90deg,transparent,rgba(255,102,0,0.3),rgba(255,102,0,0.1),transparent);animation:feixeVarrerFull2 7s linear infinite 3s;pointer-events:none;z-index:-1}.armadura-banner{position:absolute;top:20%;right:10%;font-size:30px;opacity:0.15;animation:armaduraVoarBanner 7s ease-in-out infinite;pointer-events:none;z-index:2}@keyframes reatorPulsarBanner{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:0.2}50%{transform:translate(-50%,-50%) scale(1.2);opacity:0.4}}@keyframes reatorPulsarFull{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:0.08}50%{transform:translate(-50%,-50%) scale(1.3);opacity:0.15}}@keyframes feixeVarrerBanner1{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}@keyframes feixeVarrerBanner2{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}@keyframes feixeVarrerFull1{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}@keyframes feixeVarrerFull2{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}@keyframes armaduraVoarBanner{0%{transform:translate(0,0)}50%{transform:translate(-20px,-20px) rotate(5deg)}100%{transform:translate(0,0)}}.header{border-color:#ff6600!important;box-shadow:0 0 50px rgba(255,102,0,0.5)}.header h1{text-shadow:0 0 30px #ff6600,0 0 60px #ff3300}'
+        'header_extra': '<canvas id="ironmanCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas>',
+        'css_extra': 'body{background:linear-gradient(135deg,#1a0a0a 0%,#2a1515 50%,#1a0a0a 100%)!important}.header{border-color:#ff6600!important;box-shadow:0 0 50px rgba(255,102,0,0.5)}.header h1{text-shadow:0 0 30px #ff6600,0 0 60px #ff3300}'
     }
 ]
 
