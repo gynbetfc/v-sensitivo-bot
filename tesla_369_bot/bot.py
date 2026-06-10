@@ -53,9 +53,7 @@ CACHE_TTL = 300
 
 # ============= FUNÇÃO VAZIA QUE RECEBERÁ A ESTRATÉGIA =============
 def estrategia_atual_executar(api, par, add_log):
-    """
-    FUNÇÃO VAZIA - SERÁ SOBRESCRITA PELA ESTRATÉGIA BAIXADA DO GITHUB
-    """
+    """FUNÇÃO VAZIA - SERÁ SOBRESCRITA PELA ESTRATÉGIA BAIXADA DO GITHUB"""
     add_log("⚠️ Nenhuma estratégia carregada!", "error")
     return None
 
@@ -260,6 +258,10 @@ def carregar_informacoes_estrategias():
                         'gratis': info.get('preco', 0) == 0
                     }
                     print(f"   ✅ {info.get('nome', nome_est)}")
+                else:
+                    print(f"   ⚠️ INFO não encontrado em {nome_est}")
+            else:
+                print(f"   ❌ HTTP {response.status_code} - {nome_est}")
         except Exception as e:
             print(f"   ❌ Erro ao ler {nome_est}: {e}")
     
@@ -392,22 +394,30 @@ def pegar_timestamp():
     return 0
 
 def aguardar_inicio_vela():
+    """Aguarda o início da próxima vela (entrada na virada)"""
     segundo_atual = datetime.now().second
-    if segundo_atual <= 15:
+    if segundo_atual <= 5:
+        add_log(f"   ✅ Entrada imediata (segundo {segundo_atual})", 'info')
         return True
+    add_log(f"   ⏳ Aguardando início da próxima vela... (segundo {segundo_atual})", 'info')
+    # Espera até o próximo minuto
     while datetime.now().second > 1:
         if not bot_rodando:
             return False
         time.sleep(0.1)
+    add_log(f"   ✅ Nova vela iniciada!", 'info')
     return True
 
 def aguardar_vela_fechar(ts_entrada):
+    """Aguarda o fechamento da vela atual"""
+    add_log(f"   ⏳ Aguardando fechamento da vela (timeframe {timeframe_atual}s)...", 'info')
     while True:
         if not bot_rodando:
             return False
         try:
             ts_atual = pegar_timestamp()
             if ts_atual != ts_entrada and ts_atual != 0:
+                add_log(f"   ✅ Vela fechada!", 'info')
                 return True
         except:
             pass
@@ -441,7 +451,7 @@ def consumir_volt():
     return True
 
 def executar_ciclo(direcao):
-    global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido
+    global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, timeframe_atual
     try:
         if not API:
             bot_rodando = False
@@ -462,8 +472,11 @@ def executar_ciclo(direcao):
             if not bot_rodando:
                 break
             valor = entradas[i]
+            
+            # ⭐ Aguarda o início da vela antes de cada entrada
             if not aguardar_inicio_vela():
                 break
+            
             saldo_antes = API.get_balance()
             if saldo_antes < valor:
                 add_log("❌ Saldo insuficiente!", 'error')
@@ -480,14 +493,19 @@ def executar_ciclo(direcao):
                 add_log("❌ Rejeitado!", 'error')
                 break
 
-            time.sleep(0.3)
+            add_log(f"   📝 ID da Ordem: #{id_ordem}", 'info')
+            
+            # ⭐ Pega o timestamp da vela atual
             ts_real = pegar_timestamp()
             if ts_real == 0:
+                add_log("⚠️ Falha de sincronia, aguardando 60s...", 'warning')
                 time.sleep(60)
             else:
+                # ⭐ Aguarda a vela fechar (tempo real)
                 if not aguardar_vela_fechar(ts_real):
                     break
-
+            
+            # ⭐ Só agora verifica o resultado
             res = verificar_resultado(saldo_antes, valor)
             lucro += round(res, 2)
             saldo_depois = API.get_balance()
@@ -526,7 +544,7 @@ def executar_ciclo(direcao):
                     })
                     salvar_usuario(email_usuario_atual, u)
                 if i < MARTINGALE:
-                    add_log(f"   ➡️ GALE {i + 1}...", 'loss')
+                    add_log(f"   ➡️ Preparando GALE {i + 1}...", 'loss')
                 else:
                     add_log("   💀 CICLO ESGOTADO!", 'loss')
 
@@ -536,6 +554,8 @@ def executar_ciclo(direcao):
         add_log("=" * 50, 'info')
     except Exception as e:
         add_log(f"Erro: {e}", 'error')
+        import traceback
+        traceback.print_exc()
     finally:
         bot_rodando = False
         add_log("⏹️ Ciclo finalizado!", 'info')
@@ -587,7 +607,7 @@ def bot_loop():
         ultimo_sinal = "Aguardando..."
         add_log(f"📌 {par} | 💰 ${BANCA_INICIAL_DO_BOT:.2f}")
 
-        # ⭐ THREAD QUE EXECUTA A ESTRATÉGIA INJETADA
+        # ⭐ THREAD QUE EXECUTA A ESTRATÉGIA INJETADA (roda uma vez e para)
         def processar_estrategia():
             global timeframe_atual, sinal_pendente
             try:
@@ -597,6 +617,7 @@ def bot_loop():
                     direcao = resultado.get('direcao', '').lower()
                     novo_tf = resultado.get('timeframe', timeframe_estrategia)
                     if novo_tf != timeframe_atual:
+                        add_log(f"⏱️ Timeframe alterado para {novo_tf}s", 'indicator')
                         timeframe_atual = novo_tf
                     if direcao in ['call', 'put']:
                         with sinal_lock:
@@ -788,7 +809,7 @@ def selecionar_estrategia():
     u['estrategia_atual'] = est_id
     salvar_usuario(email_usuario_atual, u)
     estrategia_atual_global = est_id
-    estrategia_ja_injetada = False  # Força recarregar a estratégia
+    estrategia_ja_injetada = False
     add_log(f"🧠 Estratégia: {estrategias_info[est_id]['nome']}", 'indicator')
     return jsonify({'ok': True})
 
@@ -877,7 +898,6 @@ def comecar_operar():
             if bot_rodando and bot_thread and bot_thread.is_alive():
                 return jsonify({'ok': False, 'erro': 'Bot já rodando!'})
             
-            # Reseta estado da estratégia injetada para forçar recarregamento
             estrategia_ja_injetada = False
             
             bot_rodando = True
@@ -1112,6 +1132,7 @@ if __name__ == '__main__':
     print("⚡ TESLA 369 BOT v9.0.1 - PIPELINE CLOUD ESTÁVEL ⚡")
     print("SKINS CARREGADAS DO GITHUB")
     print("ESTRATÉGIAS BAIXADAS E INJETADAS UMA ÚNICA VEZ")
+    print("COM TIMESTAMP E SINCRONISMO CORRETO")
     print("=" * 50)
 
     print("🔍 Testando carregamento de skins...")
