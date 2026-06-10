@@ -71,7 +71,7 @@
         .estrategia-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
         .badge-gratis{background:#00ff88;color:#000;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block}
         .badge-pago{background:#ffd700;color:#000;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block}
-        .sub-tabs{display:flex;gap:5px;margin-bottom:15px}.sub-tab{padding:8px 16px;background:#111;border:1px solid #333;border-radius:8px 8px 0 0;cursor:pointer;color:#888;font-size:11px}.sub-tab.active{background:linear-gradient(135deg,#cc8800,#ffd700);color:#000;font-weight:bold;border-color:#ffd700}.sub-tab:hover{background:#1a1a2e;color:#fff}.sub-panel{display:none}.sub-panel.active{display:block}
+        .sub-tabs{display:flex;gap:5px;margin-bottom:15px;flex-wrap:wrap}.sub-tab{padding:8px 16px;background:#111;border:1px solid #333;border-radius:8px 8px 0 0;cursor:pointer;color:#888;font-size:11px}.sub-tab.active{background:linear-gradient(135deg,#cc8800,#ffd700);color:#000;font-weight:bold;border-color:#ffd700}.sub-tab:hover{background:#1a1a2e;color:#fff}.sub-panel{display:none}.sub-panel.active{display:block}
         .planos-grid,.skins-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;padding:8px}
         .plano-card,.skin-card{background:linear-gradient(180deg,#111122 0%,#0a0a15 100%);padding:18px 14px;border-radius:18px;border:2px solid #1a1a2e;text-align:center;cursor:pointer;transition:all .35s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden}
         .plano-card::before,.skin-card::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,215,0,.03),transparent);transition:left .6s ease}
@@ -102,14 +102,17 @@
         .btn-comprado{background:linear-gradient(135deg,#1a1a2e,#0d0d1a);color:#00ff88;border:1px solid #00ff8844;cursor:default;box-shadow:0 0 12px rgba(0,255,136,.08)}
         .btn-usar{background:linear-gradient(135deg,#006699,#3399cc);color:#fff;box-shadow:0 5px 20px rgba(51,153,204,.25)}
         .btn-usar:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(51,153,204,.45)}
-        .sub-tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
-        .sub-tab{padding:10px 18px;background:#111;border:2px solid #222;border-radius:12px 12px 0 0;cursor:pointer;color:#666;font-size:11px;font-weight:bold;transition:all .3s ease}
-        .sub-tab:hover{background:#1a1a2e;color:#ccc;border-color:#333}
-        .sub-tab.active{background:linear-gradient(135deg,#1a1a0a,#0d0d05);color:{{ COR_DESTAQUE }};border-color:{{ COR_DESTAQUE }};box-shadow:0 -3px 15px rgba(255,215,0,.1)}
-        .sub-panel{display:none;animation:fadeIn .4s ease}
-        .sub-panel.active{display:block}
+        .loja-categorias{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;border-bottom:2px solid #333;padding-bottom:10px}
+        .loja-cat-btn{padding:10px 18px;background:#111;border:2px solid #222;border-radius:12px;cursor:pointer;color:#666;font-size:12px;font-weight:bold;transition:all .3s ease}
+        .loja-cat-btn:hover{background:#1a1a2e;color:#ccc;border-color:#333}
+        .loja-cat-btn.active{background:linear-gradient(135deg,#1a1a0a,#0d0d05);color:{{ COR_DESTAQUE }};border-color:{{ COR_DESTAQUE }};box-shadow:0 -3px 15px rgba(255,215,0,.1)}
+        .loja-sub-panel{display:none;animation:fadeIn .4s ease}
+        .loja-sub-panel.active{display:block}
         @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+        .canvas-full{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-2;pointer-events:none}
+        .canvas-banner{position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none}
+        .effect-element{position:absolute;pointer-events:none;z-index:2}
     </style>
 </head>
 <body>
@@ -178,34 +181,35 @@
     </div>
     
     <div class="panel" id="panel-loja">
-        <div class="sub-tabs">
-            <div class="sub-tab active" id="sub-tab-moedas" onclick="mostrarSubAba('moedas')">COMPRAR VOLTS</div>
-            <div class="sub-tab" id="sub-tab-skins" onclick="mostrarSubAba('skins')">LOJA DE SKINS</div>
-            <div class="sub-tab" id="sub-tab-estrategias" onclick="mostrarSubAba('estrategias')">LOJA DE ESTRATÉGIAS</div>
+        <!-- Categorias principais da loja -->
+        <div class="loja-categorias">
+            <div class="loja-cat-btn active" onclick="mostrarLojaCategoria('volts')">💳 COMPRAR VOLTS</div>
+            <div class="loja-cat-btn" onclick="mostrarLojaCategoria('skins')">🎨 LOJA DE SKINS</div>
+            <div class="loja-cat-btn" onclick="mostrarLojaCategoria('estrategias')">📊 ESTRATÉGIAS PREMIUM</div>
         </div>
-        <div class="sub-panel active" id="sub-panel-moedas">
+        
+        <!-- Sub-painel: COMPRAR VOLTS -->
+        <div class="loja-sub-panel active" id="loja-volts">
             <div class="config-section"><h3>💳 COMPRAR VOLTS COM PIX</h3><p style="color:#888;font-size:10px">📧 <input type="email" id="emailCompra" placeholder="Seu email" style="width:220px;padding:6px;background:#111;border:1px solid #333;color:#fff;border-radius:5px"></p><p style="color:#ffd700;font-size:10px;margin-top:5px">⚡ 1 VOLT = 1 ciclo | +1 VOLT grátis/dia</p><p style="color:#888;font-size:9px;margin-top:3px">⭐ Selecione o plano e pague com PIX</p></div>
             <div class="planos-grid" id="planosGridContainer"></div>
         </div>
-        <div class="sub-panel" id="sub-panel-skins">
-            <div class="config-section"><h3>🎨 LOJA DE SKINS</h3><p style="color:#888;font-size:10px">Escolha uma categoria abaixo</p></div>
-            <div class="sub-tabs" style="margin-bottom:10px">
-                <div class="sub-tab active" id="sub-sub-tab-basica" onclick="mostrarCategoriaSkin('basica')">⚡ BÁSICAS</div>
-                <div class="sub-tab" id="sub-sub-tab-premium" onclick="mostrarCategoriaSkin('premium')">🔮 PREMIUM</div>
-                <div class="sub-tab" id="sub-sub-tab-lendaria" onclick="mostrarCategoriaSkin('lendaria')">💎 LENDÁRIAS</div>
+        
+        <!-- Sub-painel: LOJA DE SKINS -->
+        <div class="loja-sub-panel" id="loja-skins">
+            <div class="config-section"><h3>🎨 LOJA DE SKINS</h3><p style="color:#888;font-size:10px">Personalize seu bot com skins exclusivas! As skins lendárias possuem efeitos animados na tela toda.</p></div>
+            <div class="loja-categorias" style="margin-bottom:10px;border-bottom:none;padding-bottom:0">
+                <div class="loja-cat-btn active" style="font-size:10px;padding:6px 12px" onclick="mostrarSubCategoriaSkin('basica', event)">⚡ BÁSICAS</div>
+                <div class="loja-cat-btn" style="font-size:10px;padding:6px 12px" onclick="mostrarSubCategoriaSkin('premium', event)">🔮 PREMIUM</div>
+                <div class="loja-cat-btn" style="font-size:10px;padding:6px 12px" onclick="mostrarSubCategoriaSkin('lendaria', event)">💎 LENDÁRIAS</div>
             </div>
-            <div class="sub-panel active" id="sub-sub-panel-basica">
-                <div class="skins-grid" id="skinsGridBasicas"></div>
-            </div>
-            <div class="sub-panel" id="sub-sub-panel-premium">
-                <div class="skins-grid" id="skinsGridPremium"></div>
-            </div>
-            <div class="sub-panel" id="sub-sub-panel-lendaria">
-                <div class="skins-grid" id="skinsGridLendarias"></div>
-            </div>
+            <div class="skins-grid" id="skinsGridBasicas"></div>
+            <div class="skins-grid" id="skinsGridPremium" style="display:none"></div>
+            <div class="skins-grid" id="skinsGridLendarias" style="display:none"></div>
         </div>
-        <div class="sub-panel" id="sub-panel-estrategias">
-            <div class="config-section"><h3>📊 ESTRATÉGIAS PREMIUM</h3><p style="color:#888;font-size:10px">Compre estratégias avançadas com suas VOLTS! ⚡</p></div>
+        
+        <!-- Sub-painel: ESTRATÉGIAS PREMIUM -->
+        <div class="loja-sub-panel" id="loja-estrategias">
+            <div class="config-section"><h3>📊 ESTRATÉGIAS PREMIUM</h3><p style="color:#888;font-size:10px">Compre estratégias avançadas com suas VOLTS! ⚡ Cada estratégia tem seu próprio algoritmo de análise.</p></div>
             <div class="skins-grid" id="estrategiasLojaGrid"></div>
         </div>
     </div>
@@ -275,7 +279,7 @@
             <p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify">
                 🔹 <span style="color:#ffd700">Automatizacao real:</span> Enquanto outros bots dependem de sinais manuais ou estrategias duvidosas, o Tesla 369 opera com <span style="color:#00ff88">inteligencia automatizada</span> baseada em multiplos indicadores tecnicos.<br><br>
                 🔹 <span style="color:#ffd700">Custo-beneficio imbativel:</span> Bots similares custam <span style="color:#ff4444">R$50 a R$200 por mes</span>. O Tesla 369 e <span style="color:#00ff88">GRATIS para comecar</span>, com planos a partir de <span style="color:#00ff88">R$0,99</span>.<br><br>
-                🔹 <span style="color:#ffd700">Personalizacao total:</span> <span style="color:#00ff88">15 skins</span> exclusivas para deixar o bot com a sua cara. Nenhum outro bot oferece isso.<br><br>
+                🔹 <span style="color:#ffd700">Personalizacao total:</span> <span style="color:#00ff88">Skins exclusivas</span> para deixar o bot com a sua cara. Nenhum outro bot oferece isso.<br><br>
                 🔹 <span style="color:#ffd700">Suporte direto:</span> Diferente de bots abandonados, aqui voce <span style="color:#00ff88">fala direto com o desenvolvedor</span>.<br><br>
                 🔹 <span style="color:#ffd700">Seguranca:</span> Seus dados salvos na nuvem. <span style="color:#00ff88">Nunca perde suas skins ou estrategias</span>.
             </p>
@@ -320,24 +324,43 @@ var planoSelecionado = 0;
 var pixAtual = null;
 var estrategiaSel = 'v_sensitivo';
 
-function mostrarCategoriaSkin(categoria) {
-    var tabs = document.querySelectorAll('[id^="sub-sub-tab-"]');
-    for(var i = 0; i < tabs.length; i++) {
-        tabs[i].classList.remove('active');
+// ========== FUNÇÕES DE NAVEGAÇÃO DA LOJA ==========
+function mostrarLojaCategoria(categoria) {
+    var botoes = document.querySelectorAll('.loja-cat-btn');
+    for(var i = 0; i < botoes.length; i++) {
+        botoes[i].classList.remove('active');
     }
-    var tabAtiva = document.getElementById('sub-sub-tab-' + categoria);
-    if(tabAtiva) {
-        tabAtiva.classList.add('active');
+    event.target.classList.add('active');
+    
+    var paineis = document.querySelectorAll('.loja-sub-panel');
+    for(var i = 0; i < paineis.length; i++) {
+        paineis[i].classList.remove('active');
+    }
+    document.getElementById('loja-' + categoria).classList.add('active');
+    
+    if(categoria === 'volts') {
+        renderPlanos();
+    }
+    if(categoria === 'skins') {
+        mostrarSubCategoriaSkin('basica', null);
+    }
+    if(categoria === 'estrategias') {
+        renderLojaEstrategias();
+    }
+}
+
+function mostrarSubCategoriaSkin(categoria, evento) {
+    if(evento && evento.target) {
+        var botoes = document.querySelectorAll('#loja-skins .loja-cat-btn');
+        for(var i = 0; i < botoes.length; i++) {
+            botoes[i].classList.remove('active');
+        }
+        evento.target.classList.add('active');
     }
     
-    var panels = document.querySelectorAll('[id^="sub-sub-panel-"]');
-    for(var i = 0; i < panels.length; i++) {
-        panels[i].classList.remove('active');
-    }
-    var panelAtivo = document.getElementById('sub-sub-panel-' + categoria);
-    if(panelAtivo) {
-        panelAtivo.classList.add('active');
-    }
+    document.getElementById('skinsGridBasicas').style.display = categoria === 'basica' ? 'grid' : 'none';
+    document.getElementById('skinsGridPremium').style.display = categoria === 'premium' ? 'grid' : 'none';
+    document.getElementById('skinsGridLendarias').style.display = categoria === 'lendaria' ? 'grid' : 'none';
     
     renderLojaCategoria(categoria);
 }
@@ -364,6 +387,26 @@ function mostrarSubAba(aba) {
     }
 }
 
+function mostrarCategoriaSkin(categoria) {
+    var tabs = document.querySelectorAll('[id^="sub-sub-tab-"]');
+    for(var i = 0; i < tabs.length; i++) {
+        tabs[i].classList.remove('active');
+    }
+    var tabAtiva = document.getElementById('sub-sub-tab-' + categoria);
+    if(tabAtiva) {
+        tabAtiva.classList.add('active');
+    }
+    var panels = document.querySelectorAll('[id^="sub-sub-panel-"]');
+    for(var i = 0; i < panels.length; i++) {
+        panels[i].classList.remove('active');
+    }
+    var panelAtivo = document.getElementById('sub-sub-panel-' + categoria);
+    if(panelAtivo) {
+        panelAtivo.classList.add('active');
+    }
+    renderLojaCategoria(categoria);
+}
+
 function openTab(tab) {
     var tabs = document.querySelectorAll('.tab');
     for(var i = 0; i < tabs.length; i++) {
@@ -380,7 +423,7 @@ function openTab(tab) {
         verRelatorio();
     }
     if(tab == 'loja') {
-        mostrarSubAba('moedas');
+        mostrarLojaCategoria('volts');
     }
     if(tab == 'estrategias') {
         if(botAtivo) {
@@ -449,6 +492,9 @@ function conectarIQ() {
             atualizar();
             iniciarChat();
             alert('✅ Conectado com sucesso!');
+            if(d.refresh) {
+                setTimeout(function() { location.reload(); }, 1500);
+            }
         } else {
             alert('ERRO: ' + d.erro);
             btnConectar.disabled = false;
@@ -573,7 +619,6 @@ function renderEstrategias() {
         var grid = document.getElementById('estrategiaGrid');
         if(!grid) return;
         var html = '';
-        
         for(var key in disponiveis) {
             if(estrategiasCompradas.includes(key)) {
                 var e = disponiveis[key];
@@ -621,36 +666,25 @@ function renderLojaEstrategias() {
         var html = '';
         var estrategiasCompradas = d.estrategias_compradas || ['v_sensitivo'];
         var disponiveis = d.estrategias_disponiveis || {};
-        
         for(var key in disponiveis) {
             var est = disponiveis[key];
             var comprado = estrategiasCompradas.includes(key);
-            var btnHtml = '';
-            
-            if(comprado) {
-                btnHtml = '<button class="btn-loja btn-comprado" style="width:100%;margin-top:8px;cursor:default">✅ COMPRADO</button>';
-            } else if(est.gratis) {
-                btnHtml = '<button class="btn-loja btn-comprar-est" style="width:100%;margin-top:8px" onclick="comprarEstrategia(\'' + key + '\')">🆓 ATIVAR GRÁTIS</button>';
-            } else {
-                btnHtml = '<button class="btn-loja btn-comprar-est" style="width:100%;margin-top:8px" onclick="comprarEstrategia(\'' + key + '\')">🛒 COMPRAR (' + est.preco_moedas + ' ⚡)</button>';
+            if(!comprado && key !== 'v_sensitivo') {
+                var btnHtml = '';
+                if(est.gratis) {
+                    btnHtml = '<button class="btn-loja btn-comprar-est" style="width:100%;margin-top:8px" onclick="comprarEstrategia(\'' + key + '\')">🆓 ATIVAR GRÁTIS</button>';
+                } else {
+                    btnHtml = '<button class="btn-loja btn-comprar-est" style="width:100%;margin-top:8px" onclick="comprarEstrategia(\'' + key + '\')">🛒 COMPRAR (' + est.preco_moedas + ' ⚡)</button>';
+                }
+                html += '<div class="skin-card' + (comprado ? ' ativo' : '') + '">';
+                html += '<div class="skin-nome">' + est.nome + '</div>';
+                html += '<div class="skin-desc">' + est.desc + '</div>';
+                html += '<div style="margin-top:5px"><span class="badge-pago">⚡ ' + est.preco_moedas + ' VOLTS</span></div>';
+                html += btnHtml;
+                html += '</div>';
             }
-            
-            html += '<div class="skin-card' + (comprado ? ' ativo' : '') + '">';
-            html += '<div class="skin-nome">' + est.nome + '</div>';
-            html += '<div class="skin-desc">' + est.desc + '</div>';
-            html += '<div style="margin-top:5px">';
-            if(est.gratis) {
-                html += '<span class="badge-gratis">GRÁTIS</span>';
-            } else if(comprado) {
-                html += '<span class="badge-gratis">✅ COMPRADO</span>';
-            } else {
-                html += '<span class="badge-pago">⚡ ' + est.preco_moedas + ' VOLTS</span>';
-            }
-            html += '</div>';
-            html += btnHtml;
-            html += '</div>';
         }
-        grid.innerHTML = html;
+        grid.innerHTML = html || '<p style="color:#888;text-align:center">Todas as estratégias foram adquiridas!</p>';
     });
 }
 
@@ -762,8 +796,11 @@ function comprarSkin(skinId) {
         if(d.ok) {
             alert('✅ ' + (d.msg || 'Skin adquirida com sucesso!'));
             document.getElementById('moedasSaldo').textContent = d.moedas;
-            var categoriaAtiva = document.querySelector('[id^="sub-sub-tab-"].active');
-            var categoria = categoriaAtiva ? categoriaAtiva.id.replace('sub-sub-tab-', '') : 'basica';
+            var categoriaAtiva = document.querySelector('#loja-skins .loja-cat-btn.active');
+            var categoria = categoriaAtiva ? categoriaAtiva.textContent.trim().replace('⚡', '').replace('🔮', '').replace('💎', '').trim().toLowerCase() : 'basica';
+            if(categoria === 'básicas') categoria = 'basica';
+            if(categoria === 'premium') categoria = 'premium';
+            if(categoria === 'lendárias') categoria = 'lendaria';
             renderLojaCategoria(categoria);
         } else {
             alert('❌ ERRO: ' + d.erro);
@@ -931,7 +968,8 @@ function verRanking() {
         h += '</div></div>';
         h += '<p style="color:#ffd700;font-size:14px;font-weight:bold;text-align:center;margin-bottom:10px">🏆 TOP TRADERS</p>';
         h += '<div style="background:#000;border:1px solid #333;border-radius:10px;overflow:hidden">';
-        h += '<table class="historico-table"><tr><th>#</th><th>EMAIL</th><th>LUCRO</th><th>WINS</th><th>LOSS</th><th>TAXA</th><th>BANCA</th></tr>';
+        h += '<table class="historico-table">';
+        h += '<tr><th>#</th><th>EMAIL</th><th>LUCRO</th><th>WINS</th><th>LOSS</th><th>TAXA</th><th>BANCA</th></tr>';
         for(var i = 0; i < d.ranking.length; i++) {
             var u = d.ranking[i];
             var cor = i === 0 ? '#ffd700' : (i === 1 ? '#c0c0c0' : (i === 2 ? '#cd7f32' : '#fff'));
@@ -1050,30 +1088,34 @@ function atualizarChat() {
     });
 }
 
+// ========== SISTEMA DINÂMICO DE EFEITOS DAS SKINS ==========
+// Este sistema detecta AUTOMATICAMENTE os efeitos baseado nos elementos do header_extra
+// NÃO precisa modificar o HTML ao adicionar novas skins!
+
 function initSkinEffects() {
+    // Efeito Matrix (códigos caindo)
     var matrixCanvas = document.getElementById('matrixCanvas');
-    if(matrixCanvas) {
-        var mctx = matrixCanvas.getContext('2d');
-        matrixCanvas.width = matrixCanvas.parentElement.offsetWidth;
-        matrixCanvas.height = matrixCanvas.parentElement.offsetHeight;
-        var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*()';
+    if(matrixCanvas && matrixCanvas.getContext) {
+        var ctx = matrixCanvas.getContext('2d');
+        var width = matrixCanvas.parentElement ? matrixCanvas.parentElement.offsetWidth : window.innerWidth;
+        var height = matrixCanvas.parentElement ? matrixCanvas.parentElement.offsetHeight : 200;
+        matrixCanvas.width = width;
+        matrixCanvas.height = height;
+        var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*";
         var fontSize = 14;
-        var columns = Math.floor(matrixCanvas.width / fontSize);
+        var columns = Math.floor(width / fontSize);
         var drops = [];
-        for(var i = 0; i < columns; i++) {
-            drops[i] = Math.random() * -100;
-        }
+        for(var i = 0; i < columns; i++) drops[i] = Math.random() * -100;
         function drawMatrix() {
-            mctx.fillStyle = 'rgba(0,0,0,0.05)';
-            mctx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
-            mctx.fillStyle = '#00ff00';
-            mctx.font = fontSize + 'px monospace';
+            if(!matrixCanvas || !matrixCanvas.getContext) return;
+            ctx.fillStyle = 'rgba(0,0,0,0.04)';
+            ctx.fillRect(0, 0, width, height);
+            ctx.fillStyle = '#00ff00';
+            ctx.font = fontSize + 'px monospace';
             for(var i = 0; i < drops.length; i++) {
                 var text = chars[Math.floor(Math.random() * chars.length)];
-                mctx.fillText(text, i * fontSize, drops[i] * fontSize);
-                if(drops[i] * fontSize > matrixCanvas.height && Math.random() > 0.975) {
-                    drops[i] = 0;
-                }
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if(drops[i] * fontSize > height && Math.random() > 0.975) drops[i] = 0;
                 drops[i]++;
             }
             requestAnimationFrame(drawMatrix);
@@ -1081,209 +1123,167 @@ function initSkinEffects() {
         drawMatrix();
     }
     
+    // Efeito Sakura (pétalas caindo)
     var sakuraCanvas = document.getElementById('sakuraCanvas');
-    if(sakuraCanvas) {
-        var skctx = sakuraCanvas.getContext('2d');
-        sakuraCanvas.width = sakuraCanvas.parentElement.offsetWidth;
-        sakuraCanvas.height = sakuraCanvas.parentElement.offsetHeight;
+    if(sakuraCanvas && sakuraCanvas.getContext) {
+        var sCtx = sakuraCanvas.getContext('2d');
+        var sWidth = sakuraCanvas.parentElement ? sakuraCanvas.parentElement.offsetWidth : window.innerWidth;
+        var sHeight = sakuraCanvas.parentElement ? sakuraCanvas.parentElement.offsetHeight : 200;
+        sakuraCanvas.width = sWidth;
+        sakuraCanvas.height = sHeight;
         var petals = [];
-        for(var i = 0; i < 20; i++) {
+        for(var i = 0; i < 25; i++) {
             petals.push({
-                x: Math.random() * sakuraCanvas.width,
-                y: Math.random() * sakuraCanvas.height,
+                x: Math.random() * sWidth,
+                y: Math.random() * sHeight,
                 r: Math.random() * 4 + 2,
-                speed: Math.random() * 0.5 + 0.3,
-                wind: (Math.random() - 0.5) * 0.4,
-                rotation: Math.random() * Math.PI * 2,
-                rotSpeed: (Math.random() - 0.5) * 0.02
+                speed: Math.random() * 1 + 0.5,
+                angle: Math.random() * Math.PI * 2
             });
         }
         function drawSakura() {
-            skctx.clearRect(0, 0, sakuraCanvas.width, sakuraCanvas.height);
+            if(!sakuraCanvas || !sakuraCanvas.getContext) return;
+            sCtx.clearRect(0, 0, sWidth, sHeight);
             for(var i = 0; i < petals.length; i++) {
                 var p = petals[i];
-                skctx.save();
-                skctx.translate(p.x, p.y);
-                skctx.rotate(p.rotation);
-                skctx.fillStyle = 'rgba(255,105,180,0.6)';
-                skctx.beginPath();
-                skctx.ellipse(0, 0, p.r, p.r * 0.6, 0, 0, Math.PI * 2);
-                skctx.fill();
-                skctx.restore();
+                sCtx.fillStyle = 'rgba(255,105,180,0.7)';
+                sCtx.beginPath();
+                sCtx.ellipse(p.x, p.y, p.r, p.r * 0.6, p.angle, 0, Math.PI * 2);
+                sCtx.fill();
                 p.y += p.speed;
-                p.x += p.wind;
-                p.rotation += p.rotSpeed;
-                if(p.y > sakuraCanvas.height + 10) {
-                    p.y = -10;
-                    p.x = Math.random() * sakuraCanvas.width;
-                }
+                if(p.y > sHeight) { p.y = -10; p.x = Math.random() * sWidth; }
             }
             requestAnimationFrame(drawSakura);
         }
         drawSakura();
     }
     
-    var thunderCanvas = document.getElementById('thunderCanvas');
-    if(thunderCanvas) {
-        var tctx = thunderCanvas.getContext('2d');
-        thunderCanvas.width = thunderCanvas.parentElement.offsetWidth;
-        thunderCanvas.height = thunderCanvas.parentElement.offsetHeight;
-        function drawThunder() {
-            tctx.clearRect(0, 0, thunderCanvas.width, thunderCanvas.height);
-            if(Math.random() < 0.02) {
-                tctx.strokeStyle = 'rgba(255,255,100,0.8)';
-                tctx.lineWidth = 2;
-                tctx.beginPath();
-                var x = Math.random() * thunderCanvas.width;
-                tctx.moveTo(x, 0);
-                for(var y = 0; y < thunderCanvas.height; y += 20) {
-                    x += (Math.random() - 0.5) * 60;
-                    tctx.lineTo(x, y);
-                }
-                tctx.stroke();
-                tctx.strokeStyle = 'rgba(255,255,255,0.5)';
-                tctx.lineWidth = 1;
-                tctx.stroke();
-            }
-            requestAnimationFrame(drawThunder);
-        }
-        requestAnimationFrame(drawThunder);
-    }
-    
-    var oceanCanvas = document.getElementById('oceanCanvas');
-    if(oceanCanvas) {
-        var octx = oceanCanvas.getContext('2d');
-        oceanCanvas.width = oceanCanvas.parentElement.offsetWidth;
-        oceanCanvas.height = 100;
-        var offset = 0;
-        function drawOcean() {
-            octx.clearRect(0, 0, oceanCanvas.width, oceanCanvas.height);
-            octx.beginPath();
-            octx.moveTo(0, oceanCanvas.height);
-            for(var x = 0; x < oceanCanvas.width; x += 5) {
-                var y = oceanCanvas.height / 2 + Math.sin(x * 0.02 + offset) * 15 + Math.sin(x * 0.05 + offset * 1.3) * 10;
-                octx.lineTo(x, y);
-            }
-            octx.lineTo(oceanCanvas.width, oceanCanvas.height);
-            octx.closePath();
-            octx.fillStyle = 'rgba(0,170,204,0.3)';
-            octx.fill();
-            offset += 0.03;
-            requestAnimationFrame(drawOcean);
-        }
-        drawOcean();
-    }
-    
-    var sunsetCanvas = document.getElementById('sunsetCanvas');
-    if(sunsetCanvas) {
-        var sctx2 = sunsetCanvas.getContext('2d');
-        sunsetCanvas.width = sunsetCanvas.parentElement.offsetWidth;
-        sunsetCanvas.height = sunsetCanvas.parentElement.offsetHeight;
-        var stars = [];
-        for(var i = 0; i < 30; i++) {
-            stars.push({
-                x: Math.random() * sunsetCanvas.width,
-                y: Math.random() * sunsetCanvas.height * 0.5,
-                r: Math.random() * 2 + 0.5,
-                twinkle: Math.random() * Math.PI * 2,
-                speed: Math.random() * 0.02 + 0.01
-            });
-        }
-        function drawSunset() {
-            sctx2.clearRect(0, 0, sunsetCanvas.width, sunsetCanvas.height);
-            for(var i = 0; i < stars.length; i++) {
-                var s = stars[i];
-                s.twinkle += s.speed;
-                var alpha = 0.3 + Math.sin(s.twinkle) * 0.5;
-                sctx2.fillStyle = 'rgba(255,200,100,' + alpha + ')';
-                sctx2.beginPath();
-                sctx2.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-                sctx2.fill();
-            }
-            requestAnimationFrame(drawSunset);
-        }
-        drawSunset();
-    }
-    
+    // Efeito Dark (partículas flutuantes)
     var darkCanvas = document.getElementById('darkCanvas');
-    if(darkCanvas) {
-        var dctx = darkCanvas.getContext('2d');
-        darkCanvas.width = darkCanvas.parentElement.offsetWidth;
-        darkCanvas.height = darkCanvas.parentElement.offsetHeight;
+    if(darkCanvas && darkCanvas.getContext) {
+        var dCtx = darkCanvas.getContext('2d');
+        var dWidth = darkCanvas.parentElement ? darkCanvas.parentElement.offsetWidth : window.innerWidth;
+        var dHeight = darkCanvas.parentElement ? darkCanvas.parentElement.offsetHeight : 200;
+        darkCanvas.width = dWidth;
+        darkCanvas.height = dHeight;
         var particles = [];
-        for(var i = 0; i < 25; i++) {
+        for(var i = 0; i < 40; i++) {
             particles.push({
-                x: Math.random() * darkCanvas.width,
-                y: Math.random() * darkCanvas.height,
+                x: Math.random() * dWidth,
+                y: Math.random() * dHeight,
                 r: Math.random() * 3 + 1,
-                vx: (Math.random() - 0.5) * 0.3,
-                vy: -Math.random() * 0.5 - 0.1,
-                alpha: Math.random() * 0.5 + 0.2
+                vx: (Math.random() - 0.5) * 0.5,
+                vy: Math.random() * 0.5 + 0.2
             });
         }
         function drawDark() {
-            dctx.clearRect(0, 0, darkCanvas.width, darkCanvas.height);
+            if(!darkCanvas || !darkCanvas.getContext) return;
+            dCtx.clearRect(0, 0, dWidth, dHeight);
             for(var i = 0; i < particles.length; i++) {
                 var p = particles[i];
-                dctx.beginPath();
-                dctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-                dctx.fillStyle = 'rgba(153,51,255,' + p.alpha + ')';
-                dctx.fill();
+                dCtx.beginPath();
+                dCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                dCtx.fillStyle = 'rgba(153,51,255,0.5)';
+                dCtx.fill();
                 p.x += p.vx;
                 p.y += p.vy;
-                if(p.y < -10) {
-                    p.y = darkCanvas.height + 10;
-                    p.x = Math.random() * darkCanvas.width;
-                }
+                if(p.y > dHeight) { p.y = 0; p.x = Math.random() * dWidth; }
+                if(p.x > dWidth) p.x = 0;
+                if(p.x < 0) p.x = dWidth;
             }
             requestAnimationFrame(drawDark);
         }
         drawDark();
     }
     
+    // Efeito Cyberpunk (scanline)
+    var cyberCanvas = document.getElementById('cyberCanvas');
+    if(cyberCanvas && cyberCanvas.getContext) {
+        var cCtx = cyberCanvas.getContext('2d');
+        var cWidth = cyberCanvas.parentElement ? cyberCanvas.parentElement.offsetWidth : window.innerWidth;
+        var cHeight = cyberCanvas.parentElement ? cyberCanvas.parentElement.offsetHeight : 200;
+        cyberCanvas.width = cWidth;
+        cyberCanvas.height = cHeight;
+        var glitch = 0;
+        function drawCyber() {
+            if(!cyberCanvas || !cyberCanvas.getContext) return;
+            cCtx.fillStyle = 'rgba(0,0,0,0.02)';
+            cCtx.fillRect(0, 0, cWidth, cHeight);
+            cCtx.fillStyle = '#ff3366';
+            cCtx.font = '12px monospace';
+            for(var i = 0; i < 30; i++) {
+                var x = Math.random() * cWidth;
+                var y = Math.random() * cHeight;
+                cCtx.fillText('0101', x, y);
+            }
+            requestAnimationFrame(drawCyber);
+        }
+        drawCyber();
+    }
+    
+    // Efeito Ocean (ondas)
+    var oceanCanvas = document.getElementById('oceanCanvas');
+    if(oceanCanvas && oceanCanvas.getContext) {
+        var oCtx = oceanCanvas.getContext('2d');
+        var oWidth = oceanCanvas.parentElement ? oceanCanvas.parentElement.offsetWidth : window.innerWidth;
+        var oHeight = oceanCanvas.height || 80;
+        oceanCanvas.width = oWidth;
+        var waveOffset = 0;
+        function drawOcean() {
+            if(!oceanCanvas || !oceanCanvas.getContext) return;
+            oCtx.clearRect(0, 0, oWidth, oHeight);
+            oCtx.beginPath();
+            oCtx.moveTo(0, oHeight);
+            for(var x = 0; x < oWidth; x += 10) {
+                var y = oHeight / 2 + Math.sin(x * 0.02 + waveOffset) * 15;
+                oCtx.lineTo(x, y);
+            }
+            oCtx.lineTo(oWidth, oHeight);
+            oCtx.closePath();
+            oCtx.fillStyle = 'rgba(0,170,204,0.3)';
+            oCtx.fill();
+            waveOffset += 0.05;
+            requestAnimationFrame(drawOcean);
+        }
+        drawOcean();
+    }
+    
+    // Efeito Fire (chamas)
     var fireCanvas = document.getElementById('fireCanvas');
-    if(fireCanvas) {
-        var fctx = fireCanvas.getContext('2d');
-        fireCanvas.width = fireCanvas.parentElement.offsetWidth;
-        fireCanvas.height = 80;
+    if(fireCanvas && fireCanvas.getContext) {
+        var fCtx = fireCanvas.getContext('2d');
+        var fWidth = fireCanvas.parentElement ? fireCanvas.parentElement.offsetWidth : window.innerWidth;
+        var fHeight = fireCanvas.height || 80;
+        fireCanvas.width = fWidth;
         var fireParticles = [];
-        for(var i = 0; i < 50; i++) {
+        for(var i = 0; i < 60; i++) {
             fireParticles.push({
-                x: Math.random() * fireCanvas.width,
-                y: fireCanvas.height - Math.random() * 30,
-                vx: (Math.random() - 0.5) * 0.8,
-                vy: -Math.random() * 2.5 - 1,
+                x: Math.random() * fWidth,
+                y: fHeight - Math.random() * 20,
+                size: Math.random() * 4 + 2,
                 life: Math.random() * 40 + 20,
-                maxLife: 60,
-                size: Math.random() * 5 + 2
+                maxLife: 60
             });
         }
         function drawFire() {
-            fctx.clearRect(0, 0, fireCanvas.width, fireCanvas.height);
+            if(!fireCanvas || !fireCanvas.getContext) return;
+            fCtx.clearRect(0, 0, fWidth, fHeight);
             for(var i = 0; i < fireParticles.length; i++) {
                 var p = fireParticles[i];
                 var progress = p.life / p.maxLife;
-                var gradient = fctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * progress);
-                gradient.addColorStop(0, 'rgba(255,255,100,' + progress + ')');
-                gradient.addColorStop(0.4, 'rgba(255,150,0,' + progress * 0.8 + ')');
+                var gradient = fCtx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
+                gradient.addColorStop(0, 'rgba(255,200,0,' + progress + ')');
+                gradient.addColorStop(0.5, 'rgba(255,100,0,' + progress * 0.6 + ')');
                 gradient.addColorStop(1, 'rgba(255,0,0,0)');
-                fctx.beginPath();
-                fctx.arc(p.x, p.y, p.size * progress, 0, Math.PI * 2);
-                fctx.fillStyle = gradient;
-                fctx.fill();
-                p.x += p.vx;
-                p.y += p.vy;
+                fCtx.fillStyle = gradient;
+                fCtx.beginPath();
+                fCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                fCtx.fill();
                 p.life--;
                 if(p.life <= 0) {
-                    fireParticles[i] = {
-                        x: Math.random() * fireCanvas.width,
-                        y: fireCanvas.height - Math.random() * 10,
-                        vx: (Math.random() - 0.5) * 0.8,
-                        vy: -Math.random() * 2.5 - 1,
-                        life: Math.random() * 40 + 20,
-                        maxLife: 60,
-                        size: Math.random() * 5 + 2
-                    };
+                    p.life = p.maxLife;
+                    p.x = Math.random() * fWidth;
+                    p.y = fHeight - Math.random() * 20;
                 }
             }
             requestAnimationFrame(drawFire);
@@ -1291,40 +1291,328 @@ function initSkinEffects() {
         drawFire();
     }
     
+    // Efeito Snow (neve)
     var snowCanvas = document.getElementById('snowCanvas');
-    if(snowCanvas) {
-        var sctx3 = snowCanvas.getContext('2d');
-        snowCanvas.width = snowCanvas.parentElement.offsetWidth;
-        snowCanvas.height = snowCanvas.parentElement.offsetHeight;
+    if(snowCanvas && snowCanvas.getContext) {
+        var snCtx = snowCanvas.getContext('2d');
+        var snWidth = snowCanvas.parentElement ? snowCanvas.parentElement.offsetWidth : window.innerWidth;
+        var snHeight = snowCanvas.parentElement ? snowCanvas.parentElement.offsetHeight : 200;
+        snowCanvas.width = snWidth;
+        snowCanvas.height = snHeight;
         var snowflakes = [];
-        for(var i = 0; i < 40; i++) {
+        for(var i = 0; i < 60; i++) {
             snowflakes.push({
-                x: Math.random() * snowCanvas.width,
-                y: Math.random() * snowCanvas.height,
+                x: Math.random() * snWidth,
+                y: Math.random() * snHeight,
                 r: Math.random() * 3 + 1,
-                speed: Math.random() * 0.8 + 0.2,
-                wind: (Math.random() - 0.5) * 0.3,
-                opacity: Math.random() * 0.6 + 0.4
+                speed: Math.random() * 1 + 0.3,
+                wind: (Math.random() - 0.5) * 0.5
             });
         }
         function drawSnow() {
-            sctx3.clearRect(0, 0, snowCanvas.width, snowCanvas.height);
+            if(!snowCanvas || !snowCanvas.getContext) return;
+            snCtx.clearRect(0, 0, snWidth, snHeight);
             for(var i = 0; i < snowflakes.length; i++) {
                 var f = snowflakes[i];
-                sctx3.beginPath();
-                sctx3.arc(f.x, f.y, f.r, 0, Math.PI * 2);
-                sctx3.fillStyle = 'rgba(255,255,255,' + f.opacity + ')';
-                sctx3.fill();
+                snCtx.beginPath();
+                snCtx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+                snCtx.fillStyle = 'rgba(255,255,255,0.7)';
+                snCtx.fill();
                 f.y += f.speed;
                 f.x += f.wind;
-                if(f.y > snowCanvas.height + 10) {
-                    f.y = -10;
-                    f.x = Math.random() * snowCanvas.width;
-                }
+                if(f.y > snHeight) { f.y = -5; f.x = Math.random() * snWidth; }
             }
             requestAnimationFrame(drawSnow);
         }
         drawSnow();
+    }
+    
+    // Efeito Coffee (fumaça)
+    var coffeeCanvas = document.getElementById('coffeeCanvas');
+    if(coffeeCanvas && coffeeCanvas.getContext) {
+        var cfCtx = coffeeCanvas.getContext('2d');
+        var cfWidth = coffeeCanvas.parentElement ? coffeeCanvas.parentElement.offsetWidth : window.innerWidth;
+        var cfHeight = coffeeCanvas.parentElement ? coffeeCanvas.parentElement.offsetHeight : 200;
+        coffeeCanvas.width = cfWidth;
+        coffeeCanvas.height = cfHeight;
+        var steam = [];
+        for(var i = 0; i < 15; i++) {
+            steam.push({
+                x: Math.random() * cfWidth,
+                y: cfHeight,
+                r: Math.random() * 8 + 4,
+                speed: Math.random() * 1 + 0.5
+            });
+        }
+        function drawCoffee() {
+            if(!coffeeCanvas || !coffeeCanvas.getContext) return;
+            cfCtx.clearRect(0, 0, cfWidth, cfHeight);
+            for(var i = 0; i < steam.length; i++) {
+                var s = steam[i];
+                cfCtx.fillStyle = 'rgba(180,150,100,0.15)';
+                cfCtx.beginPath();
+                cfCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                cfCtx.fill();
+                s.y -= s.speed;
+                if(s.y < 0) { s.y = cfHeight; s.x = Math.random() * cfWidth; }
+            }
+            requestAnimationFrame(drawCoffee);
+        }
+        drawCoffee();
+    }
+    
+    // Efeito Cosmic (estrelas)
+    var cosmicCanvas = document.getElementById('cosmicCanvas');
+    if(cosmicCanvas && cosmicCanvas.getContext) {
+        var cosCtx = cosmicCanvas.getContext('2d');
+        var cosWidth = cosmicCanvas.parentElement ? cosmicCanvas.parentElement.offsetWidth : window.innerWidth;
+        var cosHeight = cosmicCanvas.parentElement ? cosmicCanvas.parentElement.offsetHeight : 200;
+        cosmicCanvas.width = cosWidth;
+        cosmicCanvas.height = cosHeight;
+        var stars = [];
+        for(var i = 0; i < 100; i++) {
+            stars.push({
+                x: Math.random() * cosWidth,
+                y: Math.random() * cosHeight,
+                r: Math.random() * 2,
+                alpha: Math.random()
+            });
+        }
+        function drawCosmic() {
+            if(!cosmicCanvas || !cosmicCanvas.getContext) return;
+            cosCtx.clearRect(0, 0, cosWidth, cosHeight);
+            for(var i = 0; i < stars.length; i++) {
+                var s = stars[i];
+                cosCtx.beginPath();
+                cosCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                cosCtx.fillStyle = 'rgba(255,255,255,' + (0.3 + Math.sin(Date.now() * 0.001 + i) * 0.2) + ')';
+                cosCtx.fill();
+            }
+            requestAnimationFrame(drawCosmic);
+        }
+        drawCosmic();
+    }
+    
+    // Efeito Aurora
+    var auroraCanvas = document.getElementById('auroraCanvas');
+    if(auroraCanvas && auroraCanvas.getContext) {
+        var aCtx = auroraCanvas.getContext('2d');
+        var aWidth = auroraCanvas.parentElement ? auroraCanvas.parentElement.offsetWidth : window.innerWidth;
+        var aHeight = auroraCanvas.parentElement ? auroraCanvas.parentElement.offsetHeight : 200;
+        auroraCanvas.width = aWidth;
+        auroraCanvas.height = aHeight;
+        var aTime = 0;
+        function drawAurora() {
+            if(!auroraCanvas || !auroraCanvas.getContext) return;
+            aCtx.clearRect(0, 0, aWidth, aHeight);
+            var grad = aCtx.createLinearGradient(0, 0, aWidth, 0);
+            grad.addColorStop(0, 'rgba(0,255,170,0)');
+            grad.addColorStop(0.3, 'rgba(0,255,170,0.15)');
+            grad.addColorStop(0.5, 'rgba(100,50,255,0.12)');
+            grad.addColorStop(0.7, 'rgba(0,200,255,0.15)');
+            grad.addColorStop(1, 'rgba(0,255,170,0)');
+            aCtx.fillStyle = grad;
+            aCtx.fillRect(0, 0, aWidth, aHeight);
+            requestAnimationFrame(drawAurora);
+        }
+        drawAurora();
+    }
+    
+    // Efeito Batman (morcegos)
+    var batmanCanvas = document.getElementById('batmanCanvas');
+    if(batmanCanvas && batmanCanvas.getContext) {
+        var bCtx = batmanCanvas.getContext('2d');
+        var bWidth = batmanCanvas.parentElement ? batmanCanvas.parentElement.offsetWidth : window.innerWidth;
+        var bHeight = batmanCanvas.parentElement ? batmanCanvas.parentElement.offsetHeight : 200;
+        batmanCanvas.width = bWidth;
+        batmanCanvas.height = bHeight;
+        var bats = [];
+        for(var i = 0; i < 6; i++) {
+            bats.push({
+                x: Math.random() * bWidth,
+                y: Math.random() * bHeight,
+                vx: (Math.random() - 0.5) * 2,
+                vy: (Math.random() - 0.5) * 1,
+                size: Math.random() * 20 + 15
+            });
+        }
+        function drawBatman() {
+            if(!batmanCanvas || !batmanCanvas.getContext) return;
+            bCtx.clearRect(0, 0, bWidth, bHeight);
+            for(var i = 0; i < bats.length; i++) {
+                var bat = bats[i];
+                bCtx.font = bat.size + 'px monospace';
+                bCtx.fillStyle = 'rgba(245,197,24,0.15)';
+                bCtx.fillText('🦇', bat.x, bat.y);
+                bat.x += bat.vx;
+                bat.y += bat.vy;
+                if(bat.x > bWidth) bat.x = 0;
+                if(bat.x < 0) bat.x = bWidth;
+                if(bat.y > bHeight) bat.y = 0;
+                if(bat.y < 0) bat.y = bHeight;
+            }
+            requestAnimationFrame(drawBatman);
+        }
+        drawBatman();
+    }
+    
+    // Efeito Capitão América (estrelas)
+    var capitaoCanvas = document.getElementById('capitaoCanvas');
+    if(capitaoCanvas && capitaoCanvas.getContext) {
+        var capCtx = capitaoCanvas.getContext('2d');
+        var capWidth = capitaoCanvas.parentElement ? capitaoCanvas.parentElement.offsetWidth : window.innerWidth;
+        var capHeight = capitaoCanvas.parentElement ? capitaoCanvas.parentElement.offsetHeight : 200;
+        capitaoCanvas.width = capWidth;
+        capitaoCanvas.height = capHeight;
+        var capStars = [];
+        for(var i = 0; i < 20; i++) {
+            capStars.push({
+                x: Math.random() * capWidth,
+                y: Math.random() * capHeight,
+                r: Math.random() * 10 + 8,
+                alpha: Math.random()
+            });
+        }
+        function drawCapitao() {
+            if(!capitaoCanvas || !capitaoCanvas.getContext) return;
+            capCtx.clearRect(0, 0, capWidth, capHeight);
+            for(var i = 0; i < capStars.length; i++) {
+                var s = capStars[i];
+                capCtx.font = s.r + 'px monospace';
+                capCtx.fillStyle = 'rgba(255,0,0,0.15)';
+                capCtx.fillText('⭐', s.x, s.y);
+            }
+            requestAnimationFrame(drawCapitao);
+        }
+        drawCapitao();
+    }
+    
+    // Efeito Superman
+    var supermanCanvas = document.getElementById('supermanCanvas');
+    if(supermanCanvas && supermanCanvas.getContext) {
+        var supCtx = supermanCanvas.getContext('2d');
+        var supWidth = supermanCanvas.parentElement ? supermanCanvas.parentElement.offsetWidth : window.innerWidth;
+        var supHeight = supermanCanvas.parentElement ? supermanCanvas.parentElement.offsetHeight : 200;
+        supermanCanvas.width = supWidth;
+        supermanCanvas.height = supHeight;
+        var supSymbols = [];
+        for(var i = 0; i < 8; i++) {
+            supSymbols.push({
+                x: Math.random() * supWidth,
+                y: Math.random() * supHeight,
+                vx: (Math.random() - 0.5) * 1.5,
+                vy: (Math.random() - 0.5) * 1,
+                size: Math.random() * 25 + 20
+            });
+        }
+        function drawSuperman() {
+            if(!supermanCanvas || !supermanCanvas.getContext) return;
+            supCtx.clearRect(0, 0, supWidth, supHeight);
+            for(var i = 0; i < supSymbols.length; i++) {
+                var s = supSymbols[i];
+                supCtx.font = s.size + 'px monospace';
+                supCtx.fillStyle = 'rgba(255,204,0,0.15)';
+                supCtx.fillText('🦸', s.x, s.y);
+                s.x += s.vx;
+                s.y += s.vy;
+                if(s.x > supWidth) s.x = 0;
+                if(s.x < 0) s.x = supWidth;
+                if(s.y > supHeight) s.y = 0;
+                if(s.y < 0) s.y = supHeight;
+            }
+            requestAnimationFrame(drawSuperman);
+        }
+        drawSuperman();
+    }
+    
+    // Efeito Homem-Aranha (teias)
+    var spiderCanvas = document.getElementById('spiderCanvas');
+    if(spiderCanvas && spiderCanvas.getContext) {
+        var spCtx = spiderCanvas.getContext('2d');
+        var spWidth = spiderCanvas.parentElement ? spiderCanvas.parentElement.offsetWidth : window.innerWidth;
+        var spHeight = spiderCanvas.parentElement ? spiderCanvas.parentElement.offsetHeight : 200;
+        spiderCanvas.width = spWidth;
+        spiderCanvas.height = spHeight;
+        var webs = [];
+        for(var i = 0; i < 15; i++) {
+            webs.push({
+                x1: Math.random() * spWidth,
+                y1: Math.random() * spHeight,
+                x2: Math.random() * spWidth,
+                y2: Math.random() * spHeight
+            });
+        }
+        function drawSpider() {
+            if(!spiderCanvas || !spiderCanvas.getContext) return;
+            spCtx.clearRect(0, 0, spWidth, spHeight);
+            for(var i = 0; i < webs.length; i++) {
+                var w = webs[i];
+                spCtx.beginPath();
+                spCtx.moveTo(w.x1, w.y1);
+                spCtx.lineTo(w.x2, w.y2);
+                spCtx.strokeStyle = 'rgba(255,0,0,0.1)';
+                spCtx.lineWidth = 1;
+                spCtx.stroke();
+            }
+            requestAnimationFrame(drawSpider);
+        }
+        drawSpider();
+    }
+    
+    // Efeito Homem de Ferro (reator)
+    var ironmanCanvas = document.getElementById('ironmanCanvas');
+    if(ironmanCanvas && ironmanCanvas.getContext) {
+        var iCtx = ironmanCanvas.getContext('2d');
+        var iWidth = ironmanCanvas.parentElement ? ironmanCanvas.parentElement.offsetWidth : window.innerWidth;
+        var iHeight = ironmanCanvas.parentElement ? ironmanCanvas.parentElement.offsetHeight : 200;
+        ironmanCanvas.width = iWidth;
+        ironmanCanvas.height = iHeight;
+        var iTime = 0;
+        function drawIronman() {
+            if(!ironmanCanvas || !ironmanCanvas.getContext) return;
+            iCtx.clearRect(0, 0, iWidth, iHeight);
+            var centerX = iWidth / 2;
+            var centerY = iHeight / 2;
+            var radius = 30 + Math.sin(iTime) * 5;
+            var grad = iCtx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+            grad.addColorStop(0, 'rgba(255,102,0,0.2)');
+            grad.addColorStop(1, 'rgba(255,102,0,0)');
+            iCtx.fillStyle = grad;
+            iCtx.beginPath();
+            iCtx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            iCtx.fill();
+            iTime += 0.05;
+            requestAnimationFrame(drawIronman);
+        }
+        drawIronman();
+    }
+    
+    // Efeito Thunder (relâmpagos)
+    var thunderCanvas = document.getElementById('thunderCanvas');
+    if(thunderCanvas && thunderCanvas.getContext) {
+        var tCtx = thunderCanvas.getContext('2d');
+        var tWidth = thunderCanvas.parentElement ? thunderCanvas.parentElement.offsetWidth : window.innerWidth;
+        var tHeight = thunderCanvas.parentElement ? thunderCanvas.parentElement.offsetHeight : 200;
+        thunderCanvas.width = tWidth;
+        thunderCanvas.height = tHeight;
+        function drawThunder() {
+            if(!thunderCanvas || !thunderCanvas.getContext) return;
+            tCtx.clearRect(0, 0, tWidth, tHeight);
+            if(Math.random() < 0.05) {
+                tCtx.beginPath();
+                var x = Math.random() * tWidth;
+                tCtx.moveTo(x, 0);
+                for(var y = 0; y < tHeight; y += 30) {
+                    x += (Math.random() - 0.5) * 50;
+                    tCtx.lineTo(x, y);
+                }
+                tCtx.strokeStyle = 'rgba(255,255,0,0.4)';
+                tCtx.lineWidth = 2;
+                tCtx.stroke();
+            }
+            requestAnimationFrame(drawThunder);
+        }
+        drawThunder();
     }
 }
 
@@ -1360,4 +1648,4 @@ window.onload = function() {
 };
 </script>
 </body>
-            </html>
+                </html>
