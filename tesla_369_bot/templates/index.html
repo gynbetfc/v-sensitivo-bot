@@ -320,7 +320,6 @@ var planoSelecionado = 0;
 var pixAtual = null;
 var estrategiaSel = 'v_sensitivo';
 
-// ========== FUNÇÕES DE NAVEGAÇÃO DA LOJA ==========
 function mostrarLojaCategoria(categoria) {
     var botoes = document.querySelectorAll('.loja-cat-btn');
     for(var i = 0; i < botoes.length; i++) {
@@ -557,7 +556,6 @@ function pararBot() {
         alert('⏹️ Bot parado com sucesso!');
         atualizar();
         
-        // ⭐ Força atualização da interface
         setTimeout(function() { location.reload(); }, 500);
     })
     .catch(function(err) {
@@ -1179,4 +1177,4 @@ window.onload = function() {
 };
 </script>
 </body>
-                                      </html>
+            </html>
