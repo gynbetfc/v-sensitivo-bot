@@ -1,16 +1,37 @@
 # -*- coding: utf-8 -*-
-# ESTRATÉGIA: V-Sensitivo Script - BOT QUE SENTE A VELA
-# RSI + MM + Bollinger + MACD + Estocástico
+# ESTRATÉGIA: V-Sensitivo Script
+# Análise completa com RSI, MMs, Bollinger, MACD e Estocástico
 
 import time
 
 INFO = {
     'nome': 'V-Sensitivo Script',
-    'desc': 'Análise completa com RSI, MMs, Bollinger, MACD e Estocástico.',
+    'desc': 'Análise de momentum de velas com RSI, Estocástico, Médias Móveis, Bollinger e MACD.',
     'preco': 0,
     'timeframe': 60,
     'gratis': True
 }
+
+def get_close(vela):
+    if 'close' in vela:
+        return vela['close']
+    elif 'max' in vela:
+        return vela['max']
+    return 0
+
+def get_high(vela):
+    if 'high' in vela:
+        return vela['high']
+    elif 'max' in vela:
+        return vela['max']
+    return 0
+
+def get_low(vela):
+    if 'low' in vela:
+        return vela['low']
+    elif 'min' in vela:
+        return vela['min']
+    return 0
 
 def sma(velas, periodo):
     if len(velas) < periodo:
@@ -20,18 +41,18 @@ def sma(velas, periodo):
 def bollinger(velas, periodo=20, desvio=2):
     if len(velas) < periodo:
         return None, None, None
-    closes = [x['close'] for x in velas[-periodo:]]
+    closes = [get_close(x) for x in velas[-periodo:]]
     media = sum(closes) / periodo
     variancia = sum((x - media) ** 2 for x in closes) / periodo
     dp = variancia ** 0.5
     return round(media + desvio * dp, 6), round(media, 6), round(media - desvio * dp, 6)
 
-def rsi(velas, periodo=9):
+def rsi(velas, periodo=14):
     if len(velas) < periodo + 1:
-        return None
+        return 50
     ganhos, perdas = [], []
     for i in range(1, len(velas)):
-        diff = velas[i]['close'] - velas[i-1]['close']
+        diff = get_close(velas[i]) - get_close(velas[i-1])
         if diff > 0:
             ganhos.append(diff)
             perdas.append(0)
@@ -45,7 +66,7 @@ def rsi(velas, periodo=9):
 def macd(velas, rapido=12, lento=26):
     if len(velas) < lento:
         return None
-    closes = [x['close'] for x in velas]
+    closes = [get_close(x) for x in velas]
     er = closes[0]
     el = closes[0]
     for x in closes[1:]:
@@ -55,15 +76,14 @@ def macd(velas, rapido=12, lento=26):
 
 def estocastico(velas, periodo=14):
     if len(velas) < periodo:
-        return None
-    closes = [x['close'] for x in velas]
-    highs = [x.get('max', max(x['open'], x['close'])) for x in velas]
-    lows = [x.get('min', min(x['open'], x['close'])) for x in velas]
-    hh = max(highs[-periodo:])
-    ll = min(lows[-periodo:])
+        return 50
+    highs = [get_high(x) for x in velas[-periodo:]]
+    lows = [get_low(x) for x in velas[-periodo:]]
+    hh = max(highs)
+    ll = min(lows)
     if hh == ll:
         return 50
-    return round(((closes[-1] - ll) / (hh - ll)) * 100, 2)
+    return round(((get_close(velas[-1]) - ll) / (hh - ll)) * 100, 2)
 
 def get_fase_vela():
     segundo = time.localtime().tm_sec
@@ -75,7 +95,6 @@ def get_fase_vela():
 
 def rodar_analise(api, par, add_log):
     try:
-        global INFO
         timeframe = INFO['timeframe']
         
         add_log("📊 V-Sensitivo: Sentindo a vela...", "indicator")
@@ -89,14 +108,14 @@ def rodar_analise(api, par, add_log):
         # ========== CÁLCULO DOS INDICADORES ==========
         
         fase = get_fase_vela()
-        rs = rsi(velas, 9)
+        rs = rsi(velas, 14)
         m5 = sma(velas, 5)
         m10 = sma(velas, 10)
         m20 = sma(velas, 20)
         bs, bm, bi = bollinger(velas, 20, 2)
         mc = macd(velas, 12, 26)
         st = estocastico(velas, 14)
-        pc = velas[-1]['close']
+        pc = get_close(velas[-1])
         
         add_log(f"   🔮 Fase: {fase}", "indicator")
         if rs:
@@ -111,8 +130,8 @@ def rodar_analise(api, par, add_log):
         
         # ========== LÓGICA DE SINAL ==========
         
-        sc = 0  # Score CALL
-        sp = 0  # Score PUT
+        sc = 0
+        sp = 0
         sinais = []
         
         # Médias Móveis
@@ -198,5 +217,5 @@ def rodar_analise(api, par, add_log):
         return None
         
     except Exception as e:
-        add_log(f"❌ Erro: {e}", "error")
+        add_log(f"❌ Erro na análise: {e}", "error")
         return None
