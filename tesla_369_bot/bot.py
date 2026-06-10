@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v9.0.1 Cloud ⚡
-# ESTRATÉGIAS BAIXADAS UMA VEZ E INJETADAS NA FUNÇÃO LOCAL
-# NÃO PRECISA BAIXAR A ESTRATÉGIA A CADA CICLO!
+# ⚡ TESLA 369 BOT v11.0.0 Cloud ⚡
+# ESTRATÉGIAS SALVAS NO FIREBASE - SINCRONIZADO ENTRE DISPOSITIVOS
+# SKINS CARREGADAS DINAMICAMENTE DO GITHUB
+# VOLT CONSUMIDO APENAS NA EXECUÇÃO DA OPERAÇÃO
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -16,7 +17,6 @@ import requests
 import uuid
 import signal
 import random
-import sys
 
 warnings.filterwarnings("ignore")
 app = Flask(__name__)
@@ -47,13 +47,12 @@ PLANOS = [
 
 # ============= CACHES =============
 cache_skins = {"data": None, "timestamp": 0}
-cache_estrategias = {"data": {}, "timestamp": 0}
+cache_estrategias_info = {"data": {}, "timestamp": 0}
 cache_estrategia_carregada = {"nome": None, "codigo": None, "timestamp": 0}
 CACHE_TTL = 300
 
 # ============= FUNÇÃO VAZIA QUE RECEBERÁ A ESTRATÉGIA =============
 def estrategia_atual_executar(api, par, add_log):
-    """FUNÇÃO VAZIA - SERÁ SOBRESCRITA PELA ESTRATÉGIA BAIXADA DO GITHUB"""
     add_log("⚠️ Nenhuma estratégia carregada!", "error")
     return None
 
@@ -113,15 +112,6 @@ def get_low(vela):
     elif 'min' in vela:
         return vela['min']
     return 0
-
-def get_cor_vela(vela):
-    close = get_close(vela)
-    open_v = vela.get('open', 0)
-    if close > open_v:
-        return 'g'
-    elif close < open_v:
-        return 'r'
-    return 'd'
 
 def calcular_rsi(velas, periodo=14):
     if len(velas) < periodo + 1:
@@ -214,7 +204,7 @@ def carregar_skins_da_nuvem():
         print(f"⚠️ Erro skins: {e}")
     return get_skins_fallback()
 
-# ============= CARREGAR LISTA DE ESTRATÉGIAS =============
+# ============= CARREGAR INFORMAÇÕES DAS ESTRATÉGIAS =============
 
 def carregar_lista_estrategias():
     try:
@@ -230,12 +220,11 @@ def carregar_lista_estrategias():
     return ['v_sensitivo']
 
 def carregar_informacoes_estrategias():
-    """Carrega apenas as informações (nome, preço, desc) sem o código"""
-    global cache_estrategias
+    global cache_estrategias_info
     agora = time.time()
     
-    if cache_estrategias["data"] and (agora - cache_estrategias["timestamp"]) < CACHE_TTL:
-        return cache_estrategias["data"]
+    if cache_estrategias_info["data"] and (agora - cache_estrategias_info["timestamp"]) < CACHE_TTL:
+        return cache_estrategias_info["data"]
     
     nomes_estrategias = carregar_lista_estrategias()
     estrategias_info = {}
@@ -265,16 +254,14 @@ def carregar_informacoes_estrategias():
         except Exception as e:
             print(f"   ❌ Erro ao ler {nome_est}: {e}")
     
-    cache_estrategias["data"] = estrategias_info
-    cache_estrategias["timestamp"] = agora
+    cache_estrategias_info["data"] = estrategias_info
+    cache_estrategias_info["timestamp"] = agora
     print(f"✅ Total de {len(estrategias_info)} estratégias disponíveis!")
     return estrategias_info
 
 def carregar_e_injetar_estrategia(nome_estrategia):
-    """Baixa a estratégia do GitHub e injeta na função global"""
     global estrategia_atual_executar, cache_estrategia_carregada, estrategia_ja_injetada
     
-    # Verifica cache
     agora = time.time()
     if cache_estrategia_carregada["nome"] == nome_estrategia and (agora - cache_estrategia_carregada["timestamp"]) < CACHE_TTL:
         add_log(f"📦 Estratégia '{nome_estrategia}' carregada do cache", "info")
@@ -287,18 +274,14 @@ def carregar_e_injetar_estrategia(nome_estrategia):
         
         if response.status_code == 200:
             codigo = response.text
-            
-            # Verifica se tem a função rodar_analise
             if 'def rodar_analise' not in codigo:
                 add_log(f"❌ Estratégia '{nome_estrategia}' não contém a função 'rodar_analise'", "error")
                 return False
             
-            # Cria um ambiente para executar o código
             escopo = {}
             exec(codigo, escopo)
             
             if 'rodar_analise' in escopo:
-                # Injeta na função global
                 estrategia_atual_executar = escopo['rodar_analise']
                 cache_estrategia_carregada["nome"] = nome_estrategia
                 cache_estrategia_carregada["codigo"] = codigo
@@ -307,17 +290,16 @@ def carregar_e_injetar_estrategia(nome_estrategia):
                 add_log(f"✅ Estratégia '{nome_estrategia}' injetada com sucesso!", "win")
                 return True
             else:
-                add_log(f"❌ Função 'rodar_analise' não encontrada em '{nome_estrategia}'", "error")
+                add_log(f"❌ Função 'rodar_analise' não encontrada", "error")
                 return False
         else:
-            add_log(f"❌ Estratégia '{nome_estrategia}' não encontrada (HTTP {response.status_code})", "error")
+            add_log(f"❌ Estratégia não encontrada (HTTP {response.status_code})", "error")
             return False
-            
     except Exception as e:
         add_log(f"❌ Erro ao carregar estratégia: {e}", "error")
         return False
 
-# ========== FUNÇÕES DE USUÁRIO ==========
+# ========== FUNÇÕES DE USUÁRIO (FIREBASE) ==========
 
 def salvar_usuario(email, dados):
     try:
@@ -394,30 +376,22 @@ def pegar_timestamp():
     return 0
 
 def aguardar_inicio_vela():
-    """Aguarda o início da próxima vela (entrada na virada)"""
     segundo_atual = datetime.now().second
     if segundo_atual <= 5:
-        add_log(f"   ✅ Entrada imediata (segundo {segundo_atual})", 'info')
         return True
-    add_log(f"   ⏳ Aguardando início da próxima vela... (segundo {segundo_atual})", 'info')
-    # Espera até o próximo minuto
     while datetime.now().second > 1:
         if not bot_rodando:
             return False
         time.sleep(0.1)
-    add_log(f"   ✅ Nova vela iniciada!", 'info')
     return True
 
 def aguardar_vela_fechar(ts_entrada):
-    """Aguarda o fechamento da vela atual"""
-    add_log(f"   ⏳ Aguardando fechamento da vela (timeframe {timeframe_atual}s)...", 'info')
     while True:
         if not bot_rodando:
             return False
         try:
             ts_atual = pegar_timestamp()
             if ts_atual != ts_entrada and ts_atual != 0:
-                add_log(f"   ✅ Vela fechada!", 'info')
                 return True
         except:
             pass
@@ -472,11 +446,8 @@ def executar_ciclo(direcao):
             if not bot_rodando:
                 break
             valor = entradas[i]
-            
-            # ⭐ Aguarda o início da vela antes de cada entrada
             if not aguardar_inicio_vela():
                 break
-            
             saldo_antes = API.get_balance()
             if saldo_antes < valor:
                 add_log("❌ Saldo insuficiente!", 'error')
@@ -493,19 +464,16 @@ def executar_ciclo(direcao):
                 add_log("❌ Rejeitado!", 'error')
                 break
 
-            add_log(f"   📝 ID da Ordem: #{id_ordem}", 'info')
+            add_log(f"   📝 ID: #{id_ordem}", 'info')
             
-            # ⭐ Pega o timestamp da vela atual
             ts_real = pegar_timestamp()
             if ts_real == 0:
                 add_log("⚠️ Falha de sincronia, aguardando 60s...", 'warning')
                 time.sleep(60)
             else:
-                # ⭐ Aguarda a vela fechar (tempo real)
                 if not aguardar_vela_fechar(ts_real):
                     break
             
-            # ⭐ Só agora verifica o resultado
             res = verificar_resultado(saldo_antes, valor)
             lucro += round(res, 2)
             saldo_depois = API.get_balance()
@@ -544,7 +512,7 @@ def executar_ciclo(direcao):
                     })
                     salvar_usuario(email_usuario_atual, u)
                 if i < MARTINGALE:
-                    add_log(f"   ➡️ Preparando GALE {i + 1}...", 'loss')
+                    add_log(f"   ➡️ GALE {i + 1}...", 'loss')
                 else:
                     add_log("   💀 CICLO ESGOTADO!", 'loss')
 
@@ -572,7 +540,6 @@ def bot_loop():
             bot_rodando = False
             return
 
-        # Carrega informações das estratégias
         estrategias_info = carregar_informacoes_estrategias()
 
         if not estrategias_info:
@@ -590,14 +557,13 @@ def bot_loop():
         add_log(f"📊 Estratégia: {estrategia_info.get('nome')}", 'indicator')
         add_log(f"⏱️ Timeframe: {timeframe_estrategia}s", 'info')
 
-        # ⭐ SE A ESTRATÉGIA NÃO ESTIVER INJETADA, BAIXA E INJETA
         if not estrategia_ja_injetada or cache_estrategia_carregada["nome"] != estrategia_atual_global:
-            add_log(f"🔧 Carregando e injetando estratégia '{estrategia_atual_global}'...", "info")
+            add_log(f"🔧 Carregando estratégia '{estrategia_atual_global}'...", "info")
             if not carregar_e_injetar_estrategia(estrategia_atual_global):
-                add_log(f"❌ Falha ao carregar estratégia '{estrategia_atual_global}'", 'error')
+                add_log(f"❌ Falha ao carregar estratégia", 'error')
                 bot_rodando = False
                 return
-            add_log(f"✅ Estratégia '{estrategia_atual_global}' injetada com sucesso!", 'win')
+            add_log(f"✅ Estratégia injetada!", 'win')
 
         BANCA_INICIAL_DO_BOT = API.get_balance()
         STOP_GAIN_ATINGIDO = False
@@ -607,30 +573,25 @@ def bot_loop():
         ultimo_sinal = "Aguardando..."
         add_log(f"📌 {par} | 💰 ${BANCA_INICIAL_DO_BOT:.2f}")
 
-        # ⭐ THREAD QUE EXECUTA A ESTRATÉGIA INJETADA (roda uma vez e para)
         def processar_estrategia():
             global timeframe_atual, sinal_pendente
             try:
-                add_log(f"🔍 Executando análise da estratégia...", "info")
+                add_log(f"🔍 Analisando mercado...", "info")
                 resultado = estrategia_atual_executar(API, par, add_log)
                 if resultado and bot_rodando:
                     direcao = resultado.get('direcao', '').lower()
                     novo_tf = resultado.get('timeframe', timeframe_estrategia)
                     if novo_tf != timeframe_atual:
-                        add_log(f"⏱️ Timeframe alterado para {novo_tf}s", 'indicator')
                         timeframe_atual = novo_tf
                     if direcao in ['call', 'put']:
                         with sinal_lock:
                             sinal_pendente = direcao
                         add_log(f"🎯 SINAL: {direcao.upper()}!", 'sensitive')
             except Exception as e:
-                add_log(f"❌ Erro na execução: {e}", "error")
-                import traceback
-                traceback.print_exc()
+                add_log(f"❌ Erro: {e}", "error")
 
         threading.Thread(target=processar_estrategia, daemon=True).start()
 
-        # ⭐ Loop principal - espera o sinal (sem timeout)
         while bot_rodando and not STOP_GAIN_ATINGIDO:
             if not bot_rodando:
                 break
@@ -771,11 +732,18 @@ def status():
         estrategia_nome = estrategias_info[estrategia_atual].get('nome', estrategia_atual)
 
     return jsonify({
-        'conectado': conectado_iq, 'rodando': bot_rodando, 'email': email_usuario_atual,
-        'banca': API.get_balance() if API else 0, 'lucro': lucro, 'ops': NumDeOperacoes,
-        'sinal': ultimo_sinal, 'logs': get_logs_html(40),
-        'moedas': u.get('moedas', 0) if u else 0, 'skin_id': skin_atual,
-        'skins_status': skins_status, 'estrategia': estrategia_atual,
+        'conectado': conectado_iq,
+        'rodando': bot_rodando,
+        'email': email_usuario_atual,
+        'banca': API.get_balance() if API else 0,
+        'lucro': lucro,
+        'ops': NumDeOperacoes,
+        'sinal': ultimo_sinal,
+        'logs': get_logs_html(40),
+        'moedas': u.get('moedas', 0) if u else 0,
+        'skin_id': skin_atual,
+        'skins_status': skins_status,
+        'estrategia': estrategia_atual,
         'estrategia_nome': estrategia_nome,
         'estrategias_compradas': estrategias_compradas,
         'estrategias_disponiveis': {k: {'nome': v['nome'], 'desc': v['desc'], 'preco_moedas': v['preco_moedas'], 'gratis': v['gratis']} for k, v in estrategias_info.items()},
@@ -883,7 +851,7 @@ def comecar_operar():
 
         estrategias_info = carregar_informacoes_estrategias()
         if not estrategias_info:
-            return jsonify({'ok': False, 'erro': '❌ NENHUMA ESTRATÉGIA! Adicione estratégias no GitHub.'})
+            return jsonify({'ok': False, 'erro': '❌ NENHUMA ESTRATÉGIA DISPONÍVEL!'})
 
         if estrategia_atual_global not in estrategias_info:
             return jsonify({'ok': False, 'erro': f'❌ Estratégia "{estrategia_atual_global}" não encontrada!'})
@@ -897,9 +865,7 @@ def comecar_operar():
         with bot_lock:
             if bot_rodando and bot_thread and bot_thread.is_alive():
                 return jsonify({'ok': False, 'erro': 'Bot já rodando!'})
-            
             estrategia_ja_injetada = False
-            
             bot_rodando = True
             bot_thread = threading.Thread(target=bot_loop, daemon=True)
             bot_thread.start()
@@ -911,22 +877,16 @@ def comecar_operar():
 def parar():
     global bot_rodando, conectado_iq, volt_ja_consumido
     data = request.json or {}
-
     add_log("🛑 Parando o bot...", 'info')
-
     with bot_lock:
         bot_rodando = False
-
     time.sleep(1)
-
     volt_ja_consumido = False
-
     if data.get('desconectar'):
         conectado_iq = False
-        add_log("🔌 Desconectado da IQ Option", 'info')
+        add_log("🔌 Desconectado", 'info')
     else:
-        add_log("✅ Bot parado! Clique em COMEÇAR OPERAR para iniciar novamente.", 'win')
-
+        add_log("✅ Bot parado!", 'win')
     return jsonify({'ok': True, 'shutdown': data.get('desconectar', False)})
 
 @app.route('/comprar_skin', methods=['POST'])
@@ -1129,10 +1089,9 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 50)
-    print("⚡ TESLA 369 BOT v9.0.1 - PIPELINE CLOUD ESTÁVEL ⚡")
-    print("SKINS CARREGADAS DO GITHUB")
-    print("ESTRATÉGIAS BAIXADAS E INJETADAS UMA ÚNICA VEZ")
-    print("COM TIMESTAMP E SINCRONISMO CORRETO")
+    print("⚡ TESLA 369 BOT v11.0.0 - CLOUD ESTÁVEL ⚡")
+    print("ESTRATÉGIAS SALVAS NO FIREBASE")
+    print("VOLT CONSUMIDO APENAS NA OPERAÇÃO")
     print("=" * 50)
 
     print("🔍 Testando carregamento de skins...")
