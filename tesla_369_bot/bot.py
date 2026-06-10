@@ -68,7 +68,7 @@ ultimo_sinal, ultima_analise = "Aguardando...", {}
 logs_web, MAX_LOGS_WEB = [], 200
 email_usuario_atual = ""
 skin_atual_global = 'skin_padrao'
-estrategia_atual_global = ''  # ⭐ COMEÇA VAZIO - SEM ESTRATÉGIA SELECIONADA
+estrategia_atual_global = ''
 pagamentos_pendentes = {}
 bot_lock = threading.Lock()
 sinal_pendente = None  
@@ -185,7 +185,8 @@ def carregar_estrategias_da_nuvem():
                 for item in itens:
                     if item["name"].endswith(".py") and item["name"] != "__init__.py":
                         nome_sem_extensao = item["name"][:-3]
-                        nomes_scripts.append(nome_sem_extensao.lower())  # ⭐ Guarda em minúsculo
+                        nomes_scripts.append(nome_sem_extensao)
+                        print(f"   📄 Estratégia encontrada: {nome_sem_extensao}")
             else:
                 print("⚠️ Resposta da API do GitHub não é uma lista")
             
@@ -198,22 +199,16 @@ def carregar_estrategias_da_nuvem():
             
             for script in nomes_scripts:
                 try:
-                    # ⭐ Tenta encontrar o arquivo original (preservando case do GitHub)
+                    # Tenta baixar o arquivo
                     url_raw = f"{GIT_RAW_ESTRATEGIAS_BASE}/{script}.py"
                     print(f"   📥 Baixando estratégia: {script}")
                     resp_raw = requests.get(url_raw, timeout=10)
                     
-                    # Se não funcionar com minúsculo, tenta o nome original do GitHub
-                    if resp_raw.status_code != 200:
-                        for item in itens:
-                            if isinstance(item, dict) and item["name"].lower().startswith(script):
-                                url_raw = f"{GIT_RAW_ESTRATEGIAS_BASE}/{item['name']}"
-                                resp_raw = requests.get(url_raw, timeout=10)
-                                break
-                    
                     if resp_raw.status_code == 200:
+                        # Cria um ambiente seguro para execução
                         escopo_memoria = {}
-                        exec(resp_raw.text, {}, escopo_memoria)
+                        exec(resp_raw.text, escopo_memoria)
+                        
                         if 'INFO' in escopo_memoria:
                             info = escopo_memoria['INFO']
                             estrategias_remotas[script] = {
@@ -221,13 +216,15 @@ def carregar_estrategias_da_nuvem():
                                 'desc': info.get('desc', 'Sem descrição.'),
                                 'preco_moedas': info.get('preco', 0),
                                 'timeframe': info.get('timeframe', 60),
-                                'gratis': info.get('preco', 0) == 0
+                                'gratis': info.get('gratis', info.get('preco', 0) == 0)
                             }
-                            print(f"      ✅ Carregada: {info.get('nome', script)} (timeframe: {info.get('timeframe', 60)}s)")
+                            print(f"      ✅ Carregada: {info.get('nome', script)} (timeframe: {info.get('timeframe', 60)}s, preço: {info.get('preco', 0)}⚡)")
+                        else:
+                            print(f"      ❌ INFO não encontrado em {script}")
                     else:
                         print(f"      ❌ Falha ao baixar {script}: HTTP {resp_raw.status_code}")
                 except Exception as e:
-                    print(f"      ❌ Erro ao ler {script}: {e}")
+                    print(f"      ❌ Erro ao processar {script}: {e}")
                     
         elif resp_git.status_code == 404:
             print("⚠️ PASTA DE ESTRATÉGIAS NÃO ENCONTRADA no GitHub!")
@@ -311,7 +308,7 @@ def criar_usuario(email):
         'historico_operacoes': [],
         'dias_ativos': 0,
         'skin_atual': 'skin_padrao', 'skins_compradas': ['skin_padrao'],
-        'estrategia_atual': '', 'estrategias_compradas': []  # ⭐ COMEÇA VAZIO
+        'estrategia_atual': '', 'estrategias_compradas': []
     }
     salvar_usuario(email, dados)
     return dados
@@ -579,7 +576,7 @@ def bot_loop():
                 
                 if requisicao.status_code == 200:
                     escopo_local = {}
-                    exec(requisicao.text, {}, escopo_local)
+                    exec(requisicao.text, escopo_local)
                     
                     if 'rodar_analise' in escopo_local:
                         add_log("🔍 Executando análise da estratégia...", "info")
@@ -724,7 +721,7 @@ def status():
         for est_id in estrategias_disponiveis:
             if est_id.lower() == estrategia_atual.lower():
                 estrategia_valida = True
-                estrategia_atual = est_id  # Usa o nome correto do GitHub
+                estrategia_atual = est_id
                 break
     
     if not estrategia_valida and estrategia_atual:
@@ -734,7 +731,6 @@ def status():
             salvar_usuario(email_usuario_atual, u)
     
     if not estrategia_atual and len(estrategias_disponiveis) > 0:
-        # Pega a primeira estratégia disponível (geralmente a gratuita)
         primeira_est = list(estrategias_disponiveis.keys())[0] if estrategias_disponiveis else ''
         if primeira_est:
             estrategia_atual = primeira_est
@@ -778,7 +774,7 @@ def set_percentual():
 def selecionar_estrategia():
     global estrategia_atual_global
     d = request.get_json() or {}
-    est_id = d.get('estrategia', '').lower()  # ⭐ Normaliza para minúsculo
+    est_id = d.get('estrategia', '').lower()
     
     if not email_usuario_atual: 
         return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
