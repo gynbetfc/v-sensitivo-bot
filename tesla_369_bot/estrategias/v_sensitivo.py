@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 # ESTRATÉGIA: V-Sensitivo Script
-# Análise completa com RSI, MMs, Bollinger, MACD e Estocástico
+# Operação no INÍCIO da vela (entrada na virada do timeframe)
 
 import time
 
 INFO = {
     'nome': 'V-Sensitivo Script',
-    'desc': 'Análise de momentum de velas com RSI, Estocástico, Médias Móveis, Bollinger e MACD.',
+    'desc': 'Análise de momentum de velas com RSI, Estocástico, Médias Móveis, Bollinger e MACD. Entrada no início da vela.',
     'preco': 0,
     'timeframe': 60,
     'gratis': True
@@ -36,7 +36,7 @@ def get_low(vela):
 def sma(velas, periodo):
     if len(velas) < periodo:
         return None
-    return round(sum(x['close'] for x in velas[-periodo:]) / periodo, 6)
+    return round(sum(get_close(x) for x in velas[-periodo:]) / periodo, 6)
 
 def bollinger(velas, periodo=20, desvio=2):
     if len(velas) < periodo:
@@ -61,18 +61,7 @@ def rsi(velas, periodo=14):
             perdas.append(abs(diff))
     if sum(perdas) == 0:
         return 100
-    return round(100 - (100 / (1 + sum(ganhos) / sum(perdas))), 2)
-
-def macd(velas, rapido=12, lento=26):
-    if len(velas) < lento:
-        return None
-    closes = [get_close(x) for x in velas]
-    er = closes[0]
-    el = closes[0]
-    for x in closes[1:]:
-        er = x * (2/(rapido+1)) + er * (1-2/(rapido+1))
-        el = x * (2/(lento+1)) + el * (1-2/(lento+1))
-    return round(er - el, 8)
+    return round(100 - (100 / (1 + sum(ganhos[-periodo:]) / sum(perdas[-periodo:]))), 2)
 
 def estocastico(velas, periodo=14):
     if len(velas) < periodo:
@@ -85,137 +74,126 @@ def estocastico(velas, periodo=14):
         return 50
     return round(((get_close(velas[-1]) - ll) / (hh - ll)) * 100, 2)
 
-def get_fase_vela():
-    segundo = time.localtime().tm_sec
-    if segundo < 20:
-        return "🌅 NASCENDO"
-    elif segundo < 45:
-        return "☀️ VIVA"
-    return "🌇 MORRENDO"
+def aguardar_inicio_vela_estrategia():
+    """Aguarda o início da próxima vela para análise"""
+    segundo_atual = time.localtime().tm_sec
+    if segundo_atual <= 5:
+        return True
+    # Espera o próximo minuto
+    while time.localtime().tm_sec > 1:
+        time.sleep(0.1)
+    return True
 
 def rodar_analise(api, par, add_log):
     try:
         timeframe = INFO['timeframe']
         
-        add_log("📊 V-Sensitivo: Sentindo a vela...", "indicator")
+        # ⭐ Aguarda o início da vela para fazer a análise
+        add_log("📊 V-Sensitivo: Aguardando início da vela para análise...", "indicator")
+        aguardar_inicio_vela_estrategia()
         
-        velas = api.get_candles(par, timeframe, 30, time.time())
+        add_log("📊 V-Sensitivo: Coletando dados do mercado...", "indicator")
         
-        if not velas or len(velas) < 20:
-            add_log("⚠️ Dados insuficientes", "warning")
+        # Pega velas do timeframe atual
+        velas = api.get_candles(par, timeframe, 50, time.time())
+        
+        if not velas or len(velas) < 30:
+            add_log("⚠️ Dados insuficientes para análise", "warning")
             return None
         
         # ========== CÁLCULO DOS INDICADORES ==========
         
-        fase = get_fase_vela()
-        rs = rsi(velas, 14)
-        m5 = sma(velas, 5)
-        m10 = sma(velas, 10)
-        m20 = sma(velas, 20)
-        bs, bm, bi = bollinger(velas, 20, 2)
-        mc = macd(velas, 12, 26)
-        st = estocastico(velas, 14)
+        # Médias Móveis
+        mm5 = sma(velas, 5)
+        mm10 = sma(velas, 10)
+        mm20 = sma(velas, 20)
+        mm50 = sma(velas, 50)
+        
+        # Preço atual
         pc = get_close(velas[-1])
         
-        add_log(f"   🔮 Fase: {fase}", "indicator")
-        if rs:
-            add_log(f"   📊 RSI: {rs:.1f}", "indicator")
-        if st:
-            add_log(f"   📊 Estocástico: {st:.1f}", "indicator")
-        if m5 and m10 and m20:
-            add_log(f"   📈 MM5: {m5:.5f} | MM10: {m10:.5f} | MM20: {m20:.5f}", "indicator")
-        if mc:
-            add_log(f"   📉 MACD: {mc:.8f}", "indicator")
+        # RSI
+        rs = rsi(velas, 14)
+        
+        # Estocástico
+        st = estocastico(velas, 14)
+        
+        # Bollinger
+        bs, bm, bi = bollinger(velas, 20, 2)
+        
+        add_log(f"   📊 RSI: {rs:.1f} | Estocástico: {st:.1f}", "indicator")
+        if mm5 and mm20 and mm50:
+            add_log(f"   📈 MM5: {mm5:.5f} | MM20: {mm20:.5f} | MM50: {mm50:.5f}", "indicator")
         add_log(f"   💵 Preço: {pc:.5f}", "indicator")
         
         # ========== LÓGICA DE SINAL ==========
         
-        sc = 0
-        sp = 0
-        sinais = []
+        sc = 0  # Score CALL
+        sp = 0  # Score PUT
         
-        # Médias Móveis
-        if m5 and m20:
-            if m5 > m20:
-                sc += 20
-                sinais.append("MM5>MM20")
-            else:
-                sp += 20
-                sinais.append("MM5<MM20")
-        
-        if m5 and m10:
-            if m5 > m10:
-                sc += 15
-                sinais.append("MM5>MM10")
-            else:
-                sp += 15
-                sinais.append("MM5<MM10")
-        
-        # RSI
-        if rs:
-            if rs < 30:
+        # 1. Médias Móveis (tendência de longo prazo)
+        if mm5 and mm20 and mm50:
+            if mm5 > mm20 and mm20 > mm50:
                 sc += 25
-                sinais.append(f"RSI={rs:.0f}↓")
-            elif rs > 70:
+                add_log("   ✅ Tendência de ALTA (MM5>MM20>MM50)", "indicator")
+            elif mm5 < mm20 and mm20 < mm50:
                 sp += 25
-                sinais.append(f"RSI={rs:.0f}↑")
-            elif rs > 50:
-                sc += 10
-            else:
-                sp += 10
+                add_log("   ⚠️ Tendência de BAIXA (MM5<MM20<MM50)", "indicator")
         
-        # Bollinger
+        # 2. Preço vs MM20
+        if mm20:
+            if pc > mm20:
+                sc += 15
+                add_log("   ✅ Preço acima da MM20", "indicator")
+            else:
+                sp += 15
+                add_log("   ⚠️ Preço abaixo da MM20", "indicator")
+        
+        # 3. RSI
+        if rs < 30:
+            sc += 20
+            add_log(f"   ✅ RSI sobrevendido ({rs:.0f} < 30)", "indicator")
+        elif rs > 70:
+            sp += 20
+            add_log(f"   ⚠️ RSI sobrecomprado ({rs:.0f} > 70)", "indicator")
+        elif rs < 50:
+            sc += 5
+        else:
+            sp += 5
+        
+        # 4. Estocástico
+        if st < 20:
+            sc += 20
+            add_log(f"   ✅ Estocástico sobrevendido ({st:.0f} < 20)", "indicator")
+        elif st > 80:
+            sp += 20
+            add_log(f"   ⚠️ Estocástico sobrecomprado ({st:.0f} > 80)", "indicator")
+        
+        # 5. Bollinger (reversão)
         if bs and bi and pc:
-            if pc <= bi * 1.01:
+            if pc <= bi * 1.005:
                 sc += 20
-                sinais.append("BB↓")
-            elif pc >= bs * 0.99:
+                add_log("   ✅ Preço na banda INFERIOR", "indicator")
+            elif pc >= bs * 0.995:
                 sp += 20
-                sinais.append("BB↑")
+                add_log("   ⚠️ Preço na banda SUPERIOR", "indicator")
         
-        # MACD
-        if mc:
-            if mc > 0:
-                sc += 15
-                sinais.append("MACD+")
-            else:
-                sp += 15
-                sinais.append("MACD-")
+        add_log(f"   🎯 SCORE: CALL={sc} | PUT={sp}", "indicator")
         
-        # Estocástico
-        if st:
-            if st < 20:
-                sc += 15
-                sinais.append(f"E={st:.0f}↓")
-            elif st > 80:
-                sp += 15
-                sinais.append(f"E={st:.0f}↑")
-        
-        # Fase da vela
-        if fase == "🌇 MORRENDO":
-            cor = 'V' if velas[-1]['open'] < velas[-1]['close'] else 'R'
-            if cor == 'V':
-                sp += 10
-            else:
-                sc += 10
-        
-        add_log(f"   🎯 SCORE: CALL={sc} PUT={sp}", "indicator")
-        if sinais:
-            add_log(f"   📋 Sinais: {' '.join(sinais[:3])}", "indicator")
-        
-        dif = abs(sc - sp)
-        
-        if sc > sp and dif >= 15:
+        # ⭐ Sinal apenas com diferença mínima
+        if sc >= 40 and sc > sp + 20:
             add_log(f"🎯 SINAL DE CALL! ({sc}x{sp})", "win")
             return {'direcao': 'call', 'timeframe': INFO['timeframe']}
         
-        elif sp > sc and dif >= 15:
+        elif sp >= 40 and sp > sc + 20:
             add_log(f"🎯 SINAL DE PUT! ({sp}x{sc})", "win")
             return {'direcao': 'put', 'timeframe': INFO['timeframe']}
         
-        add_log(f"⏳ Aguardando... ({sc}x{sp})", "info")
+        add_log(f"⏳ Sem sinal. CALL:{sc} PUT:{sp}", "info")
         return None
         
     except Exception as e:
         add_log(f"❌ Erro na análise: {e}", "error")
+        import traceback
+        traceback.print_exc()
         return None
