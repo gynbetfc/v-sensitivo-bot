@@ -4,14 +4,7 @@
 # NÃO precisa modificar o bot.py!
 
 ESTRATEGIAS_LISTA = [
-    'v_sensitivo',
-    'tesla_369',
-    'mhi_filtrado',
-    'terceira_igual_primeira',
-    'quadrante_de_7',
-    'fluxo_de_velas',
-    'reversao',
-    'm5'
+    'v_sensitivo'
 ]
 
 # ========== COMO ADICIONAR UMA NOVA ESTRATÉGIA ==========
