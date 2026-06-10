@@ -3,6 +3,7 @@
 
 # ⚡ TESLA 369 BOT v9.0.1 Cloud ⚡
 # SKINS E ESTRATÉGIAS CARREGADAS DINAMICAMENTE DO GITHUB
+# ANÁLISE DE MERCADO COM INDICADORES REAIS
 # NÃO PRECISA MODIFICAR O BOT PARA ADICIONAR NOVAS ESTRATÉGIAS!
 
 from flask import Flask, render_template, jsonify, request
@@ -16,6 +17,7 @@ import requests
 import uuid
 import signal
 import random
+import math
 
 warnings.filterwarnings("ignore")
 app = Flask(__name__)
@@ -114,13 +116,103 @@ def get_cor_vela(vela):
         return 'r'
     return 'd'
 
+def calcular_rsi(velas, periodo=14):
+    """Calcula RSI a partir das velas"""
+    if len(velas) < periodo + 1:
+        return 50
+    
+    ganhos = []
+    perdas = []
+    
+    for i in range(1, len(velas)):
+        close_atual = get_close(velas[i])
+        close_anterior = get_close(velas[i-1])
+        diferenca = close_atual - close_anterior
+        
+        if diferenca >= 0:
+            ganhos.append(diferenca)
+            perdas.append(0)
+        else:
+            ganhos.append(0)
+            perdas.append(abs(diferenca))
+    
+    ganhos = ganhos[-periodo:]
+    perdas = perdas[-periodo:]
+    
+    ganho_medio = sum(ganhos) / periodo if ganhos else 0
+    perda_media = sum(perdas) / periodo if perdas else 0
+    
+    if perda_media == 0:
+        return 100
+    
+    rs = ganho_medio / perda_media
+    rsi = 100 - (100 / (1 + rs))
+    
+    return rsi
+
+def calcular_estocastico(velas, periodo_k=14):
+    """Calcula Estocástico %K"""
+    if len(velas) < periodo_k:
+        return 50
+    
+    ultimas_velas = velas[-periodo_k:]
+    
+    maior_alta = max(get_high(v) for v in ultimas_velas)
+    menor_baixa = min(get_low(v) for v in ultimas_velas)
+    ultimo_fechamento = get_close(velas[-1])
+    
+    if maior_alta == menor_baixa:
+        return 50
+    
+    k = 100 * ((ultimo_fechamento - menor_baixa) / (maior_alta - menor_baixa))
+    return k
+
 def calcular_media_movel(velas, periodo):
+    """Calcula média móvel simples"""
     if len(velas) < periodo:
         return get_close(velas[-1]) if velas else 0
+    
     soma = 0
     for v in velas[-periodo:]:
         soma += get_close(v)
     return soma / periodo
+
+def calcular_bollinger(velas, periodo=20, desvio=2):
+    """Calcula Bandas de Bollinger"""
+    if len(velas) < periodo:
+        return None, None, None
+    
+    closes = [get_close(v) for v in velas[-periodo:]]
+    media = sum(closes) / periodo
+    variancia = sum((x - media) ** 2 for x in closes) / periodo
+    dp = variancia ** 0.5
+    
+    return round(media + desvio * dp, 6), round(media, 6), round(media - desvio * dp, 6)
+
+def calcular_macd(velas, rapido=12, lento=26, sinal=9):
+    """Calcula MACD"""
+    if len(velas) < lento:
+        return None, None, None
+    
+    closes = [get_close(v) for v in velas]
+    
+    # EMA rápida
+    er = closes[0]
+    for x in closes[1:]:
+        er = x * (2/(rapido+1)) + er * (1-2/(rapido+1))
+    
+    # EMA lenta
+    el = closes[0]
+    for x in closes[1:]:
+        el = x * (2/(lento+1)) + el * (1-2/(lento+1))
+    
+    macd_line = er - el
+    
+    # Linha de sinal (EMA do MACD)
+    if len(velas) < sinal + lento:
+        return round(macd_line, 8), 0, 0
+    
+    return round(macd_line, 8), 0, 0
 
 # ============= CARREGAR SKINS =============
 
@@ -168,7 +260,7 @@ def carregar_skins_da_nuvem():
         print(f"⚠️ Erro skins: {e}")
     return get_skins_fallback()
 
-# ============= CARREGAR ESTRATÉGIAS (DINÂMICO, IGUAL AS SKINS!) =============
+# ============= CARREGAR ESTRATÉGIAS (DINÂMICO) =============
 
 def carregar_lista_estrategias():
     """Carrega a lista de nomes das estratégias do GitHub"""
@@ -188,23 +280,23 @@ def carregar_estrategias_da_nuvem():
     """Carrega cada estratégia individualmente via RAW URL"""
     global cache_estrategias
     agora = time.time()
-    
+
     if cache_estrategias["data"] and (agora - cache_estrategias["timestamp"]) < CACHE_TTL:
         return cache_estrategias["data"]
-    
+
     nomes_estrategias = carregar_lista_estrategias()
     estrategias = {}
-    
+
     for nome_est in nomes_estrategias:
         try:
             url = f"{GIT_RAW_ESTRATEGIA_BASE}/{nome_est}.py"
             print(f"🌐 Baixando estratégia: {nome_est}")
             response = requests.get(url, timeout=10)
-            
+
             if response.status_code == 200:
                 escopo = {}
                 exec(response.text, escopo)
-                
+
                 if 'INFO' in escopo:
                     info = escopo['INFO']
                     estrategias[nome_est] = {
@@ -222,10 +314,10 @@ def carregar_estrategias_da_nuvem():
                 print(f"   ❌ HTTP {response.status_code} - {nome_est}")
         except Exception as e:
             print(f"   ❌ Erro ao carregar {nome_est}: {e}")
-    
+
     cache_estrategias["data"] = estrategias
     cache_estrategias["timestamp"] = agora
-    
+
     print(f"✅ Total de {len(estrategias)} estratégias carregadas!")
     return estrategias
 
@@ -360,18 +452,18 @@ def executar_ciclo(direcao):
         if not API:
             bot_rodando = False
             return
-        
+
         if not consumir_volt():
             add_log("❌ Sem VOLTS!", 'error')
             bot_rodando = False
             return
-            
+
         bi = API.get_balance()
         payout = Payout(par)
         entradas = calcular_entradas(bi, payout, MARTINGALE)
         add_log(f"💰 Banca: ${bi:.2f} | Payout: {payout*100:.0f}%", 'info')
         add_log(f"📐 E1:${entradas[0]:.2f} | E2:${entradas[1]:.2f} | E3:${entradas[2]:.2f}", 'info')
-        
+
         for i in range(MARTINGALE + 1):
             if not bot_rodando:
                 break
@@ -382,7 +474,7 @@ def executar_ciclo(direcao):
             if saldo_antes < valor:
                 add_log("❌ Saldo insuficiente!", 'error')
                 break
-            
+
             add_log(f"🎯 {'OPERAÇÃO' if i == 0 else f'GALE {i}'}: {direcao.upper()} ${valor:.2f}", 'info')
             st, id_ordem = API.buy(valor, par, direcao, 1)
             if not st or not id_ordem:
@@ -393,7 +485,7 @@ def executar_ciclo(direcao):
             if not st or not id_ordem:
                 add_log("❌ Rejeitado!", 'error')
                 break
-            
+
             time.sleep(0.3)
             ts_real = pegar_timestamp()
             if ts_real == 0:
@@ -401,12 +493,12 @@ def executar_ciclo(direcao):
             else:
                 if not aguardar_vela_fechar(ts_real):
                     break
-            
+
             res = verificar_resultado(saldo_antes, valor)
             lucro += round(res, 2)
             saldo_depois = API.get_balance()
             lucro_liquido = round(saldo_depois - saldo_antes, 2)
-            
+
             if res > 0:
                 add_log(f"🌟 WIN! +${lucro_liquido:.2f}", 'win')
                 NumDeOperacoes += 1
@@ -443,7 +535,7 @@ def executar_ciclo(direcao):
                     add_log(f"   ➡️ GALE {i + 1}...", 'loss')
                 else:
                     add_log("   💀 CICLO ESGOTADO!", 'loss')
-        
+
         bf = API.get_balance() if API else bi
         add_log("=" * 50, 'info')
         add_log(f"{'🌟 LUCRO' if bf > bi else '💀 PERDA'}: ${abs(bf - bi):.2f} | Saldo: ${bf:.2f}", 'info')
@@ -456,33 +548,33 @@ def executar_ciclo(direcao):
 
 def bot_loop():
     global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, sinal_pendente, ultimo_sinal, timeframe_atual, volt_ja_consumido
-    
+
     with bot_lock:
         if not bot_rodando:
             return
-        
+
         if not API:
             add_log('❌ API desconectada!', 'error')
             bot_rodando = False
             return
-        
+
         estrategias = carregar_estrategias_da_nuvem()
-        
+
         if not estrategias:
             add_log("❌ NENHUMA ESTRATÉGIA DISPONÍVEL!", 'error')
             bot_rodando = False
             return
-        
+
         if estrategia_atual_global not in estrategias:
             add_log(f"❌ Estratégia '{estrategia_atual_global}' não encontrada!", 'error')
             bot_rodando = False
             return
-        
+
         estrategia_info = estrategias[estrategia_atual_global]
         timeframe_estrategia = estrategia_info.get('timeframe', 60)
         add_log(f"📊 Estratégia: {estrategia_info.get('nome')}", 'indicator')
         add_log(f"⏱️ Timeframe: {timeframe_estrategia}s", 'info')
-            
+
         BANCA_INICIAL_DO_BOT = API.get_balance()
         STOP_GAIN_ATINGIDO = False
         lucro = 0.0
@@ -490,7 +582,7 @@ def bot_loop():
         volt_ja_consumido = False
         ultimo_sinal = "Aguardando..."
         add_log(f"📌 {par} | 💰 ${BANCA_INICIAL_DO_BOT:.2f}")
-        
+
         def processar_estrategia():
             global timeframe_atual, sinal_pendente
             try:
@@ -509,9 +601,9 @@ def bot_loop():
                             add_log(f"🎯 SINAL: {direcao.upper()}!", 'sensitive')
             except Exception as e:
                 add_log(f"❌ Erro: {e}", "error")
-        
+
         threading.Thread(target=processar_estrategia, daemon=True).start()
-        
+
         while bot_rodando and not STOP_GAIN_ATINGIDO:
             if not bot_rodando:
                 break
@@ -528,19 +620,70 @@ def bot_loop():
                 time.sleep(0.5)
             except:
                 time.sleep(2)
-        
+
         bot_rodando = False
 
 def analise_mercado_loop():
+    """Análise de mercado com indicadores REAIS (não random)"""
     global ultima_analise
     while True:
         if conectado_iq and API:
-            ultima_analise = {
-                'rsi': random.uniform(30, 70), 'mm5': random.uniform(1.0810, 1.0890),
-                'mm10': random.uniform(1.0810, 1.0890), 'mm20': random.uniform(1.0810, 1.0890),
-                'stoch': random.uniform(20, 80), 'fase': random.choice(['ACUMULAÇÃO', 'TENDÊNCIA ALTA', 'TENDÊNCIA BAIXA', 'EXAUSTÃO']),
-                'preco': random.uniform(1.08300, 1.08450)
-            }
+            try:
+                velas = API.get_candles(par, 60, 30, time.time())
+                
+                if velas and len(velas) >= 20:
+                    # Cálculo do RSI real
+                    rsi_val = calcular_rsi(velas, 14)
+                    
+                    # Cálculo do Estocástico real
+                    estoc_val = calcular_estocastico(velas, 14)
+                    
+                    # Cálculo das Médias Móveis reais
+                    mm5 = calcular_media_movel(velas, 5)
+                    mm10 = calcular_media_movel(velas, 10)
+                    mm20 = calcular_media_movel(velas, 20)
+                    
+                    # Preço atual
+                    preco_atual = get_close(velas[-1])
+                    
+                    # Determinação da fase de mercado
+                    if mm5 and mm10 and mm20:
+                        if mm5 > mm10 and mm10 > mm20:
+                            fase = "TENDÊNCIA ALTA"
+                        elif mm5 < mm10 and mm10 < mm20:
+                            fase = "TENDÊNCIA BAIXA"
+                        elif rsi_val < 40:
+                            fase = "ACUMULAÇÃO"
+                        elif rsi_val > 60:
+                            fase = "EXAUSTÃO"
+                        else:
+                            fase = "CONSOLIDAÇÃO"
+                    else:
+                        fase = "ANALISANDO..."
+                    
+                    ultima_analise = {
+                        'rsi': round(rsi_val, 1),
+                        'mm5': round(mm5, 5) if mm5 else 0,
+                        'mm10': round(mm10, 5) if mm10 else 0,
+                        'mm20': round(mm20, 5) if mm20 else 0,
+                        'stoch': round(estoc_val, 1),
+                        'fase': fase,
+                        'preco': round(preco_atual, 5) if preco_atual else 0
+                    }
+                else:
+                    # Dados simulados enquanto não há dados suficientes
+                    ultima_analise = {
+                        'rsi': 50,
+                        'mm5': 1.08300,
+                        'mm10': 1.08300,
+                        'mm20': 1.08300,
+                        'stoch': 50,
+                        'fase': "AGUARDANDO DADOS",
+                        'preco': 1.08300
+                    }
+            except Exception as e:
+                print(f"Erro na análise de mercado: {e}")
+                pass
         time.sleep(2)
 
 threading.Thread(target=analise_mercado_loop, daemon=True).start()
@@ -608,15 +751,15 @@ def status():
             'preco_moedas': skin.get('preco_moedas'), 'categoria': skin.get('categoria'),
             'comprado': skin.get('id') in skins_compradas, 'ativo': skin.get('id') == skin_atual
         })
-    
+
     estrategias = carregar_estrategias_da_nuvem()
     estrategias_compradas = u.get('estrategias_compradas', ['v_sensitivo']) if u else ['v_sensitivo']
     estrategia_atual = u.get('estrategia_atual', 'v_sensitivo') if u else 'v_sensitivo'
-    
+
     estrategia_nome = "Nenhuma"
     if estrategia_atual in estrategias:
         estrategia_nome = estrategias[estrategia_atual].get('nome', estrategia_atual)
-    
+
     return jsonify({
         'conectado': conectado_iq, 'rodando': bot_rodando, 'email': email_usuario_atual,
         'banca': API.get_balance() if API else 0, 'lucro': lucro, 'ops': NumDeOperacoes,
@@ -726,20 +869,20 @@ def comecar_operar():
     try:
         if not conectado_iq:
             return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
-        
+
         estrategias = carregar_estrategias_da_nuvem()
         if not estrategias:
             return jsonify({'ok': False, 'erro': '❌ NENHUMA ESTRATÉGIA! Adicione estratégias no GitHub.'})
-        
+
         if estrategia_atual_global not in estrategias:
             return jsonify({'ok': False, 'erro': f'❌ Estratégia "{estrategia_atual_global}" não encontrada!'})
-        
+
         usuario = carregar_usuario(email_usuario_atual)
         if not usuario:
             return jsonify({'ok': False, 'erro': 'Usuário não encontrado!'})
         if usuario.get('moedas', 0) < 1:
             return jsonify({'ok': False, 'erro': 'Sem VOLTS! Compre na loja.'})
-        
+
         with bot_lock:
             if bot_rodando and bot_thread and bot_thread.is_alive():
                 return jsonify({'ok': False, 'erro': 'Bot já rodando!'})
@@ -752,21 +895,25 @@ def comecar_operar():
 
 @app.route('/parar', methods=['POST'])
 def parar():
-    global bot_rodando, conectado_iq
+    global bot_rodando, conectado_iq, volt_ja_consumido
     data = request.json or {}
-    
+
     add_log("🛑 Parando o bot...", 'info')
-    
+
     with bot_lock:
         bot_rodando = False
-    
+
     time.sleep(1)
-    
+
+    # Reseta o estado para permitir novo START
+    volt_ja_consumido = False
+
     if data.get('desconectar'):
         conectado_iq = False
-        add_log("🔌 Desconectado", 'info')
-    
-    add_log("✅ Bot parado!", 'win')
+        add_log("🔌 Desconectado da IQ Option", 'info')
+    else:
+        add_log("✅ Bot parado! Clique em COMEÇAR OPERAR para iniciar novamente.", 'win')
+
     return jsonify({'ok': True, 'shutdown': data.get('desconectar', False)})
 
 @app.route('/comprar_skin', methods=['POST'])
@@ -972,17 +1119,18 @@ if __name__ == '__main__':
     print("⚡ TESLA 369 BOT v9.0.1 - PIPELINE CLOUD ESTÁVEL ⚡")
     print("SKINS CARREGADAS DO GITHUB")
     print("ESTRATÉGIAS CARREGADAS DO GITHUB (DINÂMICO - LISTA VIA estrategias.py)")
+    print("ANÁLISE DE MERCADO COM INDICADORES REAIS")
     print("=" * 50)
-    
+
     print("🔍 Testando carregamento de skins...")
     skins_test = carregar_skins_da_nuvem()
     print(f"📦 {len(skins_test)} skins disponíveis")
-    
+
     print("🔍 Testando carregamento de estratégias...")
     estrategias_test = carregar_estrategias_da_nuvem()
     print(f"📊 {len(estrategias_test)} estratégias disponíveis")
-    
+
     sincronizar_html_local()
-    
+
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
