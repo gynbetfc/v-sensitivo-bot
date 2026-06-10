@@ -68,7 +68,7 @@ ultimo_sinal, ultima_analise = "Aguardando...", {}
 logs_web, MAX_LOGS_WEB = [], 200
 email_usuario_atual = ""
 skin_atual_global = 'skin_padrao'
-estrategia_atual_global = ''
+estrategia_atual_global = ''  # ⭐ COMEÇA VAZIO - SEM ESTRATÉGIA SELECIONADA
 pagamentos_pendentes = {}
 bot_lock = threading.Lock()
 sinal_pendente = None  
@@ -182,7 +182,10 @@ def carregar_estrategias_da_nuvem():
             nomes_scripts = []
             
             if isinstance(itens, list):
-                nomes_scripts = [i["name"][:-3] for i in itens if i["name"].endswith(".py") and i["name"] != "__init__.py"]
+                for item in itens:
+                    if item["name"].endswith(".py") and item["name"] != "__init__.py":
+                        nome_sem_extensao = item["name"][:-3]
+                        nomes_scripts.append(nome_sem_extensao.lower())  # ⭐ Guarda em minúsculo
             else:
                 print("⚠️ Resposta da API do GitHub não é uma lista")
             
@@ -195,9 +198,19 @@ def carregar_estrategias_da_nuvem():
             
             for script in nomes_scripts:
                 try:
+                    # ⭐ Tenta encontrar o arquivo original (preservando case do GitHub)
                     url_raw = f"{GIT_RAW_ESTRATEGIAS_BASE}/{script}.py"
                     print(f"   📥 Baixando estratégia: {script}")
                     resp_raw = requests.get(url_raw, timeout=10)
+                    
+                    # Se não funcionar com minúsculo, tenta o nome original do GitHub
+                    if resp_raw.status_code != 200:
+                        for item in itens:
+                            if isinstance(item, dict) and item["name"].lower().startswith(script):
+                                url_raw = f"{GIT_RAW_ESTRATEGIAS_BASE}/{item['name']}"
+                                resp_raw = requests.get(url_raw, timeout=10)
+                                break
+                    
                     if resp_raw.status_code == 200:
                         escopo_memoria = {}
                         exec(resp_raw.text, {}, escopo_memoria)
@@ -298,7 +311,7 @@ def criar_usuario(email):
         'historico_operacoes': [],
         'dias_ativos': 0,
         'skin_atual': 'skin_padrao', 'skins_compradas': ['skin_padrao'],
-        'estrategia_atual': '', 'estrategias_compradas': []
+        'estrategia_atual': '', 'estrategias_compradas': []  # ⭐ COMEÇA VAZIO
     }
     salvar_usuario(email, dados)
     return dados
@@ -518,8 +531,14 @@ def bot_loop():
             bot_rodando = False
             return
         
-        # ⭐ Verifica se a estratégia selecionada existe
-        if estrategia_atual_global not in estrategias_disponiveis:
+        # ⭐ Verifica se a estratégia selecionada existe (case insensitive)
+        estrategia_encontrada = None
+        for est_id in estrategias_disponiveis:
+            if est_id.lower() == estrategia_atual_global.lower():
+                estrategia_encontrada = est_id
+                break
+        
+        if estrategia_encontrada is None:
             add_log(f"❌ Estratégia '{estrategia_atual_global}' não encontrada no GitHub!", 'error')
             add_log(f"📋 Estratégias disponíveis: {', '.join(estrategias_disponiveis.keys())}", 'info')
             add_log("🛑 Operação cancelada. Selecione uma estratégia válida.", 'error')
@@ -527,7 +546,7 @@ def bot_loop():
             return
         
         # ⭐ Carrega as informações da estratégia
-        estrategia_info = estrategias_disponiveis[estrategia_atual_global]
+        estrategia_info = estrategias_disponiveis[estrategia_encontrada]
         timeframe_estrategia = estrategia_info.get('timeframe', 60)
         add_log(f"📊 Estratégia: {estrategia_info.get('nome')}", 'indicator')
         add_log(f"⏱️ Timeframe: {timeframe_estrategia} segundos ({timeframe_estrategia//60} minutos)", 'info')
@@ -538,19 +557,20 @@ def bot_loop():
         NumDeOperacoes = 0
         volt_ja_consumido = False
         ultimo_sinal = "Aguardando sinal da estratégia..."
-        add_log(f"📌 Ativo: {par} | Estratégia: {estrategia_atual_global} | 💰 ${BANCA_INICIAL_DO_BOT:.2f}")
+        add_log(f"📌 Ativo: {par} | Estratégia: {estrategia_encontrada} | 💰 ${BANCA_INICIAL_DO_BOT:.2f}")
         add_log("⏳ Aguardando sinal da estratégia... (pode levar minutos ou horas)", 'info')
         
-        url_modulo_remoto = f"{GIT_RAW_ESTRATEGIAS_BASE}/{estrategia_atual_global}.py"
+        # ⭐ Usa o nome correto do arquivo (como está no GitHub)
+        url_modulo_remoto = f"{GIT_RAW_ESTRATEGIAS_BASE}/{estrategia_encontrada}.py"
         
         def processamento_estrategia_remota():
             global timeframe_atual, sinal_pendente
             try:
-                add_log(f"🌐 Baixando e executando estratégia '{estrategia_atual_global}'...", "info")
+                add_log(f"🌐 Baixando e executando estratégia '{estrategia_encontrada}'...", "info")
                 requisicao = requests.get(url_modulo_remoto, timeout=15)
                 
                 if requisicao.status_code == 404:
-                    add_log(f"❌ Estratégia '{estrategia_atual_global}' não encontrada no GitHub!", 'error')
+                    add_log(f"❌ Estratégia '{estrategia_encontrada}' não encontrada no GitHub!", 'error')
                     add_log("⚠️ Verifique se o arquivo existe na pasta 'estrategias/'", 'error')
                     add_log("🛑 Nenhum sinal será gerado até que a estratégia seja adicionada.", 'error')
                     with sinal_lock:
@@ -586,7 +606,7 @@ def bot_loop():
                         else:
                             add_log("⏳ Nenhum sinal detectado. Continuando análise...", "info")
                     else:
-                        add_log(f"❌ Estratégia '{estrategia_atual_global}' não contém a função 'rodar_analise'", 'error')
+                        add_log(f"❌ Estratégia '{estrategia_encontrada}' não contém a função 'rodar_analise'", 'error')
                 else:
                     add_log(f"❌ Erro ao baixar estratégia: HTTP {requisicao.status_code}", 'error')
                     
@@ -698,10 +718,23 @@ def status():
     estrategias_compradas = u.get('estrategias_compradas', []) if u else []
     estrategia_atual = u.get('estrategia_atual', '') if u else ''
     
-    # Se a estratégia atual não existe mais, limpa
-    if estrategia_atual and estrategia_atual not in estrategias_disponiveis:
+    # Verifica se a estratégia atual ainda existe (case insensitive)
+    estrategia_valida = False
+    if estrategia_atual:
+        for est_id in estrategias_disponiveis:
+            if est_id.lower() == estrategia_atual.lower():
+                estrategia_valida = True
+                estrategia_atual = est_id  # Usa o nome correto do GitHub
+                break
+    
+    if not estrategia_valida and estrategia_atual:
         estrategia_atual = ''
-    elif not estrategia_atual and len(estrategias_disponiveis) > 0:
+        if u:
+            u['estrategia_atual'] = ''
+            salvar_usuario(email_usuario_atual, u)
+    
+    if not estrategia_atual and len(estrategias_disponiveis) > 0:
+        # Pega a primeira estratégia disponível (geralmente a gratuita)
         primeira_est = list(estrategias_disponiveis.keys())[0] if estrategias_disponiveis else ''
         if primeira_est:
             estrategia_atual = primeira_est
@@ -709,7 +742,7 @@ def status():
                 u['estrategia_atual'] = primeira_est
                 salvar_usuario(email_usuario_atual, u)
     
-    estrategia_nome = estrategias_disponiveis.get(estrategia_atual, {}).get('nome', 'Nenhuma estratégia selecionada') if estrategia_atual else 'Nenhuma estratégia disponível'
+    estrategia_nome = estrategias_disponiveis.get(estrategia_atual, {}).get('nome', 'Nenhuma estratégia selecionada') if estrategia_atual else '⚠️ NENHUMA ESTRATÉGIA SELECIONADA'
     
     pasta_vazia = cache_estrategias.get("pasta_vazia", False)
     if pasta_vazia and len(estrategias_disponiveis) == 0:
@@ -745,7 +778,7 @@ def set_percentual():
 def selecionar_estrategia():
     global estrategia_atual_global
     d = request.get_json() or {}
-    est_id = d.get('estrategia', '')
+    est_id = d.get('estrategia', '').lower()  # ⭐ Normaliza para minúsculo
     
     if not email_usuario_atual: 
         return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
@@ -759,30 +792,37 @@ def selecionar_estrategia():
     if len(estrategias_disponiveis) == 0:
         return jsonify({'ok': False, 'erro': 'Nenhuma estratégia disponível no GitHub! Adicione arquivos na pasta "estrategias".'})
     
-    if est_id not in estrategias_disponiveis:
+    # ⭐ Busca case insensitive
+    estrategia_encontrada = None
+    for key in estrategias_disponiveis:
+        if key.lower() == est_id:
+            estrategia_encontrada = key
+            break
+    
+    if estrategia_encontrada is None:
         return jsonify({'ok': False, 'erro': f'Estratégia "{est_id}" não encontrada no GitHub!'})
     
     estrategias_compradas = u.get('estrategias_compradas', [])
     
-    if est_id not in estrategias_compradas:
-        info = estrategias_disponiveis[est_id]
+    if estrategia_encontrada not in estrategias_compradas:
+        info = estrategias_disponiveis[estrategia_encontrada]
         if not info.get('gratis', False):
             return jsonify({'ok': False, 'erro': f'Estratégia bloqueada! Compre na loja por {info.get("preco_moedas")} ⚡'})
         else:
             if 'estrategias_compradas' not in u:
                 u['estrategias_compradas'] = []
-            u['estrategias_compradas'].append(est_id)
+            u['estrategias_compradas'].append(estrategia_encontrada)
     
-    u['estrategia_atual'] = est_id
+    u['estrategia_atual'] = estrategia_encontrada
     salvar_usuario(email_usuario_atual, u)
-    estrategia_atual_global = est_id
-    add_log(f"🧠 Estratégia selecionada: {estrategias_disponiveis[est_id].get('nome', est_id.upper())}", 'indicator')
+    estrategia_atual_global = estrategia_encontrada
+    add_log(f"🧠 Estratégia selecionada: {estrategias_disponiveis[estrategia_encontrada].get('nome', estrategia_encontrada.upper())}", 'indicator')
     return jsonify({'ok': True})
 
 @app.route('/comprar_estrategia', methods=['POST'])
 def comprar_estrategia():
     d = request.get_json() or {}
-    est_id = d.get('estrategia_id', '')
+    est_id = d.get('estrategia_id', '').lower()
     
     if not email_usuario_atual: 
         return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
@@ -792,7 +832,14 @@ def comprar_estrategia():
     if len(estrategias_disponiveis) == 0:
         return jsonify({'ok': False, 'erro': 'Nenhuma estratégia disponível no GitHub!'})
     
-    if est_id not in estrategias_disponiveis: 
+    # ⭐ Busca case insensitive
+    estrategia_encontrada = None
+    for key in estrategias_disponiveis:
+        if key.lower() == est_id:
+            estrategia_encontrada = key
+            break
+    
+    if estrategia_encontrada is None: 
         return jsonify({'ok': False, 'erro': 'Estratégia inválida'})
         
     u = carregar_usuario(email_usuario_atual)
@@ -802,31 +849,27 @@ def comprar_estrategia():
     if 'estrategias_compradas' not in u: 
         u['estrategias_compradas'] = []
     
-    if est_id in u['estrategias_compradas']:
-        u['estrategia_atual'] = est_id
+    if estrategia_encontrada in u['estrategias_compradas']:
+        u['estrategia_atual'] = estrategia_encontrada
         salvar_usuario(email_usuario_atual, u)
         return jsonify({'ok': True, 'moedas': u['moedas'], 'msg': 'Estratégia já adquirida!'})
     
-    info = estrategias_disponiveis[est_id]
+    info = estrategias_disponiveis[estrategia_encontrada]
     preco = info.get('preco_moedas', 0)
     
     if u.get('moedas', 0) < preco: 
         return jsonify({'ok': False, 'erro': f'Saldo insuficiente! Precisa de {preco} ⚡'})
     
     u['moedas'] -= preco
-    u['estrategias_compradas'].append(est_id)
-    u['estrategia_atual'] = est_id
+    u['estrategias_compradas'].append(estrategia_encontrada)
+    u['estrategia_atual'] = estrategia_encontrada
     salvar_usuario(email_usuario_atual, u)
     
     global estrategia_atual_global
-    estrategia_atual_global = est_id
-    add_log(f"🛒 Estratégia comprada: {info.get('nome', est_id)} por {preco} ⚡", 'win')
-    return jsonify({'ok': True, 'moedas': u['moedas'], 'msg': f'Estratégia {info.get("nome", est_id)} adquirida!'})
+    estrategia_atual_global = estrategia_encontrada
+    add_log(f"🛒 Estratégia comprada: {info.get('nome', estrategia_encontrada)} por {preco} ⚡", 'win')
+    return jsonify({'ok': True, 'moedas': u['moedas'], 'msg': f'Estratégia {info.get("nome", estrategia_encontrada)} adquirida!'})
 
-
-
-
-#########
 @app.route('/conectar', methods=['POST'])
 def conectar():
     global API, email_usuario_atual, conectado_iq, skin_atual_global, estrategia_atual_global, par, timeframe_atual
@@ -850,7 +893,7 @@ def conectar():
         usuario = carregar_usuario(email) or criar_usuario(email)
         hoje = str(datetime.now())[:10]
         
-        if usuario.get('moedas_ganhas_hoje') != hoje:  # ← CORRIGIDO!
+        if usuario.get('moedas_ganhas_hoje') != hoje:
             usuario['moedas'] = usuario.get('moedas', 0) + 1
             usuario['moedas_ganhas_hoje'] = hoje
             salvar_usuario(email, usuario)
@@ -859,13 +902,22 @@ def conectar():
         
         estrategias_disponiveis = carregar_estrategias_da_nuvem()
         estrategia_salva = usuario.get('estrategia_atual', '')
-        if estrategia_salva and estrategia_salva in estrategias_disponiveis:
-            estrategia_atual_global = estrategia_salva
-        elif len(estrategias_disponiveis) > 0:
+        
+        # Verifica se a estratégia salva ainda existe
+        estrategia_valida = False
+        if estrategia_salva:
+            for est_id in estrategias_disponiveis:
+                if est_id.lower() == estrategia_salva.lower():
+                    estrategia_atual_global = est_id
+                    estrategia_valida = True
+                    break
+        
+        if not estrategia_valida and len(estrategias_disponiveis) > 0:
             estrategia_atual_global = list(estrategias_disponiveis.keys())[0]
             usuario['estrategia_atual'] = estrategia_atual_global
         else:
             estrategia_atual_global = ''
+            usuario['estrategia_atual'] = ''
         
         salvar_usuario(email, usuario)
         add_log('🔌 Conectado à IQ Option!', 'info')
@@ -874,14 +926,12 @@ def conectar():
         if len(estrategias_disponiveis) == 0:
             add_log("⚠️ ATENÇÃO: Nenhuma estratégia encontrada no GitHub!", 'warning')
             add_log("📁 Adicione arquivos .py na pasta 'tesla_369_bot/estrategias/'", 'warning')
+        elif not estrategia_atual_global:
+            add_log("⚠️ ATENÇÃO: Nenhuma estratégia selecionada! Vá na aba ESTRATÉGIAS e escolha uma.", 'warning')
         
         return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0), 'refresh': True})
     except Exception as e: 
         return jsonify({'ok': False, 'erro': str(e)[:100]})
-#########
-
-
-
 
 @app.route('/comecar_operar', methods=['POST'])
 def comecar_operar():
@@ -890,12 +940,23 @@ def comecar_operar():
         if not conectado_iq: 
             return jsonify({'ok': False, 'erro': 'Conecte à IQ Option primeiro!'})
         
+        # ⭐ VERIFICA SE HÁ ESTRATÉGIA SELECIONADA
+        if not estrategia_atual_global:
+            return jsonify({'ok': False, 'erro': '❌ NENHUMA ESTRATÉGIA SELECIONADA! Vá na aba "ESTRATÉGIAS" e escolha uma.'})
+        
         estrategias_disponiveis = carregar_estrategias_da_nuvem()
         
         if len(estrategias_disponiveis) == 0:
             return jsonify({'ok': False, 'erro': '❌ NENHUMA ESTRATÉGIA DISPONÍVEL! Adicione arquivos .py na pasta "estrategias" do GitHub.'})
         
-        if not estrategia_atual_global or estrategia_atual_global not in estrategias_disponiveis:
+        # Verifica se a estratégia selecionada existe (case insensitive)
+        estrategia_existe = False
+        for est_id in estrategias_disponiveis:
+            if est_id.lower() == estrategia_atual_global.lower():
+                estrategia_existe = True
+                break
+        
+        if not estrategia_existe:
             return jsonify({'ok': False, 'erro': f'❌ Estratégia "{estrategia_atual_global}" não encontrada! Selecione uma estratégia válida.'})
         
         with bot_lock:
