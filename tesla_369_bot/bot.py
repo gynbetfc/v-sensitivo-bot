@@ -6,6 +6,7 @@
 # SKINS CARREGADAS DINAMICAMENTE DO GITHUB
 # ESTRATÉGIAS CARREGADAS EXCLUSIVAMENTE DO GITHUB (SEM FALLBACK)
 # VOLT É CONSUMIDO APENAS QUANDO A OPERAÇÃO É REALMENTE EXECUTADA
+# NÃO EXISTE SINAL RANDOM - SEM ESTRATÉGIA = SEM OPERAÇÃO
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -67,12 +68,12 @@ ultimo_sinal, ultima_analise = "Aguardando...", {}
 logs_web, MAX_LOGS_WEB = [], 200
 email_usuario_atual = ""
 skin_atual_global = 'skin_padrao'
-estrategia_atual_global = 'v_sensitivo'
+estrategia_atual_global = ''
 pagamentos_pendentes = {}
 bot_lock = threading.Lock()
 sinal_pendente = None  
 sinal_lock = threading.Lock()
-volt_ja_consumido = False  # ⭐ NOVO: controle para não consumir VOLT duas vezes
+volt_ja_consumido = False
 
 # ============= 📢 SISTEMA DE LOGS INTERNOS =============
 
@@ -302,7 +303,7 @@ def criar_usuario(email):
     salvar_usuario(email, dados)
     return dados
 
-# ============= FUNÇÃO PARA CONSUMIR VOLT (APENAS NA OPERAÇÃO) =============
+# ============= FUNÇÕES DE CONSUMO DE VOLT =============
 
 def consumir_volt():
     """Consome 1 VOLT do usuário. Retorna True se conseguiu, False se não tem saldo."""
@@ -325,20 +326,6 @@ def consumir_volt():
     volt_ja_consumido = True
     add_log(f"⚡ 1 VOLT consumido. Saldo restante: {usuario['moedas']} VOLTS", 'info')
     return True
-
-def devolver_volt():
-    """Devolve o VOLT consumido (caso o bot seja parado antes da operação)."""
-    global volt_ja_consumido
-    if not volt_ja_consumido:
-        return
-    
-    usuario = carregar_usuario(email_usuario_atual)
-    if usuario:
-        usuario['moedas'] = usuario.get('moedas', 0) + 1
-        usuario['total_ciclos'] -= 1
-        salvar_usuario(email_usuario_atual, usuario)
-        add_log(f"🔄 VOLT devolvido! Saldo: {usuario['moedas']} VOLTS", 'info')
-    volt_ja_consumido = False
 
 # ============= ENGENHARIA DE EXECUÇÃO AUTOMÁTICA =============
 
@@ -527,6 +514,7 @@ def bot_loop():
             add_log("❌❌❌ NENHUMA ESTRATÉGIA DISPONÍVEL! ❌❌❌", 'error')
             add_log("⚠️ O bot não pode operar porque não há estratégias no GitHub.", 'error')
             add_log("📁 Adicione arquivos .py na pasta: tesla_369_bot/estrategias/", 'error')
+            add_log("🛑 Operação cancelada. Nenhum VOLT foi consumido.", 'error')
             bot_rodando = False
             return
         
@@ -534,6 +522,7 @@ def bot_loop():
         if estrategia_atual_global not in estrategias_disponiveis:
             add_log(f"❌ Estratégia '{estrategia_atual_global}' não encontrada no GitHub!", 'error')
             add_log(f"📋 Estratégias disponíveis: {', '.join(estrategias_disponiveis.keys())}", 'info')
+            add_log("🛑 Operação cancelada. Selecione uma estratégia válida.", 'error')
             bot_rodando = False
             return
         
@@ -547,7 +536,7 @@ def bot_loop():
         STOP_GAIN_ATINGIDO = False
         lucro = 0.0
         NumDeOperacoes = 0
-        volt_ja_consumido = False  # ⭐ Reseta o controle de VOLT
+        volt_ja_consumido = False
         ultimo_sinal = "Aguardando sinal da estratégia..."
         add_log(f"📌 Ativo: {par} | Estratégia: {estrategia_atual_global} | 💰 ${BANCA_INICIAL_DO_BOT:.2f}")
         add_log("⏳ Aguardando sinal da estratégia... (pode levar minutos ou horas)", 'info')
@@ -563,6 +552,7 @@ def bot_loop():
                 if requisicao.status_code == 404:
                     add_log(f"❌ Estratégia '{estrategia_atual_global}' não encontrada no GitHub!", 'error')
                     add_log("⚠️ Verifique se o arquivo existe na pasta 'estrategias/'", 'error')
+                    add_log("🛑 Nenhum sinal será gerado até que a estratégia seja adicionada.", 'error')
                     with sinal_lock:
                         sinal_pendente = None
                     return
@@ -573,8 +563,6 @@ def bot_loop():
                     
                     if 'rodar_analise' in escopo_local:
                         add_log("🔍 Executando análise da estratégia...", "info")
-                        
-                        # Executa a estratégia (pode demorar horas)
                         sinal_detectado = escopo_local['rodar_analise'](API, par, add_log)
                         
                         if sinal_detectado and bot_rodando:
@@ -596,7 +584,7 @@ def bot_loop():
                             else:
                                 add_log(f"⚠️ Sinal inválido: {direcao}", "warning")
                         else:
-                            add_log("⏳ Nenhum sinal detectado. A estratégia será executada novamente no próximo ciclo.", "info")
+                            add_log("⏳ Nenhum sinal detectado. Continuando análise...", "info")
                     else:
                         add_log(f"❌ Estratégia '{estrategia_atual_global}' não contém a função 'rodar_analise'", 'error')
                 else:
@@ -609,7 +597,7 @@ def bot_loop():
 
         threading.Thread(target=processamento_estrategia_remota, daemon=True).start()
         
-        # ⭐ Loop principal - SEM TIMEOUT! Fica esperando o sinal para sempre
+        # ⭐ Loop principal - SEM TIMEOUT! Espera o sinal para sempre
         while bot_rodando and not STOP_GAIN_ATINGIDO:
             try:
                 with sinal_lock:
@@ -629,16 +617,9 @@ def bot_loop():
                 add_log(f"Erro no loop principal: {e}", 'error')
                 time.sleep(2)
         
-        # ⭐ Se o bot foi parado sem operar, devolve o VOLT
-        if bot_rodando == False and volt_ja_consumido == False and sinal_pendente is None:
-            # Não fez operação, não consumiu VOLT
-            pass
-        elif bot_rodando == False and volt_ja_consumido == True:
-            # Já consumiu VOLT mas não terminou? Isso não deveria acontecer
-            pass
-            
-        bot_rodando = False
-        add_log("⏹️ Loop finalizado.", 'info')
+        if bot_rodando:
+            bot_rodando = False
+            add_log("⏹️ Loop finalizado.", 'info')
 
 def analise_mercado_loop():
     global ultima_analise
@@ -681,12 +662,16 @@ def index():
 @app.route('/sinal', methods=['POST'])
 def receber_sinal():
     global sinal_pendente
-    if not bot_rodando: return jsonify({'ok': False, 'erro': 'Bot em repouso.'})
-    if not conectado_iq: return jsonify({'ok': False, 'erro': 'IQ Option offline.'})
+    if not bot_rodando: 
+        return jsonify({'ok': False, 'erro': 'Bot em repouso.'})
+    if not conectado_iq: 
+        return jsonify({'ok': False, 'erro': 'IQ Option offline.'})
     data = request.get_json()
     direcao = data.get('direcao', '').lower()
-    if direcao not in ['call', 'put']: return jsonify({'ok': False, 'erro': 'Alvo inválido'})
-    with sinal_lock: sinal_pendente = direcao
+    if direcao not in ['call', 'put']: 
+        return jsonify({'ok': False, 'erro': 'Alvo inválido'})
+    with sinal_lock: 
+        sinal_pendente = direcao
     add_log(f"📡 Sinal externo recebido: {direcao.upper()}", 'sensitive')
     return jsonify({'ok': True, 'mensagem': 'Gatilho externo sincronizado'})
 
@@ -717,7 +702,6 @@ def status():
     if estrategia_atual and estrategia_atual not in estrategias_disponiveis:
         estrategia_atual = ''
     elif not estrategia_atual and len(estrategias_disponiveis) > 0:
-        # Pega a primeira estratégia disponível (geralmente a gratuita)
         primeira_est = list(estrategias_disponiveis.keys())[0] if estrategias_disponiveis else ''
         if primeira_est:
             estrategia_atual = primeira_est
@@ -727,7 +711,6 @@ def status():
     
     estrategia_nome = estrategias_disponiveis.get(estrategia_atual, {}).get('nome', 'Nenhuma estratégia selecionada') if estrategia_atual else 'Nenhuma estratégia disponível'
     
-    # Informa se a pasta está vazia
     pasta_vazia = cache_estrategias.get("pasta_vazia", False)
     if pasta_vazia and len(estrategias_disponiveis) == 0:
         estrategia_nome = "⚠️ NENHUMA ESTRATÉGIA - Adicione na pasta 'estrategias' do GitHub"
@@ -781,13 +764,11 @@ def selecionar_estrategia():
     
     estrategias_compradas = u.get('estrategias_compradas', [])
     
-    # Se a estratégia não foi comprada e não é gratuita, bloqueia
     if est_id not in estrategias_compradas:
         info = estrategias_disponiveis[est_id]
         if not info.get('gratis', False):
             return jsonify({'ok': False, 'erro': f'Estratégia bloqueada! Compre na loja por {info.get("preco_moedas")} ⚡'})
         else:
-            # Adiciona automaticamente estratégias gratuitas às compradas
             if 'estrategias_compradas' not in u:
                 u['estrategias_compradas'] = []
             u['estrategias_compradas'].append(est_id)
@@ -865,20 +846,18 @@ def conectar():
         usuario = carregar_usuario(email) or criar_usuario(email)
         hoje = str(datetime.now())[:10]
         
-        if usuario.get('moedas_ganhas_hoje') != hoje:
+        if usuario.get('moedas_ganhas_hoje') != oggi:
             usuario['moedas'] = usuario.get('moedas', 0) + 1
             usuario['moedas_ganhas_hoje'] = hoje
             salvar_usuario(email, usuario)
         
         skin_atual_global = usuario.get('skin_atual', 'skin_padrao')
         
-        # Verifica se a estratégia atual ainda existe
         estrategias_disponiveis = carregar_estrategias_da_nuvem()
         estrategia_salva = usuario.get('estrategia_atual', '')
         if estrategia_salva and estrategia_salva in estrategias_disponiveis:
             estrategia_atual_global = estrategia_salva
         elif len(estrategias_disponiveis) > 0:
-            # Se não tem estratégia ou a salva não existe, pega a primeira disponível
             estrategia_atual_global = list(estrategias_disponiveis.keys())[0]
             usuario['estrategia_atual'] = estrategia_atual_global
         else:
@@ -903,7 +882,6 @@ def comecar_operar():
         if not conectado_iq: 
             return jsonify({'ok': False, 'erro': 'Conecte à IQ Option primeiro!'})
         
-        # ⭐ Verifica se há estratégias disponíveis
         estrategias_disponiveis = carregar_estrategias_da_nuvem()
         
         if len(estrategias_disponiveis) == 0:
@@ -920,11 +898,9 @@ def comecar_operar():
             if not usuario: 
                 return jsonify({'ok': False, 'erro': 'Usuário não encontrado!'})
             
-            # ⭐ NÃO CONSUME VOLT AQUI! Só verifica se tem saldo
             if usuario.get('moedas', 0) < 1: 
                 return jsonify({'ok': False, 'erro': 'Sem VOLTS! Compre na loja.'})
             
-            # Reseta controle de VOLT
             volt_ja_consumido = False
             lucro = 0.0
             NumDeOperacoes = 0
@@ -945,7 +921,6 @@ def parar():
     with bot_lock: 
         bot_rodando = False
     
-    # ⭐ Se o bot estava rodando e não consumiu VOLT ainda, devolve
     if volt_ja_consumido == False:
         add_log("🔄 Bot parado antes de executar operação. Nenhum VOLT foi consumido.", 'info')
     else:
@@ -1204,9 +1179,9 @@ if __name__ == '__main__':
     print("SKINS CARREGADAS DINAMICAMENTE DO GITHUB")
     print("ESTRATÉGIAS CARREGADAS EXCLUSIVAMENTE DO GITHUB")
     print("VOLT CONSUMIDO APENAS NA EXECUÇÃO DA OPERAÇÃO")
+    print("NÃO EXISTE SINAL RANDOM - SEM ESTRATÉGIA = SEM OPERAÇÃO")
     print("=" * 50)
     
-    # Testa o carregamento das skins na inicialização
     print("🔍 Testando carregamento de skins...")
     skins_test = carregar_skins_da_nuvem()
     print(f"📦 {len(skins_test)} skins disponíveis")
