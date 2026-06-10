@@ -242,7 +242,7 @@ SKINS_LIST = [
         'cor_header_borda': '#aa66ff',
         'header_extra': '<canvas id="cosmicCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>',
         'css_extra': 'body{background:#050510!important}.header{border-color:#aa66ff!important;box-shadow:0 0 50px rgba(170,102,255,0.3)}'
-    },
+    }
 ]
 
 # Função auxiliar para obter skin por ID
