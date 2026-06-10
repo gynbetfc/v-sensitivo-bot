@@ -3,9 +3,7 @@
 # Adicione novas estratégias aqui (nome do arquivo na pasta /estrategias)
 # NÃO precisa modificar o bot.py!
 
-ESTRATEGIAS_LISTA = [
-    'v_sensitivo'
-]
+ESTRATEGIAS_LISTA = ['v_sensitivo']
 
 # ========== COMO ADICIONAR UMA NOVA ESTRATÉGIA ==========
 # 1. Crie o arquivo na pasta /estrategias (ex: minha_estrategia.py)
