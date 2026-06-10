@@ -2,9 +2,8 @@
 # -*- coding: utf-8 -*-
 
 # ⚡ TESLA 369 BOT v9.0.1 Cloud ⚡
-# SKINS E ESTRATÉGIAS CARREGADAS DINAMICAMENTE DO GITHUB
-# ANÁLISE DE MERCADO COM INDICADORES REAIS
-# NÃO PRECISA MODIFICAR O BOT PARA ADICIONAR NOVAS ESTRATÉGIAS!
+# ESTRATÉGIAS BAIXADAS UMA VEZ E INJETADAS NA FUNÇÃO LOCAL
+# NÃO PRECISA BAIXAR A ESTRATÉGIA A CADA CICLO!
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -17,7 +16,7 @@ import requests
 import uuid
 import signal
 import random
-import math
+import sys
 
 warnings.filterwarnings("ignore")
 app = Flask(__name__)
@@ -28,8 +27,8 @@ print("✅ Firebase HTTP REST configurado!")
 
 HTML_URL = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/tesla_369_bot/templates/index.html"
 GIT_RAW_SKINS = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/tesla_369_bot/skins/skins.py"
+GIT_RAW_ESTRATEGIAS_BASE = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/tesla_369_bot/estrategias"
 GIT_RAW_ESTRATEGIAS_LISTA = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/tesla_369_bot/estrategias.py"
-GIT_RAW_ESTRATEGIA_BASE = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/tesla_369_bot/estrategias"
 
 MARTINGALE = 2
 PAYOUT_PADRAO = 0.85
@@ -49,7 +48,16 @@ PLANOS = [
 # ============= CACHES =============
 cache_skins = {"data": None, "timestamp": 0}
 cache_estrategias = {"data": {}, "timestamp": 0}
+cache_estrategia_carregada = {"nome": None, "codigo": None, "timestamp": 0}
 CACHE_TTL = 300
+
+# ============= FUNÇÃO VAZIA QUE RECEBERÁ A ESTRATÉGIA =============
+def estrategia_atual_executar(api, par, add_log):
+    """
+    FUNÇÃO VAZIA - SERÁ SOBRESCRITA PELA ESTRATÉGIA BAIXADA DO GITHUB
+    """
+    add_log("⚠️ Nenhuma estratégia carregada!", "error")
+    return None
 
 # ============= VARIÁVEIS GLOBAIS =============
 API, par = None, "EURUSD-OTC"
@@ -68,6 +76,7 @@ bot_lock = threading.Lock()
 sinal_pendente = None
 sinal_lock = threading.Lock()
 volt_ja_consumido = False
+estrategia_ja_injetada = False
 
 # ============= FUNÇÕES AUXILIARES =============
 
@@ -117,102 +126,49 @@ def get_cor_vela(vela):
     return 'd'
 
 def calcular_rsi(velas, periodo=14):
-    """Calcula RSI a partir das velas"""
     if len(velas) < periodo + 1:
         return 50
-    
     ganhos = []
     perdas = []
-    
     for i in range(1, len(velas)):
         close_atual = get_close(velas[i])
         close_anterior = get_close(velas[i-1])
         diferenca = close_atual - close_anterior
-        
         if diferenca >= 0:
             ganhos.append(diferenca)
             perdas.append(0)
         else:
             ganhos.append(0)
             perdas.append(abs(diferenca))
-    
     ganhos = ganhos[-periodo:]
     perdas = perdas[-periodo:]
-    
     ganho_medio = sum(ganhos) / periodo if ganhos else 0
     perda_media = sum(perdas) / periodo if perdas else 0
-    
     if perda_media == 0:
         return 100
-    
     rs = ganho_medio / perda_media
     rsi = 100 - (100 / (1 + rs))
-    
     return rsi
 
 def calcular_estocastico(velas, periodo_k=14):
-    """Calcula Estocástico %K"""
     if len(velas) < periodo_k:
         return 50
-    
     ultimas_velas = velas[-periodo_k:]
-    
     maior_alta = max(get_high(v) for v in ultimas_velas)
     menor_baixa = min(get_low(v) for v in ultimas_velas)
     ultimo_fechamento = get_close(velas[-1])
-    
     if maior_alta == menor_baixa:
         return 50
-    
     k = 100 * ((ultimo_fechamento - menor_baixa) / (maior_alta - menor_baixa))
     return k
 
 def calcular_media_movel(velas, periodo):
-    """Calcula média móvel simples"""
     if len(velas) < periodo:
         return get_close(velas[-1]) if velas else 0
-    
     soma = 0
     for v in velas[-periodo:]:
         soma += get_close(v)
     return soma / periodo
-
-def calcular_bollinger(velas, periodo=20, desvio=2):
-    """Calcula Bandas de Bollinger"""
-    if len(velas) < periodo:
-        return None, None, None
-    
-    closes = [get_close(v) for v in velas[-periodo:]]
-    media = sum(closes) / periodo
-    variancia = sum((x - media) ** 2 for x in closes) / periodo
-    dp = variancia ** 0.5
-    
-    return round(media + desvio * dp, 6), round(media, 6), round(media - desvio * dp, 6)
-
-def calcular_macd(velas, rapido=12, lento=26, sinal=9):
-    """Calcula MACD"""
-    if len(velas) < lento:
-        return None, None, None
-    
-    closes = [get_close(v) for v in velas]
-    
-    # EMA rápida
-    er = closes[0]
-    for x in closes[1:]:
-        er = x * (2/(rapido+1)) + er * (1-2/(rapido+1))
-    
-    # EMA lenta
-    el = closes[0]
-    for x in closes[1:]:
-        el = x * (2/(lento+1)) + el * (1-2/(lento+1))
-    
-    macd_line = er - el
-    
-    # Linha de sinal (EMA do MACD)
-    if len(velas) < sinal + lento:
-        return round(macd_line, 8), 0, 0
-    
-    return round(macd_line, 8), 0, 0
 
 # ============= CARREGAR SKINS =============
 
@@ -260,66 +216,104 @@ def carregar_skins_da_nuvem():
         print(f"⚠️ Erro skins: {e}")
     return get_skins_fallback()
 
-# ============= CARREGAR ESTRATÉGIAS (DINÂMICO) =============
+# ============= CARREGAR LISTA DE ESTRATÉGIAS =============
 
 def carregar_lista_estrategias():
-    """Carrega a lista de nomes das estratégias do GitHub"""
     try:
         response = requests.get(GIT_RAW_ESTRATEGIAS_LISTA, timeout=10)
         if response.status_code == 200:
             escopo = {}
             exec(response.text, escopo)
             if 'ESTRATEGIAS_LISTA' in escopo:
-                print(f"✅ Lista de estratégias carregada: {len(escopo['ESTRATEGIAS_LISTA'])} estratégias")
+                print(f"✅ Lista de estratégias carregada: {len(escopo['ESTRATEGIAS_LISTA'])}")
                 return escopo['ESTRATEGIAS_LISTA']
     except Exception as e:
         print(f"⚠️ Erro ao carregar lista: {e}")
     return ['v_sensitivo']
 
-def carregar_estrategias_da_nuvem():
-    """Carrega cada estratégia individualmente via RAW URL"""
+def carregar_informacoes_estrategias():
+    """Carrega apenas as informações (nome, preço, desc) sem o código"""
     global cache_estrategias
     agora = time.time()
-
+    
     if cache_estrategias["data"] and (agora - cache_estrategias["timestamp"]) < CACHE_TTL:
         return cache_estrategias["data"]
-
+    
     nomes_estrategias = carregar_lista_estrategias()
-    estrategias = {}
-
+    estrategias_info = {}
+    
     for nome_est in nomes_estrategias:
         try:
-            url = f"{GIT_RAW_ESTRATEGIA_BASE}/{nome_est}.py"
-            print(f"🌐 Baixando estratégia: {nome_est}")
+            url = f"{GIT_RAW_ESTRATEGIAS_BASE}/{nome_est}.py"
+            print(f"📥 Lendo info da estratégia: {nome_est}")
             response = requests.get(url, timeout=10)
-
             if response.status_code == 200:
                 escopo = {}
                 exec(response.text, escopo)
-
                 if 'INFO' in escopo:
                     info = escopo['INFO']
-                    estrategias[nome_est] = {
+                    estrategias_info[nome_est] = {
                         'nome': info.get('nome', nome_est.upper()),
                         'desc': info.get('desc', 'Sem descrição.'),
                         'preco_moedas': info.get('preco', 0),
                         'timeframe': info.get('timeframe', 60),
-                        'gratis': info.get('preco', 0) == 0,
-                        'rodar_analise': escopo.get('rodar_analise', None)
+                        'gratis': info.get('preco', 0) == 0
                     }
-                    print(f"   ✅ Carregada: {info.get('nome', nome_est)}")
-                else:
-                    print(f"   ❌ INFO não encontrado em {nome_est}")
-            else:
-                print(f"   ❌ HTTP {response.status_code} - {nome_est}")
+                    print(f"   ✅ {info.get('nome', nome_est)}")
         except Exception as e:
-            print(f"   ❌ Erro ao carregar {nome_est}: {e}")
-
-    cache_estrategias["data"] = estrategias
+            print(f"   ❌ Erro ao ler {nome_est}: {e}")
+    
+    cache_estrategias["data"] = estrategias_info
     cache_estrategias["timestamp"] = agora
+    print(f"✅ Total de {len(estrategias_info)} estratégias disponíveis!")
+    return estrategias_info
 
-    print(f"✅ Total de {len(estrategias)} estratégias carregadas!")
-    return estrategias
+def carregar_e_injetar_estrategia(nome_estrategia):
+    """Baixa a estratégia do GitHub e injeta na função global"""
+    global estrategia_atual_executar, cache_estrategia_carregada, estrategia_ja_injetada
+    
+    # Verifica cache
+    agora = time.time()
+    if cache_estrategia_carregada["nome"] == nome_estrategia and (agora - cache_estrategia_carregada["timestamp"]) < CACHE_TTL:
+        add_log(f"📦 Estratégia '{nome_estrategia}' carregada do cache", "info")
+        return True
+    
+    try:
+        url = f"{GIT_RAW_ESTRATEGIAS_BASE}/{nome_estrategia}.py"
+        add_log(f"🌐 Baixando estratégia '{nome_estrategia}' do GitHub...", "info")
+        response = requests.get(url, timeout=10)
+        
+        if response.status_code == 200:
+            codigo = response.text
+            
+            # Verifica se tem a função rodar_analise
+            if 'def rodar_analise' not in codigo:
+                add_log(f"❌ Estratégia '{nome_estrategia}' não contém a função 'rodar_analise'", "error")
+                return False
+            
+            # Cria um ambiente para executar o código
+            escopo = {}
+            exec(codigo, escopo)
+            
+            if 'rodar_analise' in escopo:
+                # Injeta na função global
+                estrategia_atual_executar = escopo['rodar_analise']
+                cache_estrategia_carregada["nome"] = nome_estrategia
+                cache_estrategia_carregada["codigo"] = codigo
+                cache_estrategia_carregada["timestamp"] = agora
+                estrategia_ja_injetada = True
+                add_log(f"✅ Estratégia '{nome_estrategia}' injetada com sucesso!", "win")
+                return True
+            else:
+                add_log(f"❌ Função 'rodar_analise' não encontrada em '{nome_estrategia}'", "error")
+                return False
+        else:
+            add_log(f"❌ Estratégia '{nome_estrategia}' não encontrada (HTTP {response.status_code})", "error")
+            return False
+            
+    except Exception as e:
+        add_log(f"❌ Erro ao carregar estratégia: {e}", "error")
+        return False
 
 # ========== FUNÇÕES DE USUÁRIO ==========
 
@@ -547,7 +541,7 @@ def executar_ciclo(direcao):
         add_log("⏹️ Ciclo finalizado!", 'info')
 
 def bot_loop():
-    global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, sinal_pendente, ultimo_sinal, timeframe_atual, volt_ja_consumido
+    global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, sinal_pendente, ultimo_sinal, timeframe_atual, volt_ja_consumido, estrategia_ja_injetada
 
     with bot_lock:
         if not bot_rodando:
@@ -558,22 +552,32 @@ def bot_loop():
             bot_rodando = False
             return
 
-        estrategias = carregar_estrategias_da_nuvem()
+        # Carrega informações das estratégias
+        estrategias_info = carregar_informacoes_estrategias()
 
-        if not estrategias:
+        if not estrategias_info:
             add_log("❌ NENHUMA ESTRATÉGIA DISPONÍVEL!", 'error')
             bot_rodando = False
             return
 
-        if estrategia_atual_global not in estrategias:
+        if estrategia_atual_global not in estrategias_info:
             add_log(f"❌ Estratégia '{estrategia_atual_global}' não encontrada!", 'error')
             bot_rodando = False
             return
 
-        estrategia_info = estrategias[estrategia_atual_global]
+        estrategia_info = estrategias_info[estrategia_atual_global]
         timeframe_estrategia = estrategia_info.get('timeframe', 60)
         add_log(f"📊 Estratégia: {estrategia_info.get('nome')}", 'indicator')
         add_log(f"⏱️ Timeframe: {timeframe_estrategia}s", 'info')
+
+        # ⭐ SE A ESTRATÉGIA NÃO ESTIVER INJETADA, BAIXA E INJETA
+        if not estrategia_ja_injetada or cache_estrategia_carregada["nome"] != estrategia_atual_global:
+            add_log(f"🔧 Carregando e injetando estratégia '{estrategia_atual_global}'...", "info")
+            if not carregar_e_injetar_estrategia(estrategia_atual_global):
+                add_log(f"❌ Falha ao carregar estratégia '{estrategia_atual_global}'", 'error')
+                bot_rodando = False
+                return
+            add_log(f"✅ Estratégia '{estrategia_atual_global}' injetada com sucesso!", 'win')
 
         BANCA_INICIAL_DO_BOT = API.get_balance()
         STOP_GAIN_ATINGIDO = False
@@ -583,27 +587,29 @@ def bot_loop():
         ultimo_sinal = "Aguardando..."
         add_log(f"📌 {par} | 💰 ${BANCA_INICIAL_DO_BOT:.2f}")
 
+        # ⭐ THREAD QUE EXECUTA A ESTRATÉGIA INJETADA
         def processar_estrategia():
             global timeframe_atual, sinal_pendente
             try:
-                add_log(f"🔍 Executando {estrategia_atual_global}...", "info")
-                func = estrategias[estrategia_atual_global].get('rodar_analise')
-                if func:
-                    resultado = func(API, par, add_log)
-                    if resultado and bot_rodando:
-                        direcao = resultado.get('direcao', '').lower()
-                        novo_tf = resultado.get('timeframe', timeframe_estrategia)
-                        if novo_tf != timeframe_atual:
-                            timeframe_atual = novo_tf
-                        if direcao in ['call', 'put']:
-                            with sinal_lock:
-                                sinal_pendente = direcao
-                            add_log(f"🎯 SINAL: {direcao.upper()}!", 'sensitive')
+                add_log(f"🔍 Executando análise da estratégia...", "info")
+                resultado = estrategia_atual_executar(API, par, add_log)
+                if resultado and bot_rodando:
+                    direcao = resultado.get('direcao', '').lower()
+                    novo_tf = resultado.get('timeframe', timeframe_estrategia)
+                    if novo_tf != timeframe_atual:
+                        timeframe_atual = novo_tf
+                    if direcao in ['call', 'put']:
+                        with sinal_lock:
+                            sinal_pendente = direcao
+                        add_log(f"🎯 SINAL: {direcao.upper()}!", 'sensitive')
             except Exception as e:
-                add_log(f"❌ Erro: {e}", "error")
+                add_log(f"❌ Erro na execução: {e}", "error")
+                import traceback
+                traceback.print_exc()
 
         threading.Thread(target=processar_estrategia, daemon=True).start()
 
+        # ⭐ Loop principal - espera o sinal (sem timeout)
         while bot_rodando and not STOP_GAIN_ATINGIDO:
             if not bot_rodando:
                 break
@@ -624,29 +630,19 @@ def bot_loop():
         bot_rodando = False
 
 def analise_mercado_loop():
-    """Análise de mercado com indicadores REAIS (não random)"""
     global ultima_analise
     while True:
         if conectado_iq and API:
             try:
                 velas = API.get_candles(par, 60, 30, time.time())
-                
                 if velas and len(velas) >= 20:
-                    # Cálculo do RSI real
                     rsi_val = calcular_rsi(velas, 14)
-                    
-                    # Cálculo do Estocástico real
                     estoc_val = calcular_estocastico(velas, 14)
-                    
-                    # Cálculo das Médias Móveis reais
                     mm5 = calcular_media_movel(velas, 5)
                     mm10 = calcular_media_movel(velas, 10)
                     mm20 = calcular_media_movel(velas, 20)
-                    
-                    # Preço atual
                     preco_atual = get_close(velas[-1])
                     
-                    # Determinação da fase de mercado
                     if mm5 and mm10 and mm20:
                         if mm5 > mm10 and mm10 > mm20:
                             fase = "TENDÊNCIA ALTA"
@@ -671,18 +667,11 @@ def analise_mercado_loop():
                         'preco': round(preco_atual, 5) if preco_atual else 0
                     }
                 else:
-                    # Dados simulados enquanto não há dados suficientes
                     ultima_analise = {
-                        'rsi': 50,
-                        'mm5': 1.08300,
-                        'mm10': 1.08300,
-                        'mm20': 1.08300,
-                        'stoch': 50,
-                        'fase': "AGUARDANDO DADOS",
-                        'preco': 1.08300
+                        'rsi': 50, 'mm5': 1.08300, 'mm10': 1.08300, 'mm20': 1.08300,
+                        'stoch': 50, 'fase': "AGUARDANDO DADOS", 'preco': 1.08300
                     }
             except Exception as e:
-                print(f"Erro na análise de mercado: {e}")
                 pass
         time.sleep(2)
 
@@ -752,13 +741,13 @@ def status():
             'comprado': skin.get('id') in skins_compradas, 'ativo': skin.get('id') == skin_atual
         })
 
-    estrategias = carregar_estrategias_da_nuvem()
+    estrategias_info = carregar_informacoes_estrategias()
     estrategias_compradas = u.get('estrategias_compradas', ['v_sensitivo']) if u else ['v_sensitivo']
     estrategia_atual = u.get('estrategia_atual', 'v_sensitivo') if u else 'v_sensitivo'
 
     estrategia_nome = "Nenhuma"
-    if estrategia_atual in estrategias:
-        estrategia_nome = estrategias[estrategia_atual].get('nome', estrategia_atual)
+    if estrategia_atual in estrategias_info:
+        estrategia_nome = estrategias_info[estrategia_atual].get('nome', estrategia_atual)
 
     return jsonify({
         'conectado': conectado_iq, 'rodando': bot_rodando, 'email': email_usuario_atual,
@@ -768,7 +757,7 @@ def status():
         'skins_status': skins_status, 'estrategia': estrategia_atual,
         'estrategia_nome': estrategia_nome,
         'estrategias_compradas': estrategias_compradas,
-        'estrategias_disponiveis': {k: {'nome': v['nome'], 'desc': v['desc'], 'preco_moedas': v['preco_moedas'], 'gratis': v['gratis']} for k, v in estrategias.items()},
+        'estrategias_disponiveis': {k: {'nome': v['nome'], 'desc': v['desc'], 'preco_moedas': v['preco_moedas'], 'gratis': v['gratis']} for k, v in estrategias_info.items()},
         'analise': ultima_analise
     })
 
@@ -780,26 +769,27 @@ def set_percentual():
 
 @app.route('/selecionar_estrategia', methods=['POST'])
 def selecionar_estrategia():
-    global estrategia_atual_global
+    global estrategia_atual_global, estrategia_ja_injetada
     est_id = request.json.get('estrategia', 'v_sensitivo')
     if not email_usuario_atual:
         return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
     u = carregar_usuario(email_usuario_atual)
     if not u:
         return jsonify({'ok': False, 'erro': 'Usuário não encontrado'})
-    estrategias = carregar_estrategias_da_nuvem()
-    if est_id not in estrategias:
+    estrategias_info = carregar_informacoes_estrategias()
+    if est_id not in estrategias_info:
         return jsonify({'ok': False, 'erro': 'Estratégia inválida'})
     estrategias_compradas = u.get('estrategias_compradas', ['v_sensitivo'])
     if est_id not in estrategias_compradas:
-        info = estrategias[est_id]
+        info = estrategias_info[est_id]
         if not info.get('gratis', False):
             return jsonify({'ok': False, 'erro': f'Estratégia bloqueada! Compre na loja.'})
         u['estrategias_compradas'].append(est_id)
     u['estrategia_atual'] = est_id
     salvar_usuario(email_usuario_atual, u)
     estrategia_atual_global = est_id
-    add_log(f"🧠 Estratégia: {estrategias[est_id]['nome']}", 'indicator')
+    estrategia_ja_injetada = False  # Força recarregar a estratégia
+    add_log(f"🧠 Estratégia: {estrategias_info[est_id]['nome']}", 'indicator')
     return jsonify({'ok': True})
 
 @app.route('/comprar_estrategia', methods=['POST'])
@@ -807,8 +797,8 @@ def comprar_estrategia():
     est_id = request.json.get('estrategia_id', '')
     if not email_usuario_atual:
         return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
-    estrategias = carregar_estrategias_da_nuvem()
-    if est_id not in estrategias:
+    estrategias_info = carregar_informacoes_estrategias()
+    if est_id not in estrategias_info:
         return jsonify({'ok': False, 'erro': 'Estratégia inválida'})
     u = carregar_usuario(email_usuario_atual)
     if not u:
@@ -819,7 +809,7 @@ def comprar_estrategia():
         u['estrategia_atual'] = est_id
         salvar_usuario(email_usuario_atual, u)
         return jsonify({'ok': True, 'moedas': u['moedas'], 'msg': 'Já adquirida!'})
-    info = estrategias[est_id]
+    info = estrategias_info[est_id]
     preco = info.get('preco_moedas', 0)
     if u.get('moedas', 0) < preco:
         return jsonify({'ok': False, 'erro': f'Precisa de {preco} ⚡'})
@@ -865,16 +855,16 @@ def conectar():
 
 @app.route('/comecar_operar', methods=['POST'])
 def comecar_operar():
-    global bot_rodando, bot_thread
+    global bot_rodando, bot_thread, estrategia_ja_injetada
     try:
         if not conectado_iq:
             return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
 
-        estrategias = carregar_estrategias_da_nuvem()
-        if not estrategias:
+        estrategias_info = carregar_informacoes_estrategias()
+        if not estrategias_info:
             return jsonify({'ok': False, 'erro': '❌ NENHUMA ESTRATÉGIA! Adicione estratégias no GitHub.'})
 
-        if estrategia_atual_global not in estrategias:
+        if estrategia_atual_global not in estrategias_info:
             return jsonify({'ok': False, 'erro': f'❌ Estratégia "{estrategia_atual_global}" não encontrada!'})
 
         usuario = carregar_usuario(email_usuario_atual)
@@ -886,6 +876,10 @@ def comecar_operar():
         with bot_lock:
             if bot_rodando and bot_thread and bot_thread.is_alive():
                 return jsonify({'ok': False, 'erro': 'Bot já rodando!'})
+            
+            # Reseta estado da estratégia injetada para forçar recarregamento
+            estrategia_ja_injetada = False
+            
             bot_rodando = True
             bot_thread = threading.Thread(target=bot_loop, daemon=True)
             bot_thread.start()
@@ -905,7 +899,6 @@ def parar():
 
     time.sleep(1)
 
-    # Reseta o estado para permitir novo START
     volt_ja_consumido = False
 
     if data.get('desconectar'):
@@ -1118,8 +1111,7 @@ if __name__ == '__main__':
     print("=" * 50)
     print("⚡ TESLA 369 BOT v9.0.1 - PIPELINE CLOUD ESTÁVEL ⚡")
     print("SKINS CARREGADAS DO GITHUB")
-    print("ESTRATÉGIAS CARREGADAS DO GITHUB (DINÂMICO - LISTA VIA estrategias.py)")
-    print("ANÁLISE DE MERCADO COM INDICADORES REAIS")
+    print("ESTRATÉGIAS BAIXADAS E INJETADAS UMA ÚNICA VEZ")
     print("=" * 50)
 
     print("🔍 Testando carregamento de skins...")
@@ -1127,7 +1119,7 @@ if __name__ == '__main__':
     print(f"📦 {len(skins_test)} skins disponíveis")
 
     print("🔍 Testando carregamento de estratégias...")
-    estrategias_test = carregar_estrategias_da_nuvem()
+    estrategias_test = carregar_informacoes_estrategias()
     print(f"📊 {len(estrategias_test)} estratégias disponíveis")
 
     sincronizar_html_local()
