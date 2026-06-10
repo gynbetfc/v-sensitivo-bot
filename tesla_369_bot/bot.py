@@ -719,15 +719,33 @@ def comecar_operar():
     except Exception as e:
         return jsonify({'ok': False, 'erro': str(e)[:100]})
 
+
+#######
 @app.route('/parar', methods=['POST'])
 def parar():
     global bot_rodando, conectado_iq
     data = request.json or {}
+    
+    add_log("🛑 Parando o bot...", 'info')
+    
     with bot_lock:
         bot_rodando = False
+    
+    # Aguarda a thread terminar
+    time.sleep(1)
+    
     if data.get('desconectar'):
         conectado_iq = False
-    return jsonify({'ok': True})
+        add_log("🔌 Desconectado da IQ Option", 'info')
+    
+    add_log("✅ Bot parado com sucesso!", 'win')
+    return jsonify({'ok': True, 'shutdown': data.get('desconectar', False)})
+#######
+
+
+
+
+
 
 @app.route('/comprar_skin', methods=['POST'])
 def comprar_skin():
