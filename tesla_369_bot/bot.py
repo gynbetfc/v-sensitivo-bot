@@ -5,6 +5,7 @@
 # PIPELINE CLOUD SEGURO - RELATÓRIOS E RANKINGS ORIGINAIS RESTAURADOS
 # SKINS CARREGADAS DINAMICAMENTE DO GITHUB
 # ESTRATÉGIAS CARREGADAS EXCLUSIVAMENTE DO GITHUB (SEM FALLBACK)
+# VOLT É CONSUMIDO APENAS QUANDO A OPERAÇÃO É REALMENTE EXECUTADA
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -71,6 +72,7 @@ pagamentos_pendentes = {}
 bot_lock = threading.Lock()
 sinal_pendente = None  
 sinal_lock = threading.Lock()
+volt_ja_consumido = False  # ⭐ NOVO: controle para não consumir VOLT duas vezes
 
 # ============= 📢 SISTEMA DE LOGS INTERNOS =============
 
@@ -300,6 +302,44 @@ def criar_usuario(email):
     salvar_usuario(email, dados)
     return dados
 
+# ============= FUNÇÃO PARA CONSUMIR VOLT (APENAS NA OPERAÇÃO) =============
+
+def consumir_volt():
+    """Consome 1 VOLT do usuário. Retorna True se conseguiu, False se não tem saldo."""
+    global volt_ja_consumido
+    if volt_ja_consumido:
+        return True
+    
+    usuario = carregar_usuario(email_usuario_atual)
+    if not usuario:
+        add_log("❌ Usuário não encontrado ao tentar consumir VOLT!", 'error')
+        return False
+    
+    if usuario.get('moedas', 0) < 1:
+        add_log("❌ Saldo de VOLTS insuficiente para realizar a operação!", 'error')
+        return False
+    
+    usuario['moedas'] -= 1
+    usuario['total_ciclos'] += 1
+    salvar_usuario(email_usuario_atual, usuario)
+    volt_ja_consumido = True
+    add_log(f"⚡ 1 VOLT consumido. Saldo restante: {usuario['moedas']} VOLTS", 'info')
+    return True
+
+def devolver_volt():
+    """Devolve o VOLT consumido (caso o bot seja parado antes da operação)."""
+    global volt_ja_consumido
+    if not volt_ja_consumido:
+        return
+    
+    usuario = carregar_usuario(email_usuario_atual)
+    if usuario:
+        usuario['moedas'] = usuario.get('moedas', 0) + 1
+        usuario['total_ciclos'] -= 1
+        salvar_usuario(email_usuario_atual, usuario)
+        add_log(f"🔄 VOLT devolvido! Saldo: {usuario['moedas']} VOLTS", 'info')
+    volt_ja_consumido = False
+
 # ============= ENGENHARIA DE EXECUÇÃO AUTOMÁTICA =============
 
 def Payout(p):
@@ -376,10 +416,16 @@ def verificar_resultado(saldo_antes, valor):
     return -valor
 
 def executar_ciclo(direcao):
-    global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando
+    global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido
     try:
         if not API:
             add_log("❌ API offline!", 'error')
+            bot_rodando = False
+            return
+        
+        # ⭐ CONSUME O VOLT APENAS AGORA, QUANDO A OPERAÇÃO VAI REALMENTE COMEÇAR
+        if not consumir_volt():
+            add_log("❌ Não foi possível consumir VOLT. Operação cancelada.", 'error')
             bot_rodando = False
             return
             
@@ -457,13 +503,14 @@ def executar_ciclo(direcao):
         add_log("=" * 50, 'info')
         add_log(f"{'🌟 LUCRO' if bf > bi else '💀 PERDA'}: ${abs(bf - bi):.2f} | Saldo: ${bf:.2f}", 'info')
         add_log("=" * 50, 'info')
-    except Exception as e: add_log(f"Erro no pipeline: {e}", 'error')
+    except Exception as e: 
+        add_log(f"Erro no pipeline: {e}", 'error')
     finally:
         bot_rodando = False
         add_log("⏹️ Ciclo finalizado! Pronto para reinicialização.", 'info')
 
 def bot_loop():
-    global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, sinal_pendente, ultimo_sinal, timeframe_atual
+    global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, sinal_pendente, ultimo_sinal, timeframe_atual, volt_ja_consumido
     
     with bot_lock:
         if not bot_rodando: return
@@ -480,7 +527,6 @@ def bot_loop():
             add_log("❌❌❌ NENHUMA ESTRATÉGIA DISPONÍVEL! ❌❌❌", 'error')
             add_log("⚠️ O bot não pode operar porque não há estratégias no GitHub.", 'error')
             add_log("📁 Adicione arquivos .py na pasta: tesla_369_bot/estrategias/", 'error')
-            add_log("🛑 Operação cancelada. VOLT não foi consumido.", 'error')
             bot_rodando = False
             return
         
@@ -488,7 +534,6 @@ def bot_loop():
         if estrategia_atual_global not in estrategias_disponiveis:
             add_log(f"❌ Estratégia '{estrategia_atual_global}' não encontrada no GitHub!", 'error')
             add_log(f"📋 Estratégias disponíveis: {', '.join(estrategias_disponiveis.keys())}", 'info')
-            add_log("🛑 Operação cancelada. VOLT não foi consumido.", 'error')
             bot_rodando = False
             return
         
@@ -502,8 +547,10 @@ def bot_loop():
         STOP_GAIN_ATINGIDO = False
         lucro = 0.0
         NumDeOperacoes = 0
+        volt_ja_consumido = False  # ⭐ Reseta o controle de VOLT
         ultimo_sinal = "Aguardando sinal da estratégia..."
         add_log(f"📌 Ativo: {par} | Estratégia: {estrategia_atual_global} | 💰 ${BANCA_INICIAL_DO_BOT:.2f}")
+        add_log("⏳ Aguardando sinal da estratégia... (pode levar minutos ou horas)", 'info')
         
         url_modulo_remoto = f"{GIT_RAW_ESTRATEGIAS_BASE}/{estrategia_atual_global}.py"
         
@@ -526,6 +573,8 @@ def bot_loop():
                     
                     if 'rodar_analise' in escopo_local:
                         add_log("🔍 Executando análise da estratégia...", "info")
+                        
+                        # Executa a estratégia (pode demorar horas)
                         sinal_detectado = escopo_local['rodar_analise'](API, par, add_log)
                         
                         if sinal_detectado and bot_rodando:
@@ -547,7 +596,7 @@ def bot_loop():
                             else:
                                 add_log(f"⚠️ Sinal inválido: {direcao}", "warning")
                         else:
-                            add_log("⏳ Nenhum sinal detectado no momento. Continuando análise...", "info")
+                            add_log("⏳ Nenhum sinal detectado. A estratégia será executada novamente no próximo ciclo.", "info")
                     else:
                         add_log(f"❌ Estratégia '{estrategia_atual_global}' não contém a função 'rodar_analise'", 'error')
                 else:
@@ -560,18 +609,9 @@ def bot_loop():
 
         threading.Thread(target=processamento_estrategia_remota, daemon=True).start()
         
-        # ⭐ Aguarda sinal com timeout (opcional)
-        tempo_inicio = time.time()
-        timeout_segundos = 300  # 5 minutos de timeout
-        
+        # ⭐ Loop principal - SEM TIMEOUT! Fica esperando o sinal para sempre
         while bot_rodando and not STOP_GAIN_ATINGIDO:
             try:
-                # Verifica timeout
-                if time.time() - tempo_inicio > timeout_segundos:
-                    add_log(f"⏰ Timeout de {timeout_segundos//60} minutos atingido. Nenhum sinal recebido.", 'warning')
-                    add_log("🛑 Ciclo encerrado sem operação. VOLT NÃO foi consumido (já foi? Verifique).", 'warning')
-                    break
-                
                 with sinal_lock:
                     direcao = sinal_pendente
                     if direcao:
@@ -589,9 +629,16 @@ def bot_loop():
                 add_log(f"Erro no loop principal: {e}", 'error')
                 time.sleep(2)
         
-        if bot_rodando:
-            bot_rodando = False
-            add_log("⏹️ Loop finalizado.", 'info')
+        # ⭐ Se o bot foi parado sem operar, devolve o VOLT
+        if bot_rodando == False and volt_ja_consumido == False and sinal_pendente is None:
+            # Não fez operação, não consumiu VOLT
+            pass
+        elif bot_rodando == False and volt_ja_consumido == True:
+            # Já consumiu VOLT mas não terminou? Isso não deveria acontecer
+            pass
+            
+        bot_rodando = False
+        add_log("⏹️ Loop finalizado.", 'info')
 
 def analise_mercado_loop():
     global ultima_analise
@@ -741,6 +788,8 @@ def selecionar_estrategia():
             return jsonify({'ok': False, 'erro': f'Estratégia bloqueada! Compre na loja por {info.get("preco_moedas")} ⚡'})
         else:
             # Adiciona automaticamente estratégias gratuitas às compradas
+            if 'estrategias_compradas' not in u:
+                u['estrategias_compradas'] = []
             u['estrategias_compradas'].append(est_id)
     
     u['estrategia_atual'] = est_id
@@ -849,12 +898,12 @@ def conectar():
 
 @app.route('/comecar_operar', methods=['POST'])
 def comecar_operar():
-    global bot_rodando, bot_thread, lucro, NumDeOperacoes
+    global bot_rodando, bot_thread, lucro, NumDeOperacoes, volt_ja_consumido
     try:
         if not conectado_iq: 
             return jsonify({'ok': False, 'erro': 'Conecte à IQ Option primeiro!'})
         
-        # ⭐ Verifica se há estratégias disponíveis ANTES de consumir o VOLT
+        # ⭐ Verifica se há estratégias disponíveis
         estrategias_disponiveis = carregar_estrategias_da_nuvem()
         
         if len(estrategias_disponiveis) == 0:
@@ -871,13 +920,12 @@ def comecar_operar():
             if not usuario: 
                 return jsonify({'ok': False, 'erro': 'Usuário não encontrado!'})
             
+            # ⭐ NÃO CONSUME VOLT AQUI! Só verifica se tem saldo
             if usuario.get('moedas', 0) < 1: 
                 return jsonify({'ok': False, 'erro': 'Sem VOLTS! Compre na loja.'})
             
-            # ⭐ SÓ CONOME O VOLT SE TUDO ESTIVER OK
-            usuario['moedas'] -= 1
-            usuario['total_ciclos'] += 1
-            salvar_usuario(email_usuario_atual, usuario)
+            # Reseta controle de VOLT
+            volt_ja_consumido = False
             lucro = 0.0
             NumDeOperacoes = 0
             
@@ -891,16 +939,25 @@ def comecar_operar():
 
 @app.route('/parar', methods=['POST'])
 def parar():
-    global bot_rodando, conectado_iq
+    global bot_rodando, conectado_iq, volt_ja_consumido
     data = request.json or {}
+    
     with bot_lock: 
         bot_rodando = False
+    
+    # ⭐ Se o bot estava rodando e não consumiu VOLT ainda, devolve
+    if volt_ja_consumido == False:
+        add_log("🔄 Bot parado antes de executar operação. Nenhum VOLT foi consumido.", 'info')
+    else:
+        add_log("⏹️ Bot parado. Operação já foi executada. VOLT já foi consumido.", 'info')
+    
     if data.get('desconectar'): 
         conectado_iq = False
         def shutdown_server():
             time.sleep(0.5)
             os.kill(os.getpid(), signal.SIGTERM)
         threading.Thread(target=shutdown_server, daemon=True).start()
+    
     return jsonify({'ok': True, 'shutdown': data.get('desconectar', False)})
 
 @app.route('/comprar_skin', methods=['POST'])
@@ -1146,6 +1203,7 @@ if __name__ == '__main__':
     print("⚡ TESLA 369 BOT v9.0.1 - PIPELINE CLOUD ESTÁVEL ⚡")
     print("SKINS CARREGADAS DINAMICAMENTE DO GITHUB")
     print("ESTRATÉGIAS CARREGADAS EXCLUSIVAMENTE DO GITHUB")
+    print("VOLT CONSUMIDO APENAS NA EXECUÇÃO DA OPERAÇÃO")
     print("=" * 50)
     
     # Testa o carregamento das skins na inicialização
