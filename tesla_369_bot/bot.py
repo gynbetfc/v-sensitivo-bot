@@ -823,6 +823,10 @@ def comprar_estrategia():
     add_log(f"🛒 Estratégia comprada: {info.get('nome', est_id)} por {preco} ⚡", 'win')
     return jsonify({'ok': True, 'moedas': u['moedas'], 'msg': f'Estratégia {info.get("nome", est_id)} adquirida!'})
 
+
+
+
+#########
 @app.route('/conectar', methods=['POST'])
 def conectar():
     global API, email_usuario_atual, conectado_iq, skin_atual_global, estrategia_atual_global, par, timeframe_atual
@@ -846,7 +850,7 @@ def conectar():
         usuario = carregar_usuario(email) or criar_usuario(email)
         hoje = str(datetime.now())[:10]
         
-        if usuario.get('moedas_ganhas_hoje') != oggi:
+        if usuario.get('moedas_ganhas_hoje') != hoje:  # ← CORRIGIDO!
             usuario['moedas'] = usuario.get('moedas', 0) + 1
             usuario['moedas_ganhas_hoje'] = hoje
             salvar_usuario(email, usuario)
@@ -874,6 +878,10 @@ def conectar():
         return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0), 'refresh': True})
     except Exception as e: 
         return jsonify({'ok': False, 'erro': str(e)[:100]})
+#########
+
+
+
 
 @app.route('/comecar_operar', methods=['POST'])
 def comecar_operar():
