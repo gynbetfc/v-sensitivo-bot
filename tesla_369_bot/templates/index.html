@@ -3,81 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ TESLA 369 BOT v9.0.1 Cloud</title>
+    <title>⚡ TESLA 369 BOT v11.0.0 Cloud</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
-        body{background:{{ COR_FUNDO }};color:{{ COR_TEXTO }};font-family:'Courier New',monospace;padding:10px}
-        .container{max-width:950px;margin:0 auto}
+        body{background:{{ COR_FUNDO }};color:{{ COR_TEXTO }};font-family:'Courier New',monospace;padding:10px;min-height:100vh}
+        .container{max-width:950px;margin:0 auto;position:relative;z-index:10}
         .tabs{display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap}
-        .tab{padding:10px 14px;background:{{ COR_PANEL }};border:1px solid #333;border-radius:10px 10px 0 0;cursor:pointer;color:#888;font-size:10px}
-        .tab.active{background:{{ COR_TAB_ATIVA }};color:#000;font-weight:bold}
-        .panel{display:none;background:{{ COR_PANEL }};padding:15px;border-radius:0 10px 10px 10px;border:1px solid #333;margin-bottom:10px}
+        .tab{padding:10px 14px;background:{{ COR_PANEL }};border:1px solid #333;border-radius:10px 10px 0 0;cursor:pointer;color:#888;font-size:10px;transition:all 0.3s}
+        .tab.active{background:{{ COR_TAB_ATIVA }};color:#000;font-weight:bold;box-shadow:0 -3px 10px rgba(0,0,0,0.2)}
+        .tab:hover{background:#2a2a4a;color:#fff}
+        .panel{display:none;background:{{ COR_PANEL }};padding:15px;border-radius:0 10px 10px 10px;border:1px solid #333;margin-bottom:10px;animation:fadeIn 0.3s ease}
         .panel.active{display:block}
         .header{background:{{ COR_HEADER_BG }};padding:20px;border-radius:20px;text-align:center;border:3px solid {{ COR_HEADER_BORDA }};position:relative;overflow:hidden;margin-bottom:15px}
         {{ CSS_EXTRA | safe }}
         .header h1{color:{{ COR_DESTAQUE }};font-size:22px;text-shadow:0 0 30px {{ COR_TAB_ATIVA }};position:relative;z-index:3}
-        .mantra{color:{{ COR_DESTAQUE }};text-align:center;margin:8px 0;font-size:10px}
+        .header p{color:{{ COR_DESTAQUE }};font-size:10px;position:relative;z-index:3;opacity:0.8}
+        .mantra{color:{{ COR_DESTAQUE }};text-align:center;margin:8px 0;font-size:10px;animation:pulse 2s infinite}
         .config-section{margin-bottom:12px}
         .config-section h3{color:{{ COR_DESTAQUE }};margin-bottom:8px;font-size:13px;border-bottom:1px solid #333;padding-bottom:5px}
         .config-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
         .config-row label{color:#888;font-size:11px}
-        .config-row select,.config-row input{padding:8px;background:#111;border:1px solid #333;border-radius:8px;color:#fff;font-size:11px}
-        .btn{padding:10px 14px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:11px}
+        .config-row select,.config-row input{padding:8px;background:#111;border:1px solid #333;border-radius:8px;color:#fff;font-size:11px;font-family:'Courier New',monospace}
+        .btn{padding:10px 14px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:11px;font-family:'Courier New',monospace;transition:all 0.3s ease}
+        .btn:hover{transform:translateY(-2px);filter:brightness(1.1)}
         .btn-start{background:{{ COR_BOTAO }};color:#000;font-weight:bold}
         .btn-stop{background:linear-gradient(135deg,#cc0000,#ff4444);color:#fff}
-        .btn-info{background:linear-gradient(135deg,#0066cc,#3399ff);color:#fff}
+        .btn-info{background:linear-gradient(135deg,#0066cc,#3399ff);color:#fff;font-size:11px;padding:8px 14px}
+        .btn-buy{background:linear-gradient(135deg,#00aa44,#00cc55);color:#fff;width:100%;padding:12px;font-size:13px}
+        .btn-reset{background:linear-gradient(135deg,#cc0000,#ff6600);color:#fff;font-size:11px;padding:8px 14px}
+        .btn-skin{background:linear-gradient(135deg,#9933ff,#cc66ff);color:#fff;font-size:11px;padding:8px 12px}
         .dashboard{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:8px;margin-bottom:10px}
-        .card{background:{{ COR_PANEL }};padding:10px;border-radius:10px;border:1px solid #333;text-align:center}
-        .card .label{color:#888;font-size:9px}.card .value{color:{{ COR_DESTAQUE }};font-size:14px;font-weight:bold}
+        .card{background:{{ COR_PANEL }};padding:10px;border-radius:10px;border:1px solid #333;text-align:center;transition:all 0.3s}
+        .card:hover{transform:translateY(-3px);border-color:{{ COR_DESTAQUE }}}
+        .card .label{color:#888;font-size:9px}.card .value{color:{{ COR_DESTAQUE }};font-size:14px;font-weight:bold;margin-top:4px}
         .indicators{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px;margin-bottom:10px}
         .ind-card{background:#111;padding:6px;border-radius:8px;border:1px solid #222;text-align:center;font-size:10px}
-        .ind-card .ind-label{color:#666;font-size:9px}.ind-card .ind-value{color:{{ COR_DESTAQUE }};font-size:11px}
-        .terminal{background:#000;color:#00ff88;padding:12px;border-radius:10px;height:200px;overflow-y:auto;font-size:10px;line-height:1.4;white-space:pre-wrap;border:1px solid #333}
-        .barra-status{display:flex;justify-content:space-between;padding:8px;background:{{ COR_PANEL }};border-radius:10px;margin-top:10px;font-size:10px;flex-wrap:wrap}
+        .ind-card .ind-label{color:#666;font-size:9px}.ind-card .ind-value{color:{{ COR_DESTAQUE }};font-size:11px;font-weight:bold}
+        .terminal{background:#000;color:#00ff88;padding:12px;border-radius:10px;height:200px;overflow-y:auto;font-size:10px;line-height:1.4;white-space:pre-wrap;border:1px solid #333;position:relative;overflow:hidden}
+        .terminal span{position:relative;z-index:1}
+        .terminal::-webkit-scrollbar{width:5px}
+        .terminal::-webkit-scrollbar-track{background:#111}
+        .terminal::-webkit-scrollbar-thumb{background:{{ COR_DESTAQUE }};border-radius:5px}
+        .barra-status{display:flex;justify-content:space-between;padding:8px;background:{{ COR_PANEL }};border-radius:10px;margin-top:10px;font-size:10px;flex-wrap:wrap;gap:5px}
         .status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
         .status-dot.active{background:#00ff88;animation:pulse 1s infinite}.status-dot.inactive{background:#888}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
-        .planos-grid,.skins-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
-        .plano-card,.skin-card{background:#111;padding:12px;border-radius:10px;border:2px solid #222;text-align:center;cursor:pointer;transition:all 0.3s ease}
-        .plano-card:hover,.skin-card:hover{border-color:{{ COR_DESTAQUE }};background:#1a1a2e}
-        .plano-card.selecionado,.skin-card.selecionado{border-color:{{ COR_DESTAQUE }};box-shadow:0 0 20px rgba(255,215,0,0.4)}
-        .skin-card.ativo{border-color:#00ff88;box-shadow:0 0 15px rgba(0,255,136,0.3)}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        .planos-grid,.skins-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:10px}
+        .plano-card,.skin-card{background:linear-gradient(135deg,#111122,#0a0a15);padding:15px;border-radius:12px;border:2px solid #1a1a2e;text-align:center;cursor:pointer;transition:all 0.3s ease}
+        .plano-card:hover,.skin-card:hover{transform:translateY(-5px);border-color:{{ COR_DESTAQUE }};box-shadow:0 10px 20px rgba(0,0,0,0.3)}
+        .plano-card.selecionado,.skin-card.selecionado{border-color:#ffd700!important;box-shadow:0 0 20px rgba(255,215,0,0.4)}
+        .skin-card.ativo{border-color:#00ff88!important;box-shadow:0 0 15px rgba(0,255,136,0.3)}
         .plano-moedas,.skin-nome{font-size:20px;color:{{ COR_DESTAQUE }};font-weight:bold}
         .plano-preco{font-size:14px;color:#00ff88;margin:5px 0}
-        .plano-desc,.skin-desc{font-size:9px;color:#888}
+        .plano-desc,.skin-desc{font-size:9px;color:#888;margin-top:4px}
+        .plano-tag{background:{{ COR_DESTAQUE }}22;color:{{ COR_DESTAQUE }};font-size:9px;padding:2px 8px;border-radius:10px;display:inline-block;margin-top:4px}
+        .plano-desconto{background:#ff4444;color:#fff;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block;margin-left:4px}
         .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:1000;justify-content:center;align-items:center}
         .modal-overlay.active{display:flex}
         .modal-pagamento{background:{{ COR_PANEL }};border:2px solid {{ COR_DESTAQUE }};border-radius:15px;padding:25px;max-width:400px;width:90%;text-align:center}
-        .btn-fechar{background:#444;color:#fff;padding:8px 20px;border-radius:8px;cursor:pointer}
-        .btn-confirmar{background:{{ COR_DESTAQUE }};color:#000;padding:8px 20px;border-radius:8px;cursor:pointer;font-weight:bold}
+        .modal-pagamento h3{color:{{ COR_DESTAQUE }};margin-bottom:15px}
+        .pix-qrcode{background:#fff;padding:15px;border-radius:10px;display:inline-block;margin:10px 0}
+        .pix-qrcode img{max-width:200px}
+        .pix-copiavel{background:#000;color:#00ff88;padding:10px;border-radius:8px;font-size:9px;word-break:break-all;margin:10px 0;max-height:60px;overflow-y:auto;cursor:pointer}
+        .btn-fechar{background:#444;color:#fff;padding:8px 20px;border-radius:8px;cursor:pointer;margin-top:10px;border:none;font-family:'Courier New',monospace}
+        .btn-confirmar{background:{{ COR_DESTAQUE }};color:#000;padding:8px 20px;border-radius:8px;cursor:pointer;margin-top:10px;font-weight:bold;border:none;font-family:'Courier New',monospace}
         .relatorio-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:6px}
         .relatorio-card{background:#111;padding:8px;border-radius:8px;border:1px solid #222;text-align:center}
         .relatorio-card .rlabel{color:#666;font-size:9px}.relatorio-card .rvalue{color:{{ COR_DESTAQUE }};font-size:14px;font-weight:bold}
         .historico-table{width:100%;font-size:9px;border-collapse:collapse;margin-top:10px}
-        .historico-table th{background:{{ COR_TAB_ATIVA }};color:#000;padding:4px}.historico-table td{padding:3px;border-bottom:1px solid #222;text-align:center}
-        .estrategia-card{background:#111;padding:12px;border-radius:10px;border:2px solid #222;cursor:pointer;transition:all 0.3s ease;text-align:center}
-        .estrategia-card:hover{border-color:{{ COR_DESTAQUE }}}
+        .historico-table th{background:{{ COR_TAB_ATIVA }};color:#000;padding:6px}.historico-table td{padding:4px;border-bottom:1px solid #222;text-align:center}
+        .estrategia-card{background:linear-gradient(135deg,#111122,#0a0a15);padding:12px;border-radius:10px;border:2px solid #1a1a2e;cursor:pointer;transition:all 0.3s ease;text-align:center}
+        .estrategia-card:hover{transform:translateY(-3px);border-color:{{ COR_DESTAQUE }}}
         .estrategia-card.ativa{border-color:#00ff88;box-shadow:0 0 15px rgba(0,255,136,0.3);background:#0a1a0a}
         .estrategia-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
         .badge-gratis{background:#00ff88;color:#000;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block}
         .badge-pago{background:#ffd700;color:#000;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block}
-        .sub-tabs{display:flex;gap:5px;margin-bottom:15px;flex-wrap:wrap}.sub-tab{padding:8px 16px;background:#111;border:1px solid #333;border-radius:8px 8px 0 0;cursor:pointer;color:#888;font-size:11px}.sub-tab.active{background:linear-gradient(135deg,#cc8800,#ffd700);color:#000;font-weight:bold}.sub-panel{display:none}.sub-panel.active{display:block}
+        .sub-tabs{display:flex;gap:5px;margin-bottom:15px;flex-wrap:wrap}
+        .sub-tab{padding:8px 16px;background:#111;border:1px solid #333;border-radius:8px 8px 0 0;cursor:pointer;color:#888;font-size:11px;transition:all 0.3s}
+        .sub-tab.active{background:linear-gradient(135deg,#cc8800,#ffd700);color:#000;font-weight:bold;border-color:#ffd700}
+        .sub-tab:hover{background:#1a1a2e;color:#fff}
+        .sub-panel{display:none;animation:fadeIn 0.3s ease}
+        .sub-panel.active{display:block}
         .loja-categorias{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;border-bottom:2px solid #333;padding-bottom:10px}
-        .loja-cat-btn{padding:10px 18px;background:#111;border:2px solid #222;border-radius:12px;cursor:pointer;color:#666;font-size:12px;font-weight:bold;transition:all .3s ease}
+        .loja-cat-btn{padding:10px 18px;background:#111;border:2px solid #222;border-radius:12px;cursor:pointer;color:#666;font-size:12px;font-weight:bold;transition:all 0.3s ease}
         .loja-cat-btn:hover{background:#1a1a2e;color:#ccc;border-color:#333}
         .loja-cat-btn.active{background:linear-gradient(135deg,#1a1a0a,#0d0d05);color:{{ COR_DESTAQUE }};border-color:{{ COR_DESTAQUE }};box-shadow:0 -3px 15px rgba(255,215,0,.1)}
-        .loja-sub-panel{display:none;animation:fadeIn .4s ease}
+        .loja-sub-panel{display:none;animation:fadeIn 0.4s ease}
         .loja-sub-panel.active{display:block}
-        @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        .canvas-full{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-2;pointer-events:none}
+        .canvas-banner{position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none}
+        .effect-element{position:absolute;pointer-events:none;z-index:2}
+        .pix-copiavel{background:#000;color:#00ff88;padding:10px;border-radius:8px;font-size:9px;word-break:break-all;margin:10px 0;cursor:pointer;transition:all 0.3s}
+        .pix-copiavel:hover{background:#1a1a1a}
+        .btn-loja{padding:12px 18px;border:none;border-radius:12px;font-weight:bold;cursor:pointer;font-size:11px;width:100%;margin-top:10px;transition:all 0.25s ease;text-transform:uppercase;letter-spacing:1.5px}
+        .btn-loja:hover{transform:translateY(-2px)}
+        .btn-comprar-volts{background:linear-gradient(135deg,#ff8c00,#ffd700);color:#000}
+        .btn-comprar-skin{background:linear-gradient(135deg,#6a0dad,#9933ff);color:#fff}
+        .btn-comprar-est{background:linear-gradient(135deg,#006644,#00aa55);color:#fff}
+        .btn-comprado{background:linear-gradient(135deg,#1a1a2e,#0d0d1a);color:#00ff88;border:1px solid #00ff8844;cursor:default}
+        .btn-usar{background:linear-gradient(135deg,#006699,#3399cc);color:#fff}
+        .skin-card .btn{width:100%;margin-top:8px}
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
         {{ HEADER_EXTRA | safe }}
-        <h1>⚡ TESLA 369 BOT ⚡</h1>
+        <h1>⚡ TESLA 369 BOT v11.0.0 ⚡</h1>
+        <p>O PODER DOS NÚMEROS - SISTEMA CLOUD</p>
     </div>
     <div class="mantra">🌀 O DINHEIRO VEM ATÉ MIM DE TODOS OS LADOS 🌀</div>
+    
     <div class="tabs">
         <div class="tab active" onclick="openTab('bot')">🤖 BOT</div>
         <div class="tab" onclick="openTab('relatorio')">📊 RELATÓRIO</div>
@@ -88,31 +125,45 @@
         <div class="tab" onclick="openTab('contato')">📞 CONTATO</div>
     </div>
 
+    <!-- PAINEL BOT -->
     <div class="panel active" id="panel-bot">
-        <div class="config-section"><h3>🔐 IQ OPTION</h3><div class="config-row">
-            <input type="email" id="email" placeholder="📧 Email" style="flex:2">
-            <input type="password" id="senha" placeholder="🔒 Senha" style="flex:1">
-            <select id="tipo"><option value="PRACTICE">🧪 PRACTICE</option><option value="REAL">💰 REAL</option></select>
-            <div style="display:flex;gap:8px;align-items:center">
-                <label style="color:#888;font-size:9px">% Banca:</label>
-                <select id="percentualBanca" onchange="atualizarPercentual()" style="padding:5px;width:70px">
-                    <option value="15" selected>15%</option><option value="20">20%</option><option value="30">30%</option><option value="50">50%</option>
+        <div class="config-section">
+            <h3>🔐 IQ OPTION</h3>
+            <div class="config-row">
+                <input type="email" id="email" placeholder="📧 Email IQ Option" style="flex:2">
+                <input type="password" id="senha" placeholder="🔒 Senha" style="flex:1">
+                <select id="tipo">
+                    <option value="PRACTICE">🧪 PRACTICE</option>
+                    <option value="REAL">💰 REAL</option>
                 </select>
-                <span style="color:#ffd700;font-size:9px" id="valorEstimado">($0.00)</span>
+                <div style="margin-top:5px;display:flex;gap:8px;align-items:center">
+                    <label style="color:#888;font-size:9px">% Banca:</label>
+                    <select id="percentualBanca" onchange="atualizarPercentual()" style="padding:5px;background:#111;border:1px solid #333;border-radius:5px;color:#fff;font-size:10px;width:70px">
+                        <option value="15" selected>15%</option>
+                        <option value="20">20%</option>
+                        <option value="30">30%</option>
+                        <option value="50">50%</option>
+                        <option value="100">100%</option>
+                    </select>
+                    <span style="color:#ffd700;font-size:9px" id="valorEstimado">($0.00)</span>
+                    <span style="color:#ff4444;font-size:8px" id="avisoMinimo"></span>
+                </div>
+                <button class="btn btn-info" id="btnConectar" onclick="conectarIQ()">🔌 CONECTAR</button>
+                <button class="btn btn-stop" id="btnDesconectar" onclick="desconectarIQ()" style="display:none">🔌 DESCONECTAR</button>
+                <button class="btn btn-start" id="btnOperar" onclick="comecarOperar()" style="display:none">🚀 COMEÇAR OPERAR</button>
+                <button class="btn btn-stop" id="btnParar" onclick="pararBot()" style="display:none">⏹️ PARAR</button>
             </div>
-            <button class="btn btn-info" id="btnConectar" onclick="conectarIQ()">🔌 CONECTAR</button>
-            <button class="btn btn-stop" id="btnDesconectar" onclick="desconectarIQ()" style="display:none">🔌 DESCONECTAR</button>
-            <button class="btn btn-start" id="btnOperar" onclick="comecarOperar()" style="display:none">🚀 COMEÇAR OPERAR</button>
-            <button class="btn btn-stop" id="btnParar" onclick="pararBot()" style="display:none">⏹️ PARAR</button>
-        </div></div>
+        </div>
+        
         <div class="dashboard">
-            <div class="card"><div class="label">💰 BANCA</div><div class="value" id="banca">--</div></div>
+            <div class="card"><div class="label">💰 BANCA</div><div class="value" id="banca" style="color:#00ff88">--</div></div>
             <div class="card"><div class="label">📈 LUCRO</div><div class="value" id="lucro">$0.00</div></div>
             <div class="card"><div class="label">🎯 OPS</div><div class="value" id="ops">0</div></div>
             <div class="card"><div class="label">⚡ VOLTS</div><div class="value" id="moedasSaldo">0</div></div>
-            <div class="card"><div class="label">📊 ESTRATÉGIA</div><div class="value" id="estrategiaAtiva">--</div></div>
-            <div class="card"><div class="label">🔮 SINAL</div><div class="value" id="sinal">--</div></div>
+            <div class="card"><div class="label">📊 ESTRATÉGIA</div><div class="value" id="estrategiaAtiva" style="font-size:10px">--</div></div>
+            <div class="card"><div class="label">🔮 SINAL</div><div class="value" id="sinal" style="font-size:11px">--</div></div>
         </div>
+        
         <div class="indicators">
             <div class="ind-card"><div class="ind-label">📊 RSI</div><div class="ind-value" id="rsi">--</div></div>
             <div class="ind-card"><div class="ind-label">📈 MM5</div><div class="ind-value" id="mm5">--</div></div>
@@ -122,342 +173,1066 @@
             <div class="ind-card"><div class="ind-label">🌅 FASE</div><div class="ind-value" id="fase">--</div></div>
             <div class="ind-card"><div class="ind-label">💵 PREÇO</div><div class="ind-value" id="preco">--</div></div>
         </div>
+        
         <div class="terminal" id="terminal">📡 Aguardando...</div>
+        
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
-            <span>⚡ TESLA 369 v9.0.1 Cloud</span>
+            <span>⚡ TESLA 369 v11.0.0</span>
+            <span>GALE 2 | SG: 1 WIN | ☁️ CLOUD</span>
         </div>
     </div>
 
+    <!-- PAINEL ESTRATÉGIAS -->
     <div class="panel" id="panel-estrategias">
-        <div class="config-section"><h3>📊 SELECIONAR ESTRATÉGIA</h3></div>
+        <div class="config-section">
+            <h3>📊 SELECIONAR ESTRATÉGIA</h3>
+            <p style="color:#888;font-size:10px">Escolha uma estratégia antes de clicar em COMEÇAR OPERAR</p>
+        </div>
         <div class="estrategia-grid" id="estrategiaGrid"></div>
     </div>
 
+    <!-- PAINEL LOJA -->
     <div class="panel" id="panel-loja">
         <div class="loja-categorias">
-            <div class="loja-cat-btn active" onclick="mostrarLojaCategoria('volts')">💳 VOLTS</div>
-            <div class="loja-cat-btn" onclick="mostrarLojaCategoria('skins')">🎨 SKINS</div>
-            <div class="loja-cat-btn" onclick="mostrarLojaCategoria('estrategias')">📊 ESTRATÉGIAS</div>
+            <div class="loja-cat-btn active" onclick="mostrarLojaCategoria('volts')">💳 COMPRAR VOLTS</div>
+            <div class="loja-cat-btn" onclick="mostrarLojaCategoria('skins')">🎨 LOJA DE SKINS</div>
+            <div class="loja-cat-btn" onclick="mostrarLojaCategoria('estrategias')">📊 ESTRATÉGIAS PREMIUM</div>
         </div>
+        
         <div class="loja-sub-panel active" id="loja-volts">
+            <div class="config-section">
+                <h3>💳 COMPRAR VOLTS COM PIX</h3>
+                <p style="color:#888;font-size:10px">📧 <input type="email" id="emailCompra" placeholder="Seu email" style="width:220px;padding:6px;background:#111;border:1px solid #333;color:#fff;border-radius:5px"></p>
+                <p style="color:#ffd700;font-size:10px;margin-top:5px">⚡ 1 VOLT = 1 ciclo | +1 VOLT grátis/dia</p>
+                <p style="color:#888;font-size:9px;margin-top:3px">⭐ Selecione o plano e pague com PIX</p>
+            </div>
             <div class="planos-grid" id="planosGridContainer"></div>
         </div>
+        
         <div class="loja-sub-panel" id="loja-skins">
-            <div class="skins-grid" id="skinsGrid"></div>
+            <div class="config-section">
+                <h3>🎨 LOJA DE SKINS</h3>
+                <p style="color:#888;font-size:10px">Personalize seu bot com skins exclusivas!</p>
+            </div>
+            <div class="loja-categorias" style="margin-bottom:10px;border-bottom:none;padding-bottom:0">
+                <div class="loja-cat-btn active" style="font-size:10px;padding:6px 12px" onclick="mostrarSubCategoriaSkin('basica', event)">⚡ BÁSICAS</div>
+                <div class="loja-cat-btn" style="font-size:10px;padding:6px 12px" onclick="mostrarSubCategoriaSkin('premium', event)">🔮 PREMIUM</div>
+                <div class="loja-cat-btn" style="font-size:10px;padding:6px 12px" onclick="mostrarSubCategoriaSkin('lendaria', event)">💎 LENDÁRIAS</div>
+            </div>
+            <div class="skins-grid" id="skinsGridBasicas"></div>
+            <div class="skins-grid" id="skinsGridPremium" style="display:none"></div>
+            <div class="skins-grid" id="skinsGridLendarias" style="display:none"></div>
         </div>
+        
         <div class="loja-sub-panel" id="loja-estrategias">
+            <div class="config-section">
+                <h3>📊 ESTRATÉGIAS PREMIUM</h3>
+                <p style="color:#888;font-size:10px">Compre estratégias avançadas com suas VOLTS! ⚡</p>
+            </div>
             <div class="skins-grid" id="estrategiasLojaGrid"></div>
         </div>
     </div>
 
+    <!-- PAINEL CHAT -->
     <div class="panel" id="panel-chat">
-        <div id="chatMensagens" style="background:#000;border-radius:10px;height:300px;overflow-y:auto;padding:10px;margin-bottom:10px"></div>
-        <div style="display:flex;gap:8px"><input type="text" id="chatMsg" placeholder="Mensagem..." style="flex:1;padding:10px;background:#111;border-radius:8px;color:#fff"><button onclick="enviarChatMsg()" class="btn btn-info">ENVIAR</button></div>
+        <div class="config-section">
+            <h3>💬 CHAT DOS TRADERS</h3>
+            <p style="color:#888;font-size:9px" id="chatInfo">Conecte na IQ Option para entrar</p>
+        </div>
+        <div id="chatMensagens" style="background:#000;border:1px solid #333;border-radius:10px;height:300px;overflow-y:auto;padding:10px;margin-bottom:10px;font-size:10px">
+            <p style="color:#888;text-align:center">💬 Envie uma mensagem para começar</p>
+        </div>
+        <div style="display:flex;gap:8px">
+            <input type="text" id="chatMsg" placeholder="Digite sua mensagem..." style="flex:1;padding:10px;background:#111;border:1px solid #333;border-radius:8px;color:#fff;font-size:11px" onkeypress="if(event.key==='Enter')enviarChatMsg()">
+            <button onclick="enviarChatMsg()" class="btn btn-info" style="padding:10px 20px">ENVIAR</button>
+        </div>
+        <div style="text-align:center;margin-top:5px">
+            <span style="color:#888;font-size:9px" id="chatOnline">0 online</span>
+        </div>
     </div>
 
+    <!-- PAINEL RELATÓRIO -->
     <div class="panel" id="panel-relatorio">
-        <div class="config-row"><input type="email" id="emailRelatorio" placeholder="Email" style="flex:2"><button class="btn btn-info" onclick="verRelatorio()">🔍 BUSCAR</button><button class="btn btn-info" onclick="verRanking()">🏆 RANKING</button></div>
+        <div class="config-section">
+            <h3>📊 RELATÓRIO</h3>
+            <div class="config-row">
+                <input type="email" id="emailRelatorio" placeholder="Email" style="flex:2">
+                <button class="btn btn-info" onclick="verRelatorio()">🔍 BUSCAR</button>
+                <button class="btn btn-info" onclick="verRanking()" style="background:linear-gradient(135deg,#ff8c00,#ffd700);color:#000">🏆 RANKING</button>
+            </div>
+        </div>
         <div id="relatorioContent"></div>
     </div>
 
+    <!-- PAINEL TUTORIAL -->
     <div class="panel" id="panel-leia-me">
-        <div style="background:#0a0a1a;border-radius:15px;padding:20px"><p>📖 Tutorial - Conecte, escolha estratégia e clique em COMEÇAR OPERAR</p></div>
+        <div class="config-section"><h3>📖 TUTORIAL & ⚠️ AVISOS IMPORTANTES</h3></div>
+        <div style="background:#0a0a1a;border:1px solid #00ff88;border-radius:15px;padding:20px;margin:10px 0">
+            <p style="color:#ffd700;font-size:18px;font-weight:bold;margin-bottom:15px;text-align:center">📖 COMO USAR O TESLA 369</p>
+            <p style="color:#ffd700;font-size:13px;font-weight:bold;margin-bottom:10px">🔰 PRIMEIROS PASSOS</p>
+            <p style="color:#ccc;font-size:11px;line-height:2.0;text-align:justify">
+                <span style="color:#00ff88">1.</span> Crie uma conta na <span style="color:#ffd700">IQ Option</span> (use conta PRACTICE para testes).<br>
+                <span style="color:#00ff88">2.</span> Digite seu <span style="color:#ffd700">email e senha</span> no bot e clique em <span style="color:#00ff88">CONECTAR</span>.<br>
+                <span style="color:#00ff88">3.</span> Selecione a <span style="color:#ffd700">% da banca</span> que deseja usar (mínimo 15%).<br>
+                <span style="color:#00ff88">4.</span> Vá na aba <span style="color:#ffd700">ESTRATÉGIAS</span> e escolha uma estratégia.<br>
+                <span style="color:#00ff88">5.</span> Clique em <span style="color:#00ff88;font-weight:bold">COMEÇAR OPERAR</span> e aguarde o sinal.<br>
+                <span style="color:#00ff88">6.</span> O bot opera automaticamente em segundo plano.
+            </p>
+            <p style="color:#ffd700;font-size:13px;font-weight:bold;margin-bottom:10px;margin-top:15px">🤖 COMO O ROBÔ FUNCIONA</p>
+            <p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify">
+                O Tesla 369 analisa <span style="color:#00ff88">padrões de velas</span> em tempo real usando indicadores técnicos. Cada estratégia tem seu próprio <span style="color:#ffd700">timeframe e gatilho</span> de entrada. Quando encontra um padrão com alta probabilidade, ele <span style="color:#ffd700">abre uma ordem automaticamente</span>. O robô busca <span style="color:#ffd700;font-weight:bold">+10% de retorno</span> sobre o valor que você definir como entrada. Se perder, ele aplica <span style="color:#ff4444">Martingale (Gale 2)</span> dobrando o valor por até 2 vezes. <span style="color:#00ff88;font-weight:bold">Stop Gain:</span> 1 WIN = bot para automaticamente.
+            </p>
+        </div>
+        <div style="background:#0a1a0a;border:1px solid #00ff88;border-radius:15px;padding:20px;margin:10px 0">
+            <p style="color:#00ff88;font-size:14px;font-weight:bold;margin-bottom:10px">💰 RISCOS REAIS</p>
+            <p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify">
+                <span style="color:#ff4444">• Você pode PERDER TODO seu dinheiro.</span><br>
+                • Opções binárias são proibidas em vários países.<br>
+                • O Martingale é perigoso: 3 perdas seguidas consomem 7x o valor inicial.<br>
+                • <span style="color:#ffd700">NUNCA invista dinheiro que você não pode perder.</span><br>
+                • Resultados passados não garantem resultados futuros.<br>
+                • O robô é uma ferramenta de <span style="color:#ffd700">análise automatizada</span>, não uma garantia de lucro.
+            </p>
+        </div>
+        <div style="background:#1a0000;border:2px solid #ff4444;border-radius:15px;padding:20px;margin:10px 0">
+            <p style="color:#ff4444;font-size:16px;text-align:center;font-weight:bold;margin-bottom:15px">⚠️ A VERDADE SOBRE A IQ OPTION</p>
+            <p style="color:#ff8888;font-size:12px;line-height:1.8;text-align:justify">
+                A <span style="color:#ffd700;font-weight:bold">IQ Option</span> <span style="color:#ff4444;font-weight:bold">NÃO É</span> o mercado financeiro real. Ela é uma <span style="color:#ffd700;font-weight:bold">corretora de opções binárias</span> - um modelo onde você aposta se o preço vai subir ou descer. Não há compra real de ativos. É uma <span style="color:#ff4444;font-weight:bold">aposta</span> contra a própria corretora.
+            </p>
+        </div>
+        <div style="text-align:center;margin-top:15px">
+            <p style="color:#ffd700;font-size:12px;font-weight:bold">🎯 A INTENÇÃO É GANHAR DINHEIRO - MAS COM CONSCIÊNCIA</p>
+            <p style="color:#888;font-size:10px;margin-top:5px">Use com responsabilidade. Conheça os riscos. Comece pela conta PRACTICE.</p>
+        </div>
     </div>
 
+    <!-- PAINEL CONTATO -->
     <div class="panel" id="panel-contato">
-        <div style="text-align:center;padding:20px"><p>📧 gyn.bet.fc@gmail.com</p><p>📱 WhatsApp: 62 98172-8653</p></div>
+        <div class="config-section"><h3>📞 ENTRE EM CONTATO</h3></div>
+        <div style="background:linear-gradient(135deg,#1a1a2e,#0d0d1a);border:2px solid #ffd700;border-radius:15px;padding:20px;margin:10px 0;text-align:center">
+            <p style="color:#ffd700;font-size:18px;font-weight:bold;margin-bottom:10px">⚡ POR QUE ESCOLHER O TESLA 369?</p>
+            <p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify">
+                🔹 <span style="color:#ffd700">Automatizacao real:</span> Enquanto outros bots dependem de sinais manuais, o Tesla 369 opera com <span style="color:#00ff88">inteligencia automatizada</span> baseada em multiplos indicadores tecnicos.<br><br>
+                🔹 <span style="color:#ffd700">Custo-beneficio imbativel:</span> Bots similares custam <span style="color:#ff4444">R$50 a R$200 por mes</span>. O Tesla 369 e <span style="color:#00ff88">GRATIS para comecar</span>.<br><br>
+                🔹 <span style="color:#ffd700">Personalizacao total:</span> <span style="color:#00ff88">Skins exclusivas</span> para deixar o bot com a sua cara.<br><br>
+                🔹 <span style="color:#ffd700">Suporte direto:</span> Voce <span style="color:#00ff88">fala direto com o desenvolvedor</span>.<br><br>
+                🔹 <span style="color:#ffd700">Seguranca:</span> Seus dados salvos na nuvem.
+            </p>
+        </div>
+        <div style="background:linear-gradient(135deg,#1a0000,#0d0000);border:2px solid #ff4444;border-radius:15px;padding:20px;margin:10px 0;text-align:center">
+            <p style="color:#ff4444;font-size:14px;font-weight:bold;margin-bottom:10px">⚠️ CUIDADO COM BOTS GRATUITOS!</p>
+            <p style="color:#ff8888;font-size:11px;line-height:1.8;text-align:justify">
+                Muitos bots gratuitos sao <span style="color:#ffd700">abandonados</span>, contem <span style="color:#ffd700">virus</span> ou simplesmente <span style="color:#ffd700">nao funcionam</span>. O Tesla 369 e <span style="color:#00ff88">atualizado constantemente</span>.
+            </p>
+        </div>
+        <div style="background:linear-gradient(135deg,#1a1a2e,#0d0d1a);border:2px solid #25D366;border-radius:15px;padding:20px;margin:15px 0;text-align:center">
+            <p style="color:#25D366;font-size:16px;font-weight:bold;margin-bottom:10px">💬 FALE COM O DESENVOLVEDOR</p>
+            <p style="color:#ccc;font-size:12px;margin:5px 0">📧 <span style="color:#00ff88">gyn.bet.fc@gmail.com</span></p>
+            <a href="https://wa.me/5562981728653?text=Ola!%20Vim%20do%20Tesla%20369%20Bot%20v11.0.0%20e%20gostaria%20de%20saber%20mais!" target="_blank" style="text-decoration:none">
+                <button style="background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;padding:14px 28px;border-radius:12px;font-size:15px;font-weight:bold;cursor:pointer;margin-top:10px;font-family:monospace;box-shadow:0 4px 15px rgba(37,211,102,0.3);transition:all 0.3s ease" onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 6px 20px rgba(37,211,102,0.5)'" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 4px 15px rgba(37,211,102,0.3)'">💬 WHATSAPP</button>
+            </a>
+            <p style="color:#888;font-size:10px;margin-top:10px">Duvidas, sugestoes ou interesse em recursos premium? Fale comigo!</p>
+        </div>
     </div>
 </div>
 
 <div class="modal-overlay" id="modalPix">
     <div class="modal-pagamento">
         <h3>💳 Pagamento PIX</h3>
-        <div id="pixContent"></div>
-        <button class="btn-fechar" onclick="fecharModal()">Fechar</button>
+        <div id="pixContent"><p style="color:#888">Carregando QR Code...</p></div>
+        <button class="btn-fechar" onclick="fecharModal()">❌ Fechar</button>
     </div>
 </div>
 
 <script>
 var PLANOS = [{{ PLANOS_JSON | safe }}];
-var intervalo = null, botAtivo = false, conectadoIQ = false, emailLogado = '';
+var intervalo = null;
+var botAtivo = false;
+var conectadoIQ = false;
+var emailLogado = '';
+var planoSelecionado = 0;
+var pixAtual = null;
+var estrategiaSel = 'v_sensitivo';
 
+// ========== FUNÇÕES DE NAVEGAÇÃO ==========
 function mostrarLojaCategoria(categoria) {
-    document.querySelectorAll('.loja-cat-btn').forEach(b => b.classList.remove('active'));
+    var botoes = document.querySelectorAll('.loja-cat-btn');
+    for(var i = 0; i < botoes.length; i++) botoes[i].classList.remove('active');
     event.target.classList.add('active');
-    document.querySelectorAll('.loja-sub-panel').forEach(p => p.classList.remove('active'));
+    
+    var paineis = document.querySelectorAll('.loja-sub-panel');
+    for(var i = 0; i < paineis.length; i++) paineis[i].classList.remove('active');
     document.getElementById('loja-' + categoria).classList.add('active');
+    
     if(categoria === 'volts') renderPlanos();
-    if(categoria === 'skins') renderSkins();
+    if(categoria === 'skins') mostrarSubCategoriaSkin('basica', null);
     if(categoria === 'estrategias') renderLojaEstrategias();
 }
 
+function mostrarSubCategoriaSkin(categoria, evento) {
+    if(evento && evento.target) {
+        var botoes = document.querySelectorAll('#loja-skins .loja-cat-btn');
+        for(var i = 0; i < botoes.length; i++) botoes[i].classList.remove('active');
+        evento.target.classList.add('active');
+    }
+    
+    document.getElementById('skinsGridBasicas').style.display = categoria === 'basica' ? 'grid' : 'none';
+    document.getElementById('skinsGridPremium').style.display = categoria === 'premium' ? 'grid' : 'none';
+    document.getElementById('skinsGridLendarias').style.display = categoria === 'lendaria' ? 'grid' : 'none';
+    
+    renderLojaCategoria(categoria);
+}
+
 function openTab(tab) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    var tabs = document.querySelectorAll('.tab');
+    for(var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
+    var panels = document.querySelectorAll('.panel');
+    for(var i = 0; i < panels.length; i++) panels[i].classList.remove('active');
     event.target.classList.add('active');
     document.getElementById('panel-' + tab).classList.add('active');
-    if(tab === 'loja') mostrarLojaCategoria('volts');
-    if(tab === 'estrategias') renderEstrategias();
+    
+    if(tab == 'relatorio' && emailLogado) {
+        document.getElementById('emailRelatorio').value = emailLogado;
+        verRelatorio();
+    }
+    if(tab == 'loja') mostrarLojaCategoria('volts');
+    if(tab == 'estrategias') {
+        if(botAtivo) {
+            alert('⚠️ Pare o bot antes de trocar de estratégia!');
+            openTab('bot');
+            return;
+        }
+        renderEstrategias();
+    }
 }
 
 function atualizarPercentual() {
     var perc = document.getElementById('percentualBanca').value;
-    fetch('/set_percentual', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({percentual:parseInt(perc)})});
+    fetch('/set_percentual', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({percentual: parseInt(perc)})
+    });
+    calcularMinimo();
 }
 
+function calcularMinimo() {
+    var bancaTexto = document.getElementById('banca').textContent;
+    var banca = parseFloat(bancaTexto.replace('$','')) || 0;
+    var perc = parseInt(document.getElementById('percentualBanca').value);
+    var valor = (banca * perc / 100).toFixed(2);
+    document.getElementById('valorEstimado').textContent = '($' + valor + ')';
+    var payout = 0.85;
+    var minimo = (valor / (1 + (1/payout) + (1/payout)*(1/payout))).toFixed(2);
+    if (banca < parseFloat(minimo) * 3) {
+        document.getElementById('avisoMinimo').textContent = '⚠️ Min: $' + (parseFloat(minimo)*3).toFixed(2);
+    } else {
+        document.getElementById('avisoMinimo').textContent = '';
+    }
+}
+
+// ========== CONEXÃO IQ OPTION ==========
 function conectarIQ() {
     var email = document.getElementById('email').value.trim();
     var senha = document.getElementById('senha').value.trim();
     var tipo = document.getElementById('tipo').value;
-    if(!email || !senha) return alert('Preencha email e senha!');
+    if(!email || !senha) {
+        alert('Preencha email e senha!');
+        return;
+    }
     emailLogado = email;
-    fetch('/conectar', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,senha:senha,tipo:tipo})})
-    .then(r=>r.json()).then(d=>{
-        if(d.ok){
-            conectadoIQ=true;
-            document.getElementById('btnConectar').style.display='none';
-            document.getElementById('btnDesconectar').style.display='inline-block';
-            document.getElementById('btnOperar').style.display='inline-block';
-            document.getElementById('statusTexto').textContent='🟢 Conectado';
-            document.getElementById('statusDot').className='status-dot active';
+    var btnConectar = document.getElementById('btnConectar');
+    btnConectar.disabled = true;
+    btnConectar.textContent = 'Conectando...';
+    
+    fetch('/conectar', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({email: email, senha: senha, tipo: tipo})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if(d.ok) {
+            conectadoIQ = true;
+            btnConectar.style.display = 'none';
+            document.getElementById('btnDesconectar').style.display = 'inline-block';
+            document.getElementById('btnOperar').style.display = 'inline-block';
+            document.getElementById('statusTexto').textContent = '🟢 Conectado';
+            document.getElementById('statusDot').className = 'status-dot active';
+            document.getElementById('moedasSaldo').textContent = d.moedas || 0;
             if(intervalo) clearInterval(intervalo);
-            intervalo = setInterval(atualizar,2000);
+            intervalo = setInterval(atualizar, 2000);
             atualizar();
-            if(d.refresh) setTimeout(()=>location.reload(),1500);
-        } else alert('ERRO: '+d.erro);
+            iniciarChat();
+            alert('✅ Conectado com sucesso!');
+            if(d.refresh) {
+                setTimeout(function() { location.reload(); }, 1500);
+            }
+        } else {
+            alert('ERRO: ' + d.erro);
+            btnConectar.disabled = false;
+            btnConectar.textContent = '🔌 CONECTAR';
+        }
+    })
+    .catch(function(err) {
+        alert('Erro de conexão: ' + err.message);
+        btnConectar.disabled = false;
+        btnConectar.textContent = '🔌 CONECTAR';
     });
 }
 
 function desconectarIQ() {
-    if(botAtivo) return alert('Pare o bot primeiro!');
-    fetch('/parar', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({desconectar:true})})
-    .then(()=>setTimeout(()=>location.reload(),500));
+    if(botAtivo) {
+        alert('⚠️ Pare o bot primeiro antes de desconectar!');
+        return;
+    }
+    if(!confirm('Deseja realmente desconectar da IQ Option?')) return;
+    
+    fetch('/parar', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({desconectar: true})
+    })
+    .then(function() {
+        conectadoIQ = false;
+        botAtivo = false;
+        document.getElementById('btnConectar').style.display = 'inline-block';
+        document.getElementById('btnConectar').disabled = false;
+        document.getElementById('btnConectar').textContent = '🔌 CONECTAR';
+        document.getElementById('btnDesconectar').style.display = 'none';
+        document.getElementById('btnOperar').style.display = 'none';
+        document.getElementById('btnParar').style.display = 'none';
+        document.getElementById('statusTexto').textContent = '⏸️ Desconectado';
+        document.getElementById('statusDot').className = 'status-dot inactive';
+        if(intervalo) clearInterval(intervalo);
+        alert('🔌 Desconectado da IQ Option');
+        setTimeout(function() { location.reload(); }, 500);
+    })
+    .catch(function(err) {
+        alert('Erro ao desconectar: ' + err.message);
+    });
 }
 
 function comecarOperar() {
-    if(!conectadoIQ) return alert('Conecte primeiro!');
-    fetch('/comecar_operar', {method:'POST',headers:{'Content-Type':'application/json'}})
-    .then(r=>r.json()).then(d=>{
-        if(d.ok){
-            botAtivo=true;
-            document.getElementById('btnOperar').style.display='none';
-            document.getElementById('btnParar').style.display='inline-block';
-            document.getElementById('statusTexto').textContent='🤖 Operando';
-            document.getElementById('moedasSaldo').textContent=d.moedas;
-        } else alert('ERRO: '+d.erro);
+    if(!conectadoIQ) {
+        alert('Conecte primeiro!');
+        return;
+    }
+    var btnOperar = document.getElementById('btnOperar');
+    btnOperar.disabled = true;
+    btnOperar.textContent = 'Iniciando...';
+    
+    fetch('/comecar_operar', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if(d.ok) {
+            botAtivo = true;
+            btnOperar.style.display = 'none';
+            document.getElementById('btnParar').style.display = 'inline-block';
+            document.getElementById('statusTexto').textContent = '🤖 Operando';
+            document.getElementById('moedasSaldo').textContent = d.moedas;
+            alert('🚀 Bot iniciado! Aguardando sinais...');
+        } else {
+            alert('ERRO: ' + d.erro);
+            btnOperar.disabled = false;
+            btnOperar.textContent = '🚀 COMEÇAR OPERAR';
+        }
+    })
+    .catch(function(err) {
+        alert('Erro: ' + err.message);
+        btnOperar.disabled = false;
+        btnOperar.textContent = '🚀 COMEÇAR OPERAR';
     });
 }
 
 function pararBot() {
-    fetch('/parar', {method:'POST',headers:{'Content-Type':'application/json'}})
-    .then(()=>setTimeout(()=>location.reload(),500));
-}
-
-function renderPlanos() {
-    var grid = document.getElementById('planosGridContainer');
-    if(!grid) return;
-    var html='';
-    PLANOS.forEach(p=>{html+=`<div class="plano-card" onclick="pagarComPix(${p.id})"><div class="plano-nome">${p.nome}</div><div class="plano-moedas">⚡ ${p.moedas}</div><div class="plano-preco">R$ ${p.preco.toFixed(2)}</div><div class="plano-desc">${p.desc}</div></div>`;});
-    grid.innerHTML=html;
-}
-
-function renderSkins() {
-    fetch('/status').then(r=>r.json()).then(d=>{
-        var grid = document.getElementById('skinsGrid');
-        if(!grid) return;
-        var html='';
-        (d.skins_status || []).forEach(skin=>{
-            var ativa = skin.ativo ? ' ativo' : '';
-            var btn = skin.ativo ? '<button class="btn btn-comprado" style="background:#00ff8822;color:#00ff88">✅ EM USO</button>' :
-                      (skin.comprado ? `<button class="btn btn-info" onclick="ativarSkin('${skin.id}')">🎨 ATIVAR</button>` :
-                      (skin.preco_moedas==0 ? `<button class="btn btn-info" onclick="ativarSkin('${skin.id}')">🆓 ATIVAR</button>` :
-                      `<button class="btn btn-start" onclick="comprarSkin('${skin.id}')">🛒 COMPRAR (${skin.preco_moedas}⚡)</button>`));
-            html+=`<div class="skin-card${ativa}"><div class="skin-nome">${skin.nome}</div><div class="skin-desc">${skin.desc}</div>${btn}</div>`;
-        });
-        grid.innerHTML=html;
+    if(!confirm('Parar o bot? O ciclo atual será interrompido.')) return;
+    var btnParar = document.getElementById('btnParar');
+    btnParar.disabled = true;
+    btnParar.textContent = 'Parando...';
+    
+    fetch('/parar', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        botAtivo = false;
+        document.getElementById('btnOperar').style.display = 'inline-block';
+        document.getElementById('btnOperar').disabled = false;
+        document.getElementById('btnOperar').textContent = '🚀 COMEÇAR OPERAR';
+        document.getElementById('btnParar').style.display = 'none';
+        document.getElementById('statusTexto').textContent = '🟢 Conectado';
+        btnParar.disabled = false;
+        btnParar.textContent = '⏹️ PARAR';
+        alert('⏹️ Bot parado com sucesso!');
+        atualizar();
+        setTimeout(function() { location.reload(); }, 500);
+    })
+    .catch(function(err) {
+        alert('Erro ao parar: ' + err.message);
+        btnParar.disabled = false;
+        btnParar.textContent = '⏹️ PARAR';
     });
 }
 
-function comprarSkin(skinId) {
-    if(!emailLogado) return alert('Conecte primeiro!');
-    fetch('/comprar_skin', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId})})
-    .then(r=>r.json()).then(d=>{if(d.ok) location.reload(); else alert(d.erro);});
-}
-
-function ativarSkin(skinId) {
-    fetch('/ativar_skin', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId})})
-    .then(r=>r.json()).then(d=>{if(d.ok) location.reload(); else alert(d.erro);});
-}
-
+// ========== ESTRATÉGIAS ==========
 function renderEstrategias() {
-    fetch('/status').then(r=>r.json()).then(d=>{
+    fetch('/status')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        var estrategiasCompradas = d.estrategias_compradas || ['v_sensitivo'];
+        var disponiveis = d.estrategias_disponiveis || {};
         var grid = document.getElementById('estrategiaGrid');
         if(!grid) return;
-        var html='';
-        for(var key in d.estrategias_disponiveis){
-            if((d.estrategias_compradas||[]).includes(key)){
-                var est = d.estrategias_disponiveis[key];
-                var ativa = key===d.estrategia ? ' ativa' : '';
-                html+=`<div class="estrategia-card${ativa}" onclick="selecionarEstrategia('${key}')"><div style="font-weight:bold">${est.nome}</div><div style="font-size:9px;color:#888">${est.desc}</div></div>`;
+        var html = '';
+        
+        for(var key in disponiveis) {
+            if(estrategiasCompradas.includes(key)) {
+                var e = disponiveis[key];
+                var ativa = key == estrategiaSel ? ' ativa' : '';
+                html += '<div class="estrategia-card' + ativa + '" onclick="selecionarEstrategia(\'' + key + '\')" id="est_' + key + '">';
+                html += '<div style="font-size:14px;font-weight:bold">' + e.nome + '</div>';
+                html += '<div style="font-size:9px;color:#888;margin-top:5px">' + e.desc + '</div>';
+                html += '</div>';
             }
         }
-        grid.innerHTML=html;
+        grid.innerHTML = html || '<p style="color:#888;text-align:center">Nenhuma estratégia liberada</p>';
+        if(disponiveis[estrategiaSel]) {
+            document.getElementById('estrategiaAtiva').textContent = disponiveis[estrategiaSel].nome;
+        }
     });
 }
 
 function selecionarEstrategia(key) {
-    fetch('/selecionar_estrategia', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estrategia:key})})
-    .then(()=>location.reload());
-}
-
-function renderLojaEstrategias() {
-    fetch('/status').then(r=>r.json()).then(d=>{
-        var grid = document.getElementById('estrategiasLojaGrid');
-        if(!grid) return;
-        var html='';
-        for(var key in d.estrategias_disponiveis){
-            var est = d.estrategias_disponiveis[key];
-            if(!(d.estrategias_compradas||[]).includes(key) && key!=='v_sensitivo'){
-                html+=`<div class="skin-card"><div class="skin-nome">${est.nome}</div><div class="skin-desc">${est.desc}</div><button class="btn btn-start" onclick="comprarEstrategia('${key}')">🛒 COMPRAR (${est.preco_moedas}⚡)</button></div>`;
-            }
-        }
-        grid.innerHTML=html;
+    estrategiaSel = key;
+    var cards = document.querySelectorAll('.estrategia-card');
+    for(var i = 0; i < cards.length; i++) cards[i].classList.remove('ativa');
+    var card = document.getElementById('est_' + key);
+    if(card) card.classList.add('ativa');
+    
+    fetch('/selecionar_estrategia', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({estrategia: key})
+    })
+    .then(function() {
+        document.getElementById('estrategiaAtiva').textContent = key.toUpperCase();
+        alert('✅ Estratégia alterada para: ' + key);
     });
 }
 
-function comprarEstrategia(estId) {
-    if(!emailLogado) return alert('Conecte primeiro!');
-    fetch('/comprar_estrategia', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estrategia_id:estId})})
-    .then(r=>r.json()).then(d=>{if(d.ok) location.reload(); else alert(d.erro);});
+// ========== LOJA ESTRATÉGIAS ==========
+function renderLojaEstrategias() {
+    fetch('/status')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        var grid = document.getElementById('estrategiasLojaGrid');
+        if(!grid) return;
+        var html = '';
+        var estrategiasCompradas = d.estrategias_compradas || ['v_sensitivo'];
+        var disponiveis = d.estrategias_disponiveis || {};
+        
+        for(var key in disponiveis) {
+            var est = disponiveis[key];
+            var comprado = estrategiasCompradas.includes(key);
+            if(!comprado && key !== 'v_sensitivo') {
+                var btnHtml = '';
+                if(est.gratis) {
+                    btnHtml = '<button class="btn-loja btn-comprar-est" onclick="comprarEstrategia(\'' + key + '\')">🆓 ATIVAR GRÁTIS</button>';
+                } else {
+                    btnHtml = '<button class="btn-loja btn-comprar-est" onclick="comprarEstrategia(\'' + key + '\')">🛒 COMPRAR (' + est.preco_moedas + ' ⚡)</button>';
+                }
+                html += '<div class="skin-card">';
+                html += '<div class="skin-nome">' + est.nome + '</div>';
+                html += '<div class="skin-desc">' + est.desc + '</div>';
+                html += '<div style="margin-top:5px"><span class="badge-pago">⚡ ' + est.preco_moedas + ' VOLTS</span></div>';
+                html += btnHtml;
+                html += '</div>';
+            }
+        }
+        grid.innerHTML = html || '<p style="color:#888;text-align:center">Todas as estratégias adquiridas!</p>';
+    });
+}
+
+function comprarEstrategia(estrategiaId) {
+    if(!emailLogado) {
+        alert('Conecte primeiro!');
+        return;
+    }
+    if(!confirm('Comprar esta estratégia com VOLTS?')) return;
+    
+    fetch('/comprar_estrategia', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({estrategia_id: estrategiaId})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if(d.ok) {
+            alert(d.msg || 'Adquirida com sucesso!');
+            document.getElementById('moedasSaldo').textContent = d.moedas;
+            renderLojaEstrategias();
+            renderEstrategias();
+        } else {
+            alert('ERRO: ' + d.erro);
+        }
+    });
+}
+
+// ========== PLANOS E SKINS ==========
+function renderPlanos() {
+    var grid = document.getElementById('planosGridContainer');
+    if(!grid) return;
+    var html = '';
+    
+    for(var i = 0; i < PLANOS.length; i++) {
+        var p = PLANOS[i];
+        html += '<div class="plano-card" id="plano' + p.id + '" onclick="selecionarPlano(' + p.id + ')">';
+        html += '<div class="plano-nome">' + p.nome + '</div>';
+        html += '<div class="plano-moedas">⚡ ' + p.moedas + '</div>';
+        html += '<div class="plano-preco">R$ ' + p.preco.toFixed(2) + '</div>';
+        html += '<div class="plano-desc">' + p.desc + '</div>';
+        if(p.desconto) html += '<div><span class="plano-desconto">' + p.desconto + '</span></div>';
+        if(p.tag) html += '<div class="plano-tag">' + p.tag + '</div>';
+        html += '<button class="btn-loja btn-comprar-volts" style="display:none;margin-top:10px" id="btnPlano' + p.id + '" onclick="event.stopPropagation();pagarComPix(' + p.id + ')">💳 PAGAR COM PIX</button>';
+        html += '</div>';
+    }
+    grid.innerHTML = html;
+}
+
+function renderLojaCategoria(categoria) {
+    fetch('/status')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        var skinsStatus = d.skins_status || [];
+        var gridId = categoria === 'basica' ? 'skinsGridBasicas' : (categoria === 'premium' ? 'skinsGridPremium' : 'skinsGridLendarias');
+        var grid = document.getElementById(gridId);
+        if(!grid) return;
+        var html = '';
+        var skinsFiltradas = [];
+        
+        for(var i = 0; i < skinsStatus.length; i++) {
+            if(skinsStatus[i].categoria === categoria) skinsFiltradas.push(skinsStatus[i]);
+        }
+        
+        for(var i = 0; i < skinsFiltradas.length; i++) {
+            var skin = skinsFiltradas[i];
+            var ativa = skin.ativo ? ' ativo' : '';
+            var btnHtml = '';
+            
+            if(skin.ativo) {
+                btnHtml = '<button class="btn-loja btn-comprado" style="width:100%;cursor:default">✅ EM USO</button>';
+            } else if(skin.comprado) {
+                btnHtml = '<button class="btn-loja btn-usar" onclick="ativarSkin(\'' + skin.id + '\')">🎨 USAR</button>';
+            } else {
+                if(skin.preco_moedas == 0) {
+                    btnHtml = '<button class="btn-loja btn-usar" onclick="ativarSkin(\'' + skin.id + '\')">🆓 ATIVAR</button>';
+                } else {
+                    btnHtml = '<button class="btn-loja btn-comprar-skin" onclick="comprarSkin(\'' + skin.id + '\')">🛒 COMPRAR (' + skin.preco_moedas + ' ⚡)</button>';
+                }
+            }
+            
+            html += '<div class="skin-card' + ativa + '">';
+            html += '<div class="skin-nome">' + skin.nome + '</div>';
+            html += '<div class="skin-desc">' + skin.desc + '</div>';
+            html += '<div style="margin-top:5px">';
+            if(skin.preco_moedas == 0) {
+                html += '<span class="badge-gratis">GRÁTIS</span>';
+            } else if(skin.comprado) {
+                html += '<span class="badge-gratis">✅ COMPRADO</span>';
+            } else {
+                html += '<span class="badge-pago">⚡ ' + skin.preco_moedas + ' VOLTS</span>';
+            }
+            html += '</div>';
+            html += btnHtml;
+            html += '</div>';
+        }
+        grid.innerHTML = html || '<p style="color:#888;text-align:center">Nenhuma skin nesta categoria</p>';
+    });
+}
+
+function comprarSkin(skinId) {
+    if(!emailLogado) {
+        alert('Conecte primeiro!');
+        return;
+    }
+    if(!confirm('Comprar esta skin?')) return;
+    
+    fetch('/comprar_skin', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({skin_id: skinId})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if(d.ok) {
+            alert('✅ ' + (d.msg || 'Skin adquirida com sucesso!'));
+            document.getElementById('moedasSaldo').textContent = d.moedas;
+            var categoriaAtiva = document.querySelector('#loja-skins .loja-cat-btn.active');
+            var categoria = categoriaAtiva ? categoriaAtiva.textContent.trim().replace('⚡', '').replace('🔮', '').replace('💎', '').trim().toLowerCase() : 'basica';
+            if(categoria === 'básicas') categoria = 'basica';
+            if(categoria === 'premium') categoria = 'premium';
+            if(categoria === 'lendárias') categoria = 'lendaria';
+            renderLojaCategoria(categoria);
+        } else {
+            alert('❌ ERRO: ' + d.erro);
+        }
+    });
+}
+
+function ativarSkin(skinId) {
+    if(!emailLogado) {
+        alert('Conecte primeiro!');
+        return;
+    }
+    if(!confirm('Ativar esta skin? O visual será atualizado.')) return;
+    
+    fetch('/ativar_skin', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({skin_id: skinId})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if(d.ok) {
+            alert('🎨 Skin ativada! A página será recarregada.');
+            setTimeout(function() { location.reload(); }, 500);
+        } else {
+            alert('❌ ERRO: ' + d.erro);
+        }
+    });
+}
+
+function selecionarPlano(id) {
+    var cards = document.querySelectorAll('.plano-card');
+    for(var i = 0; i < cards.length; i++) cards[i].classList.remove('selecionado');
+    var btns = document.querySelectorAll('[id^="btnPlano"]');
+    for(var i = 0; i < btns.length; i++) btns[i].style.display = 'none';
+    document.getElementById('plano' + id).classList.add('selecionado');
+    document.getElementById('btnPlano' + id).style.display = 'block';
+    planoSelecionado = id;
 }
 
 function pagarComPix(planoId) {
-    var email = document.getElementById('email').value.trim() || emailLogado;
-    if(!email) return alert('Digite seu email!');
+    var email = document.getElementById('emailCompra').value.trim() || emailLogado;
+    if(!email) {
+        alert('Digite seu email!');
+        return;
+    }
     document.getElementById('modalPix').classList.add('active');
-    document.getElementById('pixContent').innerHTML = '<p>Gerando PIX...</p>';
-    fetch('/criar_pix', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,plano_id:planoId})})
-    .then(r=>r.json()).then(d=>{
-        if(d.sucesso){
-            var html = `<p>Valor: R$ ${d.valor.toFixed(2)}</p><p>⚡ ${d.moedas} VOLTS</p>`;
-            if(d.qr_code_base64) html += `<img src="data:image/png;base64,${d.qr_code_base64}" style="max-width:200px">`;
-            if(d.qr_code) html += `<div style="background:#000;padding:10px;margin:10px 0;word-break:break-all;cursor:pointer" onclick="navigator.clipboard.writeText('${d.qr_code}')">📋 ${d.qr_code.substring(0,50)}...</div>`;
-            html += `<button class="btn-confirmar" onclick="verificarPagamento('${d.pix_id}')">VERIFICAR PAGAMENTO</button>`;
+    document.getElementById('pixContent').innerHTML = '<p style="color:#ffd700">⏳ Gerando QR Code...</p>';
+    
+    fetch('/criar_pix', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({email: email, plano_id: planoId})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if(d.sucesso) {
+            pixAtual = d;
+            var html = '<p style="font-size:18px;color:#ffd700">R$ ' + d.valor.toFixed(2) + '</p>';
+            html += '<p style="color:#00ff88">⚡ ' + d.moedas + ' VOLTS</p>';
+            if(d.qr_code_base64) {
+                html += '<div class="pix-qrcode"><img src="data:image/png;base64,' + d.qr_code_base64 + '" style="max-width:200px"></div>';
+            }
+            if(d.qr_code) {
+                html += '<div class="pix-copiavel" onclick="copiarPix()">📋 ' + d.qr_code.substring(0,50) + '...</div>';
+            }
+            html += '<button class="btn-confirmar" onclick="verificarPagamento(\'' + d.pix_id + '\')">🔄 VERIFICAR PAGAMENTO</button>';
             document.getElementById('pixContent').innerHTML = html;
-        } else document.getElementById('pixContent').innerHTML = '<p>Erro ao gerar PIX</p>';
+        } else {
+            document.getElementById('pixContent').innerHTML = '<p style="color:#ff4444">❌ Erro: ' + (d.erro || 'Falha ao gerar PIX') + '</p>';
+        }
     });
 }
 
-function verificarPagamento(pixId) {
-    fetch('/verificar_pix', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pix_id:pixId})})
-    .then(r=>r.json()).then(d=>{if(d.pago){alert('Pagamento confirmado!');location.reload();}else alert('Aguardando pagamento...');});
+function copiarPix() {
+    if(pixAtual && pixAtual.qr_code) {
+        navigator.clipboard.writeText(pixAtual.qr_code).then(function() {
+            alert('📋 Código PIX copiado!');
+        });
+    }
 }
 
-function fecharModal() { document.getElementById('modalPix').classList.remove('active'); }
+function verificarPagamento(pixId) {
+    document.getElementById('pixContent').innerHTML += '<p style="color:#ffd700">⏳ Verificando...</p>';
+    fetch('/verificar_pix', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({pix_id: pixId})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if(d.pago) {
+            alert('✅ PAGAMENTO CONFIRMADO! +' + d.moedas + ' VOLTS adicionados!');
+            document.getElementById('moedasSaldo').textContent = d.saldo;
+            fecharModal();
+            location.reload();
+        } else {
+            alert('⏰ Ainda não confirmado. Aguarde alguns minutos e tente novamente.');
+        }
+    });
+}
 
+function fecharModal() {
+    document.getElementById('modalPix').classList.remove('active');
+    pixAtual = null;
+}
+
+// ========== RELATÓRIO E RANKING ==========
 function verRelatorio() {
-    var email = document.getElementById('emailRelatorio').value.trim() || emailLogado;
-    if(!email) return alert('Digite o email!');
-    fetch('/relatorio?email='+email).then(r=>r.json()).then(d=>{
-        if(d.erro) return alert(d.erro);
+    var email = document.getElementById('emailRelatorio').value.trim();
+    if(!email) {
+        alert('Digite o email!');
+        return;
+    }
+    document.getElementById('relatorioContent').innerHTML = '<p style="color:#ffd700">⏳ Carregando...</p>';
+    
+    fetch('/relatorio?email=' + email)
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if(d.erro) {
+            alert(d.erro);
+            return;
+        }
+        
         var h = '<div class="relatorio-grid">';
-        h+=`<div class="relatorio-card"><div class="rlabel">⚡ VOLTS</div><div class="rvalue">${d.moedas||0}</div></div>`;
-        h+=`<div class="relatorio-card"><div class="rlabel">📈 LUCRO</div><div class="rvalue">$${(d.lucro_total||0).toFixed(2)}</div></div>`;
-        h+=`<div class="relatorio-card"><div class="rlabel">✅ WINS</div><div class="rvalue">${d.total_wins||0}</div></div>`;
-        h+=`<div class="relatorio-card"><div class="rlabel">❌ LOSS</div><div class="rvalue">${d.total_losses||0}</div></div>`;
-        h+=`<div class="relatorio-card"><div class="rlabel">🔄 CICLOS</div><div class="rvalue">${d.total_ciclos||0}</div></div>`;
-        h+=`</div>`;
+        h += '<div class="relatorio-card"><div class="rlabel">⚡ VOLTS</div><div class="rvalue">' + (d.moedas || 0) + '</div></div>';
+        h += '<div class="relatorio-card"><div class="rlabel">📈 LUCRO TOTAL</div><div class="rvalue" style="color:' + (d.lucro_total >= 0 ? '#00ff88' : '#ff4444') + '">$' + (d.lucro_total || 0).toFixed(2) + '</div></div>';
+        h += '<div class="relatorio-card"><div class="rlabel">✅ WINS</div><div class="rvalue" style="color:#00ff88">' + (d.total_wins || 0) + '</div></div>';
+        h += '<div class="relatorio-card"><div class="rlabel">❌ LOSSES</div><div class="rvalue" style="color:#ff4444">' + (d.total_losses || 0) + '</div></div>';
+        h += '<div class="relatorio-card"><div class="rlabel">🔄 CICLOS</div><div class="rvalue">' + (d.total_ciclos || 0) + '</div></div>';
+        h += '<div class="relatorio-card"><div class="rlabel">💵 GASTO</div><div class="rvalue">$' + (d.total_gasto || 0).toFixed(2) + '</div></div>';
+        h += '<div class="relatorio-card"><div class="rlabel">💰 GANHO</div><div class="rvalue">$' + (d.total_ganho || 0).toFixed(2) + '</div></div>';
+        h += '<div class="relatorio-card"><div class="rlabel">📅 DIAS</div><div class="rvalue">' + (d.dias_ativos || 0) + '</div></div>';
+        h += '<div class="relatorio-card"><div class="rlabel">🎯 TAXA</div><div class="rvalue">' + (d.total_ciclos > 0 ? ((d.total_wins / d.total_ciclos) * 100).toFixed(1) : 0) + '%</div></div>';
+        h += '<div class="relatorio-card"><div class="rlabel">💰 BANCA</div><div class="rvalue">$' + (d.banca_atual || 0).toFixed(2) + '</div></div>';
+        h += '<div class="relatorio-card"><div class="rlabel">📅 CADASTRO</div><div class="rvalue" style="font-size:10px">' + (d.data_cadastro || '--') + '</div></div>';
+        h += '</div>';
+        
+        if(d.historico_operacoes && d.historico_operacoes.length > 0) {
+            h += '<h4 style="margin-top:10px">📋 ÚLTIMAS OPERAÇÕES</h4>';
+            h += '<table class="historico-table">';
+            h += '<tr><th>Data</th><th>Resultado</th><th>Valor</th><th>Lucro</th><th>Estratégia</th></tr>';
+            var historico = d.historico_operacoes.slice(-15).reverse();
+            for(var i = 0; i < historico.length; i++) {
+                var op = historico[i];
+                var corRes = op.resultado == 'WIN' ? '#00ff88' : '#ff4444';
+                var corLucro = op.lucro >= 0 ? '#00ff88' : '#ff4444';
+                h += '<tr>';
+                h += '<td>' + op.data + '</td>';
+                h += '<td style="color:' + corRes + '">' + op.resultado + '</td>';
+                h += '<td>$' + op.valor.toFixed(2) + '</td>';
+                h += '<td style="color:' + corLucro + '">$' + op.lucro.toFixed(2) + '</td>';
+                h += '<td style="font-size:8px">' + (op.estrategia || '--') + '</td>';
+                h += '</tr>';
+            }
+            h += '</table>';
+        }
         document.getElementById('relatorioContent').innerHTML = h;
     });
 }
 
 function verRanking() {
-    fetch('/ranking').then(r=>r.json()).then(d=>{
-        var h = '<div class="relatorio-grid"><div class="relatorio-card"><div class="rlabel">👥 USUÁRIOS</div><div class="rvalue">'+d.stats.total_usuarios+'</div></div></div>';
-        h += '<table class="historico-table"><tr><th>#</th><th>EMAIL</th><th>LUCRO</th><th>WINS</th></tr>';
-        d.ranking.slice(0,10).forEach((u,i)=>{h+=`<tr><td>${i+1}</td><td>${u.email.substring(0,15)}</td><td>$${u.lucro_total}</td><td>${u.total_wins}</td></tr>`;});
-        h+=`</table>`;
+    document.getElementById('relatorioContent').innerHTML = '<p style="color:#ffd700;text-align:center">🏆 Carregando ranking...</p>';
+    
+    fetch('/ranking')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        var h = '';
+        h += '<div style="background:#1a1a0a;border:2px solid #ffd700;border-radius:15px;padding:15px;margin-bottom:15px">';
+        h += '<p style="color:#ffd700;font-size:14px;font-weight:bold;text-align:center;margin-bottom:10px">📊 ESTATÍSTICAS GLOBAIS</p>';
+        h += '<div class="relatorio-grid">';
+        h += '<div class="relatorio-card"><div class="rlabel">👥 USUÁRIOS</div><div class="rvalue" style="color:#ffd700">' + d.stats.total_usuarios + '</div></div>';
+        h += '<div class="relatorio-card"><div class="rlabel">🔄 TOTAL OPS</div><div class="rvalue" style="color:#ffd700">' + d.stats.total_ops + '</div></div>';
+        h += '<div class="relatorio-card"><div class="rlabel">✅ WINS</div><div class="rvalue" style="color:#00ff88">' + d.stats.total_wins + '</div></div>';
+        h += '<div class="relatorio-card"><div class="rlabel">🎯 TAXA GLOBAL</div><div class="rvalue" style="color:#ffd700">' + d.stats.taxa_global + '%</div></div>';
+        h += '</div></div>';
+        
+        h += '<p style="color:#ffd700;font-size:14px;font-weight:bold;text-align:center;margin-bottom:10px">🏆 TOP TRADERS</p>';
+        h += '<div style="background:#000;border:1px solid #333;border-radius:10px;overflow:hidden">';
+        h += '<table class="historico-table">';
+        h += '<tr><th>#</th><th>EMAIL</th><th>LUCRO</th><th>WINS</th><th>LOSS</th><th>TAXA</th><th>BANCA</th></tr>';
+        
+        for(var i = 0; i < d.ranking.length && i < 20; i++) {
+            var u = d.ranking[i];
+            var cor = i === 0 ? '#ffd700' : (i === 1 ? '#c0c0c0' : (i === 2 ? '#cd7f32' : '#fff'));
+            var medalha = i === 0 ? '🥇' : (i === 1 ? '🥈' : (i === 2 ? '🥉' : (i + 1)));
+            
+            h += '<tr>';
+            h += '<td style="color:' + cor + ';font-weight:bold">' + medalha + '</td>';
+            h += '<td style="color:#ccc;font-size:8px">' + (u.email || '---').substring(0,20) + '</td>';
+            h += '<td style="color:' + (u.lucro_total >= 0 ? '#00ff88' : '#ff4444') + '">$' + u.lucro_total.toFixed(2) + '</td>';
+            h += '<td style="color:#00ff88">' + u.total_wins + '</td>';
+            h += '<td style="color:#ff4444">' + u.total_losses + '</td>';
+            h += '<td style="color:#ffd700">' + u.taxa + '%</td>';
+            h += '<td style="color:#00ff88">$' + u.banca_atual.toFixed(2) + '</td>';
+            h += '</tr>';
+        }
+        h += '</table></div>';
         document.getElementById('relatorioContent').innerHTML = h;
+    })
+    .catch(function(err) {
+        document.getElementById('relatorioContent').innerHTML = '<p style="color:#ff4444;text-align:center">Erro ao carregar ranking</p>';
     });
 }
 
+// ========== ATUALIZAÇÃO EM TEMPO REAL ==========
 function atualizar() {
-    fetch('/status').then(r=>r.json()).then(d=>{
-        if(d.banca) document.getElementById('banca').textContent='$'+d.banca.toFixed(2);
-        if(d.lucro!==undefined) document.getElementById('lucro').textContent='$'+d.lucro.toFixed(2);
-        if(d.ops!==undefined) document.getElementById('ops').textContent=d.ops;
-        if(d.moedas!==undefined) document.getElementById('moedasSaldo').textContent=d.moedas;
-        if(d.sinal) document.getElementById('sinal').textContent=d.sinal;
-        if(d.estrategia_nome) document.getElementById('estrategiaAtiva').textContent=d.estrategia_nome;
-        if(d.analise){
-            document.getElementById('rsi').textContent=d.analise.rsi||'--';
-            document.getElementById('mm5').textContent=d.analise.mm5||'--';
-            document.getElementById('mm10').textContent=d.analise.mm10||'--';
-            document.getElementById('mm20').textContent=d.analise.mm20||'--';
-            document.getElementById('stoch').textContent=d.analise.stoch||'--';
-            document.getElementById('fase').textContent=d.analise.fase||'--';
-            document.getElementById('preco').textContent=d.analise.preco||'--';
+    fetch('/status')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if(d.banca) document.getElementById('banca').textContent = '$' + d.banca.toFixed(2);
+        if(d.lucro !== undefined) {
+            var el = document.getElementById('lucro');
+            el.textContent = '$' + d.lucro.toFixed(2);
+            el.style.color = d.lucro >= 0 ? '#00ff88' : '#ff4444';
         }
-        if(d.logs){
+        if(d.ops !== undefined) document.getElementById('ops').textContent = d.ops;
+        if(d.moedas !== undefined) document.getElementById('moedasSaldo').textContent = d.moedas;
+        if(d.sinal) document.getElementById('sinal').textContent = d.sinal;
+        if(d.estrategia_nome) {
+            document.getElementById('estrategiaAtiva').textContent = d.estrategia_nome;
+            estrategiaSel = d.estrategia;
+        }
+        
+        if(d.analise) {
+            document.getElementById('rsi').textContent = d.analise.rsi ? d.analise.rsi.toFixed(1) : '--';
+            document.getElementById('mm5').textContent = d.analise.mm5 ? d.analise.mm5.toFixed(5) : '--';
+            document.getElementById('mm10').textContent = d.analise.mm10 ? d.analise.mm10.toFixed(5) : '--';
+            document.getElementById('mm20').textContent = d.analise.mm20 ? d.analise.mm20.toFixed(5) : '--';
+            document.getElementById('stoch').textContent = d.analise.stoch ? d.analise.stoch.toFixed(1) : '--';
+            document.getElementById('fase').textContent = d.analise.fase || '--';
+            document.getElementById('preco').textContent = d.analise.preco ? d.analise.preco.toFixed(5) : '--';
+        }
+        
+        if(d.logs) {
             var terminal = document.getElementById('terminal');
             terminal.innerHTML = d.logs;
             terminal.scrollTop = terminal.scrollHeight;
         }
-        if(d.rodando && !botAtivo){
-            botAtivo=true;
-            document.getElementById('btnOperar').style.display='none';
-            document.getElementById('btnParar').style.display='inline-block';
-            document.getElementById('statusTexto').textContent='🤖 Operando';
-        } else if(!d.rodando && botAtivo){
-            botAtivo=false;
-            document.getElementById('btnOperar').style.display='inline-block';
-            document.getElementById('btnParar').style.display='none';
-            document.getElementById('statusTexto').textContent='🟢 Conectado';
+        
+        if(d.rodando && !botAtivo) {
+            botAtivo = true;
+            document.getElementById('btnOperar').style.display = 'none';
+            document.getElementById('btnParar').style.display = 'inline-block';
+            document.getElementById('statusTexto').textContent = '🤖 Operando';
+        } else if(!d.rodando && botAtivo) {
+            botAtivo = false;
+            document.getElementById('btnOperar').style.display = 'inline-block';
+            document.getElementById('btnOperar').disabled = false;
+            document.getElementById('btnParar').style.display = 'none';
+            document.getElementById('statusTexto').textContent = '🟢 Conectado';
         }
     });
+}
+
+// ========== CHAT ==========
+function iniciarChat() {
+    if(emailLogado) {
+        atualizarChat();
+        setInterval(atualizarChat, 5000);
+    }
 }
 
 function enviarChatMsg() {
     var msg = document.getElementById('chatMsg').value.trim();
-    if(!msg||!emailLogado) return;
-    fetch('/chat_enviar', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:emailLogado.split('@')[0],msg:msg})})
-    .then(()=>{document.getElementById('chatMsg').value='';atualizarChat();});
+    if(!msg) return;
+    if(!emailLogado) {
+        alert('Conecte-se primeiro para enviar mensagens!');
+        return;
+    }
+    var nome = emailLogado.split('@')[0];
+    
+    fetch('/chat_enviar', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({nome: nome, msg: msg})
+    })
+    .then(function() {
+        document.getElementById('chatMsg').value = '';
+        atualizarChat();
+    });
 }
 
 function atualizarChat() {
-    fetch('/chat_mensagens').then(r=>r.json()).then(d=>{
-        var html='';
-        (d.messages||[]).slice(-30).forEach(m=>{html+=`<div><span style="color:#ffd700">${m.nome}</span>: ${m.msg} <span style="color:#555">${m.hora}</span></div>`;});
-        document.getElementById('chatMensagens').innerHTML=html;
+    fetch('/chat_mensagens')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        var html = '';
+        if(d.messages && d.messages.length > 0) {
+            var mensagens = d.messages.slice(-30);
+            for(var i = 0; i < mensagens.length; i++) {
+                var m = mensagens[i];
+                html += '<div style="margin-bottom:8px;border-bottom:1px solid #222;padding-bottom:5px">';
+                html += '<span style="color:#ffd700;font-weight:bold">' + (m.nome || 'Anon') + '</span> ';
+                html += '<span style="color:#888;font-size:9px">' + (m.hora || '') + '</span><br>';
+                html += '<span style="color:#ccc;font-size:11px">' + (m.msg || '') + '</span>';
+                html += '</div>';
+            }
+        } else {
+            html = '<p style="color:#888;text-align:center">💬 Nenhuma mensagem ainda. Seja o primeiro!</p>';
+        }
+        var chatDiv = document.getElementById('chatMensagens');
+        if(chatDiv) {
+            chatDiv.innerHTML = html;
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        }
+        document.getElementById('chatOnline').textContent = '🟢 ' + (d.online || 1) + ' online';
     });
 }
 
+// ========== EFEITOS DAS SKINS ==========
+function initSkinEffects() {
+    var matrixCanvas = document.getElementById('matrixCanvas');
+    if(matrixCanvas && matrixCanvas.getContext) {
+        var ctx = matrixCanvas.getContext('2d');
+        var width = matrixCanvas.parentElement.offsetWidth;
+        var height = matrixCanvas.parentElement.offsetHeight;
+        matrixCanvas.width = width;
+        matrixCanvas.height = height;
+        var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*";
+        var fontSize = 14;
+        var columns = Math.floor(width / fontSize);
+        var drops = [];
+        for(var i = 0; i < columns; i++) drops[i] = Math.random() * -100;
+        
+        function drawMatrix() {
+            if(!matrixCanvas || !matrixCanvas.getContext) return;
+            ctx.fillStyle = 'rgba(0,0,0,0.04)';
+            ctx.fillRect(0, 0, width, height);
+            ctx.fillStyle = '#00ff00';
+            ctx.font = fontSize + 'px monospace';
+            for(var i = 0; i < drops.length; i++) {
+                var text = chars[Math.floor(Math.random() * chars.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if(drops[i] * fontSize > height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+            requestAnimationFrame(drawMatrix);
+        }
+        drawMatrix();
+    }
+    
+    var sakuraCanvas = document.getElementById('sakuraCanvas');
+    if(sakuraCanvas && sakuraCanvas.getContext) {
+        var sCtx = sakuraCanvas.getContext('2d');
+        var sWidth = sakuraCanvas.parentElement.offsetWidth;
+        var sHeight = sakuraCanvas.parentElement.offsetHeight;
+        sakuraCanvas.width = sWidth;
+        sakuraCanvas.height = sHeight;
+        var petals = [];
+        for(var i = 0; i < 25; i++) {
+            petals.push({
+                x: Math.random() * sWidth,
+                y: Math.random() * sHeight,
+                r: Math.random() * 4 + 2,
+                speed: Math.random() * 1 + 0.5,
+                angle: Math.random() * Math.PI * 2
+            });
+        }
+        
+        function drawSakura() {
+            if(!sakuraCanvas || !sakuraCanvas.getContext) return;
+            sCtx.clearRect(0, 0, sWidth, sHeight);
+            for(var i = 0; i < petals.length; i++) {
+                var p = petals[i];
+                sCtx.fillStyle = 'rgba(255,105,180,0.7)';
+                sCtx.beginPath();
+                sCtx.ellipse(p.x, p.y, p.r, p.r * 0.6, p.angle, 0, Math.PI * 2);
+                sCtx.fill();
+                p.y += p.speed;
+                if(p.y > sHeight) {
+                    p.y = -10;
+                    p.x = Math.random() * sWidth;
+                }
+            }
+            requestAnimationFrame(drawSakura);
+        }
+        drawSakura();
+    }
+    
+    var darkCanvas = document.getElementById('darkCanvas');
+    if(darkCanvas && darkCanvas.getContext) {
+        var dCtx = darkCanvas.getContext('2d');
+        var dWidth = darkCanvas.parentElement.offsetWidth;
+        var dHeight = darkCanvas.parentElement.offsetHeight;
+        darkCanvas.width = dWidth;
+        darkCanvas.height = dHeight;
+        var particles = [];
+        for(var i = 0; i < 40; i++) {
+            particles.push({
+                x: Math.random() * dWidth,
+                y: Math.random() * dHeight,
+                r: Math.random() * 3 + 1,
+                vx: (Math.random() - 0.5) * 0.5,
+                vy: Math.random() * 0.5 + 0.2
+            });
+        }
+        
+        function drawDark() {
+            if(!darkCanvas || !darkCanvas.getContext) return;
+            dCtx.clearRect(0, 0, dWidth, dHeight);
+            for(var i = 0; i < particles.length; i++) {
+                var p = particles[i];
+                dCtx.beginPath();
+                dCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                dCtx.fillStyle = 'rgba(153,51,255,0.5)';
+                dCtx.fill();
+                p.x += p.vx;
+                p.y += p.vy;
+                if(p.y > dHeight) { p.y = 0; p.x = Math.random() * dWidth; }
+                if(p.x > dWidth) p.x = 0;
+                if(p.x < 0) p.x = dWidth;
+            }
+            requestAnimationFrame(drawDark);
+        }
+        drawDark();
+    }
+}
+
+// ========== INICIALIZAÇÃO ==========
 window.onload = function() {
     renderPlanos();
-    fetch('/status').then(r=>r.json()).then(d=>{
-        if(d.conectado&&d.email){
-            conectadoIQ=true; emailLogado=d.email;
-            document.getElementById('email').value=d.email;
-            document.getElementById('btnConectar').style.display='none';
-            document.getElementById('btnDesconectar').style.display='inline-block';
-            if(d.rodando){
-                botAtivo=true;
-                document.getElementById('btnOperar').style.display='none';
-                document.getElementById('btnParar').style.display='inline-block';
-                document.getElementById('statusTexto').textContent='🤖 Operando';
+    
+    fetch('/status')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if(d.conectado && d.email) {
+            conectadoIQ = true;
+            emailLogado = d.email;
+            document.getElementById('email').value = d.email;
+            document.getElementById('btnConectar').style.display = 'none';
+            document.getElementById('btnDesconectar').style.display = 'inline-block';
+            
+            if(d.rodando) {
+                botAtivo = true;
+                document.getElementById('btnOperar').style.display = 'none';
+                document.getElementById('btnParar').style.display = 'inline-block';
+                document.getElementById('statusTexto').textContent = '🤖 Operando';
             } else {
-                document.getElementById('btnOperar').style.display='inline-block';
-                document.getElementById('statusTexto').textContent='🟢 Conectado';
+                document.getElementById('btnOperar').style.display = 'inline-block';
+                document.getElementById('statusTexto').textContent = '🟢 Conectado';
             }
-            document.getElementById('statusDot').className='status-dot active';
-            document.getElementById('moedasSaldo').textContent=d.moedas||0;
-            intervalo=setInterval(atualizar,2000);
+            document.getElementById('statusDot').className = 'status-dot active';
+            document.getElementById('moedasSaldo').textContent = d.moedas || 0;
+            intervalo = setInterval(atualizar, 2000);
             atualizar();
+            iniciarChat();
         }
     });
-    setInterval(atualizarChat,5000);
+    
+    setInterval(atualizarChat, 5000);
+    setTimeout(initSkinEffects, 300);
 };
 </script>
 </body>
-                </html>
+    </html>
