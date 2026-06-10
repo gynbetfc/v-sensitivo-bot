@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v11.0.0 Cloud ⚡
-# ESTRATÉGIAS SALVAS NO FIREBASE - SINCRONIZADO ENTRE DISPOSITIVOS
-# SKINS CARREGADAS DINAMICAMENTE DO GITHUB
+# ⚡ TESLA 369 BOT v12.0.0 Cloud - FIREBASE ONLY ⚡
+# ESTRATÉGIAS E SKINS SALVAS NO FIREBASE (CADA UMA EM SEU PRÓPRIO JSON)
 # VOLT CONSUMIDO APENAS NA EXECUÇÃO DA OPERAÇÃO
 
 from flask import Flask, render_template, jsonify, request
@@ -16,19 +15,14 @@ import warnings
 import requests
 import uuid
 import signal
-import random
+import json
 
 warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
-# ============= CONFIGURAÇÕES DE LINKS CLOUD =============
+# ============= CONFIGURAÇÕES =============
 FB_URL = "https://nexos-40654-default-rtdb.firebaseio.com"
 print("✅ Firebase HTTP REST configurado!")
-
-HTML_URL = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/tesla_369_bot/templates/index.html"
-GIT_RAW_SKINS = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/tesla_369_bot/skins/skins.py"
-GIT_RAW_ESTRATEGIAS_BASE = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/tesla_369_bot/estrategias"
-GIT_RAW_ESTRATEGIAS_LISTA = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/tesla_369_bot/estrategias.py"
 
 MARTINGALE = 2
 PAYOUT_PADRAO = 0.85
@@ -158,11 +152,12 @@ def calcular_media_movel(velas, periodo):
         soma += get_close(v)
     return soma / periodo
 
-# ============= CARREGAR SKINS =============
+# ============= SKINS NO FIREBASE (CADA UMA EM SEU JSON) =============
 
 def get_skins_fallback():
-    return [
-        {
+    """Skin padrão de fallback caso Firebase esteja vazio"""
+    return {
+        'skin_padrao': {
             'id': 'skin_padrao', 'nome': '⚡ TESLA PADRÃO', 'desc': 'Tema escuro com raios dourados',
             'preco_moedas': 0, 'categoria': 'basica',
             'cor_fundo': '#0a0a1a', 'cor_panel': '#1a1a3e', 'cor_destaque': '#ffd700', 'cor_texto': '#fff',
@@ -172,7 +167,7 @@ def get_skins_fallback():
             'header_extra': '<div class="lightning"></div>',
             'css_extra': '.lightning{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:150px;height:150px;background:radial-gradient(circle at 30% 30%,rgba(255,215,0,0.3) 0%,rgba(255,165,0,0.15) 30%,transparent 100%);border-radius:50%;z-index:0;animation:glow 3s ease-in-out infinite;pointer-events:none}@keyframes glow{0%,100%{box-shadow:0 0 30px rgba(255,215,0,0.3)}50%{box-shadow:0 0 50px rgba(255,165,0,0.5)}}.lightning::after{content:"⚡";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:50px;animation:float 2s ease-in-out infinite}@keyframes float{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-60%) scale(1.1)}}'
         },
-        {
+        'skin_dark': {
             'id': 'skin_dark', 'nome': '🌑 TESLA DARK', 'desc': 'Particulas roxas flutuantes',
             'preco_moedas': 6, 'categoria': 'basica',
             'cor_fundo': '#000000', 'cor_panel': '#0a0a0a', 'cor_destaque': '#9933ff', 'cor_texto': '#ccc',
@@ -182,84 +177,119 @@ def get_skins_fallback():
             'header_extra': '<canvas id="darkCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>',
             'css_extra': 'body{background:#000000!important}.header{border-color:#9933ff!important;box-shadow:0 0 40px rgba(153,51,255,0.3)}'
         }
-    ]
+    }
 
-def carregar_skins_da_nuvem():
+def carregar_skin_do_firebase(skin_id):
+    """Carrega UMA skin específica do Firebase"""
+    try:
+        # Sanitiza o ID para usar como key no Firebase
+        key = skin_id.replace(".", "_").replace("@", "_").replace("#", "")
+        r = requests.get(f'{FB_URL}/tesla_369/skins/{key}.json', timeout=5)
+        if r.status_code == 200 and r.json():
+            skin_data = r.json()
+            skin_data['id'] = skin_id  # Garante que o ID está presente
+            return skin_data
+    except Exception as e:
+        print(f"⚠️ Erro ao carregar skin {skin_id}: {e}")
+    return None
+
+def carregar_todas_skins_do_firebase():
+    """Carrega TODAS as skins do Firebase (cada uma em seu JSON)"""
     global cache_skins
     agora = time.time()
+    
     if cache_skins["data"] and (agora - cache_skins["timestamp"]) < CACHE_TTL:
         return cache_skins["data"]
+    
     try:
-        print(f"🌐 Baixando skins: {GIT_RAW_SKINS}")
-        response = requests.get(GIT_RAW_SKINS, timeout=10)
-        if response.status_code == 200:
-            skin_module_globals = {}
-            exec(response.text, skin_module_globals)
-            if 'SKINS_LIST' in skin_module_globals:
-                cache_skins["data"] = skin_module_globals['SKINS_LIST']
-                cache_skins["timestamp"] = agora
-                print(f"✅ {len(cache_skins['data'])} skins carregadas!")
-                return cache_skins["data"]
+        # Busca a lista de todas as skins no Firebase
+        r = requests.get(f'{FB_URL}/tesla_369/skins.json', timeout=5)
+        if r.status_code == 200 and r.json():
+            skins_dict = r.json()
+            skins_list = []
+            for skin_id, skin_data in skins_dict.items():
+                skin_data['id'] = skin_id
+                skins_list.append(skin_data)
+            print(f"✅ {len(skins_list)} skins carregadas do Firebase!")
+            cache_skins["data"] = skins_list
+            cache_skins["timestamp"] = agora
+            return skins_list
     except Exception as e:
-        print(f"⚠️ Erro skins: {e}")
-    return get_skins_fallback()
+        print(f"⚠️ Erro ao carregar skins: {e}")
+    
+    # Fallback: retorna skins padrão
+    fallback_skins = list(get_skins_fallback().values())
+    cache_skins["data"] = fallback_skins
+    cache_skins["timestamp"] = agora
+    return fallback_skins
 
-# ============= CARREGAR INFORMAÇÕES DAS ESTRATÉGIAS =============
+def carregar_skins_da_nuvem():
+    """Compatibilidade com código antigo - agora busca no Firebase"""
+    return carregar_todas_skins_do_firebase()
 
-def carregar_lista_estrategias():
-    try:
-        response = requests.get(GIT_RAW_ESTRATEGIAS_LISTA, timeout=10)
-        if response.status_code == 200:
-            escopo = {}
-            exec(response.text, escopo)
-            if 'ESTRATEGIAS_LISTA' in escopo:
-                print(f"✅ Lista de estratégias carregada: {len(escopo['ESTRATEGIAS_LISTA'])}")
-                return escopo['ESTRATEGIAS_LISTA']
-    except Exception as e:
-        print(f"⚠️ Erro ao carregar lista: {e}")
-    return ['v_sensitivo']
+# ============= ESTRATÉGIAS NO FIREBASE (CADA UMA EM SEU JSON) =============
 
 def carregar_informacoes_estrategias():
+    """Carrega informações de TODAS as estratégias disponíveis no Firebase"""
     global cache_estrategias_info
     agora = time.time()
     
     if cache_estrategias_info["data"] and (agora - cache_estrategias_info["timestamp"]) < CACHE_TTL:
         return cache_estrategias_info["data"]
     
-    nomes_estrategias = carregar_lista_estrategias()
-    estrategias_info = {}
+    try:
+        # Busca a lista de todas as estratégias no Firebase
+        r = requests.get(f'{FB_URL}/tesla_369/estrategias.json', timeout=5)
+        if r.status_code == 200 and r.json():
+            estrategias_dict = r.json()
+            estrategias_info = {}
+            for nome_est, dados in estrategias_dict.items():
+                info = dados.get('info', {})
+                estrategias_info[nome_est] = {
+                    'nome': info.get('nome', nome_est.upper()),
+                    'desc': info.get('desc', 'Sem descrição.'),
+                    'preco_moedas': info.get('preco', 0),
+                    'timeframe': info.get('timeframe', 60),
+                    'gratis': info.get('preco', 0) == 0
+                }
+            print(f"✅ {len(estrategias_info)} estratégias carregadas do Firebase!")
+            cache_estrategias_info["data"] = estrategias_info
+            cache_estrategias_info["timestamp"] = agora
+            return estrategias_info
+    except Exception as e:
+        print(f"⚠️ Erro ao carregar estratégias: {e}")
     
-    for nome_est in nomes_estrategias:
-        try:
-            url = f"{GIT_RAW_ESTRATEGIAS_BASE}/{nome_est}.py"
-            print(f"📥 Lendo info da estratégia: {nome_est}")
-            response = requests.get(url, timeout=10)
-            if response.status_code == 200:
-                escopo = {}
-                exec(response.text, escopo)
-                if 'INFO' in escopo:
-                    info = escopo['INFO']
-                    estrategias_info[nome_est] = {
-                        'nome': info.get('nome', nome_est.upper()),
-                        'desc': info.get('desc', 'Sem descrição.'),
-                        'preco_moedas': info.get('preco', 0),
-                        'timeframe': info.get('timeframe', 60),
-                        'gratis': info.get('preco', 0) == 0
-                    }
-                    print(f"   ✅ {info.get('nome', nome_est)}")
-                else:
-                    print(f"   ⚠️ INFO não encontrado em {nome_est}")
-            else:
-                print(f"   ❌ HTTP {response.status_code} - {nome_est}")
-        except Exception as e:
-            print(f"   ❌ Erro ao ler {nome_est}: {e}")
-    
-    cache_estrategias_info["data"] = estrategias_info
+    # Fallback: estratégia padrão
+    fallback = {
+        'v_sensitivo': {
+            'nome': 'V SENSITIVO',
+            'desc': 'Estratégia padrão do Tesla 369',
+            'preco_moedas': 0,
+            'timeframe': 60,
+            'gratis': True
+        }
+    }
+    cache_estrategias_info["data"] = fallback
     cache_estrategias_info["timestamp"] = agora
-    print(f"✅ Total de {len(estrategias_info)} estratégias disponíveis!")
-    return estrategias_info
+    return fallback
+
+def carregar_estrategia_do_firebase(nome_estrategia):
+    """Carrega o código COMPLETO de uma estratégia específica do Firebase"""
+    try:
+        # Sanitiza o nome para usar como key no Firebase
+        key = nome_estrategia.replace(".", "_").replace("@", "_").replace("#", "")
+        r = requests.get(f'{FB_URL}/tesla_369/estrategias/{key}.json', timeout=5)
+        if r.status_code == 200 and r.json():
+            dados = r.json()
+            codigo = dados.get('codigo', '')
+            info = dados.get('info', {})
+            return {'codigo': codigo, 'info': info}
+    except Exception as e:
+        print(f"⚠️ Erro ao carregar estratégia {nome_estrategia}: {e}")
+    return None
 
 def carregar_e_injetar_estrategia(nome_estrategia):
+    """Carrega estratégia do Firebase e injeta na função global"""
     global estrategia_atual_executar, cache_estrategia_carregada, estrategia_ja_injetada
     
     agora = time.time()
@@ -267,36 +297,38 @@ def carregar_e_injetar_estrategia(nome_estrategia):
         add_log(f"📦 Estratégia '{nome_estrategia}' carregada do cache", "info")
         return True
     
+    # 🔥 Busca APENAS no Firebase
+    estrategia_data = carregar_estrategia_do_firebase(nome_estrategia)
+    
+    if not estrategia_data:
+        add_log(f"❌ Estratégia '{nome_estrategia}' não encontrada no Firebase!", "error")
+        return False
+    
+    codigo = estrategia_data.get('codigo')
+    if not codigo or 'def rodar_analise' not in codigo:
+        add_log(f"❌ Estratégia '{nome_estrategia}' não contém a função 'rodar_analise'", "error")
+        return False
+    
     try:
-        url = f"{GIT_RAW_ESTRATEGIAS_BASE}/{nome_estrategia}.py"
-        add_log(f"🌐 Baixando estratégia '{nome_estrategia}' do GitHub...", "info")
-        response = requests.get(url, timeout=10)
+        # Executa o código da estratégia para obter a função
+        escopo = {}
+        exec(codigo, escopo)
         
-        if response.status_code == 200:
-            codigo = response.text
-            if 'def rodar_analise' not in codigo:
-                add_log(f"❌ Estratégia '{nome_estrategia}' não contém a função 'rodar_analise'", "error")
-                return False
-            
-            escopo = {}
-            exec(codigo, escopo)
-            
-            if 'rodar_analise' in escopo:
-                estrategia_atual_executar = escopo['rodar_analise']
-                cache_estrategia_carregada["nome"] = nome_estrategia
-                cache_estrategia_carregada["codigo"] = codigo
-                cache_estrategia_carregada["timestamp"] = agora
-                estrategia_ja_injetada = True
-                add_log(f"✅ Estratégia '{nome_estrategia}' injetada com sucesso!", "win")
-                return True
-            else:
-                add_log(f"❌ Função 'rodar_analise' não encontrada", "error")
-                return False
+        if 'rodar_analise' in escopo:
+            estrategia_atual_executar = escopo['rodar_analise']
+            cache_estrategia_carregada["nome"] = nome_estrategia
+            cache_estrategia_carregada["codigo"] = codigo
+            cache_estrategia_carregada["timestamp"] = agora
+            estrategia_ja_injetada = True
+            add_log(f"✅ Estratégia '{nome_estrategia}' injetada do Firebase!", "win")
+            return True
         else:
-            add_log(f"❌ Estratégia não encontrada (HTTP {response.status_code})", "error")
+            add_log(f"❌ Função 'rodar_analise' não encontrada", "error")
             return False
     except Exception as e:
-        add_log(f"❌ Erro ao carregar estratégia: {e}", "error")
+        add_log(f"❌ Erro ao executar estratégia: {e}", "error")
+        import traceback
+        traceback.print_exc()
         return False
 
 # ========== FUNÇÕES DE USUÁRIO (FIREBASE) ==========
@@ -558,7 +590,7 @@ def bot_loop():
         add_log(f"⏱️ Timeframe: {timeframe_estrategia}s", 'info')
 
         if not estrategia_ja_injetada or cache_estrategia_carregada["nome"] != estrategia_atual_global:
-            add_log(f"🔧 Carregando estratégia '{estrategia_atual_global}'...", "info")
+            add_log(f"🔧 Carregando estratégia '{estrategia_atual_global}' do Firebase...", "info")
             if not carregar_e_injetar_estrategia(estrategia_atual_global):
                 add_log(f"❌ Falha ao carregar estratégia", 'error')
                 bot_rodando = False
@@ -588,7 +620,9 @@ def bot_loop():
                             sinal_pendente = direcao
                         add_log(f"🎯 SINAL: {direcao.upper()}!", 'sensitive')
             except Exception as e:
-                add_log(f"❌ Erro: {e}", "error")
+                add_log(f"❌ Erro na análise: {e}", "error")
+                import traceback
+                traceback.print_exc()
 
         threading.Thread(target=processar_estrategia, daemon=True).start()
 
@@ -660,8 +694,10 @@ def analise_mercado_loop():
 threading.Thread(target=analise_mercado_loop, daemon=True).start()
 
 def sincronizar_html_local():
+    """Busca o HTML do GitHub (única coisa que ainda vem de lá)"""
     try:
         os.makedirs("templates", exist_ok=True)
+        HTML_URL = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/tesla_369_bot/templates/index.html"
         response = requests.get(HTML_URL, timeout=10)
         if response.status_code == 200:
             with open("templates/index.html", "w", encoding="utf-8") as f:
@@ -676,8 +712,8 @@ def sincronizar_html_local():
 
 @app.route('/')
 def index():
-    skins = carregar_skins_da_nuvem()
-    skin = next((s for s in skins if s['id'] == skin_atual_global), skins[0] if skins else get_skins_fallback()[0])
+    skins = carregar_todas_skins_do_firebase()
+    skin = next((s for s in skins if s.get('id') == skin_atual_global), skins[0] if skins else list(get_skins_fallback().values())[0])
     planos_json = ','.join([f'{{"id":{p["id"]},"moedas":{p["moedas"]},"preco":{p["preco"]},"nome":"{p["nome"]}","desc":"{p["desc"]}","tag":"{p.get("tag","")}","desconto":"{p.get("desconto","")}"}}' for p in PLANOS])
     return render_template('index.html',
         COR_FUNDO=skin.get('cor_fundo', '#0a0a1a'),
@@ -712,7 +748,7 @@ def receber_sinal():
 @app.route('/status')
 def status():
     u = carregar_usuario(email_usuario_atual) if email_usuario_atual else {}
-    skins = carregar_skins_da_nuvem()
+    skins = carregar_todas_skins_do_firebase()
     skins_status = []
     skins_compradas = u.get('skins_compradas', ['skin_padrao']) if u else ['skin_padrao']
     skin_atual = u.get('skin_atual', 'skin_padrao') if u else 'skin_padrao'
@@ -896,14 +932,22 @@ def comprar_skin():
     skin_id = d.get('skin_id', '')
     if not email_usuario_atual:
         return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
-    skins = carregar_skins_da_nuvem()
-    skin = next((s for s in skins if s['id'] == skin_id), None)
+    
+    # Busca a skin específica no Firebase
+    skin = carregar_skin_do_firebase(skin_id)
+    if not skin:
+        # Fallback: tenta nas skins carregadas
+        skins = carregar_todas_skins_do_firebase()
+        skin = next((s for s in skins if s.get('id') == skin_id), None)
+    
     if not skin:
         return jsonify({'ok': False, 'erro': 'Skin não encontrada'})
+    
     usuario = carregar_usuario(email_usuario_atual)
     if not usuario:
         return jsonify({'ok': False, 'erro': 'Usuário inválido'})
-    if skin['preco_moedas'] == 0:
+    
+    if skin.get('preco_moedas', 0) == 0:
         if 'skins_compradas' not in usuario:
             usuario['skins_compradas'] = ['skin_padrao']
         if skin_id not in usuario['skins_compradas']:
@@ -912,15 +956,19 @@ def comprar_skin():
         salvar_usuario(email_usuario_atual, usuario)
         skin_atual_global = skin_id
         return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0), 'msg': 'Skin grátis ativada!', 'refresh': True})
+    
     if 'skins_compradas' not in usuario:
         usuario['skins_compradas'] = ['skin_padrao']
+    
     if skin_id in usuario['skins_compradas']:
         usuario['skin_atual'] = skin_id
         salvar_usuario(email_usuario_atual, usuario)
         skin_atual_global = skin_id
         return jsonify({'ok': True, 'moedas': usuario['moedas'], 'msg': 'Ativada!', 'refresh': True})
-    if usuario.get('moedas', 0) < skin['preco_moedas']:
+    
+    if usuario.get('moedas', 0) < skin.get('preco_moedas', 0):
         return jsonify({'ok': False, 'erro': f'Precisa de {skin["preco_moedas"]} ⚡'})
+    
     usuario['moedas'] -= skin['preco_moedas']
     usuario['skins_compradas'].append(skin_id)
     usuario['skin_atual'] = skin_id
@@ -940,9 +988,8 @@ def ativar_skin():
     if 'skins_compradas' not in usuario:
         usuario['skins_compradas'] = ['skin_padrao']
     if skin_id not in usuario['skins_compradas']:
-        skins = carregar_skins_da_nuvem()
-        skin = next((s for s in skins if s['id'] == skin_id), None)
-        if skin and skin['preco_moedas'] > 0:
+        skin = carregar_skin_do_firebase(skin_id)
+        if skin and skin.get('preco_moedas', 0) > 0:
             return jsonify({'ok': False, 'erro': 'Compre primeiro!'})
         usuario['skins_compradas'].append(skin_id)
     usuario['skin_atual'] = skin_id
@@ -1089,16 +1136,16 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 50)
-    print("⚡ TESLA 369 BOT v11.0.0 - CLOUD ESTÁVEL ⚡")
-    print("ESTRATÉGIAS SALVAS NO FIREBASE")
+    print("⚡ TESLA 369 BOT v12.0.0 - FIREBASE ONLY ⚡")
+    print("CADA SKIN E ESTRATÉGIA EM SEU PRÓPRIO JSON")
     print("VOLT CONSUMIDO APENAS NA OPERAÇÃO")
     print("=" * 50)
 
-    print("🔍 Testando carregamento de skins...")
-    skins_test = carregar_skins_da_nuvem()
+    print("🔍 Testando carregamento de skins do Firebase...")
+    skins_test = carregar_todas_skins_do_firebase()
     print(f"📦 {len(skins_test)} skins disponíveis")
 
-    print("🔍 Testando carregamento de estratégias...")
+    print("🔍 Testando carregamento de estratégias do Firebase...")
     estrategias_test = carregar_informacoes_estrategias()
     print(f"📊 {len(estrategias_test)} estratégias disponíveis")
 
