@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
-# TESLA 369 BOT - MÓDULO DE SKINS v4.0
-# TODAS as skins com efeitos de fundo TELA CHEIA e animações COMPLEXAS
+# TESLA 369 BOT - MÓDULO DE SKINS v5.0
+# TODAS as skins com efeitos NO BANNER E NA TELA CHEIA
 
-SKINS_MODULE_VERSION = "4.0.0"
+SKINS_MODULE_VERSION = "5.0.0"
 
 SKINS_LIST = [
     # ============= SKINS BÁSICAS =============
     {
         'id': 'skin_padrao',
         'nome': '⚡ TESLA PADRÃO',
-        'desc': 'Raios dourados animados e brilho pulsante',
+        'desc': 'Raios dourados animados no banner e fundo',
         'preco_moedas': 0,
         'categoria': 'basica',
         'cor_fundo': '#0a0a1a',
@@ -20,13 +20,13 @@ SKINS_LIST = [
         'cor_tab_ativa': '#ffd700',
         'cor_header_bg': 'linear-gradient(135deg,#1a0000,#331100,#553300,#331100,#1a0000)',
         'cor_header_borda': '#ffd700',
-        'header_extra': '<div class="lightning-effect"></div><div class="bg-padrao"></div>',
-        'css_extra': '.lightning-effect{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:150px;height:150px;background:radial-gradient(circle at 30% 30%,rgba(255,215,0,0.3) 0%,rgba(255,165,0,0.15) 30%,transparent 100%);border-radius:50%;z-index:0;animation:glowEffect 3s ease-in-out infinite;pointer-events:none}.bg-padrao{position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at 50% 50%,#0a0a1a 0%,#050510 100%);z-index:-2;pointer-events:none}@keyframes glowEffect{0%,100%{box-shadow:0 0 30px rgba(255,215,0,0.3)}50%{box-shadow:0 0 50px rgba(255,165,0,0.5)}}.lightning-effect::after{content:"⚡";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:50px;animation:floatEffect 2s ease-in-out infinite}@keyframes floatEffect{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-60%) scale(1.1)}}'
+        'header_extra': '<div class="lightning-effect-banner"></div><div class="lightning-effect-full"></div>',
+        'css_extra': '.lightning-effect-banner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:150px;height:150px;background:radial-gradient(circle at 30% 30%,rgba(255,215,0,0.4) 0%,rgba(255,165,0,0.2) 30%,transparent 70%);border-radius:50%;z-index:1;animation:glowBanner 3s ease-in-out infinite;pointer-events:none}.lightning-effect-full{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:100%;height:100%;background:radial-gradient(circle at 30% 30%,rgba(255,215,0,0.1) 0%,rgba(255,165,0,0.05) 30%,transparent 80%);z-index:-1;animation:glowFull 5s ease-in-out infinite;pointer-events:none}@keyframes glowBanner{0%,100%{box-shadow:0 0 30px rgba(255,215,0,0.4)}50%{box-shadow:0 0 60px rgba(255,165,0,0.6)}}@keyframes glowFull{0%,100%{opacity:0.3}50%{opacity:0.6}}.lightning-effect-banner::after{content:"⚡";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:50px;animation:floatEffect 2s ease-in-out infinite}.lightning-effect-full::after{content:"⚡⚡⚡";position:absolute;top:20%;left:10%;font-size:30px;opacity:0.1;animation:floatEffectFull 4s ease-in-out infinite}@keyframes floatEffect{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-60%) scale(1.1)}}@keyframes floatEffectFull{0%,100%{transform:translate(0,0)}50%{transform:translate(50px,30px)}}'
     },
     {
         'id': 'skin_dark',
         'nome': '🌑 TESLA DARK',
-        'desc': 'Partículas roxas flutuantes',
+        'desc': 'Partículas roxas no banner e tela',
         'preco_moedas': 6,
         'categoria': 'basica',
         'cor_fundo': '#000000',
@@ -37,13 +37,13 @@ SKINS_LIST = [
         'cor_tab_ativa': '#9933ff',
         'cor_header_bg': 'linear-gradient(135deg,#000000,#110022,#220044,#110022,#000000)',
         'cor_header_borda': '#9933ff',
-        'header_extra': '<canvas id="darkCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>',
+        'header_extra': '<canvas id="darkCanvasBanner" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas><canvas id="darkCanvasFull" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none"></canvas>',
         'css_extra': 'body{background:#000000!important}.header{border-color:#9933ff!important;box-shadow:0 0 40px rgba(153,51,255,0.3)}'
     },
     {
         'id': 'skin_neon',
         'nome': '💜 TESLA NEON',
-        'desc': 'Brilho neon roxo pulsante',
+        'desc': 'Brilho neon roxo pulsante no banner',
         'preco_moedas': 6,
         'categoria': 'basica',
         'cor_fundo': '#0a0015',
@@ -54,13 +54,13 @@ SKINS_LIST = [
         'cor_tab_ativa': '#cc00ff',
         'cor_header_bg': 'linear-gradient(135deg,#0a0015,#150030,#200050,#150030,#0a0015)',
         'cor_header_borda': '#cc00ff',
-        'header_extra': '<div class="neon-glow-effect"></div>',
-        'css_extra': '.neon-glow-effect{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:200px;background:radial-gradient(circle,rgba(204,0,255,0.2) 0%,transparent 70%);border-radius:50%;z-index:0;animation:neonPulseEffect 2s ease-in-out infinite;pointer-events:none}@keyframes neonPulseEffect{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:0.5}50%{transform:translate(-50%,-50%) scale(1.3);opacity:0.8}}body{background:#0a0015!important}.header{border-color:#cc00ff!important;box-shadow:0 0 30px rgba(204,0,255,0.4)}'
+        'header_extra': '<div class="neon-banner"></div><div class="neon-full"></div>',
+        'css_extra': '.neon-banner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:200px;background:radial-gradient(circle,rgba(204,0,255,0.25) 0%,transparent 70%);border-radius:50%;z-index:1;animation:neonPulseBanner 2s ease-in-out infinite;pointer-events:none}.neon-full{position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle,rgba(204,0,255,0.08) 0%,transparent 80%);z-index:-1;animation:neonPulseFull 3s ease-in-out infinite;pointer-events:none}@keyframes neonPulseBanner{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:0.6}50%{transform:translate(-50%,-50%) scale(1.3);opacity:0.9}}@keyframes neonPulseFull{0%,100%{opacity:0.2}50%{opacity:0.5}}body{background:#0a0015!important}.header{border-color:#cc00ff!important;box-shadow:0 0 30px rgba(204,0,255,0.4)}'
     },
     {
         'id': 'skin_brasil',
         'nome': '🇧🇷 TESLA BRASIL',
-        'desc': 'Cores verde e amarelo com confetes',
+        'desc': 'Confetes no banner e fundo',
         'preco_moedas': 0,
         'categoria': 'basica',
         'cor_fundo': '#001a0a',
@@ -71,13 +71,13 @@ SKINS_LIST = [
         'cor_tab_ativa': '#ffd700',
         'cor_header_bg': 'linear-gradient(135deg,#001a0a,#003315,#004d20,#003315,#001a0a)',
         'cor_header_borda': '#ffd700',
-        'header_extra': '<canvas id="brasilCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>',
+        'header_extra': '<canvas id="brasilBanner" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas><canvas id="brasilFull" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none"></canvas>',
         'css_extra': 'body{background:#001a0a!important}.header{border-color:#ffd700!important}'
     },
     {
         'id': 'skin_princesa',
         'nome': '👸 TESLA PRINCESA',
-        'desc': 'Coroa flutuante e brilhos rosas',
+        'desc': 'Coroa e brilhos no banner',
         'preco_moedas': 6,
         'categoria': 'basica',
         'cor_fundo': '#1a0010',
@@ -88,13 +88,13 @@ SKINS_LIST = [
         'cor_tab_ativa': '#ff69b4',
         'cor_header_bg': 'linear-gradient(135deg,#1a0010,#2a0a20,#3a1530,#2a0a20,#1a0010)',
         'cor_header_borda': '#ff69b4',
-        'header_extra': '<div class="coroa-flutuante">👑</div><canvas id="princesaSparkles" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>',
-        'css_extra': '.coroa-flutuante{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:40px;animation:flutuar 2s ease-in-out infinite;z-index:2}@keyframes flutuar{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-10px)}}.header h1{color:#ff69b4!important;text-shadow:0 0 30px #ff1493!important}'
+        'header_extra': '<div class="coroa-banner">👑</div><canvas id="princesaBanner" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas><canvas id="princesaFull" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none"></canvas>',
+        'css_extra': '.coroa-banner{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:40px;animation:flutuarBanner 2s ease-in-out infinite;z-index:2}@keyframes flutuarBanner{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-10px)}}.header h1{color:#ff69b4!important;text-shadow:0 0 30px #ff1493!important}'
     },
     {
         'id': 'skin_cyberpunk',
         'nome': '🤖 TESLA CYBERPUNK',
-        'desc': 'Scanline animado e efeito glitch',
+        'desc': 'Scanline no banner e tela',
         'preco_moedas': 6,
         'categoria': 'basica',
         'cor_fundo': '#0a0a0a',
@@ -105,15 +105,15 @@ SKINS_LIST = [
         'cor_tab_ativa': '#ff3366',
         'cor_header_bg': 'linear-gradient(135deg,#0a0a0a,#1a1a2a,#2a2a3a,#1a1a2a,#0a0a0a)',
         'cor_header_borda': '#ff3366',
-        'header_extra': '<div class="scanline-animado"></div><canvas id="cyberCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>',
-        'css_extra': '.scanline-animado{position:fixed;top:0;left:0;width:100%;height:5px;background:linear-gradient(180deg,rgba(255,51,102,0) 0%,rgba(255,51,102,0.5) 50%,rgba(255,51,102,0) 100%);animation:scanMoveVertical 8s linear infinite;pointer-events:none;z-index:100}@keyframes scanMoveVertical{0%{transform:translateY(0)}100%{transform:translateY(100vh)}}body{background:#0a0a0a!important}.header{border-color:#ff3366!important;box-shadow:0 0 30px rgba(255,51,102,0.5)}.header h1{font-family:monospace;letter-spacing:5px;text-shadow:0 0 20px #ff3366}'
+        'header_extra': '<div class="scanline-banner"></div><div class="scanline-full"></div><canvas id="cyberBanner" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas>',
+        'css_extra': '.scanline-banner{position:absolute;top:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,rgba(255,51,102,0) 0%,rgba(255,51,102,0.6) 50%,rgba(255,51,102,0) 100%);animation:scanBanner 4s linear infinite;pointer-events:none;z-index:2}.scanline-full{position:fixed;top:0;left:0;width:100%;height:5px;background:linear-gradient(180deg,rgba(255,51,102,0) 0%,rgba(255,51,102,0.3) 50%,rgba(255,51,102,0) 100%);animation:scanFull 8s linear infinite;pointer-events:none;z-index:100}@keyframes scanBanner{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}@keyframes scanFull{0%{transform:translateY(0)}100%{transform:translateY(100vh)}}body{background:#0a0a0a!important}.header{border-color:#ff3366!important;box-shadow:0 0 30px rgba(255,51,102,0.5)}.header h1{font-family:monospace;letter-spacing:5px;text-shadow:0 0 20px #ff3366}'
     },
 
     # ============= SKINS PREMIUM =============
     {
         'id': 'skin_sakura',
         'nome': '🌸 TESLA SAKURA',
-        'desc': 'Pétalas de cerejeira caindo suavemente',
+        'desc': 'Pétalas de cerejeira caindo NO BANNER e na tela',
         'preco_moedas': 9,
         'categoria': 'premium',
         'cor_fundo': '#1a0a1a',
@@ -124,13 +124,13 @@ SKINS_LIST = [
         'cor_tab_ativa': '#ff69b4',
         'cor_header_bg': 'linear-gradient(135deg,#1a0020,#330033,#4d004d,#330033,#1a0020)',
         'cor_header_borda': '#ff69b4',
-        'header_extra': '<canvas id="sakuraCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>',
+        'header_extra': '<canvas id="sakuraBanner" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas><canvas id="sakuraFull" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none"></canvas>',
         'css_extra': 'body{background:linear-gradient(180deg,#1a0a1a 0%,#0d001a 100%)!important}.header{border-color:#ff69b4!important;box-shadow:0 0 40px rgba(255,105,180,0.3)}'
     },
     {
         'id': 'skin_ocean',
         'nome': '🌊 TESLA OCEAN',
-        'desc': 'Ondas do mar em movimento na base',
+        'desc': 'Ondas no banner e na base',
         'preco_moedas': 9,
         'categoria': 'premium',
         'cor_fundo': '#001020',
@@ -141,13 +141,13 @@ SKINS_LIST = [
         'cor_tab_ativa': '#00aacc',
         'cor_header_bg': 'linear-gradient(135deg,#001020,#002040,#003060,#002040,#001020)',
         'cor_header_borda': '#00aacc',
-        'header_extra': '<canvas id="oceanCanvas" style="position:absolute;bottom:0;left:0;width:100%;height:100px;z-index:0"></canvas>',
+        'header_extra': '<canvas id="oceanBanner" style="position:absolute;bottom:0;left:0;width:100%;height:60px;z-index:1"></canvas><canvas id="oceanFull" style="position:fixed;bottom:0;left:0;width:100%;height:120px;z-index:-1"></canvas>',
         'css_extra': 'body{background:linear-gradient(180deg,#001020 0%,#000810 100%)!important}.header{border-color:#00aacc!important;box-shadow:0 0 30px rgba(0,170,204,0.3)}'
     },
     {
         'id': 'skin_fire',
         'nome': '🔥 TESLA FIRE',
-        'desc': 'Chamas realistas animadas na base',
+        'desc': 'Chamas no banner e na base',
         'preco_moedas': 9,
         'categoria': 'premium',
         'cor_fundo': '#1a0000',
@@ -158,13 +158,13 @@ SKINS_LIST = [
         'cor_tab_ativa': '#ff4400',
         'cor_header_bg': 'linear-gradient(135deg,#1a0000,#330000,#551100,#330000,#1a0000)',
         'cor_header_borda': '#ff4400',
-        'header_extra': '<canvas id="fireCanvas" style="position:absolute;bottom:0;left:0;width:100%;height:80px;z-index:0"></canvas>',
+        'header_extra': '<canvas id="fireBanner" style="position:absolute;bottom:0;left:0;width:100%;height:50px;z-index:1"></canvas><canvas id="fireFull" style="position:fixed;bottom:0;left:0;width:100%;height:100px;z-index:-1"></canvas>',
         'css_extra': 'body{background:radial-gradient(ellipse at bottom,#1a0000 0%,#000000 100%)!important}.header{border-color:#ff4400!important;box-shadow:0 0 30px rgba(255,68,0,0.4)}'
     },
     {
         'id': 'skin_ice',
         'nome': '❄️ TESLA ICE',
-        'desc': 'Neve caindo com cristais de gelo',
+        'desc': 'Neve no banner e na tela',
         'preco_moedas': 9,
         'categoria': 'premium',
         'cor_fundo': '#000a1a',
@@ -175,13 +175,13 @@ SKINS_LIST = [
         'cor_tab_ativa': '#3399ff',
         'cor_header_bg': 'linear-gradient(135deg,#000a1a,#001133,#002255,#001133,#000a1a)',
         'cor_header_borda': '#3399ff',
-        'header_extra': '<canvas id="snowCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>',
+        'header_extra': '<canvas id="snowBanner" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas><canvas id="snowFull" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none"></canvas>',
         'css_extra': 'body{background:linear-gradient(180deg,#000a1a 0%,#001133 100%)!important}.header{border-color:#3399ff!important;box-shadow:0 0 40px rgba(51,153,255,0.3)}'
     },
     {
         'id': 'skin_coffee',
         'nome': '☕ TESLA COFFEE',
-        'desc': 'Fumaça de café subindo elegantemente',
+        'desc': 'Fumaça de café no banner e tela',
         'preco_moedas': 9,
         'categoria': 'premium',
         'cor_fundo': '#2a1a0a',
@@ -192,15 +192,15 @@ SKINS_LIST = [
         'cor_tab_ativa': '#d4a574',
         'cor_header_bg': 'linear-gradient(135deg,#2a1a0a,#3a2a1a,#4a3a2a,#3a2a1a,#2a1a0a)',
         'cor_header_borda': '#d4a574',
-        'header_extra': '<canvas id="coffeeCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>',
+        'header_extra': '<canvas id="coffeeBanner" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas><canvas id="coffeeFull" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none"></canvas>',
         'css_extra': 'body{background:linear-gradient(180deg,#2a1a0a 0%,#1a0a00 100%)!important}.header{border-color:#d4a574!important;box-shadow:0 0 40px rgba(212,165,116,0.3)}'
     },
 
-    # ============= SKINS LENDÁRIAS (COM FUNDO TELA CHEIA E MUITOS EFEITOS) =============
+    # ============= SKINS LENDÁRIAS (BANNER + TELA CHEIA) =============
     {
         'id': 'skin_matrix',
         'nome': '🧬 MATRIX',
-        'desc': 'Chuva de códigos verdes - Fundo tela cheia',
+        'desc': 'Chuva de códigos NO BANNER e na tela',
         'preco_moedas': 12,
         'categoria': 'lendaria',
         'cor_fundo': '#000000',
@@ -211,13 +211,13 @@ SKINS_LIST = [
         'cor_tab_ativa': '#00ff00',
         'cor_header_bg': 'linear-gradient(135deg,#000000,#001100,#003300,#001100,#000000)',
         'cor_header_borda': '#00ff00',
-        'header_extra': '<canvas id="matrixCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none"></canvas><div class="matrix-overlay"></div>',
-        'css_extra': 'body{background:#000000!important}.matrix-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(180deg,rgba(0,255,0,0.02) 0%,transparent 100%);z-index:-1;pointer-events:none}.header{border-color:#00ff00!important;box-shadow:0 0 30px rgba(0,255,0,0.6)}.terminal{color:#00ff00!important;font-family:monospace!important}'
+        'header_extra': '<canvas id="matrixBanner" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas><canvas id="matrixFull" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none"></canvas>',
+        'css_extra': 'body{background:#000000!important}.header{border-color:#00ff00!important;box-shadow:0 0 30px rgba(0,255,0,0.6)}.terminal{color:#00ff00!important;font-family:monospace!important}'
     },
     {
         'id': 'skin_thunder',
         'nome': '⚡ THUNDER',
-        'desc': 'Raios elétricos e tempestade tela cheia',
+        'desc': 'Raios no banner e tempestade na tela',
         'preco_moedas': 12,
         'categoria': 'lendaria',
         'cor_fundo': '#000011',
@@ -228,13 +228,13 @@ SKINS_LIST = [
         'cor_tab_ativa': '#ffff00',
         'cor_header_bg': 'linear-gradient(135deg,#000011,#111122,#222244,#111122,#000011)',
         'cor_header_borda': '#ffff00',
-        'header_extra': '<canvas id="thunderCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none"></canvas><div class="flash-effect"></div><div class="storm-clouds"></div>',
-        'css_extra': 'body{background:#000011!important}.storm-clouds{position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0.5) 0%,transparent 70%);z-index:-1;pointer-events:none;animation:cloudsMove 20s ease-in-out infinite}.flash-effect{position:fixed;top:0;left:0;width:100%;height:100%;background:white;opacity:0;pointer-events:none;animation:flashAnim 5s infinite;z-index:999}@keyframes flashAnim{0%,95%,100%{opacity:0}96%{opacity:0.3}97%{opacity:0.8}98%{opacity:0.2}}@keyframes cloudsMove{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}.header{border-color:#ffff00!important;box-shadow:0 0 50px rgba(255,255,0,0.4)}'
+        'header_extra': '<canvas id="thunderBanner" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas><div class="flash-banner"></div><canvas id="thunderFull" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none"></canvas><div class="flash-full"></div>',
+        'css_extra': 'body{background:#000011!important}.flash-banner{position:absolute;top:0;left:0;width:100%;height:100%;background:white;opacity:0;pointer-events:none;animation:flashBanner 5s infinite;z-index:2}.flash-full{position:fixed;top:0;left:0;width:100%;height:100%;background:white;opacity:0;pointer-events:none;animation:flashFull 5s infinite;z-index:999}@keyframes flashBanner{0%,95%,100%{opacity:0}96%{opacity:0.2}97%{opacity:0.5}}@keyframes flashFull{0%,95%,100%{opacity:0}96%{opacity:0.15}97%{opacity:0.3}}.header{border-color:#ffff00!important;box-shadow:0 0 50px rgba(255,255,0,0.4)}'
     },
     {
         'id': 'skin_magos',
         'nome': '🔮 MAGOS',
-        'desc': 'Bola de cristal e magos flutuantes',
+        'desc': 'Magos e cristal no banner e tela',
         'preco_moedas': 12,
         'categoria': 'lendaria',
         'cor_fundo': '#0a0a1a',
@@ -245,13 +245,13 @@ SKINS_LIST = [
         'cor_tab_ativa': '#9933ff',
         'cor_header_bg': 'linear-gradient(135deg,#0d001a,#1a0033,#2d0055,#1a0033,#0d001a)',
         'cor_header_borda': '#9933ff',
-        'header_extra': '<div class="bola-cristal"></div><div class="mago-esquerda">🧙‍♂️</div><div class="mago-direita">🧙‍♀️</div><div class="magic-bg"></div>',
-        'css_extra': '.magic-bg{position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at 50% 50%,#0d001a 0%,#05000a 100%);z-index:-2;pointer-events:none}.bola-cristal{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:150px;height:150px;background:radial-gradient(circle at 30% 30%,rgba(200,150,255,0.4) 0%,rgba(153,51,255,0.2) 30%,transparent 70%);border-radius:50%;z-index:0;animation:cristalBrilho 4s ease-in-out infinite;pointer-events:none;border:2px solid rgba(153,51,255,0.3)}@keyframes cristalBrilho{0%,100%{box-shadow:0 0 30px rgba(153,51,255,0.4)}50%{box-shadow:0 0 80px rgba(200,100,255,0.6)}}.bola-cristal::after{content:"🔮";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:55px;animation:cristalFlutuar 3s ease-in-out infinite}.mago-esquerda{position:absolute;top:50%;left:15px;font-size:35px;z-index:1;animation:magoFlutuar 2s ease-in-out infinite;pointer-events:none;filter:drop-shadow(0 0 20px #9933ff)}.mago-direita{position:absolute;top:50%;right:15px;font-size:35px;z-index:1;animation:magoFlutuar 2s ease-in-out infinite 0.5s;pointer-events:none;filter:drop-shadow(0 0 20px #9933ff)}@keyframes cristalFlutuar{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-60%) scale(1.1)}}@keyframes magoFlutuar{0%,100%{transform:translateY(-50%)}50%{transform:translateY(-65%)}}'
+        'header_extra': '<div class="cristal-banner"></div><div class="mago-banner-esq">🧙‍♂️</div><div class="mago-banner-dir">🧙‍♀️</div><div class="magic-banner"></div><div class="cristal-full"></div><div class="magic-full"></div>',
+        'css_extra': '.cristal-banner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100px;height:100px;background:radial-gradient(circle at 30% 30%,rgba(200,150,255,0.5) 0%,rgba(153,51,255,0.3) 30%,transparent 70%);border-radius:50%;z-index:1;animation:cristalBrilhoBanner 3s ease-in-out infinite;pointer-events:none}.cristal-full{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:300px;height:300px;background:radial-gradient(circle at 30% 30%,rgba(200,150,255,0.15) 0%,rgba(153,51,255,0.08) 30%,transparent 80%);border-radius:50%;z-index:-1;animation:cristalBrilhoFull 5s ease-in-out infinite;pointer-events:none}.mago-banner-esq{position:absolute;top:50%;left:15px;font-size:28px;z-index:2;animation:magoFlutuarBanner 2s ease-in-out infinite;pointer-events:none}.mago-banner-dir{position:absolute;top:50%;right:15px;font-size:28px;z-index:2;animation:magoFlutuarBanner 2s ease-in-out infinite 0.5s;pointer-events:none}.magic-banner{position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at 50% 50%,rgba(153,51,255,0.1) 0%,transparent 70%);z-index:0;pointer-events:none}.magic-full{position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at 50% 50%,rgba(153,51,255,0.05) 0%,transparent 80%);z-index:-2;pointer-events:none}@keyframes cristalBrilhoBanner{0%,100%{box-shadow:0 0 20px rgba(153,51,255,0.4)}50%{box-shadow:0 0 50px rgba(200,100,255,0.6)}}@keyframes cristalBrilhoFull{0%,100%{opacity:0.2}50%{opacity:0.5}}@keyframes magoFlutuarBanner{0%,100%{transform:translateY(-50%)}50%{transform:translateY(-60%)}}.cristal-banner::after{content:"🔮";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:40px;animation:cristalFlutuarBanner 3s ease-in-out infinite}@keyframes cristalFlutuarBanner{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-60%) scale(1.1)}}'
     },
     {
         'id': 'skin_cosmic',
         'nome': '🌌 COSMIC',
-        'desc': 'Galáxia + MUITAS estrelas cadentes + nebulosa',
+        'desc': 'Estrelas cadentes NO BANNER e nebulosa na tela',
         'preco_moedas': 12,
         'categoria': 'lendaria',
         'cor_fundo': '#050510',
@@ -262,13 +262,13 @@ SKINS_LIST = [
         'cor_tab_ativa': '#aa66ff',
         'cor_header_bg': 'linear-gradient(135deg,#050510,#0a0a2a,#151545,#0a0a2a,#050510)',
         'cor_header_borda': '#aa66ff',
-        'header_extra': '<canvas id="cosmicCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none"></canvas><div class="nebulosa"></div><div class="estrela-cadente-1"></div><div class="estrela-cadente-2"></div><div class="estrela-cadente-3"></div><div class="estrela-cadente-4"></div><div class="estrela-cadente-5"></div>',
-        'css_extra': 'body{background:#050510!important}.nebulosa{position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at 30% 40%,rgba(170,102,255,0.15) 0%,rgba(100,50,200,0.08) 30%,transparent 70%);z-index:-1;pointer-events:none;animation:nebulosaPulsar 8s ease-in-out infinite}.estrela-cadente-1,.estrela-cadente-2,.estrela-cadente-3,.estrela-cadente-4,.estrela-cadente-5{position:fixed;width:3px;height:3px;background:white;border-radius:50%;box-shadow:0 0 15px white,0 0 30px #aa66ff;opacity:0;pointer-events:none}.estrela-cadente-1{top:10%;right:10%;animation:estrelaCair 6s linear infinite}.estrela-cadente-2{top:20%;right:30%;animation:estrelaCair 8s linear infinite 2s}.estrela-cadente-3{top:5%;right:50%;animation:estrelaCair 7s linear infinite 4s}.estrela-cadente-4{top:15%;right:70%;animation:estrelaCair 5s linear infinite 1s}.estrela-cadente-5{top:25%;right:20%;animation:estrelaCair 9s linear infinite 3s}@keyframes estrelaCair{0%{transform:translate(0,0);opacity:1}100%{transform:translate(-300px,300px);opacity:0}}@keyframes nebulosaPulsar{0%,100%{opacity:0.3}50%{opacity:0.7}}.header{border-color:#aa66ff!important;box-shadow:0 0 60px rgba(170,102,255,0.4)}.header h1{text-shadow:0 0 30px #aa66ff,0 0 60px #6600cc}'
+        'header_extra': '<div class="estrela-banner-1"></div><div class="estrela-banner-2"></div><div class="estrela-banner-3"></div><div class="nebulosa-banner"></div><canvas id="cosmicFull" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none"></canvas><div class="nebulosa-full"></div>',
+        'css_extra': 'body{background:#050510!important}.estrela-banner-1,.estrela-banner-2,.estrela-banner-3{position:absolute;width:2px;height:2px;background:white;border-radius:50%;box-shadow:0 0 10px white,0 0 20px #aa66ff;opacity:0;pointer-events:none;z-index:2}.estrela-banner-1{top:10%;right:10%;animation:estrelaCairBanner 4s linear infinite}.estrela-banner-2{top:20%;right:30%;animation:estrelaCairBanner 5s linear infinite 2s}.estrela-banner-3{top:5%;right:50%;animation:estrelaCairBanner 6s linear infinite 4s}.nebulosa-banner{position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at 30% 40%,rgba(170,102,255,0.2) 0%,rgba(100,50,200,0.1) 30%,transparent 70%);z-index:0;pointer-events:none;animation:nebulosaPulsarBanner 8s ease-in-out infinite}.nebulosa-full{position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at 30% 40%,rgba(170,102,255,0.1) 0%,rgba(100,50,200,0.05) 30%,transparent 80%);z-index:-2;pointer-events:none;animation:nebulosaPulsarFull 8s ease-in-out infinite}@keyframes estrelaCairBanner{0%{transform:translate(0,0);opacity:1}100%{transform:translate(-200px,200px);opacity:0}}@keyframes nebulosaPulsarBanner{0%,100%{opacity:0.4}50%{opacity:0.8}}@keyframes nebulosaPulsarFull{0%,100%{opacity:0.2}50%{opacity:0.5}}.header{border-color:#aa66ff!important;box-shadow:0 0 60px rgba(170,102,255,0.4)}.header h1{text-shadow:0 0 30px #aa66ff,0 0 60px #6600cc}'
     },
     {
         'id': 'skin_aurora',
         'nome': '🌈 AURORA',
-        'desc': 'Aurora boreal + ondas coloridas tela cheia',
+        'desc': 'Aurora no banner e ondas na tela',
         'preco_moedas': 15,
         'categoria': 'lendaria',
         'cor_fundo': '#0a0a2a',
@@ -279,15 +279,15 @@ SKINS_LIST = [
         'cor_tab_ativa': '#00ffaa',
         'cor_header_bg': 'linear-gradient(135deg,#0a0a2a,#1a1a4a,#2a2a6a,#1a1a4a,#0a0a2a)',
         'cor_header_borda': '#00ffaa',
-        'header_extra': '<canvas id="auroraCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none"></canvas><div class="aurora-luz-1"></div><div class="aurora-luz-2"></div><div class="aurora-luz-3"></div>',
-        'css_extra': 'body{background:linear-gradient(180deg,#0a0a2a 0%,#0f0f3a 50%,#0a0a2a 100%)!important}.aurora-luz-1,.aurora-luz-2,.aurora-luz-3{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:-1}.aurora-luz-1{background:linear-gradient(45deg,transparent,rgba(0,255,170,0.08),rgba(0,200,255,0.05),transparent);animation:auroraWave1 8s ease-in-out infinite}.aurora-luz-2{background:linear-gradient(135deg,transparent,rgba(100,50,255,0.06),rgba(0,255,200,0.04),transparent);animation:auroraWave2 10s ease-in-out infinite 2s}.aurora-luz-3{background:linear-gradient(225deg,transparent,rgba(0,255,150,0.05),rgba(50,100,255,0.03),transparent);animation:auroraWave3 12s ease-in-out infinite 4s}@keyframes auroraWave1{0%{transform:translateX(-100%)}50%{transform:translateX(100%)}100%{transform:translateX(-100%)}}@keyframes auroraWave2{0%{transform:translateX(100%)}50%{transform:translateX(-100%)}100%{transform:translateX(100%)}}@keyframes auroraWave3{0%{transform:translateY(-100%)}50%{transform:translateY(100%)}100%{transform:translateY(-100%)}}.header{border-color:#00ffaa!important;box-shadow:0 0 60px rgba(0,255,170,0.4)}'
+        'header_extra': '<div class="aurora-banner-1"></div><div class="aurora-banner-2"></div><div class="aurora-banner-3"></div><div class="aurora-full-1"></div><div class="aurora-full-2"></div><div class="aurora-full-3"></div>',
+        'css_extra': 'body{background:linear-gradient(180deg,#0a0a2a 0%,#0f0f3a 50%,#0a0a2a 100%)!important}.aurora-banner-1,.aurora-banner-2,.aurora-banner-3{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0}.aurora-banner-1{background:linear-gradient(45deg,transparent,rgba(0,255,170,0.15),rgba(0,200,255,0.1),transparent);animation:auroraWaveBanner1 6s ease-in-out infinite}.aurora-banner-2{background:linear-gradient(135deg,transparent,rgba(100,50,255,0.12),rgba(0,255,200,0.08),transparent);animation:auroraWaveBanner2 8s ease-in-out infinite 2s}.aurora-banner-3{background:linear-gradient(225deg,transparent,rgba(0,255,150,0.1),rgba(50,100,255,0.06),transparent);animation:auroraWaveBanner3 10s ease-in-out infinite 4s}.aurora-full-1,.aurora-full-2,.aurora-full-3{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:-1}.aurora-full-1{background:linear-gradient(45deg,transparent,rgba(0,255,170,0.08),rgba(0,200,255,0.05),transparent);animation:auroraWaveFull1 8s ease-in-out infinite}.aurora-full-2{background:linear-gradient(135deg,transparent,rgba(100,50,255,0.06),rgba(0,255,200,0.04),transparent);animation:auroraWaveFull2 10s ease-in-out infinite 2s}.aurora-full-3{background:linear-gradient(225deg,transparent,rgba(0,255,150,0.05),rgba(50,100,255,0.03),transparent);animation:auroraWaveFull3 12s ease-in-out infinite 4s}@keyframes auroraWaveBanner1{0%{transform:translateX(-100%)}50%{transform:translateX(100%)}100%{transform:translateX(-100%)}}@keyframes auroraWaveBanner2{0%{transform:translateX(100%)}50%{transform:translateX(-100%)}100%{transform:translateX(100%)}}@keyframes auroraWaveBanner3{0%{transform:translateY(-100%)}50%{transform:translateY(100%)}100%{transform:translateY(-100%)}}@keyframes auroraWaveFull1{0%{transform:translateX(-100%)}50%{transform:translateX(100%)}100%{transform:translateX(-100%)}}@keyframes auroraWaveFull2{0%{transform:translateX(100%)}50%{transform:translateX(-100%)}100%{transform:translateX(100%)}}@keyframes auroraWaveFull3{0%{transform:translateY(-100%)}50%{transform:translateY(100%)}100%{transform:translateY(-100%)}}.header{border-color:#00ffaa!important;box-shadow:0 0 60px rgba(0,255,170,0.4)}'
     },
 
-    # ============= SKINS LENDÁRIAS DOS HERÓIS (COM FUNDO TELA CHEIA E MUITOS ELEMENTOS) =============
+    # ============= SKINS LENDÁRIAS DOS HERÓIS (BANNER + TELA CHEIA) =============
     {
         'id': 'skin_batman',
         'nome': '🦇 BATMAN',
-        'desc': 'MUITOS morcegos + névoa gótica + bat-sinal',
+        'desc': 'Morcegos no banner e névoa na tela',
         'preco_moedas': 15,
         'categoria': 'lendaria',
         'cor_fundo': '#0a0a0a',
@@ -298,13 +298,13 @@ SKINS_LIST = [
         'cor_tab_ativa': '#f5c518',
         'cor_header_bg': 'linear-gradient(135deg,#0a0a0a,#111111,#1a1a1a,#111111,#0a0a0a)',
         'cor_header_borda': '#f5c518',
-        'header_extra': '<canvas id="batmanCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none"></canvas><div class="bat-sinal"></div><div class="morcego-1">🦇</div><div class="morcego-2">🦇</div><div class="morcego-3">🦇</div><div class="morcego-4">🦇</div><div class="morcego-5">🦇</div><div class="morcego-6">🦇</div><div class="gotham-bg"></div>',
-        'css_extra': 'body{background:#0a0a0a!important}.gotham-bg{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(180deg,#0a0a0a 0%,#151515 50%,#0a0a0a 100%);z-index:-2;pointer-events:none}.bat-sinal{position:fixed;top:20%;left:50%;transform:translateX(-50%);width:200px;height:200px;background:radial-gradient(circle,rgba(245,197,24,0.15) 0%,transparent 70%);border-radius:50%;animation:batSinalPulsar 4s ease-in-out infinite;pointer-events:none}.morcego-1,.morcego-2,.morcego-3,.morcego-4,.morcego-5,.morcego-6{position:fixed;font-size:45px;opacity:0.15;pointer-events:none}.morcego-1{top:10%;left:10%;animation:voarMorcego1 12s ease-in-out infinite}.morcego-2{top:20%;right:15%;animation:voarMorcego2 10s ease-in-out infinite 2s}.morcego-3{bottom:15%;left:20%;animation:voarMorcego3 14s ease-in-out infinite 4s}.morcego-4{top:50%;right:30%;animation:voarMorcego4 11s ease-in-out infinite 1s}.morcego-5{bottom:30%;right:10%;animation:voarMorcego5 13s ease-in-out infinite 3s}.morcego-6{top:70%;left:30%;animation:voarMorcego6 9s ease-in-out infinite 5s}@keyframes voarMorcego1{0%{transform:translate(0,0) rotate(0deg)}25%{transform:translate(30px,-40px) rotate(-10deg)}75%{transform:translate(-20px,20px) rotate(5deg)}100%{transform:translate(0,0) rotate(0deg)}}@keyframes voarMorcego2{0%{transform:translate(0,0) rotate(0deg)}25%{transform:translate(-30px,-35px) rotate(8deg)}75%{transform:translate(20px,25px) rotate(-5deg)}100%{transform:translate(0,0) rotate(0deg)}}@keyframes voarMorcego3{0%{transform:translate(0,0)}50%{transform:translate(-40px,-30px) rotate(-8deg)}100%{transform:translate(0,0)}}@keyframes voarMorcego4{0%{transform:translate(0,0)}50%{transform:translate(35px,-45px) rotate(10deg)}100%{transform:translate(0,0)}}@keyframes voarMorcego5{0%{transform:translate(0,0)}50%{transform:translate(-25px,30px) rotate(-6deg)}100%{transform:translate(0,0)}}@keyframes voarMorcego6{0%{transform:translate(0,0)}50%{transform:translate(40px,-25px) rotate(7deg)}100%{transform:translate(0,0)}}@keyframes batSinalPulsar{0%,100%{opacity:0.2;transform:translateX(-50%) scale(1)}50%{opacity:0.6;transform:translateX(-50%) scale(1.2)}}.header{border-color:#f5c518!important;box-shadow:0 0 40px rgba(245,197,24,0.4)}'
+        'header_extra': '<div class="bat-sinal-banner"></div><div class="morcego-banner-1">🦇</div><div class="morcego-banner-2">🦇</div><div class="morcego-banner-3">🦇</div><div class="gotham-banner"></div><div class="bat-sinal-full"></div><div class="gotham-full"></div>',
+        'css_extra': 'body{background:#0a0a0a!important}.bat-sinal-banner{position:absolute;top:20%;left:50%;transform:translateX(-50%);width:120px;height:120px;background:radial-gradient(circle,rgba(245,197,24,0.2) 0%,transparent 70%);border-radius:50%;animation:batSinalPulsarBanner 3s ease-in-out infinite;pointer-events:none;z-index:1}.bat-sinal-full{position:fixed;top:20%;left:50%;transform:translateX(-50%);width:300px;height:300px;background:radial-gradient(circle,rgba(245,197,24,0.1) 0%,transparent 80%);border-radius:50%;animation:batSinalPulsarFull 4s ease-in-out infinite;pointer-events:none;z-index:-1}.morcego-banner-1,.morcego-banner-2,.morcego-banner-3{position:absolute;font-size:35px;opacity:0.2;pointer-events:none;z-index:2}.morcego-banner-1{top:10%;left:10%;animation:voarMorcegoBanner1 10s ease-in-out infinite}.morcego-banner-2{top:20%;right:15%;animation:voarMorcegoBanner2 8s ease-in-out infinite 3s}.morcego-banner-3{bottom:15%;left:20%;animation:voarMorcegoBanner3 12s ease-in-out infinite 5s}.gotham-banner{position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at 50% 50%,rgba(245,197,24,0.05) 0%,transparent 70%);pointer-events:none;z-index:0}.gotham-full{position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at 50% 50%,rgba(245,197,24,0.03) 0%,transparent 80%);z-index:-2;pointer-events:none}@keyframes voarMorcegoBanner1{0%{transform:translate(0,0) rotate(0deg)}25%{transform:translate(20px,-25px) rotate(-8deg)}75%{transform:translate(-15px,15px) rotate(5deg)}100%{transform:translate(0,0) rotate(0deg)}}@keyframes voarMorcegoBanner2{0%{transform:translate(0,0) rotate(0deg)}25%{transform:translate(-20px,-20px) rotate(6deg)}75%{transform:translate(15px,15px) rotate(-4deg)}100%{transform:translate(0,0) rotate(0deg)}}@keyframes voarMorcegoBanner3{0%{transform:translate(0,0)}50%{transform:translate(-25px,-20px) rotate(-6deg)}100%{transform:translate(0,0)}}@keyframes batSinalPulsarBanner{0%,100%{opacity:0.3;transform:translateX(-50%) scale(1)}50%{opacity:0.7;transform:translateX(-50%) scale(1.15)}}@keyframes batSinalPulsarFull{0%,100%{opacity:0.1;transform:translateX(-50%) scale(1)}50%{opacity:0.3;transform:translateX(-50%) scale(1.2)}}.header{border-color:#f5c518!important;box-shadow:0 0 40px rgba(245,197,24,0.4)}'
     },
     {
         'id': 'skin_capitao',
         'nome': '🇺🇸 CAPITÃO AMÉRICA',
-        'desc': 'Escudo + estrelas + fundo americano tela cheia',
+        'desc': 'Escudo no banner e estrelas na tela',
         'preco_moedas': 15,
         'categoria': 'lendaria',
         'cor_fundo': '#0a1a3a',
@@ -315,13 +315,13 @@ SKINS_LIST = [
         'cor_tab_ativa': '#ff0000',
         'cor_header_bg': 'linear-gradient(135deg,#0a1a3a,#1a2a4a,#2a3a5a,#1a2a4a,#0a1a3a)',
         'cor_header_borda': '#ff0000',
-        'header_extra': '<canvas id="capitaoCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none"></canvas><div class="escudo-gigante"></div><div class="estrela-fundo-1">⭐</div><div class="estrela-fundo-2">⭐</div><div class="estrela-fundo-3">⭐</div><div class="estrela-fundo-4">⭐</div><div class="estrela-fundo-5">⭐</div><div class="estrela-fundo-6">⭐</div><div class="bandeira-bg"></div>',
-        'css_extra': 'body{background:linear-gradient(135deg,#0a1a3a 0%,#1a2a4a 50%,#0a1a3a 100%)!important}.bandeira-bg{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(90deg,rgba(0,40,104,0.15) 0%,rgba(191,10,48,0.1) 50%,rgba(0,40,104,0.15) 100%);z-index:-2;pointer-events:none}.escudo-gigante{position:fixed;bottom:20%;left:50%;transform:translateX(-50%);font-size:180px;opacity:0.08;animation:escudoGirar 20s linear infinite;pointer-events:none}.estrela-fundo-1,.estrela-fundo-2,.estrela-fundo-3,.estrela-fundo-4,.estrela-fundo-5,.estrela-fundo-6{position:fixed;font-size:30px;opacity:0.12;pointer-events:none}.estrela-fundo-1{top:10%;left:20%;animation:estrelaBrilhar 3s ease-in-out infinite}.estrela-fundo-2{top:15%;right:25%;animation:estrelaBrilhar 3.5s ease-in-out infinite 1s}.estrela-fundo-3{top:30%;left:10%;animation:estrelaBrilhar 2.8s ease-in-out infinite 0.5s}.estrela-fundo-4{bottom:20%;right:15%;animation:estrelaBrilhar 4s ease-in-out infinite 2s}.estrela-fundo-5{top:50%;right:40%;animation:estrelaBrilhar 3.2s ease-in-out infinite 1.5s}.estrela-fundo-6{bottom:10%;left:35%;animation:estrelaBrilhar 3.7s ease-in-out infinite 2.5s}@keyframes escudoGirar{0%{transform:translateX(-50%) rotate(0deg)}100%{transform:translateX(-50%) rotate(360deg)}}@keyframes estrelaBrilhar{0%,100%{opacity:0.05;text-shadow:0 0 0px #ff0000}50%{opacity:0.2;text-shadow:0 0 20px #ff0000}}.header{border-color:#ff0000!important;box-shadow:0 0 40px rgba(255,0,0,0.4)}'
+        'header_extra': '<div class="escudo-banner">🛡️</div><div class="estrela-banner-cap-1">⭐</div><div class="estrela-banner-cap-2">⭐</div><div class="estrela-banner-cap-3">⭐</div><div class="bandeira-banner"></div><div class="escudo-full"></div><div class="bandeira-full"></div>',
+        'css_extra': 'body{background:linear-gradient(135deg,#0a1a3a 0%,#1a2a4a 50%,#0a1a3a 100%)!important}.escudo-banner{position:absolute;bottom:10%;left:50%;transform:translateX(-50%);font-size:70px;opacity:0.15;animation:escudoGirarBanner 15s linear infinite;pointer-events:none;z-index:1}.escudo-full{position:fixed;bottom:20%;left:50%;transform:translateX(-50%);font-size:200px;opacity:0.05;animation:escudoGirarFull 25s linear infinite;pointer-events:none;z-index:-1}.estrela-banner-cap-1,.estrela-banner-cap-2,.estrela-banner-cap-3{position:absolute;font-size:20px;opacity:0.2;pointer-events:none;z-index:2}.estrela-banner-cap-1{top:15%;left:20%;animation:estrelaBrilharBanner 2s ease-in-out infinite}.estrela-banner-cap-2{top:25%;right:25%;animation:estrelaBrilharBanner 2.5s ease-in-out infinite 1s}.estrela-banner-cap-3{top:40%;left:30%;animation:estrelaBrilharBanner 3s ease-in-out infinite 2s}.bandeira-banner{position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(90deg,rgba(0,40,104,0.08) 0%,rgba(191,10,48,0.05) 50%,rgba(0,40,104,0.08) 100%);pointer-events:none;z-index:0}.bandeira-full{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(90deg,rgba(0,40,104,0.05) 0%,rgba(191,10,48,0.03) 50%,rgba(0,40,104,0.05) 100%);z-index:-2;pointer-events:none}@keyframes escudoGirarBanner{0%{transform:translateX(-50%) rotate(0deg)}100%{transform:translateX(-50%) rotate(360deg)}}@keyframes escudoGirarFull{0%{transform:translateX(-50%) rotate(0deg)}100%{transform:translateX(-50%) rotate(360deg)}}@keyframes estrelaBrilharBanner{0%,100%{opacity:0.1;text-shadow:0 0 0px #ff0000}50%{opacity:0.3;text-shadow:0 0 10px #ff0000}}.header{border-color:#ff0000!important;box-shadow:0 0 40px rgba(255,0,0,0.4)}'
     },
     {
         'id': 'skin_superman',
         'nome': '🦸 SUPERMAN',
-        'desc': 'Símbolo + sol + capa voando tela cheia',
+        'desc': 'Símbolo no banner e sol na tela',
         'preco_moedas': 15,
         'categoria': 'lendaria',
         'cor_fundo': '#0a1a5a',
@@ -332,13 +332,13 @@ SKINS_LIST = [
         'cor_tab_ativa': '#ffcc00',
         'cor_header_bg': 'linear-gradient(135deg,#0a1a5a,#1a2a6a,#2a3a7a,#1a2a6a,#0a1a5a)',
         'cor_header_borda': '#ffcc00',
-        'header_extra': '<canvas id="supermanCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none"></canvas><div class="sol-krypton-bg"></div><div class="simbolo-super-voador">🦸</div><div class="simbolo-super-voador2">🦸</div><div class="simbolo-super-voador3">🦸</div><div class="capa-vermelha"></div>',
-        'css_extra': 'body{background:radial-gradient(ellipse at 50% 0%,#0a1a5a 0%,#1a2a6a 100%)!important}.sol-krypton-bg{position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at 50% 10%,rgba(255,204,0,0.12) 0%,transparent 60%);z-index:-2;pointer-events:none;animation:solPulsar 4s infinite}.simbolo-super-voador,.simbolo-super-voador2,.simbolo-super-voador3{position:fixed;font-size:40px;opacity:0.12;pointer-events:none}.simbolo-super-voador{top:15%;left:10%;animation:superVoar1 8s ease-in-out infinite}.simbolo-super-voador2{top:25%;right:15%;animation:superVoar2 10s ease-in-out infinite 2s}.simbolo-super-voador3{bottom:20%;left:25%;animation:superVoar3 9s ease-in-out infinite 4s}.capa-vermelha{position:fixed;bottom:0;left:0;width:100%;height:100px;background:linear-gradient(90deg,rgba(255,0,0,0) 0%,rgba(255,0,0,0.08) 50%,rgba(255,0,0,0) 100%);animation:capaOndular 5s ease-in-out infinite;pointer-events:none}@keyframes superVoar1{0%{transform:translate(0,0)}25%{transform:translate(50px,-30px)}75%{transform:translate(-20px,20px)}100%{transform:translate(0,0)}}@keyframes superVoar2{0%{transform:translate(0,0)}25%{transform:translate(-40px,-35px)}75%{transform:translate(30px,25px)}100%{transform:translate(0,0)}}@keyframes superVoar3{0%{transform:translate(0,0)}50%{transform:translate(-50px,40px)}100%{transform:translate(0,0)}}@keyframes capaOndular{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.3)}}@keyframes solPulsar{0%,100%{opacity:0.3}50%{opacity:0.7}}.header{border-color:#ffcc00!important;box-shadow:0 0 50px rgba(255,204,0,0.5)}'
+        'header_extra': '<div class="simbolo-super-banner">🦸</div><div class="sol-banner"></div><div class="capa-banner"></div><div class="simbolo-super-full">🦸</div><div class="sol-full"></div>',
+        'css_extra': 'body{background:radial-gradient(ellipse at 50% 0%,#0a1a5a 0%,#1a2a6a 100%)!important}.simbolo-super-banner{position:absolute;top:15px;right:15px;font-size:40px;opacity:0.2;animation:superVoarBanner 4s ease-in-out infinite;pointer-events:none;z-index:2}.simbolo-super-full{position:fixed;top:30px;right:30px;font-size:80px;opacity:0.06;animation:superVoarFull 6s ease-in-out infinite;pointer-events:none;z-index:-1}.sol-banner{position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at 50% 10%,rgba(255,204,0,0.12) 0%,transparent 60%);pointer-events:none;z-index:0;animation:solPulsarBanner 4s infinite}.sol-full{position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at 50% 10%,rgba(255,204,0,0.06) 0%,transparent 70%);z-index:-2;animation:solPulsarFull 5s infinite}.capa-banner{position:absolute;bottom:0;left:0;width:100%;height:60px;background:linear-gradient(90deg,rgba(255,0,0,0) 0%,rgba(255,0,0,0.08) 50%,rgba(255,0,0,0) 100%);animation:capaOndularBanner 4s ease-in-out infinite;pointer-events:none}@keyframes superVoarBanner{0%{transform:translate(0,0)}50%{transform:translate(10px,-15px)}100%{transform:translate(0,0)}}@keyframes superVoarFull{0%{transform:translate(0,0)}50%{transform:translate(20px,-30px)}100%{transform:translate(0,0)}}@keyframes capaOndularBanner{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.2)}}@keyframes solPulsarBanner{0%,100%{opacity:0.2}50%{opacity:0.5}}@keyframes solPulsarFull{0%,100%{opacity:0.1}50%{opacity:0.3}}.header{border-color:#ffcc00!important;box-shadow:0 0 50px rgba(255,204,0,0.5)}'
     },
     {
         'id': 'skin_spider',
         'nome': '🕷️ HOMEM-ARANHA',
-        'desc': 'MUITAS teias + aranha + fundo arranha-céu',
+        'desc': 'Teias no banner e aranhas na tela',
         'preco_moedas': 15,
         'categoria': 'lendaria',
         'cor_fundo': '#1a0a1a',
@@ -349,13 +349,13 @@ SKINS_LIST = [
         'cor_tab_ativa': '#ff0000',
         'cor_header_bg': 'linear-gradient(135deg,#1a0a1a,#2a0a2a,#3a0a3a,#2a0a2a,#1a0a1a)',
         'cor_header_borda': '#ff0000',
-        'header_extra': '<canvas id="spiderCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none"></canvas><div class="teia-gigante-1"></div><div class="teia-gigante-2"></div><div class="teia-gigante-3"></div><div class="aranha-grande">🕷️</div><div class="aranha-media-1">🕷️</div><div class="aranha-media-2">🕷️</div><div class="aranha-pequena-1">🕷️</div><div class="aranha-pequena-2">🕷️</div><div class="aranha-pequena-3">🕷️</div>',
-        'css_extra': 'body{background:linear-gradient(180deg,#1a0a1a 0%,#0a000a 100%)!important;position:relative}.teia-gigante-1,.teia-gigante-2,.teia-gigante-3{position:fixed;background:radial-gradient(circle,rgba(255,0,0,0.1) 0%,transparent 80%);pointer-events:none}.teia-gigante-1{top:0;left:0;width:300px;height:300px;animation:teiaBrilhar 4s ease-in-out infinite}.teia-gigante-2{top:0;right:0;width:300px;height:300px;animation:teiaBrilhar 4s ease-in-out infinite 1.5s}.teia-gigante-3{bottom:0;left:50%;transform:translateX(-50%);width:400px;height:200px;animation:teiaBrilhar 4s ease-in-out infinite 3s}.aranha-grande{position:fixed;bottom:15%;right:15%;font-size:70px;opacity:0.15;animation:aranhaAndarGrande 8s ease-in-out infinite;pointer-events:none}.aranha-media-1{position:fixed;top:20%;left:15%;font-size:45px;opacity:0.12;animation:aranhaAndarMedia1 6s ease-in-out infinite 1s;pointer-events:none}.aranha-media-2{position:fixed;top:40%;right:20%;font-size:45px;opacity:0.12;animation:aranhaAndarMedia2 7s ease-in-out infinite 3s;pointer-events:none}.aranha-pequena-1,.aranha-pequena-2,.aranha-pequena-3{position:fixed;font-size:25px;opacity:0.1;pointer-events:none}.aranha-pequena-1{top:30%;left:30%;animation:aranhaAndarPequena 5s ease-in-out infinite}.aranha-pequena-2{top:60%;right:40%;animation:aranhaAndarPequena 6s ease-in-out infinite 2s}.aranha-pequena-3{bottom:40%;left:20%;animation:aranhaAndarPequena 5.5s ease-in-out infinite 4s}@keyframes teiaBrilhar{0%,100%{opacity:0.2}50%{opacity:0.5}}@keyframes aranhaAndarGrande{0%{transform:translate(0,0)}25%{transform:translate(-40px,-30px)}50%{transform:translate(-80px,0)}75%{transform:translate(-40px,30px)}100%{transform:translate(0,0)}}@keyframes aranhaAndarMedia1{0%{transform:translate(0,0)}25%{transform:translate(30px,-25px)}75%{transform:translate(60px,0)}100%{transform:translate(0,0)}}@keyframes aranhaAndarMedia2{0%{transform:translate(0,0)}25%{transform:translate(-25px,20px)}75%{transform:translate(-50px,0)}100%{transform:translate(0,0)}}@keyframes aranhaAndarPequena{0%{transform:translate(0,0)}50%{transform:translate(20px,-15px)}100%{transform:translate(0,0)}}.header{border-color:#ff0000!important;box-shadow:0 0 40px rgba(255,0,0,0.5)}'
+        'header_extra': '<div class="teia-banner-1"></div><div class="teia-banner-2"></div><div class="aranha-banner">🕷️</div><div class="teia-full-1"></div><div class="teia-full-2"></div><div class="aranha-full">🕷️</div>',
+        'css_extra': 'body{background:linear-gradient(180deg,#1a0a1a 0%,#0a000a 100%)!important}.teia-banner-1{position:absolute;top:0;left:0;width:150px;height:150px;background:radial-gradient(circle at 0% 0%,rgba(255,0,0,0.15) 0%,transparent 70%);animation:teiaBrilharBanner 3s ease-in-out infinite;pointer-events:none;z-index:1}.teia-banner-2{position:absolute;top:0;right:0;width:150px;height:150px;background:radial-gradient(circle at 100% 0%,rgba(255,0,0,0.15) 0%,transparent 70%);animation:teiaBrilharBanner 3s ease-in-out infinite 1.5s;pointer-events:none;z-index:1}.teia-full-1{position:fixed;top:0;left:0;width:300px;height:300px;background:radial-gradient(circle at 0% 0%,rgba(255,0,0,0.08) 0%,transparent 80%);animation:teiaBrilharFull 4s ease-in-out infinite;pointer-events:none;z-index:-1}.teia-full-2{position:fixed;top:0;right:0;width:300px;height:300px;background:radial-gradient(circle at 100% 0%,rgba(255,0,0,0.08) 0%,transparent 80%);animation:teiaBrilharFull 4s ease-in-out infinite 2s;pointer-events:none;z-index:-1}.aranha-banner{position:absolute;bottom:10%;right:10%;font-size:35px;opacity:0.2;animation:aranhaAndarBanner 6s ease-in-out infinite;pointer-events:none;z-index:2}.aranha-full{position:fixed;bottom:15%;right:15%;font-size:80px;opacity:0.06;animation:aranhaAndarFull 8s ease-in-out infinite;pointer-events:none;z-index:-1}@keyframes teiaBrilharBanner{0%,100%{opacity:0.2}50%{opacity:0.5}}@keyframes teiaBrilharFull{0%,100%{opacity:0.1}50%{opacity:0.3}}@keyframes aranhaAndarBanner{0%{transform:translate(0,0)}25%{transform:translate(-15px,-10px)}75%{transform:translate(-30px,0)}100%{transform:translate(0,0)}}@keyframes aranhaAndarFull{0%{transform:translate(0,0)}25%{transform:translate(-30px,-20px)}75%{transform:translate(-60px,0)}100%{transform:translate(0,0)}}.header{border-color:#ff0000!important;box-shadow:0 0 40px rgba(255,0,0,0.5)}'
     },
     {
         'id': 'skin_ironman',
         'nome': '🤖 HOMEM DE FERRO',
-        'desc': 'Reator Arc + MUITOS feixes + armadura voadora',
+        'desc': 'Reator no banner e feixes na tela',
         'preco_moedas': 15,
         'categoria': 'lendaria',
         'cor_fundo': '#1a0a0a',
@@ -366,8 +366,8 @@ SKINS_LIST = [
         'cor_tab_ativa': '#ff6600',
         'cor_header_bg': 'linear-gradient(135deg,#1a0a0a,#2a1a1a,#3a2a1a,#2a1a1a,#1a0a0a)',
         'cor_header_borda': '#ff6600',
-        'header_extra': '<canvas id="ironmanCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none"></canvas><div class="reator-central"></div><div class="feixe-repulsor-1"></div><div class="feixe-repulsor-2"></div><div class="feixe-repulsor-3"></div><div class="feixe-repulsor-4"></div><div class="armadura-voadora-1">🤖</div><div class="armadura-voadora-2">🤖</div><div class="armadura-voadora-3">🤖</div><div class="particulas-energia"></div>',
-        'css_extra': 'body{background:linear-gradient(135deg,#1a0a0a 0%,#2a1515 50%,#1a0a0a 100%)!important}.reator-central{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:200px;background:radial-gradient(circle,rgba(255,102,0,0.15) 0%,rgba(255,102,0,0.05) 50%,transparent 80%);border-radius:50%;animation:reatorPulsarMassivo 2s ease-in-out infinite;pointer-events:none}.feixe-repulsor-1,.feixe-repulsor-2,.feixe-repulsor-3,.feixe-repulsor-4{position:fixed;bottom:0;width:100%;height:3px;background:linear-gradient(90deg,transparent,rgba(255,102,0,0.8),rgba(255,102,0,0.3),transparent);pointer-events:none}.feixe-repulsor-1{animation:feixeVarrer1 6s linear infinite}.feixe-repulsor-2{animation:feixeVarrer2 7s linear infinite 2s}.feixe-repulsor-3{animation:feixeVarrer3 5s linear infinite 4s}.feixe-repulsor-4{animation:feixeVarrer4 8s linear infinite 1s}.armadura-voadora-1,.armadura-voadora-2,.armadura-voadora-3{position:fixed;font-size:35px;opacity:0.12;pointer-events:none}.armadura-voadora-1{top:20%;left:10%;animation:armaduraVoar1 10s ease-in-out infinite}.armadura-voadora-2{top:30%;right:15%;animation:armaduraVoar2 12s ease-in-out infinite 3s}.armadura-voadora-3{bottom:25%;left:20%;animation:armaduraVoar3 9s ease-in-out infinite 6s}.particulas-energia{position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at 50% 50%,rgba(255,102,0,0.03) 0%,transparent 70%);animation:energiaPulsar 3s ease-in-out infinite;pointer-events:none}@keyframes reatorPulsarMassivo{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:0.1}50%{transform:translate(-50%,-50%) scale(1.5);opacity:0.3}}@keyframes feixeVarrer1{0%{transform:translateY(0)}50%{transform:translateY(100vh)}100%{transform:translateY(0)}}@keyframes feixeVarrer2{0%{transform:translateY(0)}50%{transform:translateY(80vh)}100%{transform:translateY(0)}}@keyframes feixeVarrer3{0%{transform:translateY(0)}50%{transform:translateY(120vh)}100%{transform:translateY(0)}}@keyframes feixeVarrer4{0%{transform:translateY(0)}50%{transform:translateY(60vh)}100%{transform:translateY(0)}}@keyframes armaduraVoar1{0%{transform:translate(0,0)}25%{transform:translate(40px,-30px) rotate(5deg)}75%{transform:translate(-20px,20px) rotate(-3deg)}100%{transform:translate(0,0)}}@keyframes armaduraVoar2{0%{transform:translate(0,0)}25%{transform:translate(-35px,-25px) rotate(-5deg)}75%{transform:translate(25px,15px) rotate(3deg)}100%{transform:translate(0,0)}}@keyframes armaduraVoar3{0%{transform:translate(0,0)}50%{transform:translate(30px,-40px) rotate(4deg)}100%{transform:translate(0,0)}}@keyframes energiaPulsar{0%,100%{opacity:0.2}50%{opacity:0.5}}.header{border-color:#ff6600!important;box-shadow:0 0 50px rgba(255,102,0,0.5)}.header h1{text-shadow:0 0 30px #ff6600,0 0 60px #ff3300}'
+        'header_extra': '<div class="reator-banner"></div><div class="feixe-banner-1"></div><div class="feixe-banner-2"></div><div class="armadura-banner">🤖</div><div class="reator-full"></div><div class="feixe-full-1"></div><div class="feixe-full-2"></div>',
+        'css_extra': 'body{background:linear-gradient(135deg,#1a0a0a 0%,#2a1515 50%,#1a0a0a 100%)!important}.reator-banner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:80px;height:80px;background:radial-gradient(circle,rgba(255,102,0,0.2) 0%,rgba(255,102,0,0.1) 50%,transparent 80%);border-radius:50%;animation:reatorPulsarBanner 2s ease-in-out infinite;pointer-events:none;z-index:1}.reator-full{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:250px;height:250px;background:radial-gradient(circle,rgba(255,102,0,0.1) 0%,rgba(255,102,0,0.05) 50%,transparent 90%);border-radius:50%;animation:reatorPulsarFull 3s ease-in-out infinite;pointer-events:none;z-index:-1}.feixe-banner-1{position:absolute;bottom:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,transparent,rgba(255,102,0,0.6),rgba(255,102,0,0.2),transparent);animation:feixeVarrerBanner1 4s linear infinite;pointer-events:none;z-index:2}.feixe-banner-2{position:absolute;bottom:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,transparent,rgba(255,102,0,0.4),rgba(255,102,0,0.1),transparent);animation:feixeVarrerBanner2 5s linear infinite 2s;pointer-events:none;z-index:2}.feixe-full-1{position:fixed;bottom:0;left:0;width:100%;height:4px;background:linear-gradient(90deg,transparent,rgba(255,102,0,0.4),rgba(255,102,0,0.15),transparent);animation:feixeVarrerFull1 6s linear infinite;pointer-events:none;z-index:-1}.feixe-full-2{position:fixed;bottom:0;left:0;width:100%;height:4px;background:linear-gradient(90deg,transparent,rgba(255,102,0,0.3),rgba(255,102,0,0.1),transparent);animation:feixeVarrerFull2 7s linear infinite 3s;pointer-events:none;z-index:-1}.armadura-banner{position:absolute;top:20%;right:10%;font-size:30px;opacity:0.15;animation:armaduraVoarBanner 7s ease-in-out infinite;pointer-events:none;z-index:2}@keyframes reatorPulsarBanner{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:0.2}50%{transform:translate(-50%,-50%) scale(1.2);opacity:0.4}}@keyframes reatorPulsarFull{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:0.08}50%{transform:translate(-50%,-50%) scale(1.3);opacity:0.15}}@keyframes feixeVarrerBanner1{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}@keyframes feixeVarrerBanner2{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}@keyframes feixeVarrerFull1{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}@keyframes feixeVarrerFull2{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}@keyframes armaduraVoarBanner{0%{transform:translate(0,0)}50%{transform:translate(-20px,-20px) rotate(5deg)}100%{transform:translate(0,0)}}.header{border-color:#ff6600!important;box-shadow:0 0 50px rgba(255,102,0,0.5)}.header h1{text-shadow:0 0 30px #ff6600,0 0 60px #ff3300}'
     }
 ]
 
