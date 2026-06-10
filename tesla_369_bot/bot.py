@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 
 # ⚡ TESLA 369 BOT v9.0.1 Cloud ⚡
-# SKINS E ESTRATÉGIAS CARREGADAS DO MESMO JEITO (via RAW URL)
+# SKINS E ESTRATÉGIAS CARREGADAS DINAMICAMENTE DO GITHUB
+# NÃO PRECISA MODIFICAR O BOT PARA ADICIONAR NOVAS ESTRATÉGIAS!
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -25,19 +26,7 @@ print("✅ Firebase HTTP REST configurado!")
 
 HTML_URL = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/tesla_369_bot/templates/index.html"
 GIT_RAW_SKINS = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/tesla_369_bot/skins/skins.py"
-
-# ⭐ LISTA DE ESTRATÉGIAS (nomes dos arquivos no GitHub)
-ESTRATEGIAS_LISTA = [
-    'v_sensitivo',
-    'tesla_369', 
-    'mhi_filtrado',
-    'terceira_igual_primeira',
-    'quadrante_de_7',
-    'fluxo_de_velas',
-    'reversao',
-    'm5'
-]
-
+GIT_RAW_ESTRATEGIAS_LISTA = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/tesla_369_bot/estrategias.py"
 GIT_RAW_ESTRATEGIA_BASE = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/tesla_369_bot/estrategias"
 
 MARTINGALE = 2
@@ -95,19 +84,45 @@ def get_logs_html(limite=40):
         html += f'<span style="color:#666">{log["time"]}</span> <span style="color:{cor}">{log["msg"]}</span>\n'
     return html or '📡 Aguardando...'
 
+def get_close(vela):
+    if 'close' in vela:
+        return vela['close']
+    elif 'max' in vela:
+        return vela['max']
+    return 0
+
+def get_high(vela):
+    if 'high' in vela:
+        return vela['high']
+    elif 'max' in vela:
+        return vela['max']
+    return 0
+
+def get_low(vela):
+    if 'low' in vela:
+        return vela['low']
+    elif 'min' in vela:
+        return vela['min']
+    return 0
+
 def get_cor_vela(vela):
-    if vela['close'] > vela['open']:
+    close = get_close(vela)
+    open_v = vela.get('open', 0)
+    if close > open_v:
         return 'g'
-    elif vela['close'] < vela['open']:
+    elif close < open_v:
         return 'r'
     return 'd'
 
 def calcular_media_movel(velas, periodo):
     if len(velas) < periodo:
-        return velas[-1]['close'] if velas else 0
-    return sum(v['close'] for v in velas[-periodo:]) / periodo
+        return get_close(velas[-1]) if velas else 0
+    soma = 0
+    for v in velas[-periodo:]:
+        soma += get_close(v)
+    return soma / periodo
 
-# ============= CARREGAR SKINS (funciona!) =============
+# ============= CARREGAR SKINS =============
 
 def get_skins_fallback():
     return [
@@ -153,22 +168,37 @@ def carregar_skins_da_nuvem():
         print(f"⚠️ Erro skins: {e}")
     return get_skins_fallback()
 
-# ============= CARREGAR ESTRATÉGIAS (MESMO MÉTODO DAS SKINS!) =============
+# ============= CARREGAR ESTRATÉGIAS (DINÂMICO, IGUAL AS SKINS!) =============
+
+def carregar_lista_estrategias():
+    """Carrega a lista de nomes das estratégias do GitHub"""
+    try:
+        response = requests.get(GIT_RAW_ESTRATEGIAS_LISTA, timeout=10)
+        if response.status_code == 200:
+            escopo = {}
+            exec(response.text, escopo)
+            if 'ESTRATEGIAS_LISTA' in escopo:
+                print(f"✅ Lista de estratégias carregada: {len(escopo['ESTRATEGIAS_LISTA'])} estratégias")
+                return escopo['ESTRATEGIAS_LISTA']
+    except Exception as e:
+        print(f"⚠️ Erro ao carregar lista: {e}")
+    return ['v_sensitivo']
 
 def carregar_estrategias_da_nuvem():
-    """Carrega cada estratégia individualmente via RAW URL (igual as skins)"""
+    """Carrega cada estratégia individualmente via RAW URL"""
     global cache_estrategias
     agora = time.time()
     
     if cache_estrategias["data"] and (agora - cache_estrategias["timestamp"]) < CACHE_TTL:
         return cache_estrategias["data"]
     
+    nomes_estrategias = carregar_lista_estrategias()
     estrategias = {}
     
-    for nome_est in ESTRATEGIAS_LISTA:
+    for nome_est in nomes_estrategias:
         try:
             url = f"{GIT_RAW_ESTRATEGIA_BASE}/{nome_est}.py"
-            print(f"🌐 Baixando estratégia: {nome_est} - {url}")
+            print(f"🌐 Baixando estratégia: {nome_est}")
             response = requests.get(url, timeout=10)
             
             if response.status_code == 200:
@@ -483,6 +513,8 @@ def bot_loop():
         threading.Thread(target=processar_estrategia, daemon=True).start()
         
         while bot_rodando and not STOP_GAIN_ATINGIDO:
+            if not bot_rodando:
+                break
             try:
                 with sinal_lock:
                     direcao = sinal_pendente
@@ -695,10 +727,9 @@ def comecar_operar():
         if not conectado_iq:
             return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
         
-        # Verifica se há estratégias disponíveis
         estrategias = carregar_estrategias_da_nuvem()
         if not estrategias:
-            return jsonify({'ok': False, 'erro': '❌ NENHUMA ESTRATÉGIA! Adicione arquivos .py na pasta "estrategias" do GitHub.'})
+            return jsonify({'ok': False, 'erro': '❌ NENHUMA ESTRATÉGIA! Adicione estratégias no GitHub.'})
         
         if estrategia_atual_global not in estrategias:
             return jsonify({'ok': False, 'erro': f'❌ Estratégia "{estrategia_atual_global}" não encontrada!'})
@@ -719,8 +750,6 @@ def comecar_operar():
     except Exception as e:
         return jsonify({'ok': False, 'erro': str(e)[:100]})
 
-
-#######
 @app.route('/parar', methods=['POST'])
 def parar():
     global bot_rodando, conectado_iq
@@ -731,21 +760,14 @@ def parar():
     with bot_lock:
         bot_rodando = False
     
-    # Aguarda a thread terminar
     time.sleep(1)
     
     if data.get('desconectar'):
         conectado_iq = False
-        add_log("🔌 Desconectado da IQ Option", 'info')
+        add_log("🔌 Desconectado", 'info')
     
-    add_log("✅ Bot parado com sucesso!", 'win')
+    add_log("✅ Bot parado!", 'win')
     return jsonify({'ok': True, 'shutdown': data.get('desconectar', False)})
-#######
-
-
-
-
-
 
 @app.route('/comprar_skin', methods=['POST'])
 def comprar_skin():
@@ -949,7 +971,7 @@ if __name__ == '__main__':
     print("=" * 50)
     print("⚡ TESLA 369 BOT v9.0.1 - PIPELINE CLOUD ESTÁVEL ⚡")
     print("SKINS CARREGADAS DO GITHUB")
-    print("ESTRATÉGIAS CARREGADAS DO GITHUB (MESMO MÉTODO)")
+    print("ESTRATÉGIAS CARREGADAS DO GITHUB (DINÂMICO - LISTA VIA estrategias.py)")
     print("=" * 50)
     
     print("🔍 Testando carregamento de skins...")
