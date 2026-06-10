@@ -131,7 +131,7 @@
         <div class="tab" onclick="openTab('leia-me')">📖 TUTORIAL & LEIA-ME</div>
         <div class="tab" onclick="openTab('contato')">📞 CONTATO</div>
     </div>
-    
+
     <div class="panel active" id="panel-bot">
         <div class="config-section"><h3>🔐 IQ OPTION</h3><div class="config-row">
             <input type="email" id="email" placeholder="📧 Email IQ Option" style="flex:2">
@@ -174,27 +174,24 @@
             <span>v9.0.1 Cloud | GALE 2 | SG: 1 WIN | 🔄 Bot roda em background</span>
         </div>
     </div>
-    
+
     <div class="panel" id="panel-estrategias">
         <div class="config-section"><h3>📊 SELECIONAR ESTRATÉGIA</h3><p style="color:#888;font-size:10px">Escolha antes de clicar em COMEÇAR OPERAR</p></div>
         <div class="estrategia-grid" id="estrategiaGrid"></div>
     </div>
-    
+
     <div class="panel" id="panel-loja">
-        <!-- Categorias principais da loja -->
         <div class="loja-categorias">
             <div class="loja-cat-btn active" onclick="mostrarLojaCategoria('volts')">💳 COMPRAR VOLTS</div>
             <div class="loja-cat-btn" onclick="mostrarLojaCategoria('skins')">🎨 LOJA DE SKINS</div>
             <div class="loja-cat-btn" onclick="mostrarLojaCategoria('estrategias')">📊 ESTRATÉGIAS PREMIUM</div>
         </div>
-        
-        <!-- Sub-painel: COMPRAR VOLTS -->
+
         <div class="loja-sub-panel active" id="loja-volts">
             <div class="config-section"><h3>💳 COMPRAR VOLTS COM PIX</h3><p style="color:#888;font-size:10px">📧 <input type="email" id="emailCompra" placeholder="Seu email" style="width:220px;padding:6px;background:#111;border:1px solid #333;color:#fff;border-radius:5px"></p><p style="color:#ffd700;font-size:10px;margin-top:5px">⚡ 1 VOLT = 1 ciclo | +1 VOLT grátis/dia</p><p style="color:#888;font-size:9px;margin-top:3px">⭐ Selecione o plano e pague com PIX</p></div>
             <div class="planos-grid" id="planosGridContainer"></div>
         </div>
-        
-        <!-- Sub-painel: LOJA DE SKINS -->
+
         <div class="loja-sub-panel" id="loja-skins">
             <div class="config-section"><h3>🎨 LOJA DE SKINS</h3><p style="color:#888;font-size:10px">Personalize seu bot com skins exclusivas! As skins lendárias possuem efeitos animados na tela toda.</p></div>
             <div class="loja-categorias" style="margin-bottom:10px;border-bottom:none;padding-bottom:0">
@@ -206,14 +203,13 @@
             <div class="skins-grid" id="skinsGridPremium" style="display:none"></div>
             <div class="skins-grid" id="skinsGridLendarias" style="display:none"></div>
         </div>
-        
-        <!-- Sub-painel: ESTRATÉGIAS PREMIUM -->
+
         <div class="loja-sub-panel" id="loja-estrategias">
             <div class="config-section"><h3>📊 ESTRATÉGIAS PREMIUM</h3><p style="color:#888;font-size:10px">Compre estratégias avançadas com suas VOLTS! ⚡ Cada estratégia tem seu próprio algoritmo de análise.</p></div>
             <div class="skins-grid" id="estrategiasLojaGrid"></div>
         </div>
     </div>
-    
+
     <div class="panel" id="panel-chat">
         <div class="config-section">
             <h3>💬 CHAT DOS TRADERS</h3>
@@ -230,7 +226,7 @@
             <span style="color:#888;font-size:9px" id="chatOnline">0 online</span>
         </div>
     </div>
-    
+
     <div class="panel" id="panel-leia-me">
         <div class="config-section"><h3>📖 TUTORIAL & ⚠️ AVISOS IMPORTANTES</h3></div>
         <div style="background:#0a0a1a;border:1px solid #00ff88;border-radius:15px;padding:20px;margin:10px 0">
@@ -271,7 +267,7 @@
             <p style="color:#888;font-size:10px;margin-top:5px">Use com responsabilidade. Conheça os riscos. Comece pela conta PRACTICE.</p>
         </div>
     </div>
-    
+
     <div class="panel" id="panel-contato">
         <div class="config-section"><h3>📞 ENTRE EM CONTATO</h3></div>
         <div style="background:linear-gradient(135deg,#1a1a2e,#0d0d1a);border:2px solid #ffd700;border-radius:15px;padding:20px;margin:10px 0;text-align:center">
@@ -299,7 +295,7 @@
             <p style="color:#888;font-size:10px;margin-top:10px">Duvidas, sugestoes ou interesse em recursos premium? Fale comigo!</p>
         </div>
     </div>
-    
+
     <div class="panel" id="panel-relatorio">
         <div class="config-section"><h3>📊 RELATÓRIO</h3><div class="config-row"><input type="email" id="emailRelatorio" placeholder="Email" style="flex:2"><button class="btn btn-info" onclick="verRelatorio()">🔍 BUSCAR</button><button class="btn btn-info" onclick="verRanking()" style="background:linear-gradient(135deg,#ff8c00,#ffd700);color:#000">🏆 RANKING</button></div></div>
         <div id="relatorioContent"></div>
@@ -331,13 +327,13 @@ function mostrarLojaCategoria(categoria) {
         botoes[i].classList.remove('active');
     }
     event.target.classList.add('active');
-    
+
     var paineis = document.querySelectorAll('.loja-sub-panel');
     for(var i = 0; i < paineis.length; i++) {
         paineis[i].classList.remove('active');
     }
     document.getElementById('loja-' + categoria).classList.add('active');
-    
+
     if(categoria === 'volts') {
         renderPlanos();
     }
@@ -357,53 +353,11 @@ function mostrarSubCategoriaSkin(categoria, evento) {
         }
         evento.target.classList.add('active');
     }
-    
+
     document.getElementById('skinsGridBasicas').style.display = categoria === 'basica' ? 'grid' : 'none';
     document.getElementById('skinsGridPremium').style.display = categoria === 'premium' ? 'grid' : 'none';
     document.getElementById('skinsGridLendarias').style.display = categoria === 'lendaria' ? 'grid' : 'none';
-    
-    renderLojaCategoria(categoria);
-}
 
-function mostrarSubAba(aba) {
-    var tabs = document.querySelectorAll('.sub-tab');
-    for(var i = 0; i < tabs.length; i++) {
-        tabs[i].classList.remove('active');
-    }
-    var panels = document.querySelectorAll('.sub-panel');
-    for(var i = 0; i < panels.length; i++) {
-        panels[i].classList.remove('active');
-    }
-    document.getElementById('sub-tab-' + aba).classList.add('active');
-    document.getElementById('sub-panel-' + aba).classList.add('active');
-    if(aba === 'skins') {
-        setTimeout(function() { mostrarCategoriaSkin('basica'); }, 100);
-    }
-    if(aba === 'estrategias') {
-        renderLojaEstrategias();
-    }
-    if(aba === 'moedas') {
-        renderPlanos();
-    }
-}
-
-function mostrarCategoriaSkin(categoria) {
-    var tabs = document.querySelectorAll('[id^="sub-sub-tab-"]');
-    for(var i = 0; i < tabs.length; i++) {
-        tabs[i].classList.remove('active');
-    }
-    var tabAtiva = document.getElementById('sub-sub-tab-' + categoria);
-    if(tabAtiva) {
-        tabAtiva.classList.add('active');
-    }
-    var panels = document.querySelectorAll('[id^="sub-sub-panel-"]');
-    for(var i = 0; i < panels.length; i++) {
-        panels[i].classList.remove('active');
-    }
-    var panelAtivo = document.getElementById('sub-sub-panel-' + categoria);
-    if(panelAtivo) {
-        panelAtivo.classList.add('active');
-    }
     renderLojaCategoria(categoria);
 }
 
@@ -514,7 +468,7 @@ function desconectarIQ() {
         return;
     }
     if(!confirm('Deseja realmente desconectar da IQ Option?')) return;
-    
+
     fetch('/parar', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -523,7 +477,7 @@ function desconectarIQ() {
     .then(function() {
         conectadoIQ = false;
         botAtivo = false;
-        
+
         document.getElementById('btnConectar').style.display = 'inline-block';
         document.getElementById('btnConectar').disabled = false;
         document.getElementById('btnConectar').textContent = '🔌 CONECTAR';
@@ -532,9 +486,9 @@ function desconectarIQ() {
         document.getElementById('btnParar').style.display = 'none';
         document.getElementById('statusTexto').textContent = '⏸️ Desconectado';
         document.getElementById('statusDot').className = 'status-dot inactive';
-        
+
         if(intervalo) clearInterval(intervalo);
-        
+
         alert('🔌 Desconectado da IQ Option');
         setTimeout(function() { location.reload(); }, 500);
     })
@@ -580,11 +534,11 @@ function comecarOperar() {
 
 function pararBot() {
     if(!confirm('Parar o bot? O ciclo atual será interrompido.')) return;
-    
+
     var btnParar = document.getElementById('btnParar');
     btnParar.disabled = true;
     btnParar.textContent = 'Parando...';
-    
+
     fetch('/parar', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -602,6 +556,9 @@ function pararBot() {
         btnParar.textContent = '⏹️ PARAR';
         alert('⏹️ Bot parado com sucesso!');
         atualizar();
+        
+        // ⭐ Força atualização da interface
+        setTimeout(function() { location.reload(); }, 500);
     })
     .catch(function(err) {
         alert('Erro ao parar: ' + err.message);
@@ -814,7 +771,7 @@ function ativarSkin(skinId) {
         return;
     }
     if(!confirm('Ativar esta skin? O visual será atualizado.')) return;
-    
+
     fetch('/ativar_skin', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -853,7 +810,7 @@ function pagarComPix(planoId) {
     }
     document.getElementById('modalPix').classList.add('active');
     document.getElementById('pixContent').innerHTML = '<p style="color:#ffd700">⏳ Gerando QR Code...</p>';
-    
+
     fetch('/criar_pix', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -940,7 +897,7 @@ function verRelatorio() {
         h += '<div class="relatorio-card"><div class="rlabel">📅 CADASTRO</div><div class="rvalue" style="font-size:10px">' + (d.data_cadastro || '--') + '</div></div>';
         h += '</div>';
         if(d.historico_operacoes && d.historico_operacoes.length > 0) {
-            h += '<h4 style="margin-top:10px">📋 ÚLTIMAS</h4><table class="historico-table"><tr><th>Data</th><th>Res.</th><th>Valor</th><th>Lucro</th><th>Est.</th></tr>';
+            h += '<h4 style="margin-top:10px">📋 ÚLTIMAS</h4><table class="historico-table"><tr><th>Data</th><th>Res.</th><th>Valor</th><th>Lucro</th><th>Est.</th></td>';
             var historico = d.historico_operacoes.slice(-15).reverse();
             for(var i = 0; i < historico.length; i++) {
                 var op = historico[i];
@@ -1088,12 +1045,7 @@ function atualizarChat() {
     });
 }
 
-// ========== SISTEMA DINÂMICO DE EFEITOS DAS SKINS ==========
-// Este sistema detecta AUTOMATICAMENTE os efeitos baseado nos elementos do header_extra
-// NÃO precisa modificar o HTML ao adicionar novas skins!
-
 function initSkinEffects() {
-    // Efeito Matrix (códigos caindo)
     var matrixCanvas = document.getElementById('matrixCanvas');
     if(matrixCanvas && matrixCanvas.getContext) {
         var ctx = matrixCanvas.getContext('2d');
@@ -1123,7 +1075,6 @@ function initSkinEffects() {
         drawMatrix();
     }
     
-    // Efeito Sakura (pétalas caindo)
     var sakuraCanvas = document.getElementById('sakuraCanvas');
     if(sakuraCanvas && sakuraCanvas.getContext) {
         var sCtx = sakuraCanvas.getContext('2d');
@@ -1158,7 +1109,6 @@ function initSkinEffects() {
         drawSakura();
     }
     
-    // Efeito Dark (partículas flutuantes)
     var darkCanvas = document.getElementById('darkCanvas');
     if(darkCanvas && darkCanvas.getContext) {
         var dCtx = darkCanvas.getContext('2d');
@@ -1195,425 +1145,6 @@ function initSkinEffects() {
         }
         drawDark();
     }
-    
-    // Efeito Cyberpunk (scanline)
-    var cyberCanvas = document.getElementById('cyberCanvas');
-    if(cyberCanvas && cyberCanvas.getContext) {
-        var cCtx = cyberCanvas.getContext('2d');
-        var cWidth = cyberCanvas.parentElement ? cyberCanvas.parentElement.offsetWidth : window.innerWidth;
-        var cHeight = cyberCanvas.parentElement ? cyberCanvas.parentElement.offsetHeight : 200;
-        cyberCanvas.width = cWidth;
-        cyberCanvas.height = cHeight;
-        var glitch = 0;
-        function drawCyber() {
-            if(!cyberCanvas || !cyberCanvas.getContext) return;
-            cCtx.fillStyle = 'rgba(0,0,0,0.02)';
-            cCtx.fillRect(0, 0, cWidth, cHeight);
-            cCtx.fillStyle = '#ff3366';
-            cCtx.font = '12px monospace';
-            for(var i = 0; i < 30; i++) {
-                var x = Math.random() * cWidth;
-                var y = Math.random() * cHeight;
-                cCtx.fillText('0101', x, y);
-            }
-            requestAnimationFrame(drawCyber);
-        }
-        drawCyber();
-    }
-    
-    // Efeito Ocean (ondas)
-    var oceanCanvas = document.getElementById('oceanCanvas');
-    if(oceanCanvas && oceanCanvas.getContext) {
-        var oCtx = oceanCanvas.getContext('2d');
-        var oWidth = oceanCanvas.parentElement ? oceanCanvas.parentElement.offsetWidth : window.innerWidth;
-        var oHeight = oceanCanvas.height || 80;
-        oceanCanvas.width = oWidth;
-        var waveOffset = 0;
-        function drawOcean() {
-            if(!oceanCanvas || !oceanCanvas.getContext) return;
-            oCtx.clearRect(0, 0, oWidth, oHeight);
-            oCtx.beginPath();
-            oCtx.moveTo(0, oHeight);
-            for(var x = 0; x < oWidth; x += 10) {
-                var y = oHeight / 2 + Math.sin(x * 0.02 + waveOffset) * 15;
-                oCtx.lineTo(x, y);
-            }
-            oCtx.lineTo(oWidth, oHeight);
-            oCtx.closePath();
-            oCtx.fillStyle = 'rgba(0,170,204,0.3)';
-            oCtx.fill();
-            waveOffset += 0.05;
-            requestAnimationFrame(drawOcean);
-        }
-        drawOcean();
-    }
-    
-    // Efeito Fire (chamas)
-    var fireCanvas = document.getElementById('fireCanvas');
-    if(fireCanvas && fireCanvas.getContext) {
-        var fCtx = fireCanvas.getContext('2d');
-        var fWidth = fireCanvas.parentElement ? fireCanvas.parentElement.offsetWidth : window.innerWidth;
-        var fHeight = fireCanvas.height || 80;
-        fireCanvas.width = fWidth;
-        var fireParticles = [];
-        for(var i = 0; i < 60; i++) {
-            fireParticles.push({
-                x: Math.random() * fWidth,
-                y: fHeight - Math.random() * 20,
-                size: Math.random() * 4 + 2,
-                life: Math.random() * 40 + 20,
-                maxLife: 60
-            });
-        }
-        function drawFire() {
-            if(!fireCanvas || !fireCanvas.getContext) return;
-            fCtx.clearRect(0, 0, fWidth, fHeight);
-            for(var i = 0; i < fireParticles.length; i++) {
-                var p = fireParticles[i];
-                var progress = p.life / p.maxLife;
-                var gradient = fCtx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
-                gradient.addColorStop(0, 'rgba(255,200,0,' + progress + ')');
-                gradient.addColorStop(0.5, 'rgba(255,100,0,' + progress * 0.6 + ')');
-                gradient.addColorStop(1, 'rgba(255,0,0,0)');
-                fCtx.fillStyle = gradient;
-                fCtx.beginPath();
-                fCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                fCtx.fill();
-                p.life--;
-                if(p.life <= 0) {
-                    p.life = p.maxLife;
-                    p.x = Math.random() * fWidth;
-                    p.y = fHeight - Math.random() * 20;
-                }
-            }
-            requestAnimationFrame(drawFire);
-        }
-        drawFire();
-    }
-    
-    // Efeito Snow (neve)
-    var snowCanvas = document.getElementById('snowCanvas');
-    if(snowCanvas && snowCanvas.getContext) {
-        var snCtx = snowCanvas.getContext('2d');
-        var snWidth = snowCanvas.parentElement ? snowCanvas.parentElement.offsetWidth : window.innerWidth;
-        var snHeight = snowCanvas.parentElement ? snowCanvas.parentElement.offsetHeight : 200;
-        snowCanvas.width = snWidth;
-        snowCanvas.height = snHeight;
-        var snowflakes = [];
-        for(var i = 0; i < 60; i++) {
-            snowflakes.push({
-                x: Math.random() * snWidth,
-                y: Math.random() * snHeight,
-                r: Math.random() * 3 + 1,
-                speed: Math.random() * 1 + 0.3,
-                wind: (Math.random() - 0.5) * 0.5
-            });
-        }
-        function drawSnow() {
-            if(!snowCanvas || !snowCanvas.getContext) return;
-            snCtx.clearRect(0, 0, snWidth, snHeight);
-            for(var i = 0; i < snowflakes.length; i++) {
-                var f = snowflakes[i];
-                snCtx.beginPath();
-                snCtx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
-                snCtx.fillStyle = 'rgba(255,255,255,0.7)';
-                snCtx.fill();
-                f.y += f.speed;
-                f.x += f.wind;
-                if(f.y > snHeight) { f.y = -5; f.x = Math.random() * snWidth; }
-            }
-            requestAnimationFrame(drawSnow);
-        }
-        drawSnow();
-    }
-    
-    // Efeito Coffee (fumaça)
-    var coffeeCanvas = document.getElementById('coffeeCanvas');
-    if(coffeeCanvas && coffeeCanvas.getContext) {
-        var cfCtx = coffeeCanvas.getContext('2d');
-        var cfWidth = coffeeCanvas.parentElement ? coffeeCanvas.parentElement.offsetWidth : window.innerWidth;
-        var cfHeight = coffeeCanvas.parentElement ? coffeeCanvas.parentElement.offsetHeight : 200;
-        coffeeCanvas.width = cfWidth;
-        coffeeCanvas.height = cfHeight;
-        var steam = [];
-        for(var i = 0; i < 15; i++) {
-            steam.push({
-                x: Math.random() * cfWidth,
-                y: cfHeight,
-                r: Math.random() * 8 + 4,
-                speed: Math.random() * 1 + 0.5
-            });
-        }
-        function drawCoffee() {
-            if(!coffeeCanvas || !coffeeCanvas.getContext) return;
-            cfCtx.clearRect(0, 0, cfWidth, cfHeight);
-            for(var i = 0; i < steam.length; i++) {
-                var s = steam[i];
-                cfCtx.fillStyle = 'rgba(180,150,100,0.15)';
-                cfCtx.beginPath();
-                cfCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-                cfCtx.fill();
-                s.y -= s.speed;
-                if(s.y < 0) { s.y = cfHeight; s.x = Math.random() * cfWidth; }
-            }
-            requestAnimationFrame(drawCoffee);
-        }
-        drawCoffee();
-    }
-    
-    // Efeito Cosmic (estrelas)
-    var cosmicCanvas = document.getElementById('cosmicCanvas');
-    if(cosmicCanvas && cosmicCanvas.getContext) {
-        var cosCtx = cosmicCanvas.getContext('2d');
-        var cosWidth = cosmicCanvas.parentElement ? cosmicCanvas.parentElement.offsetWidth : window.innerWidth;
-        var cosHeight = cosmicCanvas.parentElement ? cosmicCanvas.parentElement.offsetHeight : 200;
-        cosmicCanvas.width = cosWidth;
-        cosmicCanvas.height = cosHeight;
-        var stars = [];
-        for(var i = 0; i < 100; i++) {
-            stars.push({
-                x: Math.random() * cosWidth,
-                y: Math.random() * cosHeight,
-                r: Math.random() * 2,
-                alpha: Math.random()
-            });
-        }
-        function drawCosmic() {
-            if(!cosmicCanvas || !cosmicCanvas.getContext) return;
-            cosCtx.clearRect(0, 0, cosWidth, cosHeight);
-            for(var i = 0; i < stars.length; i++) {
-                var s = stars[i];
-                cosCtx.beginPath();
-                cosCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-                cosCtx.fillStyle = 'rgba(255,255,255,' + (0.3 + Math.sin(Date.now() * 0.001 + i) * 0.2) + ')';
-                cosCtx.fill();
-            }
-            requestAnimationFrame(drawCosmic);
-        }
-        drawCosmic();
-    }
-    
-    // Efeito Aurora
-    var auroraCanvas = document.getElementById('auroraCanvas');
-    if(auroraCanvas && auroraCanvas.getContext) {
-        var aCtx = auroraCanvas.getContext('2d');
-        var aWidth = auroraCanvas.parentElement ? auroraCanvas.parentElement.offsetWidth : window.innerWidth;
-        var aHeight = auroraCanvas.parentElement ? auroraCanvas.parentElement.offsetHeight : 200;
-        auroraCanvas.width = aWidth;
-        auroraCanvas.height = aHeight;
-        var aTime = 0;
-        function drawAurora() {
-            if(!auroraCanvas || !auroraCanvas.getContext) return;
-            aCtx.clearRect(0, 0, aWidth, aHeight);
-            var grad = aCtx.createLinearGradient(0, 0, aWidth, 0);
-            grad.addColorStop(0, 'rgba(0,255,170,0)');
-            grad.addColorStop(0.3, 'rgba(0,255,170,0.15)');
-            grad.addColorStop(0.5, 'rgba(100,50,255,0.12)');
-            grad.addColorStop(0.7, 'rgba(0,200,255,0.15)');
-            grad.addColorStop(1, 'rgba(0,255,170,0)');
-            aCtx.fillStyle = grad;
-            aCtx.fillRect(0, 0, aWidth, aHeight);
-            requestAnimationFrame(drawAurora);
-        }
-        drawAurora();
-    }
-    
-    // Efeito Batman (morcegos)
-    var batmanCanvas = document.getElementById('batmanCanvas');
-    if(batmanCanvas && batmanCanvas.getContext) {
-        var bCtx = batmanCanvas.getContext('2d');
-        var bWidth = batmanCanvas.parentElement ? batmanCanvas.parentElement.offsetWidth : window.innerWidth;
-        var bHeight = batmanCanvas.parentElement ? batmanCanvas.parentElement.offsetHeight : 200;
-        batmanCanvas.width = bWidth;
-        batmanCanvas.height = bHeight;
-        var bats = [];
-        for(var i = 0; i < 6; i++) {
-            bats.push({
-                x: Math.random() * bWidth,
-                y: Math.random() * bHeight,
-                vx: (Math.random() - 0.5) * 2,
-                vy: (Math.random() - 0.5) * 1,
-                size: Math.random() * 20 + 15
-            });
-        }
-        function drawBatman() {
-            if(!batmanCanvas || !batmanCanvas.getContext) return;
-            bCtx.clearRect(0, 0, bWidth, bHeight);
-            for(var i = 0; i < bats.length; i++) {
-                var bat = bats[i];
-                bCtx.font = bat.size + 'px monospace';
-                bCtx.fillStyle = 'rgba(245,197,24,0.15)';
-                bCtx.fillText('🦇', bat.x, bat.y);
-                bat.x += bat.vx;
-                bat.y += bat.vy;
-                if(bat.x > bWidth) bat.x = 0;
-                if(bat.x < 0) bat.x = bWidth;
-                if(bat.y > bHeight) bat.y = 0;
-                if(bat.y < 0) bat.y = bHeight;
-            }
-            requestAnimationFrame(drawBatman);
-        }
-        drawBatman();
-    }
-    
-    // Efeito Capitão América (estrelas)
-    var capitaoCanvas = document.getElementById('capitaoCanvas');
-    if(capitaoCanvas && capitaoCanvas.getContext) {
-        var capCtx = capitaoCanvas.getContext('2d');
-        var capWidth = capitaoCanvas.parentElement ? capitaoCanvas.parentElement.offsetWidth : window.innerWidth;
-        var capHeight = capitaoCanvas.parentElement ? capitaoCanvas.parentElement.offsetHeight : 200;
-        capitaoCanvas.width = capWidth;
-        capitaoCanvas.height = capHeight;
-        var capStars = [];
-        for(var i = 0; i < 20; i++) {
-            capStars.push({
-                x: Math.random() * capWidth,
-                y: Math.random() * capHeight,
-                r: Math.random() * 10 + 8,
-                alpha: Math.random()
-            });
-        }
-        function drawCapitao() {
-            if(!capitaoCanvas || !capitaoCanvas.getContext) return;
-            capCtx.clearRect(0, 0, capWidth, capHeight);
-            for(var i = 0; i < capStars.length; i++) {
-                var s = capStars[i];
-                capCtx.font = s.r + 'px monospace';
-                capCtx.fillStyle = 'rgba(255,0,0,0.15)';
-                capCtx.fillText('⭐', s.x, s.y);
-            }
-            requestAnimationFrame(drawCapitao);
-        }
-        drawCapitao();
-    }
-    
-    // Efeito Superman
-    var supermanCanvas = document.getElementById('supermanCanvas');
-    if(supermanCanvas && supermanCanvas.getContext) {
-        var supCtx = supermanCanvas.getContext('2d');
-        var supWidth = supermanCanvas.parentElement ? supermanCanvas.parentElement.offsetWidth : window.innerWidth;
-        var supHeight = supermanCanvas.parentElement ? supermanCanvas.parentElement.offsetHeight : 200;
-        supermanCanvas.width = supWidth;
-        supermanCanvas.height = supHeight;
-        var supSymbols = [];
-        for(var i = 0; i < 8; i++) {
-            supSymbols.push({
-                x: Math.random() * supWidth,
-                y: Math.random() * supHeight,
-                vx: (Math.random() - 0.5) * 1.5,
-                vy: (Math.random() - 0.5) * 1,
-                size: Math.random() * 25 + 20
-            });
-        }
-        function drawSuperman() {
-            if(!supermanCanvas || !supermanCanvas.getContext) return;
-            supCtx.clearRect(0, 0, supWidth, supHeight);
-            for(var i = 0; i < supSymbols.length; i++) {
-                var s = supSymbols[i];
-                supCtx.font = s.size + 'px monospace';
-                supCtx.fillStyle = 'rgba(255,204,0,0.15)';
-                supCtx.fillText('🦸', s.x, s.y);
-                s.x += s.vx;
-                s.y += s.vy;
-                if(s.x > supWidth) s.x = 0;
-                if(s.x < 0) s.x = supWidth;
-                if(s.y > supHeight) s.y = 0;
-                if(s.y < 0) s.y = supHeight;
-            }
-            requestAnimationFrame(drawSuperman);
-        }
-        drawSuperman();
-    }
-    
-    // Efeito Homem-Aranha (teias)
-    var spiderCanvas = document.getElementById('spiderCanvas');
-    if(spiderCanvas && spiderCanvas.getContext) {
-        var spCtx = spiderCanvas.getContext('2d');
-        var spWidth = spiderCanvas.parentElement ? spiderCanvas.parentElement.offsetWidth : window.innerWidth;
-        var spHeight = spiderCanvas.parentElement ? spiderCanvas.parentElement.offsetHeight : 200;
-        spiderCanvas.width = spWidth;
-        spiderCanvas.height = spHeight;
-        var webs = [];
-        for(var i = 0; i < 15; i++) {
-            webs.push({
-                x1: Math.random() * spWidth,
-                y1: Math.random() * spHeight,
-                x2: Math.random() * spWidth,
-                y2: Math.random() * spHeight
-            });
-        }
-        function drawSpider() {
-            if(!spiderCanvas || !spiderCanvas.getContext) return;
-            spCtx.clearRect(0, 0, spWidth, spHeight);
-            for(var i = 0; i < webs.length; i++) {
-                var w = webs[i];
-                spCtx.beginPath();
-                spCtx.moveTo(w.x1, w.y1);
-                spCtx.lineTo(w.x2, w.y2);
-                spCtx.strokeStyle = 'rgba(255,0,0,0.1)';
-                spCtx.lineWidth = 1;
-                spCtx.stroke();
-            }
-            requestAnimationFrame(drawSpider);
-        }
-        drawSpider();
-    }
-    
-    // Efeito Homem de Ferro (reator)
-    var ironmanCanvas = document.getElementById('ironmanCanvas');
-    if(ironmanCanvas && ironmanCanvas.getContext) {
-        var iCtx = ironmanCanvas.getContext('2d');
-        var iWidth = ironmanCanvas.parentElement ? ironmanCanvas.parentElement.offsetWidth : window.innerWidth;
-        var iHeight = ironmanCanvas.parentElement ? ironmanCanvas.parentElement.offsetHeight : 200;
-        ironmanCanvas.width = iWidth;
-        ironmanCanvas.height = iHeight;
-        var iTime = 0;
-        function drawIronman() {
-            if(!ironmanCanvas || !ironmanCanvas.getContext) return;
-            iCtx.clearRect(0, 0, iWidth, iHeight);
-            var centerX = iWidth / 2;
-            var centerY = iHeight / 2;
-            var radius = 30 + Math.sin(iTime) * 5;
-            var grad = iCtx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
-            grad.addColorStop(0, 'rgba(255,102,0,0.2)');
-            grad.addColorStop(1, 'rgba(255,102,0,0)');
-            iCtx.fillStyle = grad;
-            iCtx.beginPath();
-            iCtx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-            iCtx.fill();
-            iTime += 0.05;
-            requestAnimationFrame(drawIronman);
-        }
-        drawIronman();
-    }
-    
-    // Efeito Thunder (relâmpagos)
-    var thunderCanvas = document.getElementById('thunderCanvas');
-    if(thunderCanvas && thunderCanvas.getContext) {
-        var tCtx = thunderCanvas.getContext('2d');
-        var tWidth = thunderCanvas.parentElement ? thunderCanvas.parentElement.offsetWidth : window.innerWidth;
-        var tHeight = thunderCanvas.parentElement ? thunderCanvas.parentElement.offsetHeight : 200;
-        thunderCanvas.width = tWidth;
-        thunderCanvas.height = tHeight;
-        function drawThunder() {
-            if(!thunderCanvas || !thunderCanvas.getContext) return;
-            tCtx.clearRect(0, 0, tWidth, tHeight);
-            if(Math.random() < 0.05) {
-                tCtx.beginPath();
-                var x = Math.random() * tWidth;
-                tCtx.moveTo(x, 0);
-                for(var y = 0; y < tHeight; y += 30) {
-                    x += (Math.random() - 0.5) * 50;
-                    tCtx.lineTo(x, y);
-                }
-                tCtx.strokeStyle = 'rgba(255,255,0,0.4)';
-                tCtx.lineWidth = 2;
-                tCtx.stroke();
-            }
-            requestAnimationFrame(drawThunder);
-        }
-        drawThunder();
-    }
 }
 
 window.onload = function() {
@@ -1648,4 +1179,4 @@ window.onload = function() {
 };
 </script>
 </body>
-                </html>
+                                      </html>
