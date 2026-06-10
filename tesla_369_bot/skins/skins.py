@@ -225,24 +225,8 @@ SKINS_LIST = [
         'cor_header_borda': '#ff69b4',
         'header_extra': '<div class="coroa-p">👑</div>',
         'css_extra': '.coroa-p{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:40px;animation:float 2s ease-in-out infinite}@keyframes float{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-10px)}}.header h1{color:#ff69b4!important;text-shadow:0 0 30px #ff1493!important}'
-    }'
-    {
-        'id': 'skin_cosmic',
-        'nome': '🌌 TESLA COSMIC',
-        'desc': 'Galáxia girando com estrelas cadentes - SKIN DE TESTE',
-        'preco_moedas': 0,
-        'categoria': 'lendaria',
-        'cor_fundo': '#050510',
-        'cor_panel': '#0a0a2a',
-        'cor_destaque': '#aa66ff',
-        'cor_texto': '#e0d0ff',
-        'cor_botao': 'linear-gradient(135deg,#6600cc,#aa66ff)',
-        'cor_tab_ativa': '#aa66ff',
-        'cor_header_bg': 'linear-gradient(135deg,#050510,#0a0a2a,#151545,#0a0a2a,#050510)',
-        'cor_header_borda': '#aa66ff',
-        'header_extra': '<canvas id="cosmicCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none"></canvas>',
-        'css_extra': 'body{background:#050510!important}.header{border-color:#aa66ff!important;box-shadow:0 0 50px rgba(170,102,255,0.3)}'
     }
+    
 ]
 
 # Função auxiliar para obter skin por ID
