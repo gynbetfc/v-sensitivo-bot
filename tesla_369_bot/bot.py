@@ -471,7 +471,7 @@ def bot_loop():
             return
 
         estrategia_info = estrategias_info[estrategia_atual_global]
-        timeframe_estrategia = strategy_info.get('timeframe', 60) if 'strategy_info' in locals() else estrategia_info.get('timeframe', 60)
+        timeframe_estrategia = estrategia_info.get('timeframe', 60)
         timeframe_atual = timeframe_estrategia
         add_log(f"📊 Algoritmo Selecionado: {estrategia_info.get('nome')}", 'indicator')
         add_log(f"⏱️ Base Gráfica: {timeframe_estrategia}s", 'info')
@@ -516,17 +516,19 @@ def bot_loop():
                     sinal_pendente = None
             
             if direcao in ['call', 'put']:
+                # CALIBRAÇÃO CLOUD: Tolerância expandida para 15 segundos para compensar o delay HTTP REST
                 segundo_atual = datetime.now().second
-                if segundo_atual <= 5:
+                if segundo_atual <= 15:
                     ultimo_sinal = f"EXECUTANDO: {direcao.upper()}"
                     executar_ciclo_completo_hardcoded(direcao)
                     break
                 else:
-                    add_log(f"⚠️ Sinal de {direcao.upper()} bloqueado por entrada tardia (Segundo {segundo_atual}). Buscando próximo...", 'indicator')
+                    add_log(f"⚠️ Sinal de {direcao.upper()} retido por segurança (Entrada tardia extrema no segundo {segundo_atual}). Buscando próximo...", 'indicator')
             
             time.sleep(0.5)
 
         bot_rodando = False
+
 
 def analise_mercado_loop():
     global ultima_analise
