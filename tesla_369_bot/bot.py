@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v12.0.0 Cloud - FIREBASE ONLY ⚡
-# ESTRATÉGIAS E SKINS SALVAS NO FIREBASE (CADA UMA EM SEU PRÓPRIO JSON)
-# VOLT CONSUMIDO APENAS NA EXECUÇÃO DA OPERAÇÃO
+# ⚡ TESLA 369 BOT v12.1.0 - FIREBASE ONLY - CORRIGIDO ⚡
+# Usando a lógica de espera do tes.py (que funciona!)
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -15,7 +14,6 @@ import warnings
 import requests
 import uuid
 import signal
-import json
 
 warnings.filterwarnings("ignore")
 app = Flask(__name__)
@@ -152,10 +150,9 @@ def calcular_media_movel(velas, periodo):
         soma += get_close(v)
     return soma / periodo
 
-# ============= SKINS NO FIREBASE (CADA UMA EM SEU JSON) =============
+# ============= SKINS NO FIREBASE =============
 
 def get_skins_fallback():
-    """Skin padrão de fallback caso Firebase esteja vazio"""
     return {
         'skin_padrao': {
             'id': 'skin_padrao', 'nome': '⚡ TESLA PADRÃO', 'desc': 'Tema escuro com raios dourados',
@@ -180,21 +177,18 @@ def get_skins_fallback():
     }
 
 def carregar_skin_do_firebase(skin_id):
-    """Carrega UMA skin específica do Firebase"""
     try:
-        # Sanitiza o ID para usar como key no Firebase
         key = skin_id.replace(".", "_").replace("@", "_").replace("#", "")
         r = requests.get(f'{FB_URL}/tesla_369/skins/{key}.json', timeout=5)
         if r.status_code == 200 and r.json():
             skin_data = r.json()
-            skin_data['id'] = skin_id  # Garante que o ID está presente
+            skin_data['id'] = skin_id
             return skin_data
     except Exception as e:
         print(f"⚠️ Erro ao carregar skin {skin_id}: {e}")
     return None
 
 def carregar_todas_skins_do_firebase():
-    """Carrega TODAS as skins do Firebase (cada uma em seu JSON)"""
     global cache_skins
     agora = time.time()
     
@@ -202,7 +196,6 @@ def carregar_todas_skins_do_firebase():
         return cache_skins["data"]
     
     try:
-        # Busca a lista de todas as skins no Firebase
         r = requests.get(f'{FB_URL}/tesla_369/skins.json', timeout=5)
         if r.status_code == 200 and r.json():
             skins_dict = r.json()
@@ -217,20 +210,17 @@ def carregar_todas_skins_do_firebase():
     except Exception as e:
         print(f"⚠️ Erro ao carregar skins: {e}")
     
-    # Fallback: retorna skins padrão
     fallback_skins = list(get_skins_fallback().values())
     cache_skins["data"] = fallback_skins
     cache_skins["timestamp"] = agora
     return fallback_skins
 
 def carregar_skins_da_nuvem():
-    """Compatibilidade com código antigo - agora busca no Firebase"""
     return carregar_todas_skins_do_firebase()
 
-# ============= ESTRATÉGIAS NO FIREBASE (CADA UMA EM SEU JSON) =============
+# ============= ESTRATÉGIAS NO FIREBASE =============
 
 def carregar_informacoes_estrategias():
-    """Carrega informações de TODAS as estratégias disponíveis no Firebase"""
     global cache_estrategias_info
     agora = time.time()
     
@@ -238,7 +228,6 @@ def carregar_informacoes_estrategias():
         return cache_estrategias_info["data"]
     
     try:
-        # Busca a lista de todas as estratégias no Firebase
         r = requests.get(f'{FB_URL}/tesla_369/estrategias.json', timeout=5)
         if r.status_code == 200 and r.json():
             estrategias_dict = r.json()
@@ -259,7 +248,6 @@ def carregar_informacoes_estrategias():
     except Exception as e:
         print(f"⚠️ Erro ao carregar estratégias: {e}")
     
-    # Fallback: estratégia padrão
     fallback = {
         'v_sensitivo': {
             'nome': 'V SENSITIVO',
@@ -274,9 +262,7 @@ def carregar_informacoes_estrategias():
     return fallback
 
 def carregar_estrategia_do_firebase(nome_estrategia):
-    """Carrega o código COMPLETO de uma estratégia específica do Firebase"""
     try:
-        # Sanitiza o nome para usar como key no Firebase
         key = nome_estrategia.replace(".", "_").replace("@", "_").replace("#", "")
         r = requests.get(f'{FB_URL}/tesla_369/estrategias/{key}.json', timeout=5)
         if r.status_code == 200 and r.json():
@@ -289,7 +275,6 @@ def carregar_estrategia_do_firebase(nome_estrategia):
     return None
 
 def carregar_e_injetar_estrategia(nome_estrategia):
-    """Carrega estratégia do Firebase e injeta na função global"""
     global estrategia_atual_executar, cache_estrategia_carregada, estrategia_ja_injetada
     
     agora = time.time()
@@ -297,7 +282,6 @@ def carregar_e_injetar_estrategia(nome_estrategia):
         add_log(f"📦 Estratégia '{nome_estrategia}' carregada do cache", "info")
         return True
     
-    # 🔥 Busca APENAS no Firebase
     estrategia_data = carregar_estrategia_do_firebase(nome_estrategia)
     
     if not estrategia_data:
@@ -306,11 +290,10 @@ def carregar_e_injetar_estrategia(nome_estrategia):
     
     codigo = estrategia_data.get('codigo')
     if not codigo or 'def rodar_analise' not in codigo:
-        add_log(f"❌ Estratégia '{nome_estrategia}' não contém a função 'rodar_analise'", "error")
+        add_log(f"❌ Estratégia '{nome_estrategia}' não contém 'rodar_analise'", "error")
         return False
     
     try:
-        # Executa o código da estratégia para obter a função
         escopo = {}
         exec(codigo, escopo)
         
@@ -327,8 +310,6 @@ def carregar_e_injetar_estrategia(nome_estrategia):
             return False
     except Exception as e:
         add_log(f"❌ Erro ao executar estratégia: {e}", "error")
-        import traceback
-        traceback.print_exc()
         return False
 
 # ========== FUNÇÕES DE USUÁRIO (FIREBASE) ==========
@@ -408,22 +389,31 @@ def pegar_timestamp():
     return 0
 
 def aguardar_inicio_vela():
-    segundo_atual = datetime.now().second
-    if segundo_atual <= 5:
-        return True
-    while datetime.now().second > 1:
+    """Aguarda o início da próxima vela (igual ao tes.py)"""
+    add_log("   ⏳ Aguardando início da vela...", 'info')
+    while datetime.now().second > 5:
         if not bot_rodando:
             return False
-        time.sleep(0.1)
-    return True
+        time.sleep(0.3)
+    while True:
+        if not bot_rodando:
+            return False
+        ts1 = pegar_timestamp()
+        time.sleep(0.5)
+        ts2 = pegar_timestamp()
+        if ts1 == ts2:
+            add_log("   ✅ Vela confirmada!", 'info')
+            return True
 
 def aguardar_vela_fechar(ts_entrada):
+    """CORRIGIDO: igual ao tes.py - SEM TIMEOUT, apenas verifica timestamp"""
+    add_log(f"   ⏳ Aguardando vela fechar...", 'info')
     while True:
         if not bot_rodando:
             return False
         try:
-            ts_atual = pegar_timestamp()
-            if ts_atual != ts_entrada and ts_atual != 0:
+            if pegar_timestamp() != ts_entrada:
+                add_log("   ✅ Vela fechou!", 'info')
                 return True
         except:
             pass
@@ -457,7 +447,12 @@ def consumir_volt():
     return True
 
 def executar_ciclo(direcao):
+    """CORRIGIDO: igual ao tes.py - sem timeouts desnecessários"""
     global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, timeframe_atual
+    
+    if not bot_rodando:
+        return
+    
     try:
         if not API:
             bot_rodando = False
@@ -478,14 +473,17 @@ def executar_ciclo(direcao):
             if not bot_rodando:
                 break
             valor = entradas[i]
+            
             if not aguardar_inicio_vela():
                 break
+                
             saldo_antes = API.get_balance()
             if saldo_antes < valor:
                 add_log("❌ Saldo insuficiente!", 'error')
                 break
 
-            add_log(f"🎯 {'OPERAÇÃO' if i == 0 else f'GALE {i}'}: {direcao.upper()} ${valor:.2f}", 'info')
+            add_log(f"🎯 {'ENTRADA' if i == 0 else f'GALE {i}'}: {direcao.upper()} ${valor:.2f}", 'info')
+            
             st, id_ordem = API.buy(valor, par, direcao, 1)
             if not st or not id_ordem:
                 try:
@@ -493,18 +491,15 @@ def executar_ciclo(direcao):
                 except:
                     pass
             if not st or not id_ordem:
-                add_log("❌ Rejeitado!", 'error')
+                add_log("❌ Falha na ordem!", 'error')
                 break
 
-            add_log(f"   📝 ID: #{id_ordem}", 'info')
+            add_log(f"   📝 Ordem #{id_ordem}", 'info')
+            time.sleep(0.3)
             
             ts_real = pegar_timestamp()
-            if ts_real == 0:
-                add_log("⚠️ Falha de sincronia, aguardando 60s...", 'warning')
-                time.sleep(60)
-            else:
-                if not aguardar_vela_fechar(ts_real):
-                    break
+            if not aguardar_vela_fechar(ts_real):
+                break
             
             res = verificar_resultado(saldo_antes, valor)
             lucro += round(res, 2)
@@ -527,7 +522,7 @@ def executar_ciclo(direcao):
                     })
                     salvar_usuario(email_usuario_atual, u)
                 STOP_GAIN_ATINGIDO = True
-                add_log("🎯 STOP GAIN!", 'win')
+                add_log("🎯 STOP GAIN! Vitória alcançada!", 'win')
                 break
             else:
                 add_log(f"💀 LOSS! -${valor:.2f}", 'loss')
@@ -535,7 +530,7 @@ def executar_ciclo(direcao):
                 if u:
                     u['total_losses'] = u.get('total_losses', 0) + 1
                     u['total_gasto'] = u.get('total_gasto', 0) + valor
-                    u['lucro_total'] = u.get('total_ganho', 0) - u['total_gasto']
+                    u['lucro_total'] = u['total_ganho'] - u['total_gasto']
                     u['banca_atual'] = round(saldo_depois, 2)
                     u.setdefault('historico_operacoes', []).append({
                         'data': str(datetime.now())[:19], 'resultado': 'LOSS',
@@ -543,21 +538,25 @@ def executar_ciclo(direcao):
                         'estrategia': estrategia_atual_global.upper()
                     })
                     salvar_usuario(email_usuario_atual, u)
-                if i < MARTINGALE:
-                    add_log(f"   ➡️ GALE {i + 1}...", 'loss')
+                    
+                if i < MARTINGALE and bot_rodando:
+                    add_log(f"   ➡️ Indo para GALE {i + 1}...", 'loss')
                 else:
-                    add_log("   💀 CICLO ESGOTADO!", 'loss')
+                    add_log("   💀 CICLO COMPLETO PERDIDO!", 'loss')
 
-        bf = API.get_balance() if API else bi
-        add_log("=" * 50, 'info')
-        add_log(f"{'🌟 LUCRO' if bf > bi else '💀 PERDA'}: ${abs(bf - bi):.2f} | Saldo: ${bf:.2f}", 'info')
-        add_log("=" * 50, 'info')
+        if bot_rodando:
+            bf = API.get_balance() if API else bi
+            add_log("=" * 50, 'info')
+            add_log(f"{'🌟 LUCRO' if bf > bi else '💀 PERDA'}: ${abs(bf - bi):.2f} | Saldo: ${bf:.2f}", 'info')
+            add_log("=" * 50, 'info')
+            
     except Exception as e:
         add_log(f"Erro: {e}", 'error')
         import traceback
         traceback.print_exc()
     finally:
-        bot_rodando = False
+        if bot_rodando:
+            bot_rodando = False
         add_log("⏹️ Ciclo finalizado!", 'info')
 
 def bot_loop():
@@ -586,6 +585,7 @@ def bot_loop():
 
         estrategia_info = estrategias_info[estrategia_atual_global]
         timeframe_estrategia = estrategia_info.get('timeframe', 60)
+        timeframe_atual = timeframe_estrategia
         add_log(f"📊 Estratégia: {estrategia_info.get('nome')}", 'indicator')
         add_log(f"⏱️ Timeframe: {timeframe_estrategia}s", 'info')
 
@@ -621,27 +621,31 @@ def bot_loop():
                         add_log(f"🎯 SINAL: {direcao.upper()}!", 'sensitive')
             except Exception as e:
                 add_log(f"❌ Erro na análise: {e}", "error")
-                import traceback
-                traceback.print_exc()
 
         threading.Thread(target=processar_estrategia, daemon=True).start()
 
+        # Aguarda até 30 segundos por um sinal
+        tempo_espera = 0
         while bot_rodando and not STOP_GAIN_ATINGIDO:
             if not bot_rodando:
                 break
-            try:
-                with sinal_lock:
-                    direcao = sinal_pendente
-                    if direcao:
-                        sinal_pendente = None
-                if direcao in ['call', 'put']:
-                    ultimo_sinal = f"GATILHO: {direcao.upper()}"
-                    add_log(f"🎯 EXECUTANDO: {direcao.upper()}", 'sensitive')
-                    executar_ciclo(direcao)
-                    break
-                time.sleep(0.5)
-            except:
-                time.sleep(2)
+            
+            with sinal_lock:
+                direcao = sinal_pendente
+                if direcao:
+                    sinal_pendente = None
+            
+            if direcao in ['call', 'put']:
+                ultimo_sinal = f"GATILHO: {direcao.upper()}"
+                add_log(f"🎯 EXECUTANDO: {direcao.upper()}", 'sensitive')
+                executar_ciclo(direcao)
+                break
+            
+            time.sleep(1)
+            tempo_espera += 1
+            if tempo_espera > 30:
+                add_log("⏳ Nenhum sinal recebido após 30s. Encerrando ciclo.", 'info')
+                break
 
         bot_rodando = False
 
@@ -694,7 +698,6 @@ def analise_mercado_loop():
 threading.Thread(target=analise_mercado_loop, daemon=True).start()
 
 def sincronizar_html_local():
-    """Busca o HTML do GitHub (única coisa que ainda vem de lá)"""
     try:
         os.makedirs("templates", exist_ok=True)
         HTML_URL = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/tesla_369_bot/templates/index.html"
@@ -911,18 +914,22 @@ def comecar_operar():
 
 @app.route('/parar', methods=['POST'])
 def parar():
+    """CORRIGIDO: Para o bot imediatamente"""
     global bot_rodando, conectado_iq, volt_ja_consumido
     data = request.json or {}
     add_log("🛑 Parando o bot...", 'info')
-    with bot_lock:
-        bot_rodando = False
-    time.sleep(1)
+    
+    # Força a parada imediata
+    bot_rodando = False
+    
     volt_ja_consumido = False
+    
     if data.get('desconectar'):
         conectado_iq = False
         add_log("🔌 Desconectado", 'info')
     else:
         add_log("✅ Bot parado!", 'win')
+    
     return jsonify({'ok': True, 'shutdown': data.get('desconectar', False)})
 
 @app.route('/comprar_skin', methods=['POST'])
@@ -933,10 +940,8 @@ def comprar_skin():
     if not email_usuario_atual:
         return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
     
-    # Busca a skin específica no Firebase
     skin = carregar_skin_do_firebase(skin_id)
     if not skin:
-        # Fallback: tenta nas skins carregadas
         skins = carregar_todas_skins_do_firebase()
         skin = next((s for s in skins if s.get('id') == skin_id), None)
     
@@ -1136,9 +1141,8 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 50)
-    print("⚡ TESLA 369 BOT v12.0.0 - FIREBASE ONLY ⚡")
-    print("CADA SKIN E ESTRATÉGIA EM SEU PRÓPRIO JSON")
-    print("VOLT CONSUMIDO APENAS NA OPERAÇÃO")
+    print("⚡ TESLA 369 BOT v12.1.0 - FIREBASE ONLY - CORRIGIDO ⚡")
+    print("USANDO LÓGICA DE ESPERA DO TES.PY (SEM TIMEOUT)")
     print("=" * 50)
 
     print("🔍 Testando carregamento de skins do Firebase...")
