@@ -5,6 +5,7 @@
 # Baseado na lógica do tes.py que funciona perfeitamente
 # Firebase: SKINS e ESTRATÉGIAS carregadas da nuvem
 # SEM TIMEOUT - espera o tempo necessário pelo sinal
+# AGUARDA 60 SEGUNDOS REAIS para cada ordem
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -143,7 +144,8 @@ def get_skins_fallback():
             'cor_fundo': '#0a0a1a', 'cor_panel': '#1a1a3e', 'cor_destaque': '#ffd700', 'cor_texto': '#fff',
             'cor_botao': 'linear-gradient(135deg,#cc8800,#ffd700)', 'cor_tab_ativa': '#ffd700',
             'cor_header_bg': 'linear-gradient(135deg,#1a0000,#331100,#553300,#331100,#1a0000)', 'cor_header_borda': '#ffd700',
-            'header_extra': '<div class="lightning"></div>', 'css_extra': '.lightning{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:150px;height:150px;background:radial-gradient(circle at 30% 30%,rgba(255,215,0,0.3) 0%,rgba(255,165,0,0.15) 30%,transparent 100%);border-radius:50%;z-index:0;animation:glow 3s ease-in-out infinite;pointer-events:none}@keyframes glow{0%,100%{box-shadow:0 0 30px rgba(255,215,0,0.3)}50%{box-shadow:0 0 50px rgba(255,165,0,0.5)}}.lightning::after{content:"⚡";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:50px;animation:float 2s ease-in-out infinite}@keyframes float{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-60%) scale(1.1)}}'
+            'header_extra': '<div class="lightning"></div>', 
+            'css_extra': '.lightning{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:150px;height:150px;background:radial-gradient(circle at 30% 30%,rgba(255,215,0,0.3) 0%,rgba(255,165,0,0.15) 30%,transparent 100%);border-radius:50%;z-index:0;animation:glow 3s ease-in-out infinite;pointer-events:none}@keyframes glow{0%,100%{box-shadow:0 0 30px rgba(255,215,0,0.3)}50%{box-shadow:0 0 50px rgba(255,165,0,0.5)}}.lightning::after{content:"⚡";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:50px;animation:float 2s ease-in-out infinite}@keyframes float{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-60%) scale(1.1)}}'
         }
     }
 
@@ -281,7 +283,7 @@ def criar_usuario(email):
     salvar_usuario(email, dados)
     return dados
 
-# ========== FUNÇÕES DO BOT (IGUAL AO TES.PY) ==========
+# ========== FUNÇÕES DO BOT CORRIGIDAS ==========
 
 def Payout(p):
     try:
@@ -310,42 +312,31 @@ def calcular_entradas(b, p, g):
         entradas[-1] = round(entradas[-1] - (sum(entradas) - b) - 0.02, 2)
     return [max(1, e) for e in entradas]
 
-def pegar_timestamp():
-    """Retorna o timestamp da vela atual (igual ao tes.py)"""
+def pegar_timestamp_vela():
+    """Retorna o timestamp da vela atual (usado para sincronia)"""
     try:
         if not API: return 0
         v = API.get_candles(par, timeframe_atual, 1, time.time())
         if v and isinstance(v, list) and len(v) > 0:
             return v[0]['from']
-    except: pass
+    except:
+        pass
     return 0
 
 def aguardar_inicio_vela():
-    """Aguarda o início da vela (igual ao tes.py)"""
+    """Aguarda o início da próxima vela"""
     add_log("   ⏳ Aguardando início da vela...", 'info')
     while datetime.now().second > 5:
         if not bot_rodando: return False
         time.sleep(0.3)
     while True:
         if not bot_rodando: return False
-        ts1 = pegar_timestamp()
+        ts1 = pegar_timestamp_vela()
         time.sleep(0.5)
-        ts2 = pegar_timestamp()
+        ts2 = pegar_timestamp_vela()
         if ts1 == ts2:
             add_log("   ✅ Vela confirmada!", 'info')
             return True
-
-def aguardar_vela_fechar(ts_entrada):
-    """Aguarda a vela fechar comparando timestamps (igual ao tes.py)"""
-    add_log(f"   ⏳ Aguardando vela fechar...", 'info')
-    while True:
-        if not bot_rodando: return False
-        try:
-            if pegar_timestamp() != ts_entrada:
-                add_log("   ✅ Vela fechou!", 'info')
-                return True
-        except: pass
-        time.sleep(0.3)
 
 def verificar_resultado(saldo_antes, valor):
     saldo_base = saldo_antes - valor
@@ -370,7 +361,7 @@ def consumir_volt():
     return True
 
 def executar_ciclo(direcao):
-    """Executa o ciclo completo (igual ao tes.py)"""
+    """Executa o ciclo completo - com espera de 60 segundos REAIS"""
     global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, timeframe_atual
     
     if not bot_rodando or not API: return
@@ -410,10 +401,14 @@ def executar_ciclo(direcao):
                 break
 
             add_log(f"   📝 Ordem #{id_ordem}", 'info')
-            time.sleep(0.3)
             
-            ts_real = pegar_timestamp()
-            if not aguardar_vela_fechar(ts_real): break
+            # Aguarda 60 segundos reais
+            add_log(f"   ⏳ Aguardando 60 segundos para resultado...", 'info')
+            for _ in range(60):
+                if not bot_rodando:
+                    return False
+                time.sleep(1)
+            add_log(f"   ✅ Tempo esgotado! Verificando resultado...", 'info')
             
             res = verificar_resultado(saldo_antes, valor)
             lucro += round(res, 2)
@@ -473,7 +468,7 @@ def executar_ciclo(direcao):
         add_log("⏹️ Ciclo finalizado!", 'info')
 
 def bot_loop():
-    """Loop principal do bot - SEM TIMEOUT (igual ao tes.py)"""
+    """Loop principal do bot - SEM TIMEOUT"""
     global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, sinal_pendente, ultimo_sinal, timeframe_atual, volt_ja_consumido, estrategia_ja_injetada
 
     with bot_lock:
@@ -508,10 +503,9 @@ def bot_loop():
         ultimo_sinal = "Aguardando..."
         add_log(f"📌 {par} | 💰 ${BANCA_INICIAL_DO_BOT:.2f}")
 
-        # 🔥 LOOP PRINCIPAL - SEM TIMEOUT (IGUAL AO TES.PY) 🔥
+        # LOOP PRINCIPAL - SEM TIMEOUT
         while bot_rodando and not STOP_GAIN_ATINGIDO:
             try:
-                # Chama a estratégia diretamente (sem thread separada)
                 resultado = estrategia_atual_executar(API, par, add_log)
                 if resultado and bot_rodando:
                     direcao = resultado.get('direcao', '').lower()
@@ -521,7 +515,7 @@ def bot_loop():
                         add_log(f"🎯 EXECUTANDO CICLO: {direcao.upper()}", 'sensitive')
                         executar_ciclo(direcao)
                         break
-                time.sleep(0.3)  # Pequena pausa entre verificações
+                time.sleep(0.3)
             except Exception as e:
                 add_log(f"❌ Erro na análise: {e}", "error")
                 time.sleep(1)
@@ -917,9 +911,9 @@ def shutdown():
 if __name__ == '__main__':
     print("=" * 60)
     print("⚡ TESLA 369 BOT v13.3.0 - FINAL CORRIGIDO ⚡")
-    print("✅ Baseado na lógica do tes.py que funciona")
     print("✅ Firebase: SKINS e ESTRATÉGIAS carregadas da nuvem")
     print("✅ SEM TIMEOUT - espera o tempo necessário")
+    print("✅ AGUARDA 60 SEGUNDOS REAIS para cada ordem")
     print("✅ Ciclo: Sinal → Entrada → Gales → Stop Gain")
     print("=" * 60)
     
