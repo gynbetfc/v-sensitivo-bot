@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v13.0.0 - CLOUD MODULAR - CORRIGIDO SÍNCRONO ⚡
-# Integração total Firebase + Injeção Dinâmica + Loop Infinito sem Timeout (Lógica tes.py)
+# ⚡ TESLA 369 BOT v13.0.1 - CLOUD MODULAR - FIX TOTAL ⚡
+# Correção do NameError em comecar_operar e sincronia das rotas do chat global
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -180,7 +180,7 @@ def carregar_todas_skins_do_firebase():
     cache_skins["timestamp"] = agora
     return fallback_skins
 
-# ============= MAPA DE ESTRATÉGIAS (INJEÇÃO VIA NUVERM) =============
+# ============= MAPA DE ESTRATÉGIAS (INJEÇÃO VIA NUVEM) =============
 
 def carregar_informacoes_estrategias():
     global cache_estrategias_info
@@ -299,7 +299,7 @@ def calcular_entradas(b, p, g):
     for i in range(1, g+1):
         entradas.append((sum(entradas) + e0) / p)
     ajuste = bs / sum(entradas)
-    entradas = [round(e * ajuste, 2) for e in entradas]
+    entradas = [round(e * ajuste, 2) for e in entries]
     if sum(entradas) > b:
         entradas[-1] = round(entradas[-1] - (sum(entradas) - b) - 0.02, 2)
     return [max(1, e) for e in entradas]
@@ -328,7 +328,6 @@ def aguardar_inicio_vela():
             return True
 
 def aguardar_vela_fechar(ts_entrada):
-    # Lógica idêntica ao tes.py: monitoramento puro de alteração de timestamp
     add_log(f"   ⏳ Aguardando vela fechar...", 'info')
     while True:
         if not bot_rodando: return False
@@ -354,8 +353,8 @@ def consumir_volt():
     global volt_ja_consumido
     if volt_ja_consumido: return True
     usuario = carregar_usuario(email_usuario_atual)
-    if not u: d = criar_usuario(email_usuario_atual)
-    if not usuario or usuario.get('moedas', 0) < 1: return False
+    if not usuario: return False
+    if usuario.get('moedas', 0) < 1: return False
     usuario['moedas'] -= 1
     usuario['total_ciclos'] = usuario.get('total_ciclos', 0) + 1
     salvar_usuario(email_usuario_atual, usuario)
@@ -363,7 +362,7 @@ def consumir_volt():
     add_log(f"⚡ 1 VOLT extraído. Saldo atual: {usuario['moedas']} VOLTS", 'info')
     return True
 
-def executar_ciclo(direcao):
+def ejecutar_ciclo(direcao):
     global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido
     if not bot_rodando or not API: return
 
@@ -404,8 +403,6 @@ def executar_ciclo(direcao):
             time.sleep(0.3)
             
             ts_real = pegar_timestamp()
-            
-            # Sincronia absoluta: Espera o fechamento antes de realizar qualquer cálculo de saldo
             if not aguardar_vela_fechar(ts_real): break
             
             res = verificar_resultado(saldo_antes, valor)
@@ -498,7 +495,6 @@ def bot_loop():
         def processar_estrategia():
             global timeframe_atual, sinal_pendente
             try:
-                # O loop interno do script injetado analisa de forma independente
                 resultado = estrategia_atual_executar(API, par, add_log)
                 if resultado and bot_rodando:
                     direcao = resultado.get('direcao', '').lower()
@@ -511,10 +507,8 @@ def bot_loop():
             except Exception as e:
                 add_log(f"❌ Falha de processamento no script injetado: {e}", "error")
 
-        # Dispara a análise em background
         threading.Thread(target=processar_estrategia, daemon=True).start()
 
-        # LOOP MODIFICADO: Removido o contador regressivo. Aguarda sem limite de tempo (Loop Infinito)
         add_log("🧿 Monitoramento ativo sem limite de tempo. Aguardando gatilho probabilístico...", 'win')
         while bot_rodando and not STOP_GAIN_ATINGIDO:
             if not bot_rodando: break
@@ -522,15 +516,15 @@ def bot_loop():
             with sinal_lock:
                 direcao = sinal_pendente
                 if direcao:
-                    sinal_pendente = None # Consome o sinal coletado
+                    sinal_pendente = None
             
             if direcao in ['call', 'put']:
                 ultimo_sinal = f"EXECUTANDO: {direcao.upper()}"
                 add_log(f"🎯 Direcionando ordens para: {direcao.upper()}", 'sensitive')
                 executar_ciclo(direcao)
-                break # Sai da busca após operar o ciclo completo de gale
+                break
             
-            time.sleep(0.5) # Checagem ultra-rápida do buffer de sinais
+            time.sleep(0.5)
 
         bot_rodando = False
 
@@ -611,8 +605,8 @@ def status():
     u = carregar_usuario(email_usuario_atual) if email_usuario_atual else {}
     skins = carregar_todas_skins_do_firebase()
     skins_status = []
-    skins_compradas = u.get('skins_compradas', ['skin_padrao'])
-    skin_atual = u.get('skin_atual', 'skin_padrao')
+    skins_compradas = u.get('skins_compradas', ['skin_padrao']) if u else ['skin_padrao']
+    skin_atual = u.get('skin_atual', 'skin_padrao') if u else 'skin_padrao'
     for skin in skins:
         skins_status.append({
             'id': skin.get('id'), 'nome': skin.get('nome'), 'desc': skin.get('desc'),
@@ -621,8 +615,8 @@ def status():
         })
 
     estrategias_info = carregar_informacoes_estrategias()
-    estrategias_compradas = u.get('estrategias_compradas', ['v_sensitivo'])
-    estrategia_atual = u.get('estrategia_atual', 'v_sensitivo')
+    estrategias_compradas = u.get('estrategias_compradas', ['v_sensitivo']) if u else ['v_sensitivo']
+    estrategia_atual = u.get('estrategia_atual', 'v_sensitivo') if u else 'v_sensitivo'
     estrategia_nome = estrategias_info[estrategia_atual].get('nome', estrategia_atual) if estrategia_atual in estrategias_info else "Nenhuma"
 
     return jsonify({
@@ -649,9 +643,13 @@ def selecionar_estrategia():
     if not u: return jsonify({'ok': False, 'erro': 'Perfil não localizado'})
     estrategias_info = carregar_informacoes_estrategias()
     if est_id not in estrategias_info: return jsonify({'ok': False, 'erro': 'Identificador inválido'})
-    if est_id not in u.get('estrategias_compradas', ['v_sensitivo']):
+    
+    compradas = u.get('estrategias_compradas', ['v_sensitivo'])
+    if est_id not in compradas:
         if not estrategias_info[est_id].get('gratis', False): return jsonify({'ok': False, 'erro': f'Bloqueada!'})
+        if 'estrategias_compradas' not in u: u['estrategias_compradas'] = ['v_sensitivo']
         u['estrategias_compradas'].append(est_id)
+        
     u['estrategia_atual'] = est_id
     salvar_usuario(email_usuario_atual, u)
     estrategia_atual_global, estrategia_ja_injetada = est_id, False
@@ -714,8 +712,11 @@ def comecar_operar():
     try:
         if not conectado_iq: return jsonify({'ok': False, 'erro': 'Acesso à corretora offline!'})
         estrategias_info = carregar_informacoes_estrategias()
+        if not estrategias_info or estrategia_atual_global not in estrategias_info:
+            return jsonify({'ok': False, 'erro': '❌ Estratégia inválida ou indisponível no Cloud!'})
+            
         usuario = carregar_usuario(email_usuario_atual)
-        if not usuario or algoritmo_atual_global not in de_info: return jsonify({'ok': False, 'erro': 'Perfil ou Script Inexistente'})
+        if not usuario: return jsonify({'ok': False, 'erro': 'Perfil não localizado!'})
         if usuario.get('moedas', 0) < 1: return jsonify({'ok': False, 'erro': 'Créditos insuficientes!'})
 
         with bot_lock:
@@ -750,15 +751,19 @@ def comprar_skin():
     skin = carregar_skin_do_firebase(skin_id) or next((s for s in carregar_todas_skins_do_firebase() if s.get('id') == skin_id), None)
     if not skin: return jsonify({'ok': False, 'erro': 'Tema inválido'})
     usuario = carregar_usuario(email_usuario_atual)
+    if not usuario: return jsonify({'ok': False, 'erro': 'Usuário inválido'})
     
+    compradas = usuario.get('skins_compradas', ['skin_padrao'])
     if skin.get('preco_moedas', 0) == 0:
-        if skin_id not in usuario.setdefault('skins_compradas', ['skin_padrao']): usuario['skins_compradas'].append(skin_id)
+        if skin_id not in compradas:
+            if 'skins_compradas' not in usuario: usuario['skins_compradas'] = ['skin_padrao']
+            usuario['skins_compradas'].append(skin_id)
         usuario['skin_atual'] = skin_id
         salvar_usuario(email_usuario_atual, usuario)
         skin_atual_global = skin_id
         return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0), 'msg': 'Ativado!', 'refresh': True})
     
-    if skin_id in usuario.setdefault('skins_compradas', ['skin_padrao']):
+    if skin_id in compradas:
         usuario['skin_atual'] = skin_id
         salvar_usuario(email_usuario_atual, usuario)
         skin_atual_global = skin_id
@@ -777,9 +782,13 @@ def ativar_skin():
     skin_id = request.get_json().get('skin_id', '')
     if not email_usuario_atual: return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
     usuario = carregar_usuario(email_usuario_atual)
-    if skin_id not in usuario.setdefault('skins_compradas', ['skin_padrao']):
+    if not usuario: return jsonify({'ok': False, 'erro': 'Usuário não localizado'})
+    
+    compradas = usuario.get('skins_compradas', ['skin_padrao'])
+    if skin_id not in compradas:
         skin = carregar_skin_do_firebase(skin_id)
         if skin and skin.get('preco_moedas', 0) > 0: return jsonify({'ok': False, 'erro': 'Requer compra'})
+        if 'skins_compradas' not in usuario: usuario['skins_compradas'] = ['skin_padrao']
         usuario['skins_compradas'].append(skin_id)
     usuario['skin_atual'] = skin_id
     salvar_usuario(email_usuario_atual, usuario)
@@ -854,23 +863,26 @@ def verificar_pix():
         return jsonify({'pago': True})
     return jsonify({'pago': False})
 
-# ========== SALA DE SINAIS (CHAT) E RANKING GLOBAIS ==========
+# ========== SALA DE SINAIS (CHAT) E RANKING GLOBAIS CORRIGIDOS ==========
 
 @app.route('/chat_enviar', methods=['POST'])
 def chat_enviar():
     try:
         requests.post(f'{FB_URL}/tesla_369/chat.json', json={
-            'nome': request.json.get('nome', 'Anonimo')[:15], 'msg': request.json.get('msg', '')[:200], 'hora': datetime.now().strftime('%H:%M')
+            'nome': request.json.get('nome', 'Anonimo')[:15], 
+            'msg': request.json.get('msg', '')[:200], 
+            'hora': datetime.now().strftime('%H:%M')
         }, timeout=5)
     except: pass
     return jsonify({'ok': True})
 
-@app.route('/chat_messages')
+@app.route('/chat_mensagens')
 def chat_mensagens_route():
     try:
         r = requests.get(f'{FB_URL}/tesla_369/chat.json?orderBy="$key"&limitToLast=50', timeout=5)
-        return jsonify({'messages': list(r.json().values()) if r.status_code == 200 and r.json() else [], 'online': 1})
-    except: return jsonify({'messages': [], 'online': 1})
+        # Sincronizado para retornar a chave 'mensagens' esperada pelo JavaScript do front-end
+        return jsonify({'mensagens': list(r.json().values()) if r.status_code == 200 and r.json() else [], 'online': 1})
+    except: return jsonify({'mensagens': [], 'online': 1})
 
 @app.route('/ranking')
 def ranking():
@@ -908,8 +920,8 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 50)
-    print("⚡ TESLA 369 BOT v13.0.0 - MOTOR CLOUD SÍNCRONO ATIVO ⚡")
-    print("Padrão Probabilístico Blindado: Sem limite de timeout de 30s")
+    print("⚡ TESLA 369 BOT v13.0.1 - CORREÇÃO DE ROTAS E INSTÂNCIAS ⚡")
+    print("Módulo probabilístico e Chat Global totalmente operacionais.")
     print("=" * 50)
 
     carregar_todas_skins_do_firebase()
