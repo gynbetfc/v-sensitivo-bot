@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v13.0.6 - MOTOR LINEAR SÍNCRONO DEFINITIVO ⚡
-# Eliminação de threads paralelas de sinais. Resposta imediata igual ao tes.py.
+# ⚡ TESLA 369 BOT v13.0.7 - DISPARO INSTANTÂNEO ANTICIPADO ⚡
+# Remoção das travas de travamento por segundos artificiais para ganho de velocidade
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -265,7 +265,7 @@ def criar_usuario(email):
     salvar_usuario(email, dados)
     return dados
 
-# ========== MOTOR DE OPERAÇÕES SÍNCRONAS ==========
+# ========== MOTOR DE OPERAÇÕES HARDCODED PROPORCIONAL ==========
 
 def Payout(p):
     try:
@@ -302,18 +302,6 @@ def pegar_timestamp():
             return v[0]['from']
     except: pass
     return 0
-
-def aguardar_inicio_vela():
-    while datetime.now().second > 1:
-        if not bot_rodando: return False
-        time.sleep(0.1)
-    while True:
-        if not bot_rodando: return False
-        ts1 = pegar_timestamp()
-        time.sleep(0.3)
-        ts2 = pegar_timestamp()
-        if ts1 == ts2 and ts1 != 0:
-            return True
 
 def aguardar_vela_fechar(ts_entrada):
     while True:
@@ -375,10 +363,8 @@ def executar_ciclo_completo_hardcoded(direcao_inicial):
             valor = entradas[i]
             gale_alcançado = i
             
-            # Trava síncrona rígida apenas na primeira ordem (i == 0)
-            if i == 0:
-                if not aguardar_inicio_vela(): break
-                
+            # SINCÔNICA DIRETA: Não espera nada nos gales e nem na primeira entrada tardia
+            # Compra disparada no mesmo milissegundo em que o sinal foi injetado!
             saldo_antes = API.get_balance()
             if saldo_antes < valor:
                 add_log(f"❌ Saldo insuficiente para realizar entrada no Gale {i}!", 'error')
@@ -486,8 +472,6 @@ def bot_loop():
         add_log(f"📌 Par: {par} | Saldo em Conta: ${BANCA_INICIAL_DO_BOT:.2f}")
         add_log("🧿 Executando motor em modo linear síncrono. Aguardando gatilho probabilístico...", 'win')
 
-        # CORREÇÃO TOTAL: O loop principal congela chamando a estratégia diretamente na mesma linha.
-        # Acaba de vez com a concorrência de milissegundos e delays de threads em background!
         while bot_rodando and not STOP_GAIN_ATINGIDO:
             try:
                 resultado = estrategia_atual_executar(API, par, add_log)
@@ -495,10 +479,9 @@ def bot_loop():
                     direcao = resultado.get('direcao', '').lower()
                     if direcao in ['call', 'put']:
                         ultimo_sinal = f"EXECUTANDO: {direcao.upper()}"
-                        # Executa o ciclo de ordens imediatamente na mesma linha de código
                         executar_ciclo_completo_hardcoded(direcao)
                         break
-                time.sleep(0.5)
+                time.sleep(0.2) # Checagem veloz linear
             except Exception as e:
                 print(f"Erro no laço linear síncrono: {e}")
                 time.sleep(1)
@@ -567,7 +550,7 @@ def index():
 
 @app.route('/sinal', methods=['POST'])
 def receber_sinal():
-    return jsonify({'ok': False, 'erro': 'Mecanismo linear ativo. Use o painel de controle.'})
+    return jsonify({'ok': False, 'erro': 'Mecanismo linear síncrono ativo.'})
 
 @app.route('/status')
 def status():
@@ -887,8 +870,8 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 50)
-    print("⚡ TESLA 369 BOT v13.0.6 - MOTOR LINEAR SÍNCRONO ATIVO ⚡")
-    print("Sincronização pura reestabelecida: zero latência entre nuvem e corretora.")
+    print("⚡ TESLA 369 BOT v13.0.7 - INSTANT DISPARO REAL ⚡")
+    print("Correções aplicadas: Sincronia pura sem travas de segundos artificiais.")
     print("=" * 50)
 
     carregar_todas_skins_do_firebase()
