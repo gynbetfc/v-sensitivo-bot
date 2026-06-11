@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v13.0.1 - CLOUD MODULAR - FIX TOTAL ⚡
-# Correção do NameError em comecar_operar e sincronia das rotas do chat global
+# ⚡ TESLA 369 BOT v13.0.2 - CLOUD MODULAR - COMPATIBILIDADE SÍNCRONA INTERNA ⚡
+# Sincronia de chaves do Chat Global (messages/mensagens) e fix de digitação em calcular_entradas
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -275,7 +275,7 @@ def criar_usuario(email):
     salvar_usuario(email, dados)
     return dados
 
-# ========== MOTOR DE OPERAÇÕES SÍNCRONAS REESCRITO ==========
+# ========== MOTOR DE OPERAÇÕES SÍNCRONAS ==========
 
 def Payout(p):
     try:
@@ -299,7 +299,8 @@ def calcular_entradas(b, p, g):
     for i in range(1, g+1):
         entradas.append((sum(entradas) + e0) / p)
     ajuste = bs / sum(entradas)
-    entradas = [round(e * ajuste, 2) for e in entries]
+    # FIX: Alterado de 'entries' para 'entradas' para evitar NameError interno
+    entradas = [round(e * ajuste, 2) for e in entradas]
     if sum(entradas) > b:
         entradas[-1] = round(entradas[-1] - (sum(entradas) - b) - 0.02, 2)
     return [max(1, e) for e in entradas]
@@ -362,7 +363,7 @@ def consumir_volt():
     add_log(f"⚡ 1 VOLT extraído. Saldo atual: {usuario['moedas']} VOLTS", 'info')
     return True
 
-def ejecutar_ciclo(direcao):
+def executar_ciclo(direcao):
     global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido
     if not bot_rodando or not API: return
 
@@ -863,7 +864,7 @@ def verificar_pix():
         return jsonify({'pago': True})
     return jsonify({'pago': False})
 
-# ========== SALA DE SINAIS (CHAT) E RANKING GLOBAIS CORRIGIDOS ==========
+# ========== SINAIS (CHAT) E RANKING COMPATIBILIZADOS ==========
 
 @app.route('/chat_enviar', methods=['POST'])
 def chat_enviar():
@@ -880,9 +881,10 @@ def chat_enviar():
 def chat_mensagens_route():
     try:
         r = requests.get(f'{FB_URL}/tesla_369/chat.json?orderBy="$key"&limitToLast=50', timeout=5)
-        # Sincronizado para retornar a chave 'mensagens' esperada pelo JavaScript do front-end
-        return jsonify({'mensagens': list(r.json().values()) if r.status_code == 200 and r.json() else [], 'online': 1})
-    except: return jsonify({'mensagens': [], 'online': 1})
+        lista_msg = list(r.json().values()) if r.status_code == 200 and r.json() else []
+        # SOLUÇÃO COMPLETA: Retorna as duas chaves para aceitar o HTML v11 e o antigo unificado
+        return jsonify({'messages': lista_msg, 'mensagens': lista_msg, 'online': 1})
+    except: return jsonify({'messages': [], 'mensagens': [], 'online': 1})
 
 @app.route('/ranking')
 def ranking():
@@ -920,8 +922,8 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 50)
-    print("⚡ TESLA 369 BOT v13.0.1 - CORREÇÃO DE ROTAS E INSTÂNCIAS ⚡")
-    print("Módulo probabilístico e Chat Global totalmente operacionais.")
+    print("⚡ TESLA 369 BOT v13.0.2 - DUPLO BUFFER DO CHAT TRADERS ⚡")
+    print("Correções aplicadas: mensagens síncronas + cálculo martingale corrigido.")
     print("=" * 50)
 
     carregar_todas_skins_do_firebase()
