@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v13.0.8 - CO CÓDIGO FONTE TES.PY PURO ⚡
-# Bloqueio de loop pós-sinal por check_win síncrono por ID de ordem. Sem cliques duplos.
+# ⚡ TESLA 369 BOT v13.0.9 - RESTAURAÇÃO COMPLETA CORE TES.PY ⚡
+# Motor de Gales e sincronia de tempo idênticos ao script original funcional.
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
 from datetime import datetime
 import threading
 import time
+import sys
 import os
 import warnings
 import requests
 import uuid
-import signal
 
 warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
-# ============= CONFIGURAÇÕES =============
+# ============= CONFIGURAÇÕES DE LINKS CLOUD =============
 FB_URL = "https://nexos-40654-default-rtdb.firebaseio.com"
 print("✅ Firebase HTTP REST configurado!")
 
@@ -37,22 +37,21 @@ PLANOS = [
     {'id':5,'moedas':69,'preco':39.69,'nome':'👑 ULTRA','desc':'R$0,57/VOLT','tag':'69 ciclos','bonus':'🎨 1 Skin Lendária GRÁTIS','desconto':'69% OFF'},
 ]
 
-# ============= CACHES =============
+# ============= CACHES AND GLOBALS =============
 cache_skins = {"data": None, "timestamp": 0}
 cache_estrategias_info = {"data": {}, "timestamp": 0}
 cache_estrategia_carregada = {"nome": None, "codigo": None, "timestamp": 0}
 CACHE_TTL = 300
 
 def estrategia_atual_executar(api, par, add_log):
-    add_log("⚠️ Nenhuma estratégia carregada!", "error")
     return None
 
-# ============= VARIÁVEIS GLOBAIS DE CONTROLE =============
 API, par = None, "EURUSD-OTC"
 timeframe_atual = 60
 lucro, NumDeOperacoes = 0.0, 0
 BANCA_INICIAL_DO_BOT, STOP_GAIN_ATINGIDO = 0, False
-bot_rodando, bot_thread = False, None
+bot_rodando = False
+bot_thread = None
 conectado_iq = False
 ultimo_sinal, ultima_analise = "Aguardando...", {}
 logs_web, MAX_LOGS_WEB = [], 200
@@ -61,10 +60,12 @@ skin_atual_global = 'skin_padrao'
 estrategia_atual_global = 'v_sensitivo'
 pagamentos_pendentes = {}
 bot_lock = threading.Lock()
+sinal_pendente = None
+sinal_lock = threading.Lock()
 volt_ja_consumido = False
 estrategia_ja_injetada = False
 
-# ============= FUNÇÕES AUXILIARES DE LOGS AND VELAS =============
+# ============= FUNÇÕES AUXILIARES DE LOGS AND PARSE =============
 
 def add_log(msg, tipo='info'):
     global logs_web
@@ -96,7 +97,7 @@ def get_low(vela):
     if 'min' in vela: return vela['min']
     return 0
 
-# ============= INDICADORES PARA O DASHBOARD FRONTEND =============
+# ============= INDICADORES FRONTEND =============
 
 def calcular_rsi(velas, periodo=14):
     if len(velas) < periodo + 1: return 50
@@ -265,7 +266,7 @@ def criar_usuario(email):
     salvar_usuario(email, dados)
     return dados
 
-# ========== MOTOR DE OPERAÇÕES SÍNCRONO FIXADO (CÓPIA REAL DO TES.PY) ==========
+# ========== REPLICAÇÃO CIRÚRGICA DO MOTOR DE GALES DO TES.PY ==========
 
 def Payout(p):
     try:
@@ -282,13 +283,50 @@ def Payout(p):
     except: return PAYOUT_PADRAO
 
 def Martingale(valor, payout):
-    """Fórmula de cálculo de fator de recuperação exata do seu tes.py"""
     lucro_esperado = valor * payout
     perca = float(valor)
     while True:
         if round(valor * payout, 2) > round(abs(perca) + lucro_esperado, 2):
             return round(valor, 2)
         valor += 0.01
+
+def pegar_timestamp():
+    try:
+        if not API: return 0
+        v = API.get_candles(par, timeframe_atual, 1, time.time())
+        if v and isinstance(v, list) and len(v) > 0:
+            return v[0]['from']
+    except: pass
+    return 0
+
+def aguardar_inicio_vela():
+    """Trava de tempo copiada exatamente do tes.py"""
+    add_log("   ⏳ Aguardando início da vela...", 'info')
+    while datetime.now().second > 5:
+        if not bot_rodando: return False
+        time.sleep(0.3)
+    return True
+
+def aguardar_vela_fechar(ts_entrada):
+    """Verificação síncrona bruta contra delays"""
+    while True:
+        if not bot_rodando: return False
+        try:
+            ts_atual = pegar_timestamp()
+            if ts_atual != ts_entrada and ts_atual > ts_entrada:
+                return True
+        except: pass
+        time.sleep(0.4)
+
+def verificar_resultado(saldo_antes, valor):
+    saldo_base = saldo_antes - valor
+    try:
+        if not API: return -valor
+        s = API.get_balance()
+        d = round(s - saldo_base, 2)
+        if d >= 1.0: return d
+    except: pass
+    return -valor
 
 def consumir_volt():
     global volt_ja_consumido
@@ -305,8 +343,7 @@ def consumir_volt():
 
 def executar_ciclo_completo_hardcoded(direcao_inicial):
     """
-    TRANSPLANTE PURO DO LOOP DE OPERAÇÕES + GALES DO TES.PY
-    Trava o script por check_win_digital_v2 impedindo cliques múltiplos.
+    CONTROLA O CICLO COMPREHENSIVO DE GALES EXATAMENTE IGUAL AO TES.PY
     """
     global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido
     if not bot_rodando or not API: return
@@ -320,87 +357,103 @@ def executar_ciclo_completo_hardcoded(direcao_inicial):
         bi = API.get_balance()
         payout = Payout(par)
         
-        # Define o valor inicial baseado no percentual configurado da banca
+        # Estruturação da Grade baseada no percentual configurado pelo usuário
         valor_entrada = round((bi * PERCENTUAL_BANCA / 100) * 0.35, 2)
         if valor_entrada < 1.0: valor_entrada = 1.0
         
-        add_log(f"💰 Operação Iniciada! Banca Inicial: ${bi:.2f} | Payout: {payout*100:.0f}%", 'info')
+        add_log(f"💰 Banca Inicial: ${bi:.2f} | Payout Real: {payout*100:.0f}%", 'info')
 
         dir = direcao_inicial
-        
-        # Executa a Entrada principal + os Gales de forma linear e travada por check_win (IGUAL AO TES.PY)
+        vitoria = False
+        gale_alcançado = 0
+
         for i in range(MARTINGALE + 1):
             if not bot_rodando: break
+            gale_alcançado = i
             
+            # Sincronia de entrada idêntica ao seu script funcional tes.py
+            if not aguardar_inicio_vela(): break
+                
+            saldo_antes = API.get_balance()
+            if saldo_antes < valor_entrada:
+                add_log("❌ Saldo em conta insuficiente!", 'error')
+                break
+
             add_log(f"🎯 {'ORDEM PRINCIPAL' if i == 0 else f'GALE {i}'}: {dir.upper()} ${valor_entrada:.2f}", 'info')
             
-            # Compra Spot Digital
+            # Envio da ordem direta para a API da IQ Option
             status, id_ordem = API.buy_digital_spot(par, valor_entrada, dir, 1)
             
             if status:
-                # TRAVA SÍNCRONA CRÍTICA DO TES.PY: Segura o processador até a corretora liquidar a ordem por ID
-                while True:
-                    status_win, valor_retorno = API.check_win_digital_v2(id_ordem)
-                    if status_win:
-                        # Se perder, formata o retorno negativo baseado no valor investido
-                        valor_retorno = valor_retorno if valor_retorno > 0 else float('-' + str(abs(valor_entrada)))
-                        lucro += round(valor_retorno, 2)
-                        break
-                    time.sleep(0.5)
+                time.sleep(0.5)
+                ts_real = pegar_timestamp()
                 
-                saldo_atual = API.get_balance()
+                add_log("   ⏳ Aguardando vela fechar...", 'info')
+                if not aguardar_vela_fechar(ts_real): break
                 
-                # Print de resultado idêntico ao console do seu tes.py
+                res = verificar_resultado(saldo_antes, valor_entrada)
+                lucro += round(res, 2)
+                saldo_depois = API.get_balance()
+                
                 print()
                 add_log("="*50, 'info')
-                add_log(f"RESULTADO: {'🏆 WIN' if valor_retorno > 0 else '💀 LOSS'} {round(valor_retorno, 2)} | Lucro Acumulado: {round(lucro, 2)}" + (f" | no GALE {i}" if i > 0 else ""), 'win' if valor_retorno > 0 else 'loss')
+                if res > 0:
+                    add_log(f"🏆 WIN COMPUTADO! +${res:.2f}", 'win')
+                    vitoria = True
+                else:
+                    add_log(f"💀 LOSS COMPUTADO! -${valor_entrada:.2f}", 'loss')
                 add_log("="*50, 'info')
                 print()
-                
-                # Persistência de dados do resultado no perfil do usuário do Firebase
+
+                # Persistência do resultado no Firebase
                 u = carregar_usuario(email_usuario_atual)
                 if u:
-                    if valor_retorno > 0:
+                    if res > 0:
                         u['total_wins'] = u.get('total_wins', 0) + 1
-                        u['total_ganho'] = u.get('total_ganho', 0) + abs(valor_retorno)
+                        u['total_ganho'] = u.get('total_ganho', 0) + abs(res)
                     else:
                         u['total_losses'] = u.get('total_losses', 0) + 1
                         u['total_gasto'] = u.get('total_gasto', 0) + valor_entrada
-                        
                     u['lucro_total'] = u.get('total_ganho', 0.0) - u.get('total_gasto', 0.0)
-                    u['banca_atual'] = round(saldo_atual, 2)
+                    u['banca_atual'] = round(saldo_depois, 2)
                     u.setdefault('historico_operacoes', []).append({
-                        'data': str(datetime.now())[:19], 'resultado': 'WIN' if valor_retorno > 0 else 'LOSS', 'valor': valor_entrada, 'lucro': valor_retorno, 'estrategia': estrategia_atual_global.upper()
+                        'data': str(datetime.now())[:19], 'resultado': 'WIN' if res > 0 else 'LOSS', 'valor': valor_entrada, 'lucro': res, 'estrategia': estrategia_atual_global.upper()
                     })
                     salvar_usuario(email_usuario_atual, u)
 
-                # Se deu WIN, quebra o ciclo de gales e encerra com lucro
-                if valor_retorno > 0:
+                if vitoria:
                     NumDeOperacoes += 1
                     STOP_GAIN_ATINGIDO = True
-                    add_log("🎯 STOP GAIN ALCANÇADO - Ciclo finalizado com sucesso!", 'win')
                     break
                 else:
-                    # Se deu LOSS, calcula o valor do próximo Gale usando a matemática do seu tes.py
                     if i < MARTINGALE:
                         valor_entrada = Martingale(valor_entrada, payout)
-                        add_log(f"   ➡️ Preparando entrada para o GALE {i + 1}...", 'loss')
-                    else:
-                        add_log("   💀 CICLO DE GALE COMPLETAMENTE ESGOTADO!", 'loss')
+                        # Dá uma folga síncrona pequena para a virada física do relógio
+                        time.sleep(1.5)
             else:
-                add_log("❌ Ordem rejeitada ou bloqueada pela corretora!", 'error')
+                add_log("❌ Corretora rejeitou a entrada!", 'error')
                 break
-                
+
+        print()
+        add_log("=" * 50, 'info')
+        if vitoria:
+            onde_ganhou = "de PRIMEIRA" if gale_alcançado == 0 else f"no GALE {gale_alcançado}"
+            add_log(f"🌟 RETORNO POSITIVO: ${lucro:.2f} | Banca Final: ${API.get_balance():.2f}", 'win')
+        else:
+            add_log(f"💀 CICLO COMPLETO PERDIDO NO GALE {gale_alcançado}!", 'loss')
+        add_log("=" * 50, 'info')
+        print()
+            
     except Exception as e:
-        print(f"Erro no ciclo síncrono do tes.py: {e}")
+        print(f"Erro no ciclo do tes.py: {e}")
     finally:
         bot_rodando = False
         add_log("⏹️ Robô em repouso pronto para nova ativação.", 'info')
 
-# ========== LAÇO LINEAR SÍNCRONO (IGUAL AO TES.PY) ==========
+# ========== LAÇO DE ESCUTA SEGURO POR THREADS ==========
 
 def bot_loop():
-    global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, ultimo_sinal, timeframe_atual, volt_ja_consumido, estrategia_ja_injetada
+    global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, sinal_pendente, ultimo_sinal, timeframe_atual, volt_ja_consumido, estrategia_ja_injetada
 
     with bot_lock:
         if not bot_rodando or not API:
@@ -432,26 +485,37 @@ def bot_loop():
         volt_ja_consumido = False
         ultimo_sinal = "Buscando gatilho..."
         add_log(f"📌 Par: {par} | Saldo em Conta: ${BANCA_INICIAL_DO_BOT:.2f}")
-        add_log("重️ Executando motor em modo linear síncrono. Aguardando gatilho probabilístico...", 'win')
 
-        # Laço linear puro: roda e congela na mesma linha esperando o retorno do script cloud
-        while bot_rodando and not STOP_GAIN_ATINGIDO:
+        def processar_estrategia():
+            global timeframe_atual, sinal_pendente
             try:
                 resultado = estrategia_atual_executar(API, par, add_log)
                 if resultado and bot_rodando:
                     direcao = resultado.get('direcao', '').lower()
                     if direcao in ['call', 'put']:
-                        ultimo_sinal = f"EXECUTANDO: {direcao.upper()}"
-                        
-                        # Executa o ciclo e segura o script inteiro dentro da função até terminar tudo
-                        executar_ciclo_completo_hardcoded(direcao)
-                        
-                        # Uma vez encerrado o ciclo completo (Win ou Loss final), quebra o while do bot
-                        break
-                time.sleep(0.5)
+                        with sinal_lock:
+                            sinal_pendente = direcao
             except Exception as e:
-                print(f"Erro no laço linear síncrono: {e}")
-                time.sleep(1)
+                print(f"Erro execução thread sinal: {e}")
+
+        # Mantém a thread em segundo plano coletando sinais de forma assíncrona para não travar o Flask
+        threading.Thread(target=processar_estrategia, daemon=True).start()
+
+        add_log("🧿 Monitoramento ativo. Aguardando gatilho probabilístico...", 'win')
+        while bot_rodando and not STOP_GAIN_ATINGIDO:
+            if not bot_rodando: break
+            
+            with sinal_lock:
+                direcao = sinal_pendente
+                if direcao:
+                    sinal_pendente = None
+            
+            if direcao in ['call', 'put']:
+                ultimo_sinal = f"EXECUTANDO: {direcao.upper()}"
+                executar_ciclo_completo_hardcoded(direcao)
+                break
+            
+            time.sleep(0.3)
 
         bot_rodando = False
 
@@ -490,7 +554,6 @@ threading.Thread(target=analise_mercado_loop, daemon=True).start()
 def sincronizar_html_local():
     try:
         os.makedirs("templates", exist_ok=True)
-        HTML_URL = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/tesla_369_bot/templates/index.html"
         response = requests.get(HTML_URL, timeout=10)
         if response.status_code == 200:
             with open("templates/index.html", "w", encoding="utf-8") as f:
@@ -517,7 +580,12 @@ def index():
 
 @app.route('/sinal', methods=['POST'])
 def receber_sinal():
-    return jsonify({'ok': False, 'erro': 'Mecanismo linear síncrono ativo.'})
+    global sinal_pendente
+    if not bot_rodando or not conectado_iq: return jsonify({'ok': False, 'erro': 'Mecanismo inativo.'})
+    direcao = request.get_json().get('direcao', '').lower()
+    if direcao not in ['call', 'put']: return jsonify({'ok': False, 'erro': 'Gatilho inválido'})
+    with sinal_lock: sinal_pendente = direcao
+    return jsonify({'ok': True})
 
 @app.route('/status')
 def status():
@@ -837,8 +905,8 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 50)
-    print("⚡ TESLA 369 BOT v13.0.8 - SÍNCRONO TRAVADO POR ID ⚡")
-    print("Mapeamento do tes.py restaurado por completo com check_win travando duplicados.")
+    print("⚡ TESLA 369 BOT v13.0.9 - RESTAURAÇÃO COMPLETA CORE TES.PY ⚡")
+    print("Mecanismo assíncrono de escuta ativado. Lógica e tempos do tes.py cravados.")
     print("=" * 50)
 
     carregar_todas_skins_do_firebase()
