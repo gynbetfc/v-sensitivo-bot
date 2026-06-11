@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v13.0.2 - CLOUD MODULAR - COMPATIBILIDADE SÍNCRONA INTERNA ⚡
-# Sincronia de chaves do Chat Global (messages/mensagens) e fix de digitação em calcular_entradas
+# ⚡ TESLA 369 BOT v13.0.3 - CLOUD MODULAR - BLINDAGEM DE SINAL ATRAZADO ⚡
+# Sincronia de execução limpa, gales silenciosos e trava contra entradas tardias
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -43,7 +43,6 @@ cache_estrategias_info = {"data": {}, "timestamp": 0}
 cache_estrategia_carregada = {"nome": None, "codigo": None, "timestamp": 0}
 CACHE_TTL = 300
 
-# ============= FUNÇÃO DINÂMICA DE ANÁLISE =============
 def estrategia_atual_executar(api, par, add_log):
     add_log("⚠️ Nenhuma estratégia carregada!", "error")
     return None
@@ -99,7 +98,7 @@ def get_low(vela):
     if 'min' in vela: return vela['min']
     return 0
 
-# ============= INDICADORES PARA O FRONTEND (DASHBOARD) =============
+# ============= INDICADORES PARA O DASHBOARD FRONTEND =============
 
 def calcular_rsi(velas, periodo=14):
     if len(velas) < periodo + 1: return 50
@@ -119,7 +118,7 @@ def calcular_rsi(velas, periodo=14):
 
 def calcular_estocastico(velas, periodo_k=14):
     if len(velas) < periodo_k: return 50
-    ultimas_velas = velas[-periodo_k:]
+    ultimas_velas = candles[-periodo_k:] if 'candles' in locals() else velas[-periodo_k:]
     maior_alta = max(get_high(v) for v in ultimas_velas)
     menor_baixa = min(get_low(v) for v in ultimas_velas)
     ultimo_fechamento = get_close(velas[-1])
@@ -130,7 +129,7 @@ def calcular_media_movel(velas, periodo):
     if len(velas) < periodo: return get_close(velas[-1]) if velas else 0
     return sum(get_close(v) for v in velas[-periodo:]) / periodo
 
-# ============= MAPA DE SKINS (INJEÇÃO E FALLBACKS) =============
+# ============= MANIPULAÇÃO DE MAPAS E ASSETS DO BANCO =============
 
 def get_skins_fallback():
     return {
@@ -153,7 +152,7 @@ def carregar_skin_do_firebase(skin_id):
             skin_data['id'] = skin_id
             return skin_data
     except Exception as e:
-        print(f"⚠️ Erro ao carregar skin {skin_id}: {e}")
+        print(f"⚠️ Erro skin cloud {skin_id}: {e}")
     return None
 
 def carregar_todas_skins_do_firebase():
@@ -172,15 +171,12 @@ def carregar_todas_skins_do_firebase():
             cache_skins["data"] = skins_list
             cache_skins["timestamp"] = agora
             return skins_list
-    except Exception as e:
-        print(f"⚠️ Erro ao carregar skins do banco: {e}")
+    except: pass
     
     fallback_skins = list(get_skins_fallback().values())
     cache_skins["data"] = fallback_skins
     cache_skins["timestamp"] = agora
     return fallback_skins
-
-# ============= MAPA DE ESTRATÉGIAS (INJEÇÃO VIA NUVEM) =============
 
 def carregar_informacoes_estrategias():
     global cache_estrategias_info
@@ -204,8 +200,7 @@ def carregar_informacoes_estrategias():
             cache_estrategias_info["data"] = estrategias_info
             cache_estrategias_info["timestamp"] = agora
             return estrategias_info
-    except Exception as e:
-        print(f"⚠️ Erro ao carregar estratégias: {e}")
+    except: pass
     
     fallback = {'v_sensitivo': {'nome': 'V SENSITIVO', 'desc': 'Estratégia padrão', 'preco_moedas': 0, 'timeframe': 60, 'gratis': True}}
     cache_estrategias_info["data"] = fallback
@@ -216,10 +211,8 @@ def carregar_estrategia_do_firebase(nome_estrategia):
     try:
         key = nome_estrategia.replace(".", "_").replace("@", "_").replace("#", "")
         r = requests.get(f'{FB_URL}/tesla_369/estrategias/{key}.json', timeout=5)
-        if r.status_code == 200 and r.json():
-            return r.json()
-    except Exception as e:
-        print(f"⚠️ Erro Firebase na estratégia {nome_estrategia}: {e}")
+        if r.status_code == 200 and r.json(): return r.json()
+    except: pass
     return None
 
 def carregar_e_injetar_estrategia(nome_estrategia):
@@ -241,10 +234,10 @@ def carregar_e_injetar_estrategia(nome_estrategia):
             estrategia_atual_executar = escopo['rodar_analise']
             cache_estrategia_carregada.update({"nome": nome_estrategia, "codigo": codigo, "timestamp": agora})
             estrategia_ja_injetada = True
-            add_log(f"✅ Estratégia '{nome_estrategia}' injetada!", "win")
+            add_log(f"✅ Estratégia cloud '{nome_estrategia}' carregada!", "win")
             return True
     except Exception as e:
-        add_log(f"❌ Erro estrutural ao injetar script: {e}", "error")
+        print(f"❌ Erro compilação script dinâmico: {e}")
     return False
 
 # ========== INTERFACE DATABASE USUÁRIOS ==========
@@ -253,8 +246,7 @@ def salvar_usuario(email, dados):
     try:
         key = email.replace("@", "_").replace(".", "_").replace("#", "").replace("$", "").replace("[", "").replace("]", "").replace("/", "_")
         requests.put(f'{FB_URL}/tesla_369/usuarios/{key}.json', json=dados, timeout=5)
-    except Exception as e:
-        print(f"⚠️ Erro ao persistir usuário: {e}")
+    except: pass
 
 def carregar_usuario(email):
     try:
@@ -275,7 +267,7 @@ def criar_usuario(email):
     salvar_usuario(email, dados)
     return dados
 
-# ========== MOTOR DE OPERAÇÕES SÍNCRONAS ==========
+# ========== MOTOR DE OPERAÇÕES SÍNCRONAS - COMPLETAMENTE SILENCIOSO GALE ==========
 
 def Payout(p):
     try:
@@ -299,7 +291,6 @@ def calcular_entradas(b, p, g):
     for i in range(1, g+1):
         entradas.append((sum(entradas) + e0) / p)
     ajuste = bs / sum(entradas)
-    # FIX: Alterado de 'entries' para 'entradas' para evitar NameError interno
     entradas = [round(e * ajuste, 2) for e in entradas]
     if sum(entradas) > b:
         entradas[-1] = round(entradas[-1] - (sum(entradas) - b) - 0.02, 2)
@@ -315,30 +306,28 @@ def pegar_timestamp():
     return 0
 
 def aguardar_inicio_vela():
-    add_log("   ⏳ Aguardando início da vela...", 'info')
-    while datetime.now().second > 5:
+    # Garante entrada perfeita no início do nascimento da vela, igual ao tes.py
+    while datetime.now().second > 1:
         if not bot_rodando: return False
-        time.sleep(0.3)
+        time.sleep(0.1)
     while True:
         if not bot_rodando: return False
         ts1 = pegar_timestamp()
-        time.sleep(0.5)
+        time.sleep(0.3)
         ts2 = pegar_timestamp()
         if ts1 == ts2 and ts1 != 0:
-            add_log("   ✅ Vela confirmada!", 'info')
             return True
 
 def aguardar_vela_fechar(ts_entrada):
-    add_log(f"   ⏳ Aguardando vela fechar...", 'info')
+    # Monitoramento bruto e preciso de alteração de timestamp para impedir falsos resultados por delay
     while True:
         if not bot_rodando: return False
         try:
             ts_atual = pegar_timestamp()
             if ts_atual != ts_entrada and ts_atual > ts_entrada:
-                add_log("   ✅ Vela fechou com sucesso!", 'info')
                 return True
         except: pass
-        time.sleep(0.3)
+        time.sleep(0.4)
 
 def verificar_resultado(saldo_antes, valor):
     saldo_base = saldo_antes - valor
@@ -369,66 +358,67 @@ def executar_ciclo(direcao):
 
     try:
         if not consumir_volt():
-            add_log("❌ VOLTS Esgotados!", 'error')
+            add_log("❌ Módulo sem VOLTS!", 'error')
             bot_rodando = False
             return
 
         bi = API.get_balance()
         payout = Payout(par)
         entradas = calcular_entradas(bi, payout, MARTINGALE)
-        add_log(f"💰 Banca Inicial: ${bi:.2f} | Payout Real: {payout*100:.0f}%", 'info')
-        add_log(f"📐 Grade Operacional: E1:${entradas[0]:.2f} | E2:${entradas[1]:.2f} | E3:${entradas[2]:.2f}", 'info')
+        
+        add_log(f"💰 Operação Iniciada! Banca: ${bi:.2f} | Payout: {payout*100:.0f}%", 'info')
+        add_log("⚙️ Executando ordens em modo síncrono silencioso...", 'info')
+
+        gale_alcançado = 0
+        vitoria = False
+        ultimo_lucro_liquido = 0.0
 
         for i in range(MARTINGALE + 1):
             if not bot_rodando: break
             valor = entradas[i]
+            gale_alcançado = i
             
+            # Bloqueio síncrono para nascimento exato da vela
             if not aguardar_inicio_vela(): break
                 
             saldo_antes = API.get_balance()
-            if saldo_antes < valor:
-                add_log("❌ Capital insuficiente para este Gale!", 'error')
-                break
+            if saldo_antes < valor: break
 
-            add_log(f"🎯 {'ORDEM PRINCIPAL' if i == 0 else f'GALE DE RECUPERAÇÃO {i}'}: {direcao.upper()} ${valor:.2f}", 'info')
-            
+            # Envia ordem
             st, id_ordem = API.buy(valor, par, direcao, 1)
             if not st or not id_ordem:
                 try: st, id_ordem = API.buy_digital_spot(par, valor, direcao, 1)
                 except: pass
-            if not st or not id_ordem:
-                add_log("❌ Rejeitado pela corretora!", 'error')
-                break
+            if not st or not id_ordem: break
 
-            add_log(f"   📝 Adquirido: Ordem #{id_ordem}", 'info')
-            time.sleep(0.3)
-            
+            # Captura o timestamp real do gráfico da corretora APÓS a compra ser aceita
+            time.sleep(0.5)
             ts_real = pegar_timestamp()
+            
+            # Espera absoluta do fechamento da vela
             if not aguardar_vela_fechar(ts_real): break
             
             res = verificar_resultado(saldo_antes, valor)
             lucro += round(res, 2)
             saldo_depois = API.get_balance()
-            lucro_liquido = round(saldo_depois - saldo_antes, 2)
+            ultimo_lucro_liquido = round(saldo_depois - saldo_antes, 2)
 
             if res > 0:
-                add_log(f"🌟 WIN ALCANÇADO! +${lucro_liquido:.2f}", 'win')
+                vitoria = True
                 NumDeOperacoes += 1
                 u = carregar_usuario(email_usuario_atual)
                 if u:
                     u['total_wins'] = u.get('total_wins', 0) + 1
-                    u['total_ganho'] = u.get('total_ganho', 0) + abs(lucro_liquido)
+                    u['total_ganho'] = u.get('total_ganho', 0) + abs(ultimo_lucro_liquido)
                     u['lucro_total'] = u['total_ganho'] - u.get('total_gasto', 0)
                     u['banca_atual'] = round(saldo_depois, 2)
                     u.setdefault('historico_operacoes', []).append({
-                        'data': str(datetime.now())[:19], 'resultado': 'WIN', 'valor': valor, 'lucro': lucro_liquido, 'estrategia': estrategia_atual_global.upper()
+                        'data': str(datetime.now())[:19], 'resultado': 'WIN', 'valor': valor, 'lucro': ultimo_lucro_liquido, 'estrategia': estrategia_atual_global.upper()
                     })
                     salvar_usuario(email_usuario_atual, u)
                 STOP_GAIN_ATINGIDO = True
-                add_log("🎯 STOP GAIN IMPLEMENTADO! Finalizando ciclo com lucro.", 'win')
                 break
             else:
-                add_log(f"💀 LOSS COMPUTADO! -${valor:.2f}", 'loss')
                 u = carregar_usuario(email_usuario_atual)
                 if u:
                     u['total_losses'] = u.get('total_losses', 0) + 1
@@ -439,25 +429,29 @@ def executar_ciclo(direcao):
                         'data': str(datetime.now())[:19], 'resultado': 'LOSS', 'valor': valor, 'lucro': -valor, 'estrategia': estrategia_atual_global.upper()
                     })
                     salvar_usuario(email_usuario_atual, u)
-                    
-                if i < MARTINGALE and bot_rodando:
-                    add_log(f"   ➡️ Preparando entrada para o GALE {i + 1}...", 'loss')
-                else:
-                    add_log("   💀 CICLO DE GALE ESGOTADO!", 'loss')
 
-        if bot_rodando:
-            bf = API.get_balance() if API else bi
-            add_log("=" * 50, 'info')
-            add_log(f"{'🌟 RETORNO POSITIVO' if bf > bi else '💀 RETORNO NEGATIVO'}: ${abs(bf - bi):.2f} | Banca Final: ${bf:.2f}", 'info')
-            add_log("=" * 50, 'info')
+        # RESUMO EXCLUSIVO NO FINAL DO CICLO COMPLETO
+        print()
+        add_log("=" * 50, 'info')
+        if vitoria:
+            onde_ganhou = "de PRIMEIRA" if gale_alcançado == 0 else f"no GALE {gale_alcançado}"
+            add_log(f"🌟 WIN ALCANÇADO {onde_ganhou}! Retorno: +${ultimo_lucro_liquido:.2f}", 'win')
+            add_log("🎯 STOP GAIN IMPLEMENTADO - Ciclo encerrado com lucro!", 'win')
+        else:
+            add_log(f"💀 CICLO COMPLETO PERDIDO (LOSS NO GALE {gale_alcançado})!", 'loss')
+        
+        bf = API.get_balance() if API else bi
+        add_log(f"💰 Banca Final: ${bf:.2f} | Saldo Líquido do Ciclo: ${bf - bi:.2f}", 'info')
+        add_log("=" * 50, 'info')
+        print()
             
     except Exception as e:
-        add_log(f"Erro no ciclo operacional: {e}", 'error')
+        print(f"Erro controle de ciclos: {e}")
     finally:
         bot_rodando = False
         add_log("⏹️ Robô em repouso pronto para nova ativação.", 'info')
 
-# ========== LAÇO DE BUSCA DE SINAL (REMOVIDO OS 30 SEGUNDOS) ==========
+# ========== LAÇO DE BUSCA DE SINAL CONTÍNUO ENTRA NO SEGUNDO CORRETO ==========
 
 def bot_loop():
     global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, sinal_pendente, ultimo_sinal, timeframe_atual, volt_ja_consumido, estrategia_ja_injetada
@@ -469,7 +463,7 @@ def bot_loop():
 
         estrategias_info = carregar_informacoes_estrategias()
         if not estrategias_info or estrategia_atual_global not in estrategias_info:
-            add_log("❌ Estratégia indisponível ou inválida!", 'error')
+            add_log("❌ Estratégia cloud inválida!", 'error')
             bot_rodando = False
             return
 
@@ -482,7 +476,7 @@ def bot_loop():
         if not estrategia_ja_injetada or cache_estrategia_carregada["nome"] != estrategia_atual_global:
             add_log(f"🔧 Puxando script '{estrategia_atual_global}' do Cloud...", "info")
             if not carregar_e_injetar_estrategia(estrategia_atual_global):
-                add_log(f"❌ Abortado. Erro ao injetar script.", 'error')
+                add_log(f"❌ Erro ao baixar script dinâmico.", 'error')
                 bot_rodando = False
                 return
 
@@ -491,7 +485,7 @@ def bot_loop():
         lucro, NumDeOperacoes = 0.0, 0
         volt_ja_consumido = False
         ultimo_sinal = "Buscando gatilho..."
-        add_log(f"📌 Par: {par} | Saldo: ${BANCA_INICIAL_DO_BOT:.2f}")
+        add_log(f"📌 Par: {par} | Saldo Inicial: ${BANCA_INICIAL_DO_BOT:.2f}")
 
         def processar_estrategia():
             global timeframe_atual, sinal_pendente
@@ -504,13 +498,12 @@ def bot_loop():
                     if direcao in ['call', 'put']:
                         with sinal_lock:
                             sinal_pendente = direcao
-                        add_log(f"🎯 Padrão Identificado: {direcao.upper()}!", 'sensitive')
             except Exception as e:
-                add_log(f"❌ Falha de processamento no script injetado: {e}", "error")
+                print(f"Erro processamento thread sinal: {e}")
 
         threading.Thread(target=processar_estrategia, daemon=True).start()
 
-        add_log("🧿 Monitoramento ativo sem limite de tempo. Aguardando gatilho probabilístico...", 'win')
+        add_log("🧿 Monitoramento ativo. Aguardando gatilho probabilístico por tempo indeterminado...", 'win')
         while bot_rodando and not STOP_GAIN_ATINGIDO:
             if not bot_rodando: break
             
@@ -520,10 +513,15 @@ def bot_loop():
                     sinal_pendente = None
             
             if direcao in ['call', 'put']:
-                ultimo_sinal = f"EXECUTANDO: {direcao.upper()}"
-                add_log(f"🎯 Direcionando ordens para: {direcao.upper()}", 'sensitive')
-                executar_ciclo(direcao)
-                break
+                # TRAVA DE ENTRADA TARDIA: Só aceita operar se a vela estiver nos segundos iniciais (0 a 5)
+                # Isso impede o "Loss Instantâneo" por delay ou sinais atrasados da nuvem
+                segundo_atual = datetime.now().second
+                if segundo_atual <= 5:
+                    ultimo_sinal = f"EXECUTANDO: {direcao.upper()}"
+                    executar_ciclo(direcao)
+                    break
+                else:
+                    add_log(f"⚠️ Sinal de {direcao.upper()} descartado (Entrada tardia detectada no segundo {segundo_atual}).", 'indicator')
             
             time.sleep(0.5)
 
@@ -571,9 +569,7 @@ def sincronizar_html_local():
                 f.write(response.text)
             print("✅ HTML sincronizado com o repositório principal!")
             return True
-    except Exception as e:
-        print(f"❌ Erro ao capturar HTML: {e}")
-    return False
+    except: return False
 
 # ========== ENDPOINTS HTTP FLASK INTERFACE ==========
 
@@ -598,7 +594,6 @@ def receber_sinal():
     direcao = request.get_json().get('direcao', '').lower()
     if direcao not in ['call', 'put']: return jsonify({'ok': False, 'erro': 'Gatilho inválido'})
     with sinal_lock: sinal_pendente = direcao
-    add_log(f"📡 Webhook Externo capturado: {direcao.upper()}", 'sensitive')
     return jsonify({'ok': True})
 
 @app.route('/status')
@@ -654,7 +649,7 @@ def selecionar_estrategia():
     u['estrategia_atual'] = est_id
     salvar_usuario(email_usuario_atual, u)
     estrategia_atual_global, estrategia_ja_injetada = est_id, False
-    add_log(f"🧠 Alvo de execução alterado: {estrategias_info[est_id]['nome']}", 'indicator')
+    add_log(f"🧠 Estratégia alterada: {estrategias_info[est_id]['nome']}", 'indicator')
     return jsonify({'ok': True})
 
 @app.route('/comprar_estrategia', methods=['POST'])
@@ -714,7 +709,7 @@ def comecar_operar():
         if not conectado_iq: return jsonify({'ok': False, 'erro': 'Acesso à corretora offline!'})
         estrategias_info = carregar_informacoes_estrategias()
         if not estrategias_info or estrategia_atual_global not in estrategias_info:
-            return jsonify({'ok': False, 'erro': '❌ Estratégia inválida ou indisponível no Cloud!'})
+            return jsonify({'ok': False, 'erro': '❌ Estratégia inválida no Cloud!'})
             
         usuario = carregar_usuario(email_usuario_atual)
         if not usuario: return jsonify({'ok': False, 'erro': 'Perfil não localizado!'})
@@ -741,7 +736,7 @@ def parar():
         conectado_iq = False
         add_log("🔌 Sessão encerrada", 'info')
     else:
-        add_log("✅ Linha de execução limpa e liberada!", 'win')
+        add_log("✅ Linha de execução limpa!", 'win')
     return jsonify({'ok': True, 'shutdown': data.get('desconectar', False)})
 
 @app.route('/comprar_skin', methods=['POST'])
@@ -752,7 +747,6 @@ def comprar_skin():
     skin = carregar_skin_do_firebase(skin_id) or next((s for s in carregar_todas_skins_do_firebase() if s.get('id') == skin_id), None)
     if not skin: return jsonify({'ok': False, 'erro': 'Tema inválido'})
     usuario = carregar_usuario(email_usuario_atual)
-    if not usuario: return jsonify({'ok': False, 'erro': 'Usuário inválido'})
     
     compradas = usuario.get('skins_compradas', ['skin_padrao'])
     if skin.get('preco_moedas', 0) == 0:
@@ -779,11 +773,10 @@ def comprar_skin():
     return jsonify({'ok': True, 'moedas': usuario['moedas'], 'msg': 'Skin Adquirida!', 'refresh': True})
 
 @app.route('/ativar_skin', methods=['POST'])
-def ativar_skin():
+def activar_skin():
     skin_id = request.get_json().get('skin_id', '')
     if not email_usuario_atual: return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
     usuario = carregar_usuario(email_usuario_atual)
-    if not usuario: return jsonify({'ok': False, 'erro': 'Usuário não localizado'})
     
     compradas = usuario.get('skins_compradas', ['skin_padrao'])
     if skin_id not in compradas:
@@ -864,7 +857,7 @@ def verificar_pix():
         return jsonify({'pago': True})
     return jsonify({'pago': False})
 
-# ========== SINAIS (CHAT) E RANKING COMPATIBILIZADOS ==========
+# ========== CHAT E RANKING COMPATIBILIZADOS ==========
 
 @app.route('/chat_enviar', methods=['POST'])
 def chat_enviar():
@@ -882,7 +875,6 @@ def chat_mensagens_route():
     try:
         r = requests.get(f'{FB_URL}/tesla_369/chat.json?orderBy="$key"&limitToLast=50', timeout=5)
         lista_msg = list(r.json().values()) if r.status_code == 200 and r.json() else []
-        # SOLUÇÃO COMPLETA: Retorna as duas chaves para aceitar o HTML v11 e o antigo unificado
         return jsonify({'messages': lista_msg, 'mensagens': lista_msg, 'online': 1})
     except: return jsonify({'messages': [], 'mensagens': [], 'online': 1})
 
@@ -922,8 +914,8 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 50)
-    print("⚡ TESLA 369 BOT v13.0.2 - DUPLO BUFFER DO CHAT TRADERS ⚡")
-    print("Correções aplicadas: mensagens síncronas + cálculo martingale corrigido.")
+    print("⚡ TESLA 369 BOT v13.0.3 - MÓDULO ULTRA SÍNCRONO SILENCIOSO ⚡")
+    print("Correções aplicadas: Travas de delay zeradas + Resumo limpo ao fim do ciclo.")
     print("=" * 50)
 
     carregar_todas_skins_do_firebase()
