@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v13.2.0 - INTEGRADO ULTRA FIX ⚡
-# Ciclos assíncronos baseados no v12.1.0 com gales colados e motor síncrono isolado
+# ⚡ TESLA 369 BOT v13.2.1 - INTEGRADO ULTRA FIX ⚡
+# Usando a lógica de espera do tes.py (Corrigido erro de sintaxe na linha 575)
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -108,7 +108,8 @@ def calcular_rsi(velas, periodo=14):
             ganhos.append(diferenca); perdas.append(0)
         else:
             ganhos.append(0); perdas.append(abs(diferenca))
-    ganhos, perdas = ganhos[-periodo:], perdas[-periodo:]
+    ganhos = ganhos[-periodo:]
+    perdas = perdas[-periodo:]
     ganho_medio = sum(ganhos) / periodo if ganhos else 0
     perda_media = sum(perdas) / periodo if perdas else 0
     if perda_media == 0: return 100
@@ -242,6 +243,7 @@ def carregar_e_injetar_estrategia(nome_estrategia):
             estrategia_ja_injetada = True
             add_log(f"✅ Estratégia '{nome_estrategia}' injetada do Firebase!", "win")
             return True
+        else: return False
     except Exception as e:
         add_log(f"❌ Erro ao executar estratégia: {e}", "error")
         return False
@@ -359,7 +361,6 @@ def consumir_volt():
     return True
 
 def executar_ciclo(direcao):
-    """MOTOR DE SINAL ISOLADO: Executa ordens principais e gales colados sem pulos de vela"""
     global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, timeframe_atual
     if not bot_rodando or not API: return
     
@@ -379,8 +380,8 @@ def executar_ciclo(direcao):
             if not bot_rodando: break
             valor = entradas[i]
             
-            # CORREÇÃO CIRÚRGICA: Só espera o início da vela na ordem inicial (i == 0)
-            # Nos gales (i > 0), a vela anterior acabou de fechar, então entra cravado sem travas artificiais!
+            # CORREÇÃO CIRÚRGICA: Só espera o início da vela na ordem principal (i == 0)
+            # Nos gales (i > 0), entra cravado e direto sem travas de segundos artificiais!
             if i == 0:
                 if not aguardar_inicio_vela(): break
                 
@@ -442,8 +443,7 @@ def executar_ciclo(direcao):
                     
                 if i < MARTINGALE and bot_rodando:
                     add_log(f"   ➡️ Preparando entrada síncrona para o GALE {i + 1}...", 'loss')
-                else:
-                    add_log("   💀 CICLO COMPLETO PERDIDO!", 'loss')
+                else: add_log("   💀 CICLO COMPLETO PERDIDO!", 'loss')
 
         if bot_rodando:
             bf = API.get_balance() if API else bi
@@ -451,8 +451,7 @@ def executar_ciclo(direcao):
             add_log(f"{'🌟 LUCRO' if bf > bi else '💀 PERDA'}: ${abs(bf - bi):.2f} | Saldo Final: ${bf:.2f}", 'info')
             add_log("=" * 50, 'info')
             
-    except Exception as e:
-        add_log(f"Erro no ciclo operacional: {e}", 'error')
+    except Exception as e: add_log(f"Erro no ciclo operacional: {e}", 'error')
     finally:
         bot_rodando = False
         add_log("⏹️ Ciclo finalizado!", 'info')
@@ -501,13 +500,10 @@ def bot_loop():
                     if direcao in ['call', 'put']:
                         with sinal_lock:
                             sinal_pendente = direcao
-            except Exception as e:
-                add_log(f"❌ Erro na análise cloud: {e}", "error")
+            except Exception as e: add_log(f"❌ Erro na análise cloud: {e}", "error")
 
-        # Dispara o script dinâmico assíncrono para colher os gatilhos no relógio síncrono
         threading.Thread(target=processar_estrategia, daemon=True).start()
 
-        # Loop principal de monitoramento de sinais
         while bot_rodando and not STOP_GAIN_ATINGIDO:
             if not bot_rodando: break
             
@@ -523,8 +519,7 @@ def bot_loop():
                     ultimo_sinal = f"GATILHO: {direcao.upper()}"
                     executar_ciclo(direcao)
                     break
-                else:
-                    add_log(f"⚠️ Sinal de {direcao.upper()} retido (Entrada tardia extrema no segundo {segundo_atual}). Buscando próximo...", 'indicator')
+                else: add_log(f"⚠️ Sinal de {direcao.upper()} retido (Entrada tardia extrema no segundo {segundo_atual}). Buscando próximo...", 'indicator')
             
             time.sleep(0.5)
 
@@ -572,7 +567,7 @@ def sincronizar_html_local():
                 f.write(response.text)
             print("✅ HTML sincronizado!")
             return True
-    exceptException as e: print(f"❌ Erro HTML: {e}")
+    except Exception as e: print(f"❌ Erro HTML: {e}")
     return False
 
 # ========== ROTAS FLASK ==========
@@ -883,8 +878,8 @@ def shutdown(): os.kill(os.getpid(), signal.SIGTERM); return jsonify({'ok': True
 
 if __name__ == '__main__':
     print("=" * 50)
-    print("⚡ TESLA 369 BOT v13.2.0 - INTEGRADO ULTRA FIX ⚡")
-    print("USANDO LÓGICA DE ESPERA FRAGMENTADA DO TES.PY (SEM DELAYS)")
+    print("⚡ TESLA 369 BOT v13.2.1 - FIREBASE ONLY - CORRIGIDO ⚡")
+    print("USANDO LÓGICA DE ESPERA DO TES.PY (SEM DELAYS)")
     print("=" * 50)
     carregar_todas_skins_do_firebase()
     carregar_informacoes_estrategias()
