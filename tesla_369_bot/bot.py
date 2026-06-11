@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 
 # ⚡ TESLA 369 BOT v13.3.0 - FINAL CORRIGIDO ⚡
-# Sistema completo: Firebase, Skins, Estratégias, Ciclo contínuo
-# CORREÇÕES: Loop infinito de análise, sem timeout, gales sincronizados
+# Baseado na lógica do tes.py que funciona perfeitamente
+# Firebase: SKINS e ESTRATÉGIAS carregadas da nuvem
+# SEM TIMEOUT - espera o tempo necessário pelo sinal
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -15,7 +16,6 @@ import warnings
 import requests
 import uuid
 import signal
-import json
 
 warnings.filterwarnings("ignore")
 app = Flask(__name__)
@@ -174,6 +174,7 @@ def carregar_todas_skins_do_firebase():
                 skins_list.append(skin_data)
             cache_skins["data"] = skins_list
             cache_skins["timestamp"] = agora
+            print(f"✅ {len(skins_list)} skins carregadas do Firebase!")
             return skins_list
     except Exception as e:
         print(f"⚠️ Erro ao carregar skins: {e}")
@@ -206,6 +207,7 @@ def carregar_informacoes_estrategias():
                 }
             cache_estrategias_info["data"] = estrategias_info
             cache_estrategias_info["timestamp"] = agora
+            print(f"✅ {len(estrategias_info)} estratégias carregadas do Firebase!")
             return estrategias_info
     except Exception as e:
         print(f"⚠️ Erro ao carregar estratégias: {e}")
@@ -279,7 +281,7 @@ def criar_usuario(email):
     salvar_usuario(email, dados)
     return dados
 
-# ========== FUNÇÕES DO BOT CORRIGIDAS ==========
+# ========== FUNÇÕES DO BOT (IGUAL AO TES.PY) ==========
 
 def Payout(p):
     try:
@@ -309,6 +311,7 @@ def calcular_entradas(b, p, g):
     return [max(1, e) for e in entradas]
 
 def pegar_timestamp():
+    """Retorna o timestamp da vela atual (igual ao tes.py)"""
     try:
         if not API: return 0
         v = API.get_candles(par, timeframe_atual, 1, time.time())
@@ -318,6 +321,7 @@ def pegar_timestamp():
     return 0
 
 def aguardar_inicio_vela():
+    """Aguarda o início da vela (igual ao tes.py)"""
     add_log("   ⏳ Aguardando início da vela...", 'info')
     while datetime.now().second > 5:
         if not bot_rodando: return False
@@ -332,6 +336,7 @@ def aguardar_inicio_vela():
             return True
 
 def aguardar_vela_fechar(ts_entrada):
+    """Aguarda a vela fechar comparando timestamps (igual ao tes.py)"""
     add_log(f"   ⏳ Aguardando vela fechar...", 'info')
     while True:
         if not bot_rodando: return False
@@ -365,14 +370,12 @@ def consumir_volt():
     return True
 
 def executar_ciclo(direcao):
-    """Executa o ciclo completo: entrada + gales"""
+    """Executa o ciclo completo (igual ao tes.py)"""
     global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, timeframe_atual
     
-    if not bot_rodando or not API:
-        return
+    if not bot_rodando or not API: return
     
     try:
-        # Consome 1 VOLT
         if not consumir_volt():
             add_log("❌ Sem VOLTS!", 'error')
             bot_rodando = False
@@ -384,50 +387,34 @@ def executar_ciclo(direcao):
         add_log(f"💰 Banca: ${bi:.2f} | Payout: {payout*100:.0f}%", 'info')
         add_log(f"📐 E1:${entradas[0]:.2f} | E2:${entradas[1]:.2f} | E3:${entradas[2]:.2f}", 'info')
 
-        # Loop dos gales
         for i in range(MARTINGALE + 1):
-            if not bot_rodando:
-                break
-                
+            if not bot_rodando: break
             valor = entradas[i]
             
-            # Só espera início da vela na PRIMEIRA entrada
-            if i == 0:
-                if not aguardar_inicio_vela():
-                    break
-            else:
-                # Nos gales, só uma pequena pausa (entrada no mesmo minuto)
-                time.sleep(0.5)
-                add_log(f"   🔄 GALE {i} - Executando...", 'info')
-            
-            # Verifica saldo
+            if not aguardar_inicio_vela(): break
+                
             saldo_antes = API.get_balance()
             if saldo_antes < valor:
                 add_log("❌ Saldo insuficiente!", 'error')
                 break
 
-            # Abre a ordem
             add_log(f"🎯 {'ENTRADA' if i == 0 else f'GALE {i}'}: {direcao.upper()} ${valor:.2f}", 'info')
-            st, id_ordem = API.buy(valor, par, direcao, 1)
             
+            st, id_ordem = API.buy(valor, par, direcao, 1)
             if not st or not id_ordem:
-                try:
-                    st, id_ordem = API.buy_digital_spot(par, valor, direcao, 1)
-                except:
-                    pass
-                    
+                try: st, id_ordem = API.buy_digital_spot(par, valor, direcao, 1)
+                except: pass
+                
             if not st or not id_ordem:
                 add_log("❌ Falha na ordem!", 'error')
                 break
 
             add_log(f"   📝 Ordem #{id_ordem}", 'info')
+            time.sleep(0.3)
             
-            # Marca timestamp da entrada e aguarda vela fechar
             ts_real = pegar_timestamp()
-            if not aguardar_vela_fechar(ts_real):
-                break
+            if not aguardar_vela_fechar(ts_real): break
             
-            # Verifica resultado
             res = verificar_resultado(saldo_antes, valor)
             lucro += round(res, 2)
             saldo_depois = API.get_balance()
@@ -436,8 +423,6 @@ def executar_ciclo(direcao):
             if res > 0:
                 add_log(f"🌟 WIN! +${lucro_liquido:.2f}", 'win')
                 NumDeOperacoes += 1
-                
-                # Atualiza estatísticas do usuário
                 u = carregar_usuario(email_usuario_atual)
                 if u:
                     u['total_wins'] = u.get('total_wins', 0) + 1
@@ -450,14 +435,11 @@ def executar_ciclo(direcao):
                         'estrategia': estrategia_atual_global.upper()
                     })
                     salvar_usuario(email_usuario_atual, u)
-                    
                 STOP_GAIN_ATINGIDO = True
-                add_log("🎯 STOP GAIN! Ciclo encerrado com lucro!", 'win')
+                add_log("🎯 STOP GAIN! Vitória alcançada!", 'win')
                 break
             else:
                 add_log(f"💀 LOSS! -${valor:.2f}", 'loss')
-                
-                # Atualiza estatísticas
                 u = carregar_usuario(email_usuario_atual)
                 if u:
                     u['total_losses'] = u.get('total_losses', 0) + 1
@@ -472,26 +454,26 @@ def executar_ciclo(direcao):
                     salvar_usuario(email_usuario_atual, u)
                     
                 if i < MARTINGALE and bot_rodando:
-                    add_log(f"   ➡️ Partindo para GALE {i + 1}...", 'loss')
+                    add_log(f"   ➡️ Indo para GALE {i + 1}...", 'loss')
                 else:
-                    add_log("   💀 CICLO ESGOTADO! Todas as entradas perdidas.", 'loss')
+                    add_log("   💀 CICLO COMPLETO PERDIDO!", 'loss')
 
-        # Resumo do ciclo
         if bot_rodando:
             bf = API.get_balance() if API else bi
             add_log("=" * 50, 'info')
-            add_log(f"{'🌟 LUCRO' if bf > bi else '💀 PERDA'}: ${abs(bf - bi):.2f} | Saldo Final: ${bf:.2f}", 'info')
+            add_log(f"{'🌟 LUCRO' if bf > bi else '💀 PERDA'}: ${abs(bf - bi):.2f} | Saldo: ${bf:.2f}", 'info')
             add_log("=" * 50, 'info')
             
     except Exception as e:
-        add_log(f"❌ Erro no ciclo: {e}", 'error')
+        add_log(f"Erro: {e}", 'error')
         import traceback
         traceback.print_exc()
     finally:
         bot_rodando = False
+        add_log("⏹️ Ciclo finalizado!", 'info')
 
 def bot_loop():
-    """Loop principal do bot - AGORA FUNCIONAL com análise contínua"""
+    """Loop principal do bot - SEM TIMEOUT (igual ao tes.py)"""
     global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, sinal_pendente, ultimo_sinal, timeframe_atual, volt_ja_consumido, estrategia_ja_injetada
 
     with bot_lock:
@@ -499,7 +481,6 @@ def bot_loop():
             bot_rodando = False
             return
 
-        # Carrega informações da estratégia
         estrategias_info = carregar_informacoes_estrategias()
         if not estrategias_info or estrategia_atual_global not in estrategias_info:
             add_log(f"❌ Estratégia '{estrategia_atual_global}' não encontrada!", 'error')
@@ -512,14 +493,12 @@ def bot_loop():
         add_log(f"📊 Estratégia: {estrategia_info.get('nome')}", 'indicator')
         add_log(f"⏱️ Timeframe: {timeframe_estrategia}s", 'info')
 
-        # Carrega e injeta a estratégia
         if not estrategia_ja_injetada or cache_estrategia_carregada["nome"] != estrategia_atual_global:
             add_log(f"🔧 Carregando estratégia '{estrategia_atual_global}' do Firebase...", "info")
             if not carregar_e_injetar_estrategia(estrategia_atual_global):
                 bot_rodando = False
                 return
 
-        # Inicializa variáveis do ciclo
         BANCA_INICIAL_DO_BOT = API.get_balance()
         STOP_GAIN_ATINGIDO = False
         lucro = 0.0
@@ -529,47 +508,25 @@ def bot_loop():
         ultimo_sinal = "Aguardando..."
         add_log(f"📌 {par} | 💰 ${BANCA_INICIAL_DO_BOT:.2f}")
 
-        # 🔥 FUNÇÃO DE ANÁLISE EM LOOP CONTÍNUO 🔥
-        def analise_continua():
-            global sinal_pendente
-            while bot_rodando and not STOP_GAIN_ATINGIDO:
-                try:
-                    resultado = estrategia_atual_executar(API, par, add_log)
-                    if resultado and bot_rodando:
-                        direcao = resultado.get('direcao', '').lower()
-                        if direcao in ['call', 'put']:
-                            with sinal_lock:
-                                sinal_pendente = direcao
-                            add_log(f"🎯 SINAL RECEBIDO: {direcao.upper()}!", 'sensitive')
-                            break  # Sai do loop quando recebe sinal
-                except Exception as e:
-                    add_log(f"❌ Erro na análise: {e}", "error")
-                time.sleep(1)  # Aguarda 1 segundo entre análises
-
-        # Inicia thread de análise contínua
-        thread_analise = threading.Thread(target=analise_continua, daemon=True)
-        thread_analise.start()
-
-        # ⏳ AGUARDA INDEFINIDAMENTE O SINAL (SEM TIMEOUT!)
+        # 🔥 LOOP PRINCIPAL - SEM TIMEOUT (IGUAL AO TES.PY) 🔥
         while bot_rodando and not STOP_GAIN_ATINGIDO:
-            if not bot_rodando:
-                break
-            
-            with sinal_lock:
-                direcao = sinal_pendente
-                if direcao:
-                    sinal_pendente = None
-            
-            if direcao in ['call', 'put']:
-                ultimo_sinal = f"GATILHO: {direcao.upper()}"
-                add_log(f"🎯 EXECUTANDO CICLO: {direcao.upper()}", 'sensitive')
-                executar_ciclo(direcao)
-                break
-            
-            time.sleep(0.3)  # Pequena pausa para não sobrecarregar
+            try:
+                # Chama a estratégia diretamente (sem thread separada)
+                resultado = estrategia_atual_executar(API, par, add_log)
+                if resultado and bot_rodando:
+                    direcao = resultado.get('direcao', '').lower()
+                    if direcao in ['call', 'put']:
+                        ultimo_sinal = f"GATILHO: {direcao.upper()}"
+                        add_log(f"🎯 SINAL: {direcao.upper()}!", 'sensitive')
+                        add_log(f"🎯 EXECUTANDO CICLO: {direcao.upper()}", 'sensitive')
+                        executar_ciclo(direcao)
+                        break
+                time.sleep(0.3)  # Pequena pausa entre verificações
+            except Exception as e:
+                add_log(f"❌ Erro na análise: {e}", "error")
+                time.sleep(1)
 
         bot_rodando = False
-        add_log("⏹️ Bot finalizado! Clique em COMEÇAR OPERAR para novo ciclo.", 'info')
 
 def analise_mercado_loop():
     global ultima_analise
@@ -960,8 +917,9 @@ def shutdown():
 if __name__ == '__main__':
     print("=" * 60)
     print("⚡ TESLA 369 BOT v13.3.0 - FINAL CORRIGIDO ⚡")
+    print("✅ Baseado na lógica do tes.py que funciona")
     print("✅ Firebase: SKINS e ESTRATÉGIAS carregadas da nuvem")
-    print("✅ Loop contínuo de análise (SEM TIMEOUT)")
+    print("✅ SEM TIMEOUT - espera o tempo necessário")
     print("✅ Ciclo: Sinal → Entrada → Gales → Stop Gain")
     print("=" * 60)
     
