@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v13.0.4 - MOTOR REESCRITO HARDCODED ⚡
-# Ciclo de Gales autônomo e isolado (Módulo tes.py). As estratégias apenas enviam o gatilho inicial.
+# ⚡ TESLA 369 BOT v13.0.5 - MOTOR REESCRITO ULTRA COMPACTO ⚡
+# Sincronia de Gales instantâneos sem pulo de velas. Lógica síncrona real e limpa.
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -267,7 +267,7 @@ def criar_usuario(email):
     salvar_usuario(email, dados)
     return dados
 
-# ========== MOTOR DE OPERAÇÕES HARDCODED (TRANSTRANTE DIRETO DO TES.PY) ==========
+# ========== MOTOR DE OPERAÇÕES HARDCODED CORRIGIDO VELOCIDADE ==========
 
 def Payout(p):
     try:
@@ -306,7 +306,6 @@ def pegar_timestamp():
     return 0
 
 def aguardar_inicio_vela():
-    # Loop de espera rígido idêntico ao tes.py: segura o fluxo na virada da vela (segundo 0)
     while datetime.now().second > 1:
         if not bot_rodando: return False
         time.sleep(0.1)
@@ -319,7 +318,6 @@ def aguardar_inicio_vela():
             return True
 
 def aguardar_vela_fechar(ts_entrada):
-    # Monitoramento síncrono bruto: só sai do loop se o timestamp do gráfico alterar
     while True:
         if not bot_rodando: return False
         try:
@@ -353,10 +351,6 @@ def consumir_volt():
     return True
 
 def executar_ciclo_completo_hardcoded(direcao_inicial):
-    """
-    MÉTODO EXCLUSIVO REESCRITO: Assume o controle completo das operações.
-    Gerencia a Entrada Inicial e os Gales de forma isolada na mesma direção, exatamente como o tes.py.
-    """
     global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido
     if not bot_rodando or not API: return
 
@@ -376,22 +370,23 @@ def executar_ciclo_completo_hardcoded(direcao_inicial):
         gale_alcançado = 0
         vitoria = False
         ultimo_lucro_liquido = 0.0
-        direcao = direcao_inicial  # Mantém a mesma direção fixa por todo o ciclo
+        direcao = direcao_inicial
 
         for i in range(MARTINGALE + 1):
             if not bot_rodando: break
             valor = entradas[i]
             gale_alcançado = i
             
-            # Sincronização e trava de segundo inicial na vela (MOLDE TES.PY)
-            if not aguardar_inicio_vela(): break
+            # CORREÇÃO CRÍTICA: Só aguarda o início da vela na entrada PRINCIPAL (i == 0)
+            # Nos Gales (1 e 2), a vela anterior acabou de fechar, então entra INSTANTÂNEO sem delay!
+            if i == 0:
+                if not aguardar_inicio_vela(): break
                 
             saldo_antes = API.get_balance()
             if saldo_antes < valor:
                 add_log(f"❌ Saldo insuficiente para realizar entrada no Gale {i}!", 'error')
                 break
 
-            # Dispara a ordem na corretora
             st, id_ordem = API.buy(valor, par, direcao, 1)
             if not st or not id_ordem:
                 try: st, id_ordem = API.buy_digital_spot(par, valor, direcao, 1)
@@ -401,14 +396,12 @@ def executar_ciclo_completo_hardcoded(direcao_inicial):
                 add_log(f"❌ Erro ao processar ordem no Gale {i}!", 'error')
                 break
 
-            # Coleta de timestamp pós-compra protegida contra delay
             time.sleep(0.5)
             ts_real = pegar_timestamp()
             
-            # Trava a thread esperando os 60 segundos da vela fecharem de verdade
+            # Trava síncrona esperando os 60 segundos expirarem
             if not aguardar_vela_fechar(ts_real): break
             
-            # Checa o resultado calculando a variação do saldo líquido
             res = verificar_resultado(saldo_antes, valor)
             lucro += round(res, 2)
             saldo_depois = API.get_balance()
@@ -428,7 +421,7 @@ def executar_ciclo_completo_hardcoded(direcao_inicial):
                     })
                     salvar_usuario(email_usuario_atual, u)
                 STOP_GAIN_ATINGIDO = True
-                break  # Sai do laço do ciclo imediatamente em caso de vitória (WIN)
+                break 
             else:
                 u = carregar_usuario(email_usuario_atual)
                 if u:
@@ -440,9 +433,7 @@ def executar_ciclo_completo_hardcoded(direcao_inicial):
                         'data': str(datetime.now())[:19], 'resultado': 'LOSS', 'valor': valor, 'lucro': -valor, 'estrategia': estrategia_atual_global.upper()
                     })
                     salvar_usuario(email_usuario_atual, u)
-                # Se der Loss, ele continua no laço 'for' indo para o próximo Gale na mesma direção!
 
-        # IMPRESSÃO EXCLUSIVA DO RELATÓRIO DO CICLO APÓS O FECHAMENTO TOTAL
         print()
         add_log("=" * 50, 'info')
         if vitoria:
@@ -463,7 +454,7 @@ def executar_ciclo_completo_hardcoded(direcao_inicial):
         bot_rodando = False
         add_log("⏹️ Robô em repouso pronto para nova ativação.", 'info')
 
-# ========== LAÇO DE ESCUTA INFINITA DO GATILHO DA ESTRATÉGIA ==========
+# ========== LAÇO DE ESCUTA INFINITA ==========
 
 def bot_loop():
     global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, sinal_pendente, ultimo_sinal, timeframe_atual, volt_ja_consumido, estrategia_ja_injetada
@@ -480,7 +471,7 @@ def bot_loop():
             return
 
         estrategia_info = estrategias_info[estrategia_atual_global]
-        timeframe_estrategia = estrategia_info.get('timeframe', 60)
+        timeframe_estrategia = strategy_info.get('timeframe', 60) if 'strategy_info' in locals() else estrategia_info.get('timeframe', 60)
         timeframe_atual = timeframe_estrategia
         add_log(f"📊 Algoritmo Selecionado: {estrategia_info.get('nome')}", 'indicator')
         add_log(f"⏱️ Base Gráfica: {timeframe_estrategia}s", 'info')
@@ -502,7 +493,6 @@ def bot_loop():
         def processar_estrategia():
             global timeframe_atual, sinal_pendente
             try:
-                # O script injetado apenas monitora e cospe o sinal (Call/Put)
                 resultado = estrategia_atual_executar(API, par, add_log)
                 if resultado and bot_rodando:
                     direcao = resultado.get('direcao', '').lower()
@@ -514,7 +504,6 @@ def bot_loop():
             except Exception as e:
                 print(f"Erro execução thread sinal: {e}")
 
-        # Inicia a thread em segundo plano para pescar o sinal
         threading.Thread(target=processar_estrategia, daemon=True).start()
 
         add_log("🧿 Monitoramento ativo. Aguardando sinal inicial da nuvem (Sem timeout)...", 'win')
@@ -527,11 +516,9 @@ def bot_loop():
                     sinal_pendente = None
             
             if direcao in ['call', 'put']:
-                # Trava rígida: Só aceita o sinal se estiver nos segundos iniciais do nascimento da vela
                 segundo_atual = datetime.now().second
                 if segundo_atual <= 5:
                     ultimo_sinal = f"EXECUTANDO: {direcao.upper()}"
-                    # CHAMA O CONTROLADOR COMPLETO HARDCODED: Ele consome o sinal e faz tudo sozinho!
                     executar_ciclo_completo_hardcoded(direcao)
                     break
                 else:
@@ -928,8 +915,8 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 50)
-    print("⚡ TESLA 369 BOT v13.0.4 - CICLO DE GALES ISOLADO DEFINITIVO ⚡")
-    print("Lógica pura do tes.py restaurada: ordens e gales sob controle exclusivo do bot core.")
+    print("⚡ TESLA 369 BOT v13.0.5 - FIXED MARTINGALE SPEED ⚡")
+    print("Gales consecutivos sem intervalos artificiais ou pulo de velas.")
     print("=" * 50)
 
     carregar_todas_skins_do_firebase()
