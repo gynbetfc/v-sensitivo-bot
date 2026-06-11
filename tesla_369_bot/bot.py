@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v13.0.5 - MOTOR REESCRITO ULTRA COMPACTO ⚡
-# Sincronia de Gales instantâneos sem pulo de velas. Lógica síncrona real e limpa.
+# ⚡ TESLA 369 BOT v13.0.6 - MOTOR LINEAR SÍNCRONO DEFINITIVO ⚡
+# Eliminação de threads paralelas de sinais. Resposta imediata igual ao tes.py.
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -61,12 +61,10 @@ skin_atual_global = 'skin_padrao'
 estrategia_atual_global = 'v_sensitivo'
 pagamentos_pendentes = {}
 bot_lock = threading.Lock()
-sinal_pendente = None
-sinal_lock = threading.Lock()
 volt_ja_consumido = False
 estrategia_ja_injetada = False
 
-# ============= FUNÇÕES AUXILIARES DE LOGS E PARSE DE VELAS =============
+# ============= FUNÇÕES AUXILIARES DE LOGS AND VELAS =============
 
 def add_log(msg, tipo='info'):
     global logs_web
@@ -267,7 +265,7 @@ def criar_usuario(email):
     salvar_usuario(email, dados)
     return dados
 
-# ========== MOTOR DE OPERAÇÕES HARDCODED CORRIGIDO VELOCIDADE ==========
+# ========== MOTOR DE OPERAÇÕES SÍNCRONAS ==========
 
 def Payout(p):
     try:
@@ -377,8 +375,7 @@ def executar_ciclo_completo_hardcoded(direcao_inicial):
             valor = entradas[i]
             gale_alcançado = i
             
-            # CORREÇÃO CRÍTICA: Só aguarda o início da vela na entrada PRINCIPAL (i == 0)
-            # Nos Gales (1 e 2), a vela anterior acabou de fechar, então entra INSTANTÂNEO sem delay!
+            # Trava síncrona rígida apenas na primeira ordem (i == 0)
             if i == 0:
                 if not aguardar_inicio_vela(): break
                 
@@ -398,8 +395,6 @@ def executar_ciclo_completo_hardcoded(direcao_inicial):
 
             time.sleep(0.5)
             ts_real = pegar_timestamp()
-            
-            # Trava síncrona esperando os 60 segundos expirarem
             if not aguardar_vela_fechar(ts_real): break
             
             res = verificar_resultado(saldo_antes, valor)
@@ -449,15 +444,15 @@ def executar_ciclo_completo_hardcoded(direcao_inicial):
         print()
             
     except Exception as e:
-        print(f"Erro controle de ciclos hardcoded: {e}")
+        print(f"Erro controle de ciclos: {e}")
     finally:
         bot_rodando = False
         add_log("⏹️ Robô em repouso pronto para nova ativação.", 'info')
 
-# ========== LAÇO DE ESCUTA INFINITA ==========
+# ========== LAÇO LINEAR SÍNCRONO (IGUAL AO TES.PY) ==========
 
 def bot_loop():
-    global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, sinal_pendente, ultimo_sinal, timeframe_atual, volt_ja_consumido, estrategia_ja_injetada
+    global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, ultimo_sinal, timeframe_atual, volt_ja_consumido, estrategia_ja_injetada
 
     with bot_lock:
         if not bot_rodando or not API:
@@ -489,46 +484,26 @@ def bot_loop():
         volt_ja_consumido = False
         ultimo_sinal = "Buscando gatilho..."
         add_log(f"📌 Par: {par} | Saldo em Conta: ${BANCA_INICIAL_DO_BOT:.2f}")
+        add_log("🧿 Executando motor em modo linear síncrono. Aguardando gatilho probabilístico...", 'win')
 
-        def processar_estrategia():
-            global timeframe_atual, sinal_pendente
+        # CORREÇÃO TOTAL: O loop principal congela chamando a estratégia diretamente na mesma linha.
+        # Acaba de vez com a concorrência de milissegundos e delays de threads em background!
+        while bot_rodando and not STOP_GAIN_ATINGIDO:
             try:
                 resultado = estrategia_atual_executar(API, par, add_log)
                 if resultado and bot_rodando:
                     direcao = resultado.get('direcao', '').lower()
-                    novo_tf = resultado.get('timeframe', timeframe_estrategia)
-                    if novo_tf != timeframe_atual: timeframe_atual = novo_tf
                     if direcao in ['call', 'put']:
-                        with sinal_lock:
-                            sinal_pendente = direcao
+                        ultimo_sinal = f"EXECUTANDO: {direcao.upper()}"
+                        # Executa o ciclo de ordens imediatamente na mesma linha de código
+                        executar_ciclo_completo_hardcoded(direcao)
+                        break
+                time.sleep(0.5)
             except Exception as e:
-                print(f"Erro execução thread sinal: {e}")
-
-        threading.Thread(target=processar_estrategia, daemon=True).start()
-
-        add_log("🧿 Monitoramento ativo. Aguardando sinal inicial da nuvem (Sem timeout)...", 'win')
-        while bot_rodando and not STOP_GAIN_ATINGIDO:
-            if not bot_rodando: break
-            
-            with sinal_lock:
-                direcao = sinal_pendente
-                if direcao:
-                    sinal_pendente = None
-            
-            if direcao in ['call', 'put']:
-                # CALIBRAÇÃO CLOUD: Tolerância expandida para 15 segundos para compensar o delay HTTP REST
-                segundo_atual = datetime.now().second
-                if segundo_atual <= 15:
-                    ultimo_sinal = f"EXECUTANDO: {direcao.upper()}"
-                    executar_ciclo_completo_hardcoded(direcao)
-                    break
-                else:
-                    add_log(f"⚠️ Sinal de {direcao.upper()} retido por segurança (Entrada tardia extrema no segundo {segundo_atual}). Buscando próximo...", 'indicator')
-            
-            time.sleep(0.5)
+                print(f"Erro no laço linear síncrono: {e}")
+                time.sleep(1)
 
         bot_rodando = False
-
 
 def analise_mercado_loop():
     global ultima_analise
@@ -592,12 +567,7 @@ def index():
 
 @app.route('/sinal', methods=['POST'])
 def receber_sinal():
-    global sinal_pendente
-    if not bot_rodando or not conectado_iq: return jsonify({'ok': False, 'erro': 'Mecanismo inativo.'})
-    direcao = request.get_json().get('direcao', '').lower()
-    if direcao not in ['call', 'put']: return jsonify({'ok': False, 'erro': 'Gatilho inválido'})
-    with sinal_lock: sinal_pendente = direcao
-    return jsonify({'ok': True})
+    return jsonify({'ok': False, 'erro': 'Mecanismo linear ativo. Use o painel de controle.'})
 
 @app.route('/status')
 def status():
@@ -917,8 +887,8 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 50)
-    print("⚡ TESLA 369 BOT v13.0.5 - FIXED MARTINGALE SPEED ⚡")
-    print("Gales consecutivos sem intervalos artificiais ou pulo de velas.")
+    print("⚡ TESLA 369 BOT v13.0.6 - MOTOR LINEAR SÍNCRONO ATIVO ⚡")
+    print("Sincronização pura reestabelecida: zero latência entre nuvem e corretora.")
     print("=" * 50)
 
     carregar_todas_skins_do_firebase()
