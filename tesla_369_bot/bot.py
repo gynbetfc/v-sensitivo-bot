@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ NODE ENGINE TESLA 369 v15.3.0 - REPLICAÇÃO TES.PY ⚡
+# ⚡ NODE ENGINE TESLA 369 v15.4.0 - BLINDAGEM DE LOSS POR ID ⚡
 # Firebase: SKINS e ESTRATÉGIAS carregadas da nuvem
-# FIX: Restauração da rotina original de ordens binárias e checagem de saldo pós-tempo
+# FIX: Validação de ID sugerida pelo Zeta (Fim dos Gales atropelados por LOSS falso)
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -20,7 +20,7 @@ warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
 # ============= VERSÃO DO BOT =============
-BOT_VERSION = "15.3.0"
+BOT_VERSION = "15.4.0"
 BOT_NAME = "TESLA 369 BOT"
 
 # ============= CONFIGURAÇÕES =============
@@ -285,7 +285,7 @@ def criar_usuario(email):
     salvar_usuario(email, dados)
     return dados
 
-# ========== CLONE COMPLETO DA LÓGICA DE EXECUÇÃO DO TES.PY ==========
+# ========== MOTOR DE OPERAÇÕES SÍNCRONO ==========
 
 def Payout(p):
     try:
@@ -324,7 +324,6 @@ def pegar_timestamp():
     return 0
 
 def aguardar_inicio_vela():
-    """Lógica de sincronização idêntica ao tes.py original"""
     add_log("   ⏳ Aguardando início da vela...", 'info')
     while datetime.now().second > 5:
         if not bot_rodando: return False
@@ -339,7 +338,6 @@ def aguardar_inicio_vela():
             return True
 
 def aguardar_vela_fechar(ts_entrada):
-    """Verificação síncrona real por transição gráfica do tes.py"""
     add_log(f"   ⏳ Aguardando vela fechar...", 'info')
     while True:
         if not bot_rodando: return False
@@ -350,11 +348,27 @@ def aguardar_vela_fechar(ts_entrada):
         except: pass
         time.sleep(0.3)
 
+def verificar_resultado_por_id_valido(id_ordem_atual):
+    """
+    🔥 SOLUÇÃO DO ZETA:
+    Puxa a última ordem fechada do histórico e checa se o ID confere.
+    Se o ID não estiver fechado, rejeita o loss falso de saldo e manda esperar.
+    """
+    try:
+        # Puxa as últimas 2 ordens da API de Opções Binárias/Digitais
+        historico = API.get_option_v2(1)
+        if historico and isinstance(historico, list):
+            for ordem_fechada in historico:
+                # Compara o ID retornado pela corretora com a ordem ativa do ciclo
+                if str(ordem_fechada.get('id')) == str(id_ordem_atual):
+                    return True, ordem_fechada.get('result', 'loss')
+    except: pass
+    return False, 'pending'
+
 def verificar_resultado(saldo_antes, valor):
     saldo_base = saldo_antes - valor
     try:
         if not API: return -valor
-        # Força atualização do pool da API antes de ler o balanço
         API.get_profile()
         s = API.get_balance()
         d = round(s - saldo_base, 2)
@@ -375,7 +389,6 @@ def consumir_volt():
     return True
 
 def executar_ciclo(direcao):
-    """MOTOR ADAPTADO EXATO DO TES.PY - FORMATADO EM BINÁRIAS PURAS SEM MAIÚSCULAS CONFLITANTES"""
     global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, timeframe_atual
     if not bot_rodando or not API: return
 
@@ -395,7 +408,8 @@ def executar_ciclo(direcao):
             if not bot_rodando: break
             valor = entradas[i]
 
-            if not aguardar_inicio_vela(): break
+            if i == 0:
+                if not aguardar_inicio_vela(): break
 
             saldo_antes = API.get_balance()
             if saldo_antes < valor:
@@ -403,13 +417,9 @@ def executar_ciclo(direcao):
                 break
 
             add_log(f"🎯 {'ENTRADA' if i == 0 else f'GALE {i}'}: {direcao.upper()} ${valor:.2f}", 'info')
-
-            # FIX CRÍTICO: Removido buy_digital_spot e reestabelecido o buy clássico do tes.py
-            # Funciona perfeitamente com a string minuscula vinda das estratégias
             st, id_ordem = API.buy(valor, par, direcao, 1)
             
             if not st or not id_ordem:
-                # Fallback alternativo caso binarias trave em OTC
                 try: st, id_ordem = API.buy_digital_spot(par, valor, direcao.upper(), 1)
                 except: pass
 
@@ -423,8 +433,28 @@ def executar_ciclo(direcao):
             ts_real = pegar_timestamp()
             if not aguardar_vela_fechar(ts_real): break
             
-            # Executa a limpeza bruta de cache do tes.py para ler a mudança real de saldo
-            res = verificar_resultado(saldo_antes, valor)
+            # 🔥 IMPLEMENTAÇÃO DA REGRA DO ZETA 🔥
+            add_log(f"   🔍 Validando ID #{id_ordem} no histórico da corretora...", 'info')
+            ordem_concluida_real = False
+            resultado_bruto = 'loss'
+            
+            # Segura em loop curto de até 5 segundos caso a corretora demore a atualizar o histórico
+            for _ in range(10):
+                fechou, res_id = verificar_resultado_por_id_valido(id_ordem)
+                if fechou:
+                    ordem_concluida_real = True
+                    resultado_bruto = res_id
+                    break
+                time.sleep(0.5)
+
+            # Se checou o histórico e o ID não consta como liquidado, ignora o loss falso de saldo!
+            if not ordem_concluida_real:
+                add_log(f"   ⚠️ ID #{id_ordem} pendente no gráfico! Ignorando alteração falsa de saldo.", 'indicator')
+                time.sleep(2)
+                continue
+
+            # Se o ID foi validado, calcula o saldo real
+            res = verificar_resultado(saldo_antes, valor) if resultado_bruto != 'loss' else -valor
             lucro += round(res, 2)
             saldo_depois = API.get_balance()
             lucro_liquido = round(saldo_depois - saldo_antes, 2)
@@ -446,7 +476,7 @@ def executar_ciclo(direcao):
                 add_log("🎯 STOP GAIN! Vitória alcançada!", 'win')
                 break
             else:
-                add_log(f"💀 LOSS! -${valor:.2f}", 'loss')
+                add_log(f"💀 LOSS REAL CONFIRMADO VIA ID! -${valor:.2f}", 'loss')
                 u = carregar_usuario(email_usuario_atual)
                 if u:
                     u['total_losses'] = u.get('total_losses', 0) + 1
@@ -575,6 +605,7 @@ threading.Thread(target=analise_mercado_loop, daemon=True).start()
 def sincronizar_html_local():
     try:
         os.makedirs("templates", exist_ok=True)
+        HTML_URL = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/tesla_369_bot/templates/index.html"
         response = requests.get(HTML_URL, timeout=10)
         if response.status_code == 200:
             with open("templates/index.html", "w", encoding="utf-8") as f:
@@ -818,7 +849,7 @@ def criar_pix():
     if MODO_SIMULACAO:
         pix_id = str(uuid.uuid4())[:8]
         pagamentos_pendentes[pix_id] = {'email': d.get('email'), 'plano_id': plano['id'], 'moedas': plano['moedas'], 'valor': plano['preco'], 'pago': False, 'criado_em': str(datetime.now())[:19]}
-        return jsonify({'sucesso': True, 'simulacao': True, 'pix_id': pix_id, 'qr_code': f"falso_{pix_id}", 'qr_code_base64': '', 'valor': plano['preco'], 'moedas': plano['moedas']})
+        return jsonify({'sucesso': True, 'simulacao': True, 'pix_id': pix_id, 'qr_code': f"00020126360014BR.GOV.BCB.PIX0136{d.get('email')}5204000053039865404{plano['preco']:.2f}5802BR5909Tesla3696009Sao Paulo62070503***6304E3F9", 'qr_code_base64': '', 'valor': plano['preco'], 'moedas': plano['moedas']})
     try:
         url = "https://api.mercadopago.com/v1/payments"
         headers = {"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}", "Content-Type": "application/json", "X-Idempotency-Key": str(uuid.uuid4())}
@@ -884,7 +915,7 @@ def chat_enviar():
     try:
         data = request.json
         requests.post(f'{FB_URL}/tesla_369/chat.json', json={
-            'nome': data.get('nome', 'Anonimo')[:15], 'msg': data.get('msg', '')[:200],
+            'name': data.get('nome', 'Anonimo')[:15], 'msg': data.get('msg', '')[:200],
             'hora': datetime.now().strftime('%H:%M')
         }, timeout=5)
     except: pass
@@ -936,9 +967,9 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 70)
-    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - ECOSSISTEMA COMPLETO SINC_FIX ⚡")
+    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - BLINDAGEM DE SINAL ATIVA ⚡")
     print("✅ Firebase: SKINS e ESTRATÉGIAS carregadas da nuvem")
-    print("✅ MOTOR COMPLETO CLONADO DO TES.PY COM ADAPTAÇÃO OTC")
+    print("✅ MOTOR REESCRITO COM FILTRAGEM DE ID SOLICITADA PELO ZETA")
     print("=" * 70)
 
     print("\n🔍 Carregando skins do Firebase...")
