@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v15.0.0 - VERIFICAÇÃO CONTÍNUA ⚡
+# ⚡ TESLA 369 BOT v15.0.0 - VERIFICAÇÃO POR ID DA ORDEM ⚡
 # Firebase: SKINS e ESTRATÉGIAS carregadas da nuvem
-# VERIFICAÇÃO DE SALDO A CADA 1 SEGUNDO (SEM DELAY)
-# DETECTA RESULTADO ASSIM QUE DISPONÍVEL
+# VERIFICAÇÃO DE RESULTADO USANDO ID DA ORDEM
+# DETECTA QUANDO O ID MUDA PARA CONFIRMAR RESULTADO
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -19,6 +19,10 @@ import signal
 
 warnings.filterwarnings("ignore")
 app = Flask(__name__)
+
+# ============= VERSÃO DO BOT =============
+BOT_VERSION = "15.0.0"
+BOT_NAME = "TESLA 369 BOT"
 
 # ============= CONFIGURAÇÕES =============
 FB_URL = "https://nexos-40654-default-rtdb.firebaseio.com"
@@ -68,7 +72,7 @@ sinal_pendente = None
 sinal_lock = threading.Lock()
 volt_ja_consumido = False
 estrategia_ja_injetada = False
-ordem_id_atual = None
+ordem_id_principal = None  # ID da ordem principal (primeira entrada)
 
 # ============= FUNÇÕES AUXILIARES =============
 
@@ -333,9 +337,78 @@ def consumir_volt():
     add_log(f"⚡ 1 VOLT consumido. Saldo: {usuario['moedas']} VOLTS", 'info')
     return True
 
+def verificar_resultado_por_id(id_ordem_principal, valor_entrada, saldo_antes, timeout=75):
+    """
+    Verifica resultado monitorando quando o ID da ordem principal desaparece/muda
+    Retorna (win, lucro_liquido, saldo_atual)
+    """
+    inicio = time.time()
+    saldo_referencia = saldo_antes
+    
+    add_log(f"   🔍 Monitorando ordem #{id_ordem_principal}...", 'info')
+    
+    while time.time() - inicio < timeout:
+        if not bot_rodando:
+            return False, -valor_entrada, saldo_referencia
+        
+        try:
+            # Tenta obter as posições atuais
+            posicoes = API.get_positions()
+            if posicoes:
+                ordem_encontrada = False
+                for pos in posicoes:
+                    if pos.get('id') == id_ordem_principal:
+                        ordem_encontrada = True
+                        status = pos.get('status')
+                        if status == 'win':
+                            profit = pos.get('profit', 0)
+                            add_log(f"   ✅ WIN detectado via posição!", 'info')
+                            return True, profit, API.get_balance()
+                        elif status == 'loss':
+                            add_log(f"   ❌ LOSS detectado via posição!", 'info')
+                            return False, -valor_entrada, API.get_balance()
+                        break
+                
+                # Se a ordem principal não está mais nas posições, ela fechou
+                if not ordem_encontrada and id_ordem_principal is not None:
+                    add_log(f"   📊 Ordem principal não está mais ativa. Verificando saldo...", 'info')
+                    saldo_atual = API.get_balance()
+                    diferenca = round(saldo_atual - saldo_referencia, 2)
+                    if diferenca > 0:
+                        return True, diferenca, saldo_atual
+                    else:
+                        return False, -valor_entrada, saldo_atual
+        except:
+            pass
+        
+        # Verifica histórico da ordem
+        try:
+            historico = API.get_position_history(id_ordem_principal)
+            if historico:
+                if historico.get('win'):
+                    profit = historico.get('profit', 0)
+                    add_log(f"   ✅ WIN detectado via histórico!", 'info')
+                    return True, profit, API.get_balance()
+                elif historico.get('loss'):
+                    add_log(f"   ❌ LOSS detectado via histórico!", 'info')
+                    return False, -valor_entrada, API.get_balance()
+        except:
+            pass
+        
+        time.sleep(1)
+    
+    # Timeout - verifica saldo como fallback
+    add_log(f"   ⏰ Timeout! Verificando saldo...", 'warning')
+    saldo_atual = API.get_balance()
+    diferenca = round(saldo_atual - saldo_referencia, 2)
+    if diferenca > 0:
+        return True, diferenca, saldo_atual
+    else:
+        return False, -valor_entrada, saldo_atual
+
 def executar_ciclo(direcao):
-    """Executa o ciclo com verificação a cada 1 segundo"""
-    global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, timeframe_atual, ordem_id_atual
+    """Executa o ciclo com verificação por ID da ordem"""
+    global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, timeframe_atual, ordem_id_principal
 
     if not bot_rodando or not API: return
 
@@ -375,57 +448,36 @@ def executar_ciclo(direcao):
                 add_log("❌ Falha na ordem!", 'error')
                 break
 
+            # Guarda o ID da primeira entrada
             if i == 0:
-                ordem_id_atual = id_ordem
+                ordem_id_principal = id_ordem
                 add_log(f"   📝 Ordem #{id_ordem} (Entrada Principal)", 'info')
+                
+                # 🔥 VERIFICAÇÃO INTELIGENTE POR ID 🔥
+                win, resultado, saldo_atual = verificar_resultado_por_id(ordem_id_principal, valor, saldo_antes)
             else:
                 add_log(f"   📝 Ordem #{id_ordem} (GALE {i})", 'info')
-
-            # 🔥 VERIFICAÇÃO A CADA 1 SEGUNDO 🔥
-            add_log(f"   🔍 Monitorando resultado...", 'info')
-            
-            inicio_espera = time.time()
-            timeout_maximo = 75
-            resultado_detectado = False
-            lucro_liquido = 0
-            
-            while time.time() - inicio_espera < timeout_maximo:
-                if not bot_rodando:
-                    return False
-                
+                # Para GALES, usa verificação simples por saldo
+                add_log(f"   ⏳ Aguardando 60 segundos para resultado...", 'info')
+                time.sleep(60)
                 saldo_atual = API.get_balance()
-                if saldo_atual is not None:
-                    diferenca = round(saldo_atual - saldo_antes, 2)
-                    if abs(diferenca) >= 0.01:
-                        lucro_liquido = diferenca
-                        resultado_detectado = True
-                        tempo_decorrido = int(time.time() - inicio_espera)
-                        add_log(f"   ✅ Resultado após {tempo_decorrido}s", 'info')
-                        break
-                
-                time.sleep(1)
-            
-            if not resultado_detectado:
-                add_log(f"   ⏰ Timeout! Considerando LOSS.", 'warning')
-                lucro_liquido = -valor
-                saldo_depois = API.get_balance()
-            else:
-                saldo_depois = saldo_atual
-            
-            lucro += lucro_liquido
+                resultado = round(saldo_atual - saldo_antes, 2)
+                win = resultado > 0
 
-            if lucro_liquido > 0:
-                add_log(f"🌟 WIN! +${lucro_liquido:.2f}", 'win')
+            lucro += resultado
+
+            if win:
+                add_log(f"🌟 WIN! +${resultado:.2f}", 'win')
                 NumDeOperacoes += 1
                 u = carregar_usuario(email_usuario_atual)
                 if u:
                     u['total_wins'] = u.get('total_wins', 0) + 1
-                    u['total_ganho'] = u.get('total_ganho', 0) + abs(lucro_liquido)
+                    u['total_ganho'] = u.get('total_ganho', 0) + abs(resultado)
                     u['lucro_total'] = u['total_ganho'] - u.get('total_gasto', 0)
-                    u['banca_atual'] = round(saldo_depois, 2)
+                    u['banca_atual'] = round(saldo_atual, 2)
                     u.setdefault('historico_operacoes', []).append({
                         'data': str(datetime.now())[:19], 'resultado': 'WIN',
-                        'valor': valor, 'lucro': lucro_liquido,
+                        'valor': valor, 'lucro': resultado,
                         'estrategia': estrategia_atual_global.upper()
                     })
                     salvar_usuario(email_usuario_atual, u)
@@ -433,16 +485,16 @@ def executar_ciclo(direcao):
                 add_log("🎯 STOP GAIN! Vitória alcançada!", 'win')
                 break
             else:
-                add_log(f"💀 LOSS! {lucro_liquido:.2f}", 'loss')
+                add_log(f"💀 LOSS! {resultado:.2f}", 'loss')
                 u = carregar_usuario(email_usuario_atual)
                 if u:
                     u['total_losses'] = u.get('total_losses', 0) + 1
                     u['total_gasto'] = u.get('total_gasto', 0) + valor
                     u['lucro_total'] = u['total_ganho'] - u['total_gasto']
-                    u['banca_atual'] = round(saldo_depois, 2)
+                    u['banca_atual'] = round(saldo_atual, 2)
                     u.setdefault('historico_operacoes', []).append({
                         'data': str(datetime.now())[:19], 'resultado': 'LOSS',
-                        'valor': valor, 'lucro': lucro_liquido,
+                        'valor': valor, 'lucro': resultado,
                         'estrategia': estrategia_atual_global.upper()
                     })
                     salvar_usuario(email_usuario_atual, u)
@@ -465,7 +517,7 @@ def executar_ciclo(direcao):
         traceback.print_exc()
     finally:
         bot_rodando = False
-        ordem_id_atual = None
+        ordem_id_principal = None
         add_log("⏹️ Ciclo finalizado!", 'info')
 
 def bot_loop():
@@ -580,7 +632,8 @@ def index():
         COR_BOTAO=skin.get('cor_botao', 'linear-gradient(135deg,#cc8800,#ffd700)'), COR_TAB_ATIVA=skin.get('cor_tab_ativa', '#ffd700'),
         COR_HEADER_BG=skin.get('cor_header_bg', 'linear-gradient(135deg,#1a0000,#331100,#553300,#331100,#1a0000)'),
         COR_HEADER_BORDA=skin.get('cor_header_borda', '#ffd700'), CSS_EXTRA=skin.get('css_extra', ''),
-        HEADER_EXTRA=skin.get('header_extra', '<div class="lightning"></div>'), PLANOS_JSON=planos_json
+        HEADER_EXTRA=skin.get('header_extra', '<div class="lightning"></div>'), PLANOS_JSON=planos_json,
+        BOT_VERSION=BOT_VERSION, BOT_NAME=BOT_NAME
     )
 
 @app.route('/sinal', methods=['POST'])
@@ -619,8 +672,13 @@ def status():
         'logs': get_logs_html(40), 'moedas': u.get('moedas', 0) if u else 0, 'skin_id': skin_atual, 'skins_status': skins_status,
         'estrategia': estrategia_atual, 'estrategia_nome': estrategia_nome, 'estrategias_compradas': estrategias_compradas,
         'estrategias_disponiveis': {k: {'nome': v['nome'], 'desc': v['desc'], 'preco_moedas': v['preco_moedas'], 'gratis': v['gratis']} for k, v in estrategias_info.items()},
-        'analise': ultima_analise
+        'analise': ultima_analise, 'bot_version': BOT_VERSION, 'bot_name': BOT_NAME
     })
+
+@app.route('/bot_version')
+def bot_version():
+    """Rota para obter a versão do bot"""
+    return jsonify({'version': BOT_VERSION, 'name': BOT_NAME})
 
 @app.route('/set_percentual', methods=['POST'])
 def set_percentual():
@@ -910,11 +968,10 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 70)
-    print("⚡ TESLA 369 BOT v15.0.0 - VERIFICAÇÃO CONTÍNUA ⚡")
+    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - VERIFICAÇÃO POR ID DA ORDEM ⚡")
     print("✅ Firebase: SKINS e ESTRATÉGIAS carregadas da nuvem")
-    print("✅ VERIFICAÇÃO DE SALDO A CADA 1 SEGUNDO")
-    print("✅ DETECTA RESULTADO ASSIM QUE DISPONÍVEL")
-    print("✅ SEM DELAYS DESNECESSÁRIOS")
+    print("✅ VERIFICAÇÃO DE RESULTADO USANDO ID DA ORDEM")
+    print("✅ DETECTA QUANDO O ID MUDA PARA CONFIRMAR RESULTADO")
     print("=" * 70)
 
     print("\n🔍 Carregando skins do Firebase...")
