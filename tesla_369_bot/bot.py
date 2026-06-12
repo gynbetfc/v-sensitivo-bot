@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v15.0.0 - ESPERA INTELIGENTE ⚡
+# ⚡ TESLA 369 BOT v15.1.0 - CORE ID_CHECK RESTAURADO ⚡
 # Firebase: SKINS e ESTRATÉGIAS carregadas da nuvem
-# ESPERA 50 SEGUNDOS, DEPOIS VERIFICA SALDO A CADA 1 SEGUNDO
+# CORRIGIDO: Checagem de resultado síncrona por ID de Ordem (Fim do travamento de saldo)
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -20,7 +20,7 @@ warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
 # ============= VERSÃO DO BOT =============
-BOT_VERSION = "15.0.0"
+BOT_VERSION = "15.1.0"
 BOT_NAME = "TESLA 369 BOT"
 
 # ============= CONFIGURAÇÕES =============
@@ -285,7 +285,7 @@ def criar_usuario(email):
     salvar_usuario(email, dados)
     return dados
 
-# ========== FUNÇÕES DO BOT ==========
+# ========== FUNÇÕES DO BOT CORRIGIDAS POR ID ==========
 
 def Payout(p):
     try:
@@ -315,7 +315,6 @@ def calcular_entradas(b, p, g):
     return [max(1, e) for e in entradas]
 
 def aguardar_inicio_vela():
-    """Aguarda o início da próxima vela"""
     add_log("   ⏳ Aguardando início da vela...", 'info')
     while datetime.now().second > 5:
         if not bot_rodando: return False
@@ -335,47 +334,8 @@ def consumir_volt():
     add_log(f"⚡ 1 VOLT consumido. Saldo: {usuario['moedas']} VOLTS", 'info')
     return True
 
-def aguardar_e_verificar_resultado(saldo_antes, valor_entrada, timeout_total=65, espera_inicial=50):
-    """
-    Espera 50 segundos, depois verifica saldo a cada 1 segundo
-    timeout_total: tempo máximo total (65 segundos)
-    espera_inicial: tempo que espera sem verificar (50 segundos)
-    """
-    add_log(f"   ⏳ Aguardando {espera_inicial}s, depois verei o saldo...", 'info')
-    
-    # 1. Aguarda a espera inicial (50 segundos)
-    for s in range(espera_inicial):
-        if not bot_rodando:
-            return False, -valor_entrada
-        time.sleep(1)
-    
-    # 2. Agora verifica o saldo a cada 1 segundo (por até 15 segundos)
-    add_log(f"   🔍 Verificando saldo a cada 1s...", 'info')
-    tempo_restante = timeout_total - espera_inicial
-    
-    for s in range(tempo_restante):
-        if not bot_rodando:
-            return False, -valor_entrada
-        
-        saldo_atual = API.get_balance()
-        if saldo_atual is not None:
-            diferenca = round(saldo_atual - saldo_antes, 2)
-            if abs(diferenca) >= 0.01:
-                if diferenca > 0:
-                    add_log(f"   ✅ WIN detectado após {espera_inicial + s + 1}s!", 'info')
-                    return True, diferenca
-                else:
-                    add_log(f"   ❌ LOSS detectado após {espera_inicial + s + 1}s!", 'info')
-                    return False, -valor_entrada
-        
-        time.sleep(1)
-    
-    # 3. Timeout final - considera perda
-    add_log(f"   ⏰ Timeout! Considerando LOSS.", 'warning')
-    return False, -valor_entrada
-
 def executar_ciclo(direcao):
-    """Executa o ciclo com espera inteligente"""
+    """Executa o ciclo com checagem síncrona real por ID do tes.py"""
     global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, timeframe_atual
 
     if not bot_rodando or not API: return
@@ -389,8 +349,8 @@ def executar_ciclo(direcao):
         bi = API.get_balance()
         payout = Payout(par)
         entradas = calcular_entradas(bi, payout, MARTINGALE)
-        add_log(f"💰 Banca: ${bi:.2f} | Payout: {payout*100:.0f}%", 'info')
-        add_log(f"📐 E1:${entradas[0]:.2f} | E2:${entradas[1]:.2f} | E3:${entradas[2]:.2f}", 'info')
+        add_log(f"💰 Banca Inicial: ${bi:.2f} | Payout: {payout*100:.0f}%", 'info')
+        add_log(f"📐 Grade: E1:${entradas[0]:.2f} | E2:${entradas[1]:.2f} | E3:${entradas[2]:.2f}", 'info')
 
         for i in range(MARTINGALE + 1):
             if not bot_rodando: break
@@ -405,37 +365,43 @@ def executar_ciclo(direcao):
 
             add_log(f"🎯 {'ENTRADA' if i == 0 else f'GALE {i}'}: {direcao.upper()} ${valor:.2f}", 'info')
 
-            st, id_ordem = API.buy(valor, par, direcao, 1)
+            # Tenta executar em Opções Digitais primeiro
+            st, id_ordem = API.buy_digital_spot(par, valor, direcao, 1)
             if not st or not id_ordem:
-                try:
-                    st, id_ordem = API.buy_digital_spot(par, valor, direcao, 1)
-                except:
-                    pass
+                # Fallback para Opções Binárias caso digital falhe
+                st, id_ordem = API.buy(valor, par, direcao, 1)
 
             if not st or not id_ordem:
-                add_log("❌ Falha na ordem!", 'error')
+                add_log("❌ Falha na transmissão da ordem!", 'error')
                 break
 
-            add_log(f"   📝 Ordem #{id_ordem}", 'info')
+            add_log(f"   📝 Ordem aceita com ID #{id_ordem}. Monitorando fechamento síncrono...", 'info')
 
-            # 🔥 ESPERA INTELIGENTE: 50s espera + verificação a cada 1s 🔥
-            win, resultado = aguardar_e_verificar_resultado(saldo_antes, valor)
+            # REPLICAÇÃO DO CORE DO TES.PY: Espera o fechamento real travando a linha de código pelo ID
+            while True:
+                if not bot_rodando: break
+                status_win, valor_retorno = API.check_win_digital_v2(id_ordem)
+                if status_win:
+                    # Se o retorno for menor ou igual a zero, formata o loss real baseado no valor de entrada
+                    valor_retorno = valor_retorno if valor_retorno > 0 else float('-' + str(abs(valor)))
+                    break
+                time.sleep(0.5)
 
-            lucro += resultado
+            lucro += round(valor_retorno, 2)
             saldo_atual = API.get_balance()
 
-            if win:
-                add_log(f"🌟 WIN! +${resultado:.2f}", 'win')
+            if valor_retorno > 0:
+                add_log(f"🌟 WIN! +${valor_retorno:.2f}", 'win')
                 NumDeOperacoes += 1
                 u = carregar_usuario(email_usuario_atual)
                 if u:
                     u['total_wins'] = u.get('total_wins', 0) + 1
-                    u['total_ganho'] = u.get('total_ganho', 0) + abs(resultado)
+                    u['total_ganho'] = u.get('total_ganho', 0) + abs(valor_retorno)
                     u['lucro_total'] = u['total_ganho'] - u.get('total_gasto', 0)
                     u['banca_atual'] = round(saldo_atual, 2)
                     u.setdefault('historico_operacoes', []).append({
                         'data': str(datetime.now())[:19], 'resultado': 'WIN',
-                        'valor': valor, 'lucro': resultado,
+                        'valor': valor, 'lucro': valor_retorno,
                         'estrategia': estrategia_atual_global.upper()
                     })
                     salvar_usuario(email_usuario_atual, u)
@@ -443,7 +409,7 @@ def executar_ciclo(direcao):
                 add_log("🎯 STOP GAIN! Vitória alcançada!", 'win')
                 break
             else:
-                add_log(f"💀 LOSS! {resultado:.2f}", 'loss')
+                add_log(f"💀 LOSS! -${valor:.2f}", 'loss')
                 u = carregar_usuario(email_usuario_atual)
                 if u:
                     u['total_losses'] = u.get('total_losses', 0) + 1
@@ -452,7 +418,7 @@ def executar_ciclo(direcao):
                     u['banca_atual'] = round(saldo_atual, 2)
                     u.setdefault('historico_operacoes', []).append({
                         'data': str(datetime.now())[:19], 'resultado': 'LOSS',
-                        'valor': valor, 'lucro': resultado,
+                        'valor': valor, 'lucro': valor_retorno,
                         'estrategia': estrategia_atual_global.upper()
                     })
                     salvar_usuario(email_usuario_atual, u)
@@ -470,15 +436,12 @@ def executar_ciclo(direcao):
             add_log("=" * 50, 'info')
 
     except Exception as e:
-        add_log(f"Erro: {e}", 'error')
-        import traceback
-        traceback.print_exc()
+        add_log(f"Erro no motor de gales: {e}", 'error')
     finally:
         bot_rodando = False
         add_log("⏹️ Ciclo finalizado!", 'info')
 
 def bot_loop():
-    """Loop principal do bot"""
     global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, sinal_pendente, ultimo_sinal, timeframe_atual, volt_ja_consumido, estrategia_ja_injetada
 
     with bot_lock:
@@ -627,14 +590,13 @@ def status():
         'conectado': conectado_iq, 'rodando': bot_rodando, 'email': email_usuario_atual,
         'banca': API.get_balance() if API else 0, 'lucro': lucro, 'ops': NumDeOperacoes, 'sinal': ultimo_sinal,
         'logs': get_logs_html(40), 'moedas': u.get('moedas', 0) if u else 0, 'skin_id': skin_atual, 'skins_status': skins_status,
-        'estrategia': estrategia_atual, 'estrategia_nome': estrategia_nome, 'estrategias_compradas': estrategias_compradas,
+        'estrategia': estrategia_atual, 'estrategia_nome': estrategia_nome, 'estrategias_compradas': strategies_compradas,
         'estrategias_disponiveis': {k: {'nome': v['nome'], 'desc': v['desc'], 'preco_moedas': v['preco_moedas'], 'gratis': v['gratis']} for k, v in estrategias_info.items()},
         'analise': ultima_analise, 'bot_version': BOT_VERSION, 'bot_name': BOT_NAME
     })
 
 @app.route('/bot_version')
 def bot_version():
-    """Rota para obter a versão do bot"""
     return jsonify({'version': BOT_VERSION, 'name': BOT_NAME})
 
 @app.route('/set_percentual', methods=['POST'])
@@ -783,7 +745,7 @@ def comprar_skin():
     return jsonify({'ok': True, 'moedas': usuario['moedas'], 'msg': 'Skin adquirida!', 'refresh': True})
 
 @app.route('/ativar_skin', methods=['POST'])
-def ativar_skin():
+def activar_skin():
     skin_id = request.get_json().get('skin_id', '')
     if not email_usuario_atual: return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
     usuario = carregar_usuario(email_usuario_atual)
@@ -925,10 +887,9 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 70)
-    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - ESPERA INTELIGENTE ⚡")
+    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - CORE ID_CHECK RESTAURADO ⚡")
     print("✅ Firebase: SKINS e ESTRATÉGIAS carregadas da nuvem")
-    print("✅ ESPERA 50 SEGUNDOS, DEPOIS VERIFICA SALDO A CADA 1 SEGUNDO")
-    print("✅ DETECTA RESULTADO ASSIM QUE DISPONÍVEL")
+    print("✅ CHECAGEM DE RESULTADO REAL VIA ID DA CORRETORA")
     print("=" * 70)
 
     print("\n🔍 Carregando skins do Firebase...")
