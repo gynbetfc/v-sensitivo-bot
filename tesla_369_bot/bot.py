@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v13.4.0 - COM LOCK DE TIMESTAMP ⚡
+# ⚡ TESLA 369 BOT v14.0.0 - VERIFICAÇÃO POR ID DA ORDEM ⚡
 # Firebase: SKINS e ESTRATÉGIAS carregadas da nuvem
-# LÓGICA DE VELA IGUAL AO TES.PY (QUE FUNCIONA)
-# LOCK implementado para evitar concorrência de threads
+# VERIFICAÇÃO DE RESULTADO USANDO ID DA ORDEM + SALDO
+# SEM TIMESTAMP DE VELA - SEM CRONÔMETROS TRAVADOS
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -64,11 +64,11 @@ skin_atual_global = 'skin_padrao'
 estrategia_atual_global = 'v_sensitivo'
 pagamentos_pendentes = {}
 bot_lock = threading.Lock()
-timestamp_lock = threading.Lock()  # 🔥 NOVO LOCK PARA EVITAR CONCORRÊNCIA
 sinal_pendente = None
 sinal_lock = threading.Lock()
 volt_ja_consumido = False
 estrategia_ja_injetada = False
+ordem_id_atual = None  # Armazena o ID da ordem atual
 
 # ============= FUNÇÕES AUXILIARES =============
 
@@ -283,7 +283,7 @@ def criar_usuario(email):
     salvar_usuario(email, dados)
     return dados
 
-# ========== FUNÇÕES DO BOT (IGUAIS AO TES.PY COM LOCK) ==========
+# ========== FUNÇÕES DO BOT (VERIFICAÇÃO POR ID) ==========
 
 def Payout(p):
     try:
@@ -312,55 +312,70 @@ def calcular_entradas(b, p, g):
         entradas[-1] = round(entradas[-1] - (sum(entradas) - b) - 0.02, 2)
     return [max(1, e) for e in entradas]
 
-def pegar_timestamp():
-    """Retorna o timestamp da vela atual (COM LOCK para evitar concorrência)"""
-    with timestamp_lock:  # 🔥 GARANTE QUE UMA THREAD POR VEZ
-        try:
-            if not API: return 0
-            v = API.get_candles(par, timeframe_atual, 1, time.time())
-            if v and isinstance(v, list) and len(v) > 0:
-                return v[0]['from']
-        except:
-            pass
-        return 0
-
 def aguardar_inicio_vela():
-    """Aguarda o início da próxima vela (IGUAL AO TES.PY)"""
+    """Aguarda o início da próxima vela (baseado no relógio)"""
     add_log("   ⏳ Aguardando início da vela...", 'info')
     while datetime.now().second > 5:
         if not bot_rodando: return False
         time.sleep(0.3)
-    while True:
-        if not bot_rodando: return False
-        ts1 = pegar_timestamp()
-        time.sleep(0.5)
-        ts2 = pegar_timestamp()
-        if ts1 == ts2:
-            add_log("   ✅ Vela confirmada!", 'info')
-            return True
+    add_log("   ✅ Vela confirmada!", 'info')
+    return True
 
-def aguardar_vela_fechar(ts_entrada):
-    """Aguarda a vela fechar comparando timestamps (IGUAL AO TES.PY)"""
-    add_log(f"   ⏳ Aguardando vela fechar...", 'info')
-    while True:
-        if not bot_rodando: return False
+def verificar_resultado_por_id(id_ordem, valor_entrada, timeout=65):
+    """
+    Verifica resultado usando o ID da ordem + comparação de saldo
+    Retorna (win, lucro_liquido)
+    """
+    saldo_anterior = API.get_balance()
+    inicio = time.time()
+    
+    add_log(f"   🔍 Monitorando ordem #{id_ordem}...", 'info')
+    
+    while time.time() - inicio < timeout:
+        if not bot_rodando:
+            return False, -valor_entrada
+        
         try:
-            if pegar_timestamp() != ts_entrada:
-                add_log("   ✅ Vela fechou!", 'info')
-                return True
+            # Tenta verificar o status da ordem
+            # Método 1: check_win_v3 (se disponível)
+            resultado = API.check_win_v3(id_ordem)
+            if resultado and len(resultado) >= 2:
+                win, valor = resultado[0], resultado[1]
+                if win:
+                    return True, valor
+                else:
+                    return False, -valor_entrada
         except:
             pass
-        time.sleep(0.3)
-
-def verificar_resultado(saldo_antes, valor):
-    saldo_base = saldo_antes - valor
-    try:
-        if not API: return -valor
-        s = API.get_balance()
-        d = round(s - saldo_base, 2)
-        if d >= 1.0: return d
-    except: pass
-    return -valor
+        
+        try:
+            # Método 2: get_position
+            posicao = API.get_position(id_ordem)
+            if posicao:
+                status = posicao.get('status')
+                if status == 'win':
+                    return True, posicao.get('profit', 0)
+                elif status == 'loss':
+                    return False, -posicao.get('loss', valor_entrada)
+        except:
+            pass
+        
+        # Fallback: verifica saldo a cada 2 segundos
+        time.sleep(2)
+        saldo_atual = API.get_balance()
+        if saldo_atual is not None:
+            diferenca = round(saldo_atual - saldo_anterior, 2)
+            if abs(diferenca) >= 0.01:  # Saldo mudou
+                if diferenca > 0:
+                    add_log(f"   📊 Saldo alterado: +${diferenca:.2f}", 'info')
+                    return True, diferenca
+                else:
+                    add_log(f"   📊 Saldo alterado: ${diferenca:.2f}", 'info')
+                    return False, -valor_entrada
+    
+    # Timeout - considera perda
+    add_log(f"   ⏰ Timeout! Considerando LOSS.", 'warning')
+    return False, -valor_entrada
 
 def consumir_volt():
     global volt_ja_consumido
@@ -375,8 +390,8 @@ def consumir_volt():
     return True
 
 def executar_ciclo(direcao):
-    """Executa o ciclo completo (IGUAL AO TES.PY)"""
-    global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, timeframe_atual
+    """Executa o ciclo completo usando verificação por ID da ordem"""
+    global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, timeframe_atual, ordem_id_atual
 
     if not bot_rodando or not API: return
 
@@ -416,19 +431,17 @@ def executar_ciclo(direcao):
                 add_log("❌ Falha na ordem!", 'error')
                 break
 
+            ordem_id_atual = id_ordem
             add_log(f"   📝 Ordem #{id_ordem}", 'info')
-            time.sleep(0.3)
 
-            # 🔥 CORAÇÃO DA LÓGICA DO TES.PY 🔥
-            ts_real = pegar_timestamp()
-            if not aguardar_vela_fechar(ts_real): break
+            # 🔥 VERIFICAÇÃO POR ID DA ORDEM + SALDO 🔥
+            win, resultado = verificar_resultado_por_id(id_ordem, valor)
 
-            res = verificar_resultado(saldo_antes, valor)
-            lucro += round(res, 2)
+            lucro += resultado
             saldo_depois = API.get_balance()
-            lucro_liquido = round(saldo_depois - saldo_antes, 2)
+            lucro_liquido = resultado
 
-            if res > 0:
+            if win:
                 add_log(f"🌟 WIN! +${lucro_liquido:.2f}", 'win')
                 NumDeOperacoes += 1
                 u = carregar_usuario(email_usuario_atual)
@@ -447,7 +460,7 @@ def executar_ciclo(direcao):
                 add_log("🎯 STOP GAIN! Vitória alcançada!", 'win')
                 break
             else:
-                add_log(f"💀 LOSS! -${valor:.2f}", 'loss')
+                add_log(f"💀 LOSS! {lucro_liquido:.2f}", 'loss')
                 u = carregar_usuario(email_usuario_atual)
                 if u:
                     u['total_losses'] = u.get('total_losses', 0) + 1
@@ -456,15 +469,16 @@ def executar_ciclo(direcao):
                     u['banca_atual'] = round(saldo_depois, 2)
                     u.setdefault('historico_operacoes', []).append({
                         'data': str(datetime.now())[:19], 'resultado': 'LOSS',
-                        'valor': valor, 'lucro': -valor,
+                        'valor': valor, 'lucro': lucro_liquido,
                         'estrategia': estrategia_atual_global.upper()
                     })
                     salvar_usuario(email_usuario_atual, u)
 
                 if i < MARTINGALE and bot_rodando:
                     add_log(f"   ➡️ Indo para GALE {i + 1}...", 'loss')
+                    time.sleep(1)  # Pequena pausa entre gales
                 else:
-                    add_log("   💀 CICLO COMPLETO PERDIDO!", 'loss')
+                    add_log("   💀 CICLO ESGOTADO! Todas as entradas perdidas.", 'loss')
 
         if bot_rodando:
             bf = API.get_balance() if API else bi
@@ -478,10 +492,11 @@ def executar_ciclo(direcao):
         traceback.print_exc()
     finally:
         bot_rodando = False
+        ordem_id_atual = None
         add_log("⏹️ Ciclo finalizado!", 'info')
 
 def bot_loop():
-    """Loop principal do bot - SEM TIMEOUT (IGUAL AO TES.PY)"""
+    """Loop principal do bot - SEM TIMEOUT"""
     global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, sinal_pendente, ultimo_sinal, timeframe_atual, volt_ja_consumido, estrategia_ja_injetada
 
     with bot_lock:
@@ -516,7 +531,7 @@ def bot_loop():
         ultimo_sinal = "Aguardando..."
         add_log(f"📌 {par} | Timeframe: {timeframe_atual}s | 💰 ${BANCA_INICIAL_DO_BOT:.2f}")
 
-        # LOOP PRINCIPAL - SEM TIMEOUT (IGUAL AO TES.PY)
+        # LOOP PRINCIPAL - SEM TIMEOUT
         while bot_rodando and not STOP_GAIN_ATINGIDO:
             try:
                 resultado = estrategia_atual_executar(API, par, add_log)
@@ -923,11 +938,10 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 60)
-    print("⚡ TESLA 369 BOT v13.4.0 - COM LOCK DE TIMESTAMP ⚡")
+    print("⚡ TESLA 369 BOT v14.0.0 - VERIFICAÇÃO POR ID DA ORDEM ⚡")
     print("✅ Firebase: SKINS e ESTRATÉGIAS carregadas da nuvem")
-    print("✅ LÓGICA DE VELA IGUAL AO TES.PY")
-    print("✅ LOCK implementado para evitar concorrência de threads")
-    print("✅ SEM TIMEOUT - espera o tempo necessário")
+    print("✅ VERIFICAÇÃO DE RESULTADO USANDO ID DA ORDEM + SALDO")
+    print("✅ SEM TIMESTAMP DE VELA - SEM CRONÔMETROS TRAVADOS")
     print("=" * 60)
 
     print("\n🔍 Carregando skins do Firebase...")
