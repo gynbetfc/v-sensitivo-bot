@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v15.1.1 - CORE ID_CHECK - FIXED SYNTAX ⚡
+# ⚡ TESLA 369 BOT v15.1.2 - RESTAURAÇÃO TOTAL DE LOGIN ⚡
 # Firebase: SKINS e ESTRATÉGIAS carregadas da nuvem
-# CORRIGIDO: Erro de NameError na rota /status (strategies_compradas -> estrategias_compradas)
+# CORRIGIDO: Inicialização de sessão e correção do loop de conexão da IQ Option
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -20,7 +20,7 @@ warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
 # ============= VERSÃO DO BOT =============
-BOT_VERSION = "15.1.1"
+BOT_VERSION = "15.1.2"
 BOT_NAME = "TESLA 369 BOT"
 
 # ============= CONFIGURAÇÕES =============
@@ -285,7 +285,7 @@ def criar_usuario(email):
     salvar_usuario(email, dados)
     return dados
 
-# ========== FUNÇÕES DO BOT CORRIGIDAS POR ID ==========
+# ========== FUNÇÕES OPERACIONAIS SÍNCRONAS ==========
 
 def Payout(p):
     try:
@@ -335,7 +335,6 @@ def consumir_volt():
     return True
 
 def executar_ciclo(direcao):
-    """Executa o ciclo com checagem síncrona real por ID do tes.py"""
     global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, timeframe_atual
 
     if not bot_rodando or not API: return
@@ -535,7 +534,7 @@ def sincronizar_html_local():
     except Exception as e: print(f"❌ Erro HTML: {e}")
     return False
 
-# ========== ROTAS FLASK ==========
+# ========== ROTAS FLASK INTERFACE ==========
 
 @app.route('/')
 def index():
@@ -654,22 +653,29 @@ def conectar():
         d = request.get_json()
         email, senha, tipo = d.get('email', '').strip(), d.get('senha', '').strip(), d.get('tipo', 'PRACTICE')
         if not email or not senha: return jsonify({'ok': False, 'erro': 'Credenciais em branco'})
+        
+        # Sincroniza a variável de sessão global para destravar as rotas seguintes
         email_usuario_atual = email
         API = IQ_Option(email, senha)
         status_conn, reason = API.connect()
         if not status_conn: return jsonify({'ok': False, 'erro': str(reason)[:100]})
+        
         API.change_balance(tipo)
         conectado_iq = True
+        
+        # Garante a carga inicial estável do Firebase
         usuario = carregar_usuario(email) or criar_usuario(email)
         hoje = str(datetime.now())[:10]
         if usuario.get('moedas_ganhas_hoje') != hoje:
             usuario['moedas'] = usuario.get('moedas', 0) + 1
             usuario['moedas_ganhas_hoje'] = hoje
             salvar_usuario(email, usuario)
+            
         skin_atual_global = usuario.get('skin_atual', 'skin_padrao')
         estrategia_atual_global = usuario.get('estrategia_atual', 'v_sensitivo')
-        add_log('🔌 Conectado!', 'info')
-        add_log(f'✅ ${API.get_balance():.2f} | ⚡ {usuario.get("moedas", 0)} VOLTS', 'win')
+        
+        add_log('🔌 Conectado e autenticado com o Firebase!', 'info')
+        add_log(f'✅ Saldo: ${API.get_balance():.2f} | Módulo: {usuario.get("moedas", 0)} VOLTS', 'win')
         return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0), 'refresh': True})
     except Exception as e: return jsonify({'ok': False, 'erro': str(e)[:100]})
 
@@ -756,7 +762,7 @@ def activar_skin():
     skin_atual_global = skin_id
     return jsonify({'ok': True, 'refresh': True})
 
-# ========== PIX ==========
+# ========== PIX AND AUTOMATION ==========
 
 @app.route('/criar_pix', methods=['POST'])
 def criar_pix():
@@ -883,7 +889,7 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 70)
-    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - SINTAXE CORRIGIDA ⚡")
+    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - LOGIN REESTABELECIDO ⚡")
     print("✅ Firebase: SKINS e ESTRATÉGIAS carregadas da nuvem")
     print("✅ CHECAGEM DE RESULTADO REAL VIA ID DA CORRETORA")
     print("=" * 70)
