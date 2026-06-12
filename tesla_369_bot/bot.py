@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v15.6.0 - ENGINE HÍBRIDA DE ENTRADAS ⚡
+# ⚡ TESLA 369 BOT v15.7.0 - MOTOR CLÁSSICO SEQUENCIAL ⚡
 # Firebase: SKINS e ESTRATÉGIAS carregadas da nuvem
-# FIX: Suporte a modo_calculo: 'grade' (Fixa para Probabilidade) ou 'dinamico' (Contextual)
+# RESTAURAÇÃO: Padrão clássico com Gale 1 e Gale 2 sequenciais cravados (Sem travas contextuais)
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -20,13 +20,14 @@ warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
 # ============= VERSÃO DO BOT =============
-BOT_VERSION = "15.6.0"
+BOT_VERSION = "15.7.0"
 BOT_NAME = "TESLA 369 BOT"
 
 # ============= CONFIGURAÇÕES =============
 FB_URL = "https://nexos-40654-default-rtdb.firebaseio.com"
 print("✅ Firebase HTTP REST configurado!")
 
+MARTINGALE = 2
 PAYOUT_PADRAO = 0.85
 PERCENTUAL_BANCA = 15
 
@@ -66,10 +67,9 @@ estrategia_atual_global = 'v_sensitivo'
 pagamentos_pendentes = {}
 bot_lock = threading.Lock()
 
-# VARIÁVEIS DO MOTOR DINÂMICO DE GALES
+# RESTRUTURAÇÃO DE SINAIS SIMPLES COPIADO DO PORTABLE
 sinal_pendente_dict = None
 sinal_lock = threading.Lock()
-gale_pendente_contexto = None  
 volt_ja_consumido = False
 estrategia_ja_injetada = False
 
@@ -197,7 +197,7 @@ def carregar_e_injetar_estrategia(nome_estrategia):
     estrategia_data = carregar_estrategia_do_firebase(nome_estrategia)
     if not estrategia_data: return False
     codigo = estrategia_data.get('codigo')
-    if not codigo or 'def rodar_analise' not in codigo: return False
+    if not code or 'def rodar_analise' not in codigo: return False
     try:
         escopo = {}
         exec(codigo, escopo)
@@ -224,7 +224,18 @@ def carregar_usuario(email):
     except: pass
     return None
 
-# ========== MECÂNICA DE GERENCIAMENTO HÍBRIDA ==========
+def criar_usuario(email):
+    dados = {
+        'email': email, 'moedas': 12, 'moedas_ganhas_hoje': str(datetime.now())[:10],
+        'total_ciclos': 0, 'total_wins': 0, 'total_losses': 0, 'total_gasto': 0.0, 'total_ganho': 0.0,
+        'lucro_total': 0.0, 'banca_atual': 0.0, 'data_cadastro': str(datetime.now())[:19],
+        'historico_operacoes': [], 'dias_ativos': 0, 'skin_atual': 'skin_padrao',
+        'skins_compradas': ['skin_padrao'], 'estrategia_atual': 'v_sensitivo', 'estrategias_compradas': ['v_sensitivo']
+    }
+    salvar_usuario(email, dados)
+    return dados
+
+# ========== SINC OPERACIONAL ORIGINAL PORTABLE ==========
 
 def Payout(p):
     try:
@@ -239,13 +250,6 @@ def Payout(p):
         API.unsubscribe_strike_list(p, 1)
         return PAYOUT_PADRAO
     except: return PAYOUT_PADRAO
-
-def Martingale(valor, payout):
-    lucro_esperado = valor * payout
-    perca = float(valor)
-    while True:
-        if round(valor * payout, 2) > round(abs(perca) + lucro_esperado, 2): return round(valor, 2)
-        valor += 0.01
 
 def calcular_grade_fixa(b, p, g):
     global PERCENTUAL_BANCA
@@ -305,59 +309,67 @@ def consumir_volt():
     add_log(f"⚡ 1 VOLT extraído. Saldo atual: {usuario['moedas']} VOLTS", 'info')
     return True
 
-# ========== CICLO OPERACIONAL HÍBRIDO (GRADE VS DINÂMICO) ==========
+# ========== ENGINE CLÁSSICA SEQUENCIAL RESTAURADA ==========
 
-def ejecutar_ciclo_dinamico(config_sinal):
-    global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, gale_pendente_contexto, timeframe_atual
+def executar_ciclo_classico_sequencial(config_sinal):
+    """
+    RESTAURAÇÃO DO PIPELINE DE GALE 2 SEGUIDO DO TES.PY ORIGINAL:
+    Calcula a grade inteira no ato e executa um atrás do outro cravado na virada!
+    """
+    global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, timeframe_atual
     if not bot_rodando or not API: return
 
     try:
-        direcao = config_sinal.get('direcao').lower()
+        direcao = config_sinal.get('direcao', 'call').lower()
         tf_dinamico = config_sinal.get('timeframe', 60)
-        gale_tipo = config_sinal.get('gale_tipo', 'imediato').lower()
-        martingale_max = config_sinal.get('martingale_max', 2)
-        modo_calculo = config_sinal.get('modo_calculo', 'dinamico').lower() 
         
         timeframe_atual = tf_dinamico 
-
-        bi = API.get_balance()
-        payout = Payout(par)
-
-        # Seleção de modo de cálculo: grade fixa ou passo a passo
-        if modo_calculo == 'grade':
-            grade_fixa = calcular_grade_fixa(bi, payout, martingale_max)
-            add_log(f"📐 MODO PROBABILIDADE ATIVO! Grade Pré-Calculada: {grade_fixa}", 'indicator')
-        
-        if gale_pendente_contexto and gale_tipo == 'quadrante':
-            nivel_gale = gale_pendente_contexto['nivel']
-            valor_entrada = gale_pendente_contexto['proximo_valor']
-            add_log(f"🔄 Retomando GALE Contextual [Nível {nivel_gale}] -> ${valor_entrada:.2f}", 'indicator')
-        else:
-            nivel_gale = 0
-            if modo_calculo == 'grade':
-                valor_entrada = grade_fixa[0]
-            else:
-                valor_entrada = round((bi * PERCENTUAL_BANCA / 100) * 0.35, 2)
-                if valor_entrada < 1.0: valor_entrada = 1.0
 
         if not consumir_volt():
             add_log("❌ Módulo sem VOLTS!", 'error')
             bot_rodando = False
             return
 
-        saldo_antes = API.get_balance()
+        bi = API.get_balance()
+        payout = Payout(par)
+        
+        # Gera a grade pré-calculada exata de 3 níveis do seu motor antigo
+        grade_entradas = calcular_grade_fixa(bi, payout, MARTINGALE)
+        add_log(f"💰 Banca Inicial: ${bi:.2f} | Payout: {payout*100:.0f}%", 'info')
+        add_log(f"📐 Grade Clássica Travada: E1:${grade_entradas[0]:.2f} | E2:${grade_entradas[1]:.2f} | E3:${grade_entradas[2]:.2f}", 'info')
 
-        if gale_tipo == 'imediato' or nivel_gale == 0:
-            if not aguardar_inicio_vela_dinamico(tf_dinamico): return
+        for i in range(MARTINGALE + 1):
+            if not bot_rodando: break
+            valor = grade_entradas[i]
 
-        add_log(f"🎯 {'ENTRADA PRINCIPAL' if nivel_gale == 0 else f'GALE {nivel_gale}'}: {direcao.upper()} ${valor_entrada:.2f}", 'info')
-        st, id_ordem = API.buy(valor_entrada, par, direcao, 1)
+            # Só aguarda o alinhamento de relógio na Ordem Principal (i == 0)
+            # Nos Gales (i > 0), entra cravado direto na virada do bloco de tempo!
+            if i == 0:
+                if not aguardar_inicio_vela_dinamico(tf_dinamico): break
 
-        if st and id_ordem:
+            saldo_antes = API.get_balance()
+            if saldo_antes < valor:
+                add_log("❌ Saldo insuficiente para prosseguir a grade!", 'error')
+                break
+
+            add_log(f"🎯 {'ENTRADA PRINCIPAL' if i == 0 else f'GALE {i} IMEDIATO'}: {direcao.upper()} ${valor:.2f}", 'info')
+            st, id_ordem = API.buy(valor, par, direcao, 1)
+            
+            if not st or not id_ordem:
+                try: st, id_ordem = API.buy_digital_spot(par, valor, direcao.upper(), 1)
+                except: pass
+
+            if not st or not id_ordem:
+                add_log("❌ Falha na emissão da ordem! Pulando laço.", 'error')
+                break
+
+            add_log(f"   📝 Ordem aceita #{id_ordem}", 'info')
+            
+            # Congelamento síncrono e bruto baseado no relógio do processador (igual ao portable)
             segundos_restantes = tf_dinamico - (datetime.now().second % tf_dinamico)
             time.sleep(segundos_restantes + 2) 
             
-            res = verificar_resultado(saldo_antes, valor_entrada)
+            res = verificar_resultado(saldo_antes, valor)
             lucro += round(res, 2)
             saldo_depois = API.get_balance()
             lucro_liquido = round(saldo_depois - saldo_antes, 2)
@@ -365,10 +377,8 @@ def ejecutar_ciclo_dinamico(config_sinal):
             print()
             add_log("="*50, 'info')
             if res > 0:
-                add_log(f"🏆 WIN COMPUTADO! +${lucro_liquido:.2f}", 'win')
+                add_log(f"🌟 WIN ALCANÇADO! +${lucro_liquido:.2f}", 'win')
                 NumDeOperacoes += 1
-                gale_pendente_contexto = None 
-                STOP_GAIN_ATINGIDO = True
                 
                 u = carregar_usuario(email_usuario_atual)
                 if u:
@@ -376,53 +386,44 @@ def ejecutar_ciclo_dinamico(config_sinal):
                     u['total_ganho'] = u.get('total_ganho', 0) + abs(lucro_liquido)
                     u['lucro_total'] = u['total_ganho'] - u.get('total_gasto', 0)
                     u['banca_atual'] = round(saldo_depois, 2)
-                    u.setdefault('historico_operacoes', []).append({'data': str(datetime.now())[:19], 'resultado': 'WIN', 'valor': valor_entrada, 'lucro': lucro_liquido, 'estrategia': estrategia_atual_global.upper()})
+                    u.setdefault('historico_operacoes', []).append({'data': str(datetime.now())[:19], 'resultado': 'WIN', 'valor': valor, 'lucro': lucro_liquido, 'estrategia': estrategia_atual_global.upper()})
                     salvar_usuario(email_usuario_atual, u)
-                bot_rodando = False
+                
+                STOP_GAIN_ATINGIDO = True
+                add_log("🎯 STOP GAIN! Finalizando ciclo vitorioso.", 'win')
+                break
             else:
-                add_log(f"💀 LOSS COMPUTADO! -${valor_entrada:.2f}", 'loss')
+                add_log(f"💀 LOSS COMPUTADO! -${valor:.2f}", 'loss')
                 
                 u = carregar_usuario(email_usuario_atual)
                 if u:
                     u['total_losses'] = u.get('total_losses', 0) + 1
-                    u['total_gasto'] = u.get('total_gasto', 0) + valor_entrada
+                    u['total_gasto'] = u.get('total_gasto', 0) + valor
                     u['lucro_total'] = u['total_ganho'] - u['total_gasto']
                     u['banca_atual'] = round(saldo_depois, 2)
-                    u.setdefault('historico_operacoes', []).append({'data': str(datetime.now())[:19], 'resultado': 'LOSS', 'valor': valor_entrada, 'lucro': -valor_entrada, 'estrategia': estrategia_atual_global.upper()})
+                    u.setdefault('historico_operacoes', []).append({'data': str(datetime.now())[:19], 'resultado': 'LOSS', 'valor': valor, 'lucro': -valor, 'estrategia': estrategia_atual_global.upper()})
                     salvar_usuario(email_usuario_atual, u)
 
-                if nivel_gale < martingale_max:
-                    nivel_gale += 1
-                    
-                    if modo_calculo == 'grade':
-                        proximo_valor_gale = grade_fixa[nivel_gale]
-                    else:
-                        proximo_valor_gale = Martingale(valor_entrada, payout)
-                    
-                    if gale_tipo == 'imediato':
-                        add_log(f"   ➡️ Engatando GALE {nivel_gale} IMEDIATO com valor de ${proximo_valor_gale:.2f}...", 'loss')
-                        time.sleep(0.5)
-                        config_sinal['direcao'] = direcao
-                        executar_ciclo_dinamico(config_sinal)
-                    
-                    elif gale_tipo == 'quadrante':
-                        gale_pendente_contexto = {'nivel': nivel_gale, 'proximo_valor': proximo_valor_gale}
-                        add_log(f"   🛡️ GALE {nivel_gale} DE QUADRANTE SALVO (${proximo_valor_gale:.2f})! No aguardo do próximo sinal...", 'indicator')
+                if i < MARTINGALE and bot_rodando:
+                    add_log(f"   ➡️ Preparando entrada sequencial imediata para o GALE {i + 1}...", 'loss')
+                    time.sleep(0.5)
                 else:
-                    add_log("   💀 CICLO DE GALE COMPLETAMENTE ESGOTADO!", 'loss')
-                    gale_pendente_contexto = None
-                    bot_rodando = False
-            print()
-        else:
-            add_log("❌ Ordem rejeitada!", 'error')
-            bot_rodando = False
+                    add_log("   💀 CICLO DE GALE 2 COMPLETAMENTE PERDIDO!", 'loss')
 
+        if bot_rodando:
+            bf = API.get_balance() if API else bi
+            add_log("=" * 50, 'info')
+            add_log(f"{'🌟 LUCRO' if bf > bi else '💀 PERDA'}: ${abs(bf - bi):.2f} | Saldo Final: ${bf:.2f}", 'info')
+            add_log("=" * 50, 'info')
+            
     except Exception as e:
-        print(f"Erro no laço híbrido: {e}")
+        add_log(f"Erro no laço: {e}", 'error')
+    finally:
         bot_rodando = False
+        add_log("⏹️ Ciclo finalizado!", 'info')
 
 def bot_loop():
-    global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, sinal_pendente_dict, ultimo_sinal, timeframe_atual, volt_ja_consumido, estrategia_ja_injetada, gale_pendente_contexto
+    global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, sinal_pendente_dict, ultimo_sinal, timeframe_atual, volt_ja_consumido, estrategia_ja_injetada
 
     with bot_lock:
         if not bot_rodando or not API:
@@ -447,9 +448,8 @@ def bot_loop():
         lucro, NumDeOperacoes = 0.0, 0
         volt_ja_consumido = False
         sinal_pendente_dict = None
-        gale_pendente_contexto = None 
         ultimo_sinal = "Aguardando..."
-        add_log(f"📌 {par} | Saldo: ${BANCA_INICIAL_DO_BOT:.2f}")
+        add_log(f"📌 {par} | Saldo Inicial: ${BANCA_INICIAL_DO_BOT:.2f}")
 
         def processar_estrategia():
             global sinal_pendente_dict
@@ -462,7 +462,7 @@ def bot_loop():
 
         threading.Thread(target=processar_estrategia, daemon=True).start()
 
-        add_log("🧿 Monitoramento híbrido ativo. Aguardando payload da nuvem...", 'win')
+        add_log("🧿 Escuta sequencial direta ativa. Aguardando gatilho...", 'win')
         while bot_rodando and not STOP_GAIN_ATINGIDO:
             if not bot_rodando: break
             
@@ -475,15 +475,14 @@ def bot_loop():
                 direcao = config_sinal.get('direcao', '').lower()
                 if direcao in ['call', 'put']:
                     ultimo_sinal = f"EXECUTANDO: {direcao.upper()}"
-                    executar_ciclo_dinamico(config_sinal)
-                    if not gale_pendente_contexto:
-                        break
+                    executar_ciclo_classico_sequencial(config_sinal)
+                    break
             
-            time.sleep(0.5)
+            time.sleep(0.4)
 
         bot_rodando = False
 
-# ========== INTEGRAÇÃO DE ROTAS FLASK BACKEND ==========
+# ========== INTEGRAÇÃO FLASK ROTAS ==========
 
 def analise_mercado_loop():
     global ultima_analise
@@ -530,18 +529,6 @@ def sincronizar_html_local():
     except Exception as e: print(f"❌ Erro HTML: {e}")
     return False
 
-def get_skins_fallback():
-    return {
-        'skin_padrao': {
-            'id': 'skin_padrao', 'nome': '⚡ TESLA PADRÃO', 'desc': 'Tema escuro com raios dourados',
-            'preco_moedas': 0, 'categoria': 'basica',
-            'cor_fundo': '#0a0a1a', 'cor_panel': '#1a1a3e', 'cor_destaque': '#ffd700', 'cor_texto': '#fff',
-            'cor_botao': 'linear-gradient(135deg,#cc8800,#ffd700)', 'cor_tab_ativa': '#ffd700',
-            'cor_header_bg': 'linear-gradient(135deg,#1a0000,#331100,#553300,#331100,#1a0000)', 'cor_header_borda': '#ffd700',
-            'header_extra': '<div class="lightning"></div>', 'css_extra': ''
-        }
-    }
-
 @app.route('/')
 def index():
     skins = carregar_todas_skins_do_firebase()
@@ -563,7 +550,6 @@ def receber_sinal():
     if not conectado_iq: return jsonify({'ok': False, 'erro': 'IQ Option offline.'})
     data = request.get_json()
     with sinal_lock: sinal_pendente_dict = data
-    add_log(f"📡 Payload externo sincronizado: {data}", 'sensitive')
     return jsonify({'ok': True})
 
 @app.route('/status')
@@ -743,7 +729,7 @@ def ativar_skin():
     skin_atual_global = skin_id
     return jsonify({'ok': True, 'refresh': True})
 
-# ========== PIX AND AUTOMATION SYSTEM ==========
+# ========== PIX SYSTEM ==========
 
 @app.route('/criar_pix', methods=['POST'])
 def criar_pix():
@@ -793,54 +779,10 @@ def verificador_automatico_pix():
 
 threading.Thread(target=verificador_automatico_pix, daemon=True).start()
 
-@app.route('/chat_enviar', methods=['POST'])
-def chat_enviar():
-    try: requests.post(f'{FB_URL}/tesla_369/chat.json', json={'name': request.json.get('nome')[:15], 'msg': request.json.get('msg')[:200], 'hora': datetime.now().strftime('%H:%M')}, timeout=5)
-    except: pass
-    return jsonify({'ok': True})
-
-@app.route('/chat_messages')
-def chat_mensagens_route():
-    try:
-        r = requests.get(f'{FB_URL}/tesla_369/chat.json?orderBy="$key"&limitToLast=50', timeout=5)
-        return jsonify({'messages': list(r.json().values()) if r.status_code == 200 and r.json() else [], 'online': 1})
-    except: return jsonify({'messages': [], 'online': 1})
-
-@app.route('/ranking')
-def ranking():
-    ranking_list = []
-    try:
-        usuarios = requests.get(f'{FB_URL}/tesla_369/usuarios.json').json() or {}
-        for k, ud in usuarios.items():
-            if ud:
-                ranking_list.append({
-                    'email': ud.get('email', 'N/A'), 'lucro_total': round(ud.get('lucro_total', 0), 2), 'total_wins': ud.get('total_wins', 0), 'total_losses': ud.get('total_losses', 0), 'total_ciclos': ud.get('total_ciclos', 0),
-                    'taxa': round((ud.get('total_wins', 0) / max(ud.get('total_ciclos', 1), 1)) * 100, 1), 'banca_atual': round(ud.get('banca_atual', 0), 2)
-                })
-    except: pass
-    ranking_list.sort(key=lambda x: x['lucro_total'], reverse=True)
-    tc, tw = sum(x['total_ciclos'] for x in ranking_list), sum(x['total_wins'] for x in ranking_list)
-    return jsonify({'ranking': ranking_list, 'stats': {'total_usuarios': len(ranking_list), 'total_ops': tc, 'total_wins': tw, 'taxa_global': round((tw/max(tc,1))*100,1)}})
-
-@app.route('/relatorio')
-def relatorio(): return jsonify(carregar_usuario(request.args.get('email', '')) or {'erro': 'Nao encontrado'})
-
-@app.route('/resetar', methods=['POST'])
-def resetar():
-    u = carregar_usuario(request.json.get('email', ''))
-    if not u: return jsonify({'ok': False, 'msg': 'Nao encontrado'})
-    u.update({'total_ciclos':0,'total_wins':0,'total_losses':0,'total_gasto':0.0,'total_ganho':0.0,'lucro_total':0.0,'historico_operacoes':[],'dias_ativos':0,'banca_atual':0.0,'moedas_ganhas_hoje':str(datetime.now())[:10]})
-    salvar_usuario(request.json.get('email', ''), u)
-    return jsonify({'ok': True, 'msg': 'Resetado!'})
-
-@app.route('/shutdown')
-def shutdown(): os.kill(os.getpid(), signal.SIGTERM); return jsonify({'ok': True})
-
 if __name__ == '__main__':
     print("=" * 70)
-    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - ENGINE HÍBRIDA DE GERENCIAMENTO ⚡")
-    print("✅ Firebase: SKINS e ESTRATÉGIAS carregadas da nuvem")
-    print("✅ MODO DE CÁLCULO SELECIONÁVEL: GRADE FIXA OU DINÂMICO")
+    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - PURE CLASSIC SEQUENTIAL ⚡")
+    print("= REALTIME SEQUENTIAL MARTINGALE ENGINE")
     print("=" * 70)
     carregar_todas_skins_do_firebase()
     carregar_informacoes_estrategias()
