@@ -248,7 +248,6 @@ def Martingale(valor, payout):
         valor += 0.01
 
 def calcular_grade_fixa(b, p, g):
-    """Fórmula matemática clássica de grade estável do tes.py original"""
     global PERCENTUAL_BANCA
     bs = (b * PERCENTUAL_BANCA / 100) * 0.99
     e0 = bs / sum((1/p)**i for i in range(g+1))
@@ -308,7 +307,7 @@ def consumir_volt():
 
 # ========== CICLO OPERACIONAL HÍBRIDO (GRADE VS DINÂMICO) ==========
 
-def executar_ciclo_dinamico(config_sinal):
+def ejecutar_ciclo_dinamico(config_sinal):
     global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, gale_pendente_contexto, timeframe_atual
     if not bot_rodando or not API: return
 
@@ -317,14 +316,14 @@ def executar_ciclo_dinamico(config_sinal):
         tf_dinamico = config_sinal.get('timeframe', 60)
         gale_tipo = config_sinal.get('gale_tipo', 'imediato').lower()
         martingale_max = config_sinal.get('martingale_max', 2)
-        modo_calculo = config_sinal.get('modo_calculo', 'dinamico').lower() # 'grade' ou 'dinamico'
+        modo_calculo = config_sinal.get('modo_calculo', 'dinamico').lower() 
         
         timeframe_atual = tf_dinamico 
 
         bi = API.get_balance()
         payout = Payout(par)
 
-        # 🚀 A MÁGICA DA SELEÇÃO DE MODO DE CÁLCULO SOLICITADA PELO ZETA
+        # Seleção de modo de cálculo: grade fixa ou passo a passo
         if modo_calculo == 'grade':
             grade_fixa = calcular_grade_fixa(bi, payout, martingale_max)
             add_log(f"📐 MODO PROBABILIDADE ATIVO! Grade Pré-Calculada: {grade_fixa}", 'indicator')
@@ -375,7 +374,7 @@ def executar_ciclo_dinamico(config_sinal):
                 if u:
                     u['total_wins'] = u.get('total_wins', 0) + 1
                     u['total_ganho'] = u.get('total_ganho', 0) + abs(lucro_liquido)
-                    u['lucro_total'] = u.get('total_ganho', 0.0) - u.get('total_gasto', 0.0)
+                    u['lucro_total'] = u['total_ganho'] - u.get('total_gasto', 0)
                     u['banca_atual'] = round(saldo_depois, 2)
                     u.setdefault('historico_operacoes', []).append({'data': str(datetime.now())[:19], 'resultado': 'WIN', 'valor': valor_entrada, 'lucro': lucro_liquido, 'estrategia': estrategia_atual_global.upper()})
                     salvar_usuario(email_usuario_atual, u)
@@ -387,7 +386,7 @@ def executar_ciclo_dinamico(config_sinal):
                 if u:
                     u['total_losses'] = u.get('total_losses', 0) + 1
                     u['total_gasto'] = u.get('total_gasto', 0) + valor_entrada
-                    u['lucro_total'] = u['total_ganho', 0.0] - u['total_gasto', 0.0]
+                    u['lucro_total'] = u['total_ganho'] - u['total_gasto']
                     u['banca_atual'] = round(saldo_depois, 2)
                     u.setdefault('historico_operacoes', []).append({'data': str(datetime.now())[:19], 'resultado': 'LOSS', 'valor': valor_entrada, 'lucro': -valor_entrada, 'estrategia': estrategia_atual_global.upper()})
                     salvar_usuario(email_usuario_atual, u)
@@ -395,7 +394,6 @@ def executar_ciclo_dinamico(config_sinal):
                 if nivel_gale < martingale_max:
                     nivel_gale += 1
                     
-                    # Decide a origem matemática do próximo valor baseado no modo da estratégia
                     if modo_calculo == 'grade':
                         proximo_valor_gale = grade_fixa[nivel_gale]
                     else:
@@ -404,8 +402,6 @@ def executar_ciclo_dinamico(config_sinal):
                     if gale_tipo == 'imediato':
                         add_log(f"   ➡️ Engatando GALE {nivel_gale} IMEDIATO com valor de ${proximo_valor_gale:.2f}...", 'loss')
                         time.sleep(0.5)
-                        
-                        # Altera o payload interno para injetar o valor fixo da grade na recursão
                         config_sinal['direcao'] = direcao
                         executar_ciclo_dinamico(config_sinal)
                     
@@ -746,6 +742,8 @@ def ativar_skin():
     global skin_atual_global
     skin_atual_global = skin_id
     return jsonify({'ok': True, 'refresh': True})
+
+# ========== PIX AND AUTOMATION SYSTEM ==========
 
 @app.route('/criar_pix', methods=['POST'])
 def criar_pix():
