@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v15.0.0 - VERIFICAÇÃO POR ID DA ORDEM ⚡
+# ⚡ TESLA 369 BOT v15.0.0 - ESPERA INTELIGENTE ⚡
 # Firebase: SKINS e ESTRATÉGIAS carregadas da nuvem
-# VERIFICAÇÃO DE RESULTADO USANDO ID DA ORDEM
-# DETECTA QUANDO O ID MUDA PARA CONFIRMAR RESULTADO
+# ESPERA 50 SEGUNDOS, DEPOIS VERIFICA SALDO A CADA 1 SEGUNDO
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -72,7 +71,6 @@ sinal_pendente = None
 sinal_lock = threading.Lock()
 volt_ja_consumido = False
 estrategia_ja_injetada = False
-ordem_id_principal = None  # ID da ordem principal (primeira entrada)
 
 # ============= FUNÇÕES AUXILIARES =============
 
@@ -337,78 +335,48 @@ def consumir_volt():
     add_log(f"⚡ 1 VOLT consumido. Saldo: {usuario['moedas']} VOLTS", 'info')
     return True
 
-def verificar_resultado_por_id(id_ordem_principal, valor_entrada, saldo_antes, timeout=75):
+def aguardar_e_verificar_resultado(saldo_antes, valor_entrada, timeout_total=65, espera_inicial=50):
     """
-    Verifica resultado monitorando quando o ID da ordem principal desaparece/muda
-    Retorna (win, lucro_liquido, saldo_atual)
+    Espera 50 segundos, depois verifica saldo a cada 1 segundo
+    timeout_total: tempo máximo total (65 segundos)
+    espera_inicial: tempo que espera sem verificar (50 segundos)
     """
-    inicio = time.time()
-    saldo_referencia = saldo_antes
+    add_log(f"   ⏳ Aguardando {espera_inicial}s, depois verei o saldo...", 'info')
     
-    add_log(f"   🔍 Monitorando ordem #{id_ordem_principal}...", 'info')
-    
-    while time.time() - inicio < timeout:
+    # 1. Aguarda a espera inicial (50 segundos)
+    for s in range(espera_inicial):
         if not bot_rodando:
-            return False, -valor_entrada, saldo_referencia
+            return False, -valor_entrada
+        time.sleep(1)
+    
+    # 2. Agora verifica o saldo a cada 1 segundo (por até 15 segundos)
+    add_log(f"   🔍 Verificando saldo a cada 1s...", 'info')
+    tempo_restante = timeout_total - espera_inicial
+    
+    for s in range(tempo_restante):
+        if not bot_rodando:
+            return False, -valor_entrada
         
-        try:
-            # Tenta obter as posições atuais
-            posicoes = API.get_positions()
-            if posicoes:
-                ordem_encontrada = False
-                for pos in posicoes:
-                    if pos.get('id') == id_ordem_principal:
-                        ordem_encontrada = True
-                        status = pos.get('status')
-                        if status == 'win':
-                            profit = pos.get('profit', 0)
-                            add_log(f"   ✅ WIN detectado via posição!", 'info')
-                            return True, profit, API.get_balance()
-                        elif status == 'loss':
-                            add_log(f"   ❌ LOSS detectado via posição!", 'info')
-                            return False, -valor_entrada, API.get_balance()
-                        break
-                
-                # Se a ordem principal não está mais nas posições, ela fechou
-                if not ordem_encontrada and id_ordem_principal is not None:
-                    add_log(f"   📊 Ordem principal não está mais ativa. Verificando saldo...", 'info')
-                    saldo_atual = API.get_balance()
-                    diferenca = round(saldo_atual - saldo_referencia, 2)
-                    if diferenca > 0:
-                        return True, diferenca, saldo_atual
-                    else:
-                        return False, -valor_entrada, saldo_atual
-        except:
-            pass
-        
-        # Verifica histórico da ordem
-        try:
-            historico = API.get_position_history(id_ordem_principal)
-            if historico:
-                if historico.get('win'):
-                    profit = historico.get('profit', 0)
-                    add_log(f"   ✅ WIN detectado via histórico!", 'info')
-                    return True, profit, API.get_balance()
-                elif historico.get('loss'):
-                    add_log(f"   ❌ LOSS detectado via histórico!", 'info')
-                    return False, -valor_entrada, API.get_balance()
-        except:
-            pass
+        saldo_atual = API.get_balance()
+        if saldo_atual is not None:
+            diferenca = round(saldo_atual - saldo_antes, 2)
+            if abs(diferenca) >= 0.01:
+                if diferenca > 0:
+                    add_log(f"   ✅ WIN detectado após {espera_inicial + s + 1}s!", 'info')
+                    return True, diferenca
+                else:
+                    add_log(f"   ❌ LOSS detectado após {espera_inicial + s + 1}s!", 'info')
+                    return False, -valor_entrada
         
         time.sleep(1)
     
-    # Timeout - verifica saldo como fallback
-    add_log(f"   ⏰ Timeout! Verificando saldo...", 'warning')
-    saldo_atual = API.get_balance()
-    diferenca = round(saldo_atual - saldo_referencia, 2)
-    if diferenca > 0:
-        return True, diferenca, saldo_atual
-    else:
-        return False, -valor_entrada, saldo_atual
+    # 3. Timeout final - considera perda
+    add_log(f"   ⏰ Timeout! Considerando LOSS.", 'warning')
+    return False, -valor_entrada
 
 def executar_ciclo(direcao):
-    """Executa o ciclo com verificação por ID da ordem"""
-    global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, timeframe_atual, ordem_id_principal
+    """Executa o ciclo com espera inteligente"""
+    global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, timeframe_atual
 
     if not bot_rodando or not API: return
 
@@ -448,23 +416,13 @@ def executar_ciclo(direcao):
                 add_log("❌ Falha na ordem!", 'error')
                 break
 
-            # Guarda o ID da primeira entrada
-            if i == 0:
-                ordem_id_principal = id_ordem
-                add_log(f"   📝 Ordem #{id_ordem} (Entrada Principal)", 'info')
-                
-                # 🔥 VERIFICAÇÃO INTELIGENTE POR ID 🔥
-                win, resultado, saldo_atual = verificar_resultado_por_id(ordem_id_principal, valor, saldo_antes)
-            else:
-                add_log(f"   📝 Ordem #{id_ordem} (GALE {i})", 'info')
-                # Para GALES, usa verificação simples por saldo
-                add_log(f"   ⏳ Aguardando 60 segundos para resultado...", 'info')
-                time.sleep(60)
-                saldo_atual = API.get_balance()
-                resultado = round(saldo_atual - saldo_antes, 2)
-                win = resultado > 0
+            add_log(f"   📝 Ordem #{id_ordem}", 'info')
+
+            # 🔥 ESPERA INTELIGENTE: 50s espera + verificação a cada 1s 🔥
+            win, resultado = aguardar_e_verificar_resultado(saldo_antes, valor)
 
             lucro += resultado
+            saldo_atual = API.get_balance()
 
             if win:
                 add_log(f"🌟 WIN! +${resultado:.2f}", 'win')
@@ -517,7 +475,6 @@ def executar_ciclo(direcao):
         traceback.print_exc()
     finally:
         bot_rodando = False
-        ordem_id_principal = None
         add_log("⏹️ Ciclo finalizado!", 'info')
 
 def bot_loop():
@@ -968,10 +925,10 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 70)
-    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - VERIFICAÇÃO POR ID DA ORDEM ⚡")
+    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - ESPERA INTELIGENTE ⚡")
     print("✅ Firebase: SKINS e ESTRATÉGIAS carregadas da nuvem")
-    print("✅ VERIFICAÇÃO DE RESULTADO USANDO ID DA ORDEM")
-    print("✅ DETECTA QUANDO O ID MUDA PARA CONFIRMAR RESULTADO")
+    print("✅ ESPERA 50 SEGUNDOS, DEPOIS VERIFICA SALDO A CADA 1 SEGUNDO")
+    print("✅ DETECTA RESULTADO ASSIM QUE DISPONÍVEL")
     print("=" * 70)
 
     print("\n🔍 Carregando skins do Firebase...")
