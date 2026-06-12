@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v13.4.0 - IDÊNTICO AO TES.PY ⚡
+# ⚡ TESLA 369 BOT v13.4.0 - COM LOCK DE TIMESTAMP ⚡
 # Firebase: SKINS e ESTRATÉGIAS carregadas da nuvem
 # LÓGICA DE VELA IGUAL AO TES.PY (QUE FUNCIONA)
+# LOCK implementado para evitar concorrência de threads
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -63,6 +64,7 @@ skin_atual_global = 'skin_padrao'
 estrategia_atual_global = 'v_sensitivo'
 pagamentos_pendentes = {}
 bot_lock = threading.Lock()
+timestamp_lock = threading.Lock()  # 🔥 NOVO LOCK PARA EVITAR CONCORRÊNCIA
 sinal_pendente = None
 sinal_lock = threading.Lock()
 volt_ja_consumido = False
@@ -281,7 +283,7 @@ def criar_usuario(email):
     salvar_usuario(email, dados)
     return dados
 
-# ========== FUNÇÕES DO BOT (IGUAIS AO TES.PY) ==========
+# ========== FUNÇÕES DO BOT (IGUAIS AO TES.PY COM LOCK) ==========
 
 def Payout(p):
     try:
@@ -311,15 +313,16 @@ def calcular_entradas(b, p, g):
     return [max(1, e) for e in entradas]
 
 def pegar_timestamp():
-    """Retorna o timestamp da vela atual (IGUAL AO TES.PY)"""
-    try:
-        if not API: return 0
-        v = API.get_candles(par, timeframe_atual, 1, time.time())
-        if v and isinstance(v, list) and len(v) > 0:
-            return v[0]['from']
-    except:
-        pass
-    return 0
+    """Retorna o timestamp da vela atual (COM LOCK para evitar concorrência)"""
+    with timestamp_lock:  # 🔥 GARANTE QUE UMA THREAD POR VEZ
+        try:
+            if not API: return 0
+            v = API.get_candles(par, timeframe_atual, 1, time.time())
+            if v and isinstance(v, list) and len(v) > 0:
+                return v[0]['from']
+        except:
+            pass
+        return 0
 
 def aguardar_inicio_vela():
     """Aguarda o início da próxima vela (IGUAL AO TES.PY)"""
@@ -920,11 +923,11 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 60)
-    print("⚡ TESLA 369 BOT v13.3.0 - IDÊNTICO AO TES.PY ⚡")
+    print("⚡ TESLA 369 BOT v13.4.0 - COM LOCK DE TIMESTAMP ⚡")
     print("✅ Firebase: SKINS e ESTRATÉGIAS carregadas da nuvem")
     print("✅ LÓGICA DE VELA IGUAL AO TES.PY")
+    print("✅ LOCK implementado para evitar concorrência de threads")
     print("✅ SEM TIMEOUT - espera o tempo necessário")
-    print("✅ VERIFICAÇÃO DE VELA POR TIMESTAMP")
     print("=" * 60)
 
     print("\n🔍 Carregando skins do Firebase...")
