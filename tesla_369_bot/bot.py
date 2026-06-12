@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v15.5.0 - MOTOR DINÂMICO MULTI-TIMEFRAME ⚡
+# ⚡ TESLA 369 BOT v15.6.0 - ENGINE HÍBRIDA DE ENTRADAS ⚡
 # Firebase: SKINS e ESTRATÉGIAS carregadas da nuvem
-# FIX: O robô agora lê e obedece o Timeframe, Tipo de Gale e Max Gale enviados pela estratégia!
+# FIX: Suporte a modo_calculo: 'grade' (Fixa para Probabilidade) ou 'dinamico' (Contextual)
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -20,7 +20,7 @@ warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
 # ============= VERSÃO DO BOT =============
-BOT_VERSION = "15.5.0"
+BOT_VERSION = "15.6.0"
 BOT_NAME = "TESLA 369 BOT"
 
 # ============= CONFIGURAÇÕES =============
@@ -69,7 +69,7 @@ bot_lock = threading.Lock()
 # VARIÁVEIS DO MOTOR DINÂMICO DE GALES
 sinal_pendente_dict = None
 sinal_lock = threading.Lock()
-gale_pendente_contexto = None  # Salva o estado para Gale de Quadrante
+gale_pendente_contexto = None  
 volt_ja_consumido = False
 estrategia_ja_injetada = False
 
@@ -124,9 +124,9 @@ def calcular_rsi(velas, periodo=14):
 
 def calcular_estocastico(velas, periodo_k=14):
     if len(velas) < periodo_k: return 50
-    ultimas_velas = velas[-periodo_k:]
-    maior_alta = max(get_high(v) for v in ultimas_velas)
-    menor_baixa = min(get_low(v) for v in ultimas_velas)
+    text_velas = velas[-periodo_k:]
+    maior_alta = max(get_high(v) for v in text_velas)
+    menor_baixa = min(get_low(v) for v in text_velas)
     ultimo_fechamento = get_close(velas[-1])
     if maior_alta == menor_baixa: return 50
     return 100 * ((ultimo_fechamento - menor_baixa) / (maior_alta - menor_baixa))
@@ -171,7 +171,7 @@ def carregar_informacoes_estrategias():
                     'nome': info.get('nome', nome_est.upper()), 'desc': info.get('desc', 'Sem descrição.'),
                     'preco_moedas': info.get('preco', 0), 'timeframe': info.get('timeframe', 60), 'gratis': info.get('preco', 0) == 0
                 }
-            cache_estrategias_info["data"] = eateries_info = estrategias_info
+            cache_estrategias_info["data"] = estrategias_info
             cache_estrategias_info["timestamp"] = agora
             return estrategias_info
     except: pass
@@ -224,7 +224,7 @@ def carregar_usuario(email):
     except: pass
     return None
 
-# ========== DINÂMICA DE TIMEFRAME E VERIFICAÇÃO DE SALDO ==========
+# ========== MECÂNICA DE GERENCIAMENTO HÍBRIDA ==========
 
 def Payout(p):
     try:
@@ -247,6 +247,20 @@ def Martingale(valor, payout):
         if round(valor * payout, 2) > round(abs(perca) + lucro_esperado, 2): return round(valor, 2)
         valor += 0.01
 
+def calcular_grade_fixa(b, p, g):
+    """Fórmula matemática clássica de grade estável do tes.py original"""
+    global PERCENTUAL_BANCA
+    bs = (b * PERCENTUAL_BANCA / 100) * 0.99
+    e0 = bs / sum((1/p)**i for i in range(g+1))
+    entradas = [e0]
+    for i in range(1, g+1):
+        entradas.append((sum(entradas) + e0) / p)
+    ajuste = bs / sum(entradas)
+    entradas = [round(e * ajuste, 2) for e in entradas]
+    if sum(entradas) > b:
+        entradas[-1] = round(entradas[-1] - (sum(entradas) - b) - 0.02, 2)
+    return [max(1, e) for e in entradas]
+
 def pegar_timestamp(tf_dinamico):
     try:
         if not API: return 0
@@ -256,14 +270,10 @@ def pegar_timestamp(tf_dinamico):
     return 0
 
 def aguardar_inicio_vela_dinamico(tf_dinamico):
-    """Sincroniza dinamicamente baseado no Timeframe da estratégia (M1, M5, etc.)"""
     add_log(f"   ⏳ Alinhando relógio para base de {tf_dinamico}s...", 'info')
-    
-    # Se for M1, espera o final do minuto. Se for M5, espera fechar o quadrante cheio.
     while datetime.now().second > 3:
         if not bot_rodando: return False
         time.sleep(0.2)
-        
     while True:
         if not bot_rodando: return False
         ts1 = pegar_timestamp(tf_dinamico)
@@ -296,55 +306,57 @@ def consumir_volt():
     add_log(f"⚡ 1 VOLT extraído. Saldo atual: {usuario['moedas']} VOLTS", 'info')
     return True
 
-# ========== MOTOR OPERACIONAL CONTEXTUAL (IMEDIATO OU QUADRANTE) ==========
+# ========== CICLO OPERACIONAL HÍBRIDO (GRADE VS DINÂMICO) ==========
 
 def executar_ciclo_dinamico(config_sinal):
-    """
-    MOTOR CONFIGURÁVEL REESCRITO:
-    Interpreta em tempo real o Timeframe e o Tipo de Gale exigido pela estratégia.
-    """
     global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, gale_pendente_contexto, timeframe_atual
     if not bot_rodando or not API: return
 
     try:
-        # Puxa os dados injetados de dentro do dicionário da estratégia
         direcao = config_sinal.get('direcao').lower()
         tf_dinamico = config_sinal.get('timeframe', 60)
         gale_tipo = config_sinal.get('gale_tipo', 'imediato').lower()
         martingale_max = config_sinal.get('martingale_max', 2)
+        modo_calculo = config_sinal.get('modo_calculo', 'dinamico').lower() # 'grade' ou 'dinamico'
         
-        timeframe_atual = tf_dinamico # Atualiza painel
+        timeframe_atual = tf_dinamico 
 
-        # Se for continuação de um Gale de Quadrante antigo, recupera o nível atual
+        bi = API.get_balance()
+        payout = Payout(par)
+
+        # 🚀 A MÁGICA DA SELEÇÃO DE MODO DE CÁLCULO SOLICITADA PELO ZETA
+        if modo_calculo == 'grade':
+            grade_fixa = calcular_grade_fixa(bi, payout, martingale_max)
+            add_log(f"📐 MODO PROBABILIDADE ATIVO! Grade Pré-Calculada: {grade_fixa}", 'indicator')
+        
         if gale_pendente_contexto and gale_tipo == 'quadrante':
             nivel_gale = gale_pendente_contexto['nivel']
             valor_entrada = gale_pendente_contexto['proximo_valor']
-            add_log(f"🔄 Retomando GALE Contextual de Quadrante [Nível {nivel_gale}]", 'indicator')
+            add_log(f"🔄 Retomando GALE Contextual [Nível {nivel_gale}] -> ${valor_entrada:.2f}", 'indicator')
         else:
             nivel_gale = 0
-            bi = API.get_balance()
-            valor_entrada = round((bi * PERCENTUAL_BANCA / 100) * 0.35, 2)
-            if valor_entrada < 1.0: valor_entrada = 1.0
+            if modo_calculo == 'grade':
+                valor_entrada = grade_fixa[0]
+            else:
+                valor_entrada = round((bi * PERCENTUAL_BANCA / 100) * 0.35, 2)
+                if valor_entrada < 1.0: valor_entrada = 1.0
 
         if not consumir_volt():
             add_log("❌ Módulo sem VOLTS!", 'error')
             bot_rodando = False
             return
 
-        payout = Payout(par)
         saldo_antes = API.get_balance()
 
-        # Se for o início do ciclo ou um Gale Imediato, sincroniza o relógio na virada
         if gale_tipo == 'imediato' or nivel_gale == 0:
             if not aguardar_inicio_vela_dinamico(tf_dinamico): return
 
-        add_log(f"🎯 {'ENTRADA PRINCIPAL' if nivel_gale == 0 else f'GALE {nivel_gale}'}: {direcao.upper()} ${valor_entrada:.2f} [TF: {tf_dinamico}s]", 'info')
+        add_log(f"🎯 {'ENTRADA PRINCIPAL' if nivel_gale == 0 else f'GALE {nivel_gale}'}: {direcao.upper()} ${valor_entrada:.2f}", 'info')
         st, id_ordem = API.buy(valor_entrada, par, direcao, 1)
 
         if st and id_ordem:
-            # Trava síncrona robusta por tempo de expiração do relógio de vela
             segundos_restantes = tf_dinamico - (datetime.now().second % tf_dinamico)
-            time.sleep(segundos_restantes + 2) # Dorme até a vela fechar fisicamente
+            time.sleep(segundos_restantes + 2) 
             
             res = verificar_resultado(saldo_antes, valor_entrada)
             lucro += round(res, 2)
@@ -356,10 +368,9 @@ def executar_ciclo_dinamico(config_sinal):
             if res > 0:
                 add_log(f"🏆 WIN COMPUTADO! +${lucro_liquido:.2f}", 'win')
                 NumDeOperacoes += 1
-                gale_pendente_contexto = None # Limpa contexto de gales
+                gale_pendente_contexto = None 
                 STOP_GAIN_ATINGIDO = True
                 
-                # Salva Firebase
                 u = carregar_usuario(email_usuario_atual)
                 if u:
                     u['total_wins'] = u.get('total_wins', 0) + 1
@@ -368,49 +379,50 @@ def executar_ciclo_dinamico(config_sinal):
                     u['banca_atual'] = round(saldo_depois, 2)
                     u.setdefault('historico_operacoes', []).append({'data': str(datetime.now())[:19], 'resultado': 'WIN', 'valor': valor_entrada, 'lucro': lucro_liquido, 'estrategia': estrategia_atual_global.upper()})
                     salvar_usuario(email_usuario_atual, u)
-                add_log("🎯 STOP GAIN ALCANÇADO - Operação finalizada com sucesso.", 'win')
                 bot_rodando = False
             else:
                 add_log(f"💀 LOSS COMPUTADO! -${valor_entrada:.2f}", 'loss')
                 
-                # Salva Firebase
                 u = carregar_usuario(email_usuario_atual)
                 if u:
                     u['total_losses'] = u.get('total_losses', 0) + 1
                     u['total_gasto'] = u.get('total_gasto', 0) + valor_entrada
-                    u['lucro_total'] = u.get('total_ganho', 0.0) - u.get('total_gasto', 0.0)
+                    u['lucro_total'] = u['total_ganho', 0.0] - u['total_gasto', 0.0]
                     u['banca_atual'] = round(saldo_depois, 2)
                     u.setdefault('historico_operacoes', []).append({'data': str(datetime.now())[:19], 'resultado': 'LOSS', 'valor': valor_entrada, 'lucro': -valor_entrada, 'estrategia': estrategia_atual_global.upper()})
                     salvar_usuario(email_usuario_atual, u)
 
-                # Se ainda possuir gales disponíveis na estratégia
                 if nivel_gale < martingale_max:
-                    proximo_valor_gale = Martingale(valor_entrada, payout)
                     nivel_gale += 1
                     
+                    # Decide a origem matemática do próximo valor baseado no modo da estratégia
+                    if modo_calculo == 'grade':
+                        proximo_valor_gale = grade_fixa[nivel_gale]
+                    else:
+                        proximo_valor_gale = Martingale(valor_entrada, payout)
+                    
                     if gale_tipo == 'imediato':
-                        add_log(f"   ➡️ Engatando GALE {nivel_gale} IMEDIATO para o próximo candle...", 'loss')
+                        add_log(f"   ➡️ Engatando GALE {nivel_gale} IMEDIATO com valor de ${proximo_valor_gale:.2f}...", 'loss')
                         time.sleep(0.5)
-                        # Relança recursivamente no mesmo instante para pegar a abertura da vela colada
-                        nova_config = config_sinal.copy()
-                        executar_ciclo_dinamico(nova_config)
+                        
+                        # Altera o payload interno para injetar o valor fixo da grade na recursão
+                        config_sinal['direcao'] = direcao
+                        executar_ciclo_dinamico(config_sinal)
                     
                     elif gale_tipo == 'quadrante':
-                        # CONSERVA O ESTADO: Guarda o valor e o nível e jera o robô para repouso
                         gale_pendente_contexto = {'nivel': nivel_gale, 'proximo_valor': proximo_valor_gale}
-                        add_log(f"   🛡️ GALE {nivel_gale} DE QUADRANTE CONSERVADO! Aguardando o próximo sinal da nuvem...", 'indicator')
-                        # Não desliga o botão de operar, apenas quebra para esperar o próximo loop de sinal
+                        add_log(f"   🛡️ GALE {nivel_gale} DE QUADRANTE SALVO (${proximo_valor_gale:.2f})! No aguardo do próximo sinal...", 'indicator')
                 else:
                     add_log("   💀 CICLO DE GALE COMPLETAMENTE ESGOTADO!", 'loss')
                     gale_pendente_contexto = None
                     bot_rodando = False
             print()
         else:
-            add_log("❌ Conexão rejeitou a ordem do motor core!", 'error')
+            add_log("❌ Ordem rejeitada!", 'error')
             bot_rodando = False
 
     except Exception as e:
-        print(f"Erro no laço dinâmico: {e}")
+        print(f"Erro no laço híbrido: {e}")
         bot_rodando = False
 
 def bot_loop():
@@ -428,8 +440,6 @@ def bot_loop():
             return
 
         estrategia_info = estrategias_info[estrategia_atual_global]
-        add_log(f"📊 Algoritmo Ativo: {estrategia_info.get('nome')}", 'indicator')
-
         if not estrategia_ja_injetada or cache_estrategia_carregada["nome"] != estrategia_atual_global:
             add_log(f"🔧 Puxando script '{estrategia_atual_global}' do Cloud...", "info")
             if not carregar_e_injetar_estrategia(estrategia_atual_global):
@@ -441,14 +451,13 @@ def bot_loop():
         lucro, NumDeOperacoes = 0.0, 0
         volt_ja_consumido = False
         sinal_pendente_dict = None
-        gale_pendente_contexto = None # Limpa contexto antigo ao iniciar o botão
+        gale_pendente_contexto = None 
         ultimo_sinal = "Aguardando..."
         add_log(f"📌 {par} | Saldo: ${BANCA_INICIAL_DO_BOT:.2f}")
 
         def processar_estrategia():
             global sinal_pendente_dict
             try:
-                # O script da nuvem agora retorna o payload dicionário estruturado
                 resultado = estrategia_atual_executar(API, par, add_log)
                 if resultado and bot_rodando:
                     if isinstance(resultado, dict) and 'direcao' in resultado:
@@ -457,7 +466,7 @@ def bot_loop():
 
         threading.Thread(target=processar_estrategia, daemon=True).start()
 
-        add_log("🧿 Monitoramento contextual ativo. Aguardando comando da estratégia...", 'win')
+        add_log("🧿 Monitoramento híbrido ativo. Aguardando payload da nuvem...", 'win')
         while bot_rodando and not STOP_GAIN_ATINGIDO:
             if not bot_rodando: break
             
@@ -470,10 +479,7 @@ def bot_loop():
                 direcao = config_sinal.get('direcao', '').lower()
                 if direcao in ['call', 'put']:
                     ultimo_sinal = f"EXECUTANDO: {direcao.upper()}"
-                    # Executa o ciclo dinâmico lendo as configurações da estratégia
                     executar_ciclo_dinamico(config_sinal)
-                    
-                    # Se NÃO houver gale de quadrante pendente pendurado, encerra o loop principal
                     if not gale_pendente_contexto:
                         break
             
@@ -481,7 +487,7 @@ def bot_loop():
 
         bot_rodando = False
 
-# ========== RESTO DA ESTRUTURA FLASK INTEGRAÇÃO (IGUAL AO V15.1.2) ==========
+# ========== INTEGRAÇÃO DE ROTAS FLASK BACKEND ==========
 
 def analise_mercado_loop():
     global ultima_analise
@@ -633,7 +639,7 @@ def comprar_estrategia():
         u['estrategia_atual'] = est_id
         salvar_usuario(email_usuario_atual, u)
         return jsonify({'ok': True, 'moedas': u['moedas'], 'msg': 'Já adquirida!'})
-    preco = Corporate = estrategias_info[est_id].get('preco_moedas', 0)
+    preco = estrategias_info[est_id].get('preco_moedas', 0)
     if u.get('moedas', 0) < preco: return jsonify({'ok': False, 'erro': f'Precisa de {preco} ⚡'})
     u['moedas'] -= preco
     u['estrategias_compradas'].append(est_id)
@@ -834,9 +840,9 @@ def shutdown(): os.kill(os.getpid(), signal.SIGTERM); return jsonify({'ok': True
 
 if __name__ == '__main__':
     print("=" * 70)
-    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - MOTOR DINÂMICO CONTEXTUAL ⚡")
+    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - ENGINE HÍBRIDA DE GERENCIAMENTO ⚡")
     print("✅ Firebase: SKINS e ESTRATÉGIAS carregadas da nuvem")
-    print("✅ ESTRUTURADO PARA SUPORTAR GALES IMEDIATOS OU DE QUADRANTE")
+    print("✅ MODO DE CÁLCULO SELECIONÁVEL: GRADE FIXA OU DINÂMICO")
     print("=" * 70)
     carregar_todas_skins_do_firebase()
     carregar_informacoes_estrategias()
