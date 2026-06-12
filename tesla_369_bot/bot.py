@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v15.1.2 - RESTAURAÇÃO TOTAL DE LOGIN ⚡
+# ⚡ TESLA 369 BOT v15.2.0 - VERIFICAÇÃO DE SALDO CORRIGIDA ⚡
 # Firebase: SKINS e ESTRATÉGIAS carregadas da nuvem
-# CORRIGIDO: Inicialização de sessão e correção do loop de conexão da IQ Option
+# FIX: Sincronia bruta de saldo via get_profile() (Fim do cache lento da corretora)
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -20,7 +20,7 @@ warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
 # ============= VERSÃO DO BOT =============
-BOT_VERSION = "15.1.2"
+BOT_VERSION = "15.2.0"
 BOT_NAME = "TESLA 369 BOT"
 
 # ============= CONFIGURAÇÕES =============
@@ -285,7 +285,7 @@ def criar_usuario(email):
     salvar_usuario(email, dados)
     return dados
 
-# ========== FUNÇÕES OPERACIONAIS SÍNCRONAS ==========
+# ========== MOTOR DE OPERAÇÕES ==========
 
 def Payout(p):
     try:
@@ -334,6 +334,44 @@ def consumir_volt():
     add_log(f"⚡ 1 VOLT consumido. Saldo: {usuario['moedas']} VOLTS", 'info')
     return True
 
+def aguardar_e_verificar_resultado(saldo_antes, valor_entrada, timeout_total=65, espera_inicial=50):
+    """
+    CORREÇÃO DO CACHE: Usa api.get_profile() para estourar o cache da IQ Option
+    e colher o saldo do milissegundo real.
+    """
+    add_log(f"   ⏳ Aguardando {espera_inicial}s antes de checar a banca...", 'info')
+    
+    for s in range(espera_inicial):
+        if not bot_rodando: return False, -valor_entrada
+        time.sleep(1)
+    
+    add_log(f"   🔍 Monitorando variação do saldo real a cada 1s...", 'info')
+    tempo_restante = timeout_total - espera_inicial
+    
+    for s in range(tempo_restante):
+        if not bot_rodando: return False, -valor_entrada
+        
+        try:
+            # FORÇA A CORRETORA A LIMPAR O CACHE DE MEMÓRIA DA CONTA
+            API.get_profile()
+        except: pass
+        
+        saldo_atual = API.get_balance()
+        if saldo_atual is not None:
+            diferenca = round(saldo_atual - saldo_antes, 2)
+            if abs(diferenca) >= 0.01:
+                if diferenca > 0:
+                    add_log(f"   ✅ Retorno positivo detectado após {espera_inicial + s + 1}s!", 'info')
+                    return True, diferenca
+                else:
+                    add_log(f"   ❌ Perda detectada após {espera_inicial + s + 1}s!", 'info')
+                    return False, -valor_entrada
+        
+        time.sleep(1)
+    
+    add_log(f"   ⏰ Tempo limite estourado! Computando LOSS por segurança.", 'warning')
+    return False, -valor_entrada
+
 def executar_ciclo(direcao):
     global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, timeframe_atual
 
@@ -366,37 +404,33 @@ def executar_ciclo(direcao):
 
             st, id_ordem = API.buy_digital_spot(par, valor, direcao, 1)
             if not st or not id_ordem:
-                st, id_ordem = API.buy(valor, par, direcao, 1)
+                try: st, id_ordem = API.buy(valor, par, direcao, 1)
+                except: pass
 
             if not st or not id_ordem:
                 add_log("❌ Falha na transmissão da ordem!", 'error')
                 break
 
-            add_log(f"   📝 Ordem aceita com ID #{id_ordem}. Monitorando fechamento síncrono...", 'info')
+            add_log(f"   📝 Ordem transmitida com ID #{id_ordem}", 'info')
 
-            while True:
-                if not bot_rodando: break
-                status_win, valor_retorno = API.check_win_digital_v2(id_ordem)
-                if status_win:
-                    valor_retorno = valor_retorno if valor_retorno > 0 else float('-' + str(abs(valor)))
-                    break
-                time.sleep(0.5)
+            # Ativa o motor inteligente corrigido por estouro de cache de saldo
+            win, resultado = aguardar_e_verificar_resultado(saldo_antes, valor)
 
-            lucro += round(valor_retorno, 2)
+            lucro += resultado
             saldo_atual = API.get_balance()
 
-            if valor_retorno > 0:
-                add_log(f"🌟 WIN! +${valor_retorno:.2f}", 'win')
+            if win:
+                add_log(f"🌟 WIN! +${resultado:.2f}", 'win')
                 NumDeOperacoes += 1
                 u = carregar_usuario(email_usuario_atual)
                 if u:
                     u['total_wins'] = u.get('total_wins', 0) + 1
-                    u['total_ganho'] = u.get('total_ganho', 0) + abs(valor_retorno)
+                    u['total_ganho'] = u.get('total_ganho', 0) + abs(resultado)
                     u['lucro_total'] = u['total_ganho'] - u.get('total_gasto', 0)
                     u['banca_atual'] = round(saldo_atual, 2)
                     u.setdefault('historico_operacoes', []).append({
                         'data': str(datetime.now())[:19], 'resultado': 'WIN',
-                        'valor': valor, 'lucro': valor_retorno,
+                        'valor': valor, 'lucro': resultado,
                         'estrategia': estrategia_atual_global.upper()
                     })
                     salvar_usuario(email_usuario_atual, u)
@@ -404,7 +438,7 @@ def executar_ciclo(direcao):
                 add_log("🎯 STOP GAIN! Vitória alcançada!", 'win')
                 break
             else:
-                add_log(f"💀 LOSS! -${valor:.2f}", 'loss')
+                add_log(f"💀 LOSS! {resultado:.2f}", 'loss')
                 u = carregar_usuario(email_usuario_atual)
                 if u:
                     u['total_losses'] = u.get('total_losses', 0) + 1
@@ -413,7 +447,7 @@ def executar_ciclo(direcao):
                     u['banca_atual'] = round(saldo_atual, 2)
                     u.setdefault('historico_operacoes', []).append({
                         'data': str(datetime.now())[:19], 'resultado': 'LOSS',
-                        'valor': valor, 'lucro': valor_retorno,
+                        'valor': valor, 'lucro': resultado,
                         'estrategia': estrategia_atual_global.upper()
                     })
                     salvar_usuario(email_usuario_atual, u)
@@ -431,7 +465,7 @@ def executar_ciclo(direcao):
             add_log("=" * 50, 'info')
 
     except Exception as e:
-        add_log(f"Erro no motor de gales: {e}", 'error')
+        add_log(f"Erro: {e}", 'error')
     finally:
         bot_rodando = False
         add_log("⏹️ Ciclo finalizado!", 'info')
@@ -534,7 +568,7 @@ def sincronizar_html_local():
     except Exception as e: print(f"❌ Erro HTML: {e}")
     return False
 
-# ========== ROTAS FLASK INTERFACE ==========
+# ========== ROTAS FLASK ==========
 
 @app.route('/')
 def index():
@@ -654,7 +688,6 @@ def conectar():
         email, senha, tipo = d.get('email', '').strip(), d.get('senha', '').strip(), d.get('tipo', 'PRACTICE')
         if not email or not senha: return jsonify({'ok': False, 'erro': 'Credenciais em branco'})
         
-        # Sincroniza a variável de sessão global para destravar as rotas seguintes
         email_usuario_atual = email
         API = IQ_Option(email, senha)
         status_conn, reason = API.connect()
@@ -663,7 +696,6 @@ def conectar():
         API.change_balance(tipo)
         conectado_iq = True
         
-        # Garante a carga inicial estável do Firebase
         usuario = carregar_usuario(email) or criar_usuario(email)
         hoje = str(datetime.now())[:10]
         if usuario.get('moedas_ganhas_hoje') != hoje:
@@ -762,7 +794,7 @@ def activar_skin():
     skin_atual_global = skin_id
     return jsonify({'ok': True, 'refresh': True})
 
-# ========== PIX AND AUTOMATION ==========
+# ========== PIX AND SYSTEM AUTOMATION ==========
 
 @app.route('/criar_pix', methods=['POST'])
 def criar_pix():
@@ -889,9 +921,9 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 70)
-    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - LOGIN REESTABELECIDO ⚡")
+    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - SINCRONIA DE BANCA POR GET_PROFILE ⚡")
     print("✅ Firebase: SKINS e ESTRATÉGIAS carregadas da nuvem")
-    print("✅ CHECAGEM DE RESULTADO REAL VIA ID DA CORRETORA")
+    print("✅ CHECAGEM DE BANCA EM TEMPO REAL INDEPENDENTE DE CHECK_WIN")
     print("=" * 70)
 
     print("\n🔍 Carregando skins do Firebase...")
