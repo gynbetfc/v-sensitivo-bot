@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v15.1.0 - CORE ID_CHECK RESTAURADO ⚡
+# ⚡ TESLA 369 BOT v15.1.1 - CORE ID_CHECK - FIXED SYNTAX ⚡
 # Firebase: SKINS e ESTRATÉGIAS carregadas da nuvem
-# CORRIGIDO: Checagem de resultado síncrona por ID de Ordem (Fim do travamento de saldo)
+# CORRIGIDO: Erro de NameError na rota /status (strategies_compradas -> estrategias_compradas)
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -20,7 +20,7 @@ warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
 # ============= VERSÃO DO BOT =============
-BOT_VERSION = "15.1.0"
+BOT_VERSION = "15.1.1"
 BOT_NAME = "TESLA 369 BOT"
 
 # ============= CONFIGURAÇÕES =============
@@ -365,10 +365,8 @@ def executar_ciclo(direcao):
 
             add_log(f"🎯 {'ENTRADA' if i == 0 else f'GALE {i}'}: {direcao.upper()} ${valor:.2f}", 'info')
 
-            # Tenta executar em Opções Digitais primeiro
             st, id_ordem = API.buy_digital_spot(par, valor, direcao, 1)
             if not st or not id_ordem:
-                # Fallback para Opções Binárias caso digital falhe
                 st, id_ordem = API.buy(valor, par, direcao, 1)
 
             if not st or not id_ordem:
@@ -377,12 +375,10 @@ def executar_ciclo(direcao):
 
             add_log(f"   📝 Ordem aceita com ID #{id_ordem}. Monitorando fechamento síncrono...", 'info')
 
-            # REPLICAÇÃO DO CORE DO TES.PY: Espera o fechamento real travando a linha de código pelo ID
             while True:
                 if not bot_rodando: break
                 status_win, valor_retorno = API.check_win_digital_v2(id_ordem)
                 if status_win:
-                    # Se o retorno for menor ou igual a zero, formata o loss real baseado no valor de entrada
                     valor_retorno = valor_retorno if valor_retorno > 0 else float('-' + str(abs(valor)))
                     break
                 time.sleep(0.5)
@@ -590,7 +586,7 @@ def status():
         'conectado': conectado_iq, 'rodando': bot_rodando, 'email': email_usuario_atual,
         'banca': API.get_balance() if API else 0, 'lucro': lucro, 'ops': NumDeOperacoes, 'sinal': ultimo_sinal,
         'logs': get_logs_html(40), 'moedas': u.get('moedas', 0) if u else 0, 'skin_id': skin_atual, 'skins_status': skins_status,
-        'estrategia': estrategia_atual, 'estrategia_nome': estrategia_nome, 'estrategias_compradas': strategies_compradas,
+        'estrategia': estrategia_atual, 'estrategia_nome': estrategia_nome, 'estrategias_compradas': estrategias_compradas,
         'estrategias_disponiveis': {k: {'nome': v['nome'], 'desc': v['desc'], 'preco_moedas': v['preco_moedas'], 'gratis': v['gratis']} for k, v in estrategias_info.items()},
         'analise': ultima_analise, 'bot_version': BOT_VERSION, 'bot_name': BOT_NAME
     })
@@ -887,7 +883,7 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 70)
-    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - CORE ID_CHECK RESTAURADO ⚡")
+    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - SINTAXE CORRIGIDA ⚡")
     print("✅ Firebase: SKINS e ESTRATÉGIAS carregadas da nuvem")
     print("✅ CHECAGEM DE RESULTADO REAL VIA ID DA CORRETORA")
     print("=" * 70)
