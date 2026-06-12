@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v15.2.0 - VERIFICAÇÃO DE SALDO CORRIGIDA ⚡
+# ⚡ NODE ENGINE TESLA 369 v15.3.0 - REPLICAÇÃO TES.PY ⚡
 # Firebase: SKINS e ESTRATÉGIAS carregadas da nuvem
-# FIX: Sincronia bruta de saldo via get_profile() (Fim do cache lento da corretora)
+# FIX: Restauração da rotina original de ordens binárias e checagem de saldo pós-tempo
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -20,7 +20,7 @@ warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
 # ============= VERSÃO DO BOT =============
-BOT_VERSION = "15.2.0"
+BOT_VERSION = "15.3.0"
 BOT_NAME = "TESLA 369 BOT"
 
 # ============= CONFIGURAÇÕES =============
@@ -285,7 +285,7 @@ def criar_usuario(email):
     salvar_usuario(email, dados)
     return dados
 
-# ========== MOTOR DE OPERAÇÕES ==========
+# ========== CLONE COMPLETO DA LÓGICA DE EXECUÇÃO DO TES.PY ==========
 
 def Payout(p):
     try:
@@ -314,13 +314,53 @@ def calcular_entradas(b, p, g):
         entradas[-1] = round(entradas[-1] - (sum(entradas) - b) - 0.02, 2)
     return [max(1, e) for e in entradas]
 
+def pegar_timestamp():
+    try:
+        if not API: return 0
+        v = API.get_candles(par, timeframe_atual, 1, time.time())
+        if v and isinstance(v, list) and len(v) > 0:
+            return v[0]['from']
+    except: pass
+    return 0
+
 def aguardar_inicio_vela():
+    """Lógica de sincronização idêntica ao tes.py original"""
     add_log("   ⏳ Aguardando início da vela...", 'info')
     while datetime.now().second > 5:
         if not bot_rodando: return False
         time.sleep(0.3)
-    add_log("   ✅ Vela confirmada!", 'info')
-    return True
+    while True:
+        if not bot_rodando: return False
+        ts1 = pegar_timestamp()
+        time.sleep(0.5)
+        ts2 = pegar_timestamp()
+        if ts1 == ts2 and ts1 != 0:
+            add_log("   ✅ Vela confirmada!", 'info')
+            return True
+
+def aguardar_vela_fechar(ts_entrada):
+    """Verificação síncrona real por transição gráfica do tes.py"""
+    add_log(f"   ⏳ Aguardando vela fechar...", 'info')
+    while True:
+        if not bot_rodando: return False
+        try:
+            if pegar_timestamp() != ts_entrada:
+                add_log("   ✅ Vela fechou!", 'info')
+                return True
+        except: pass
+        time.sleep(0.3)
+
+def verificar_resultado(saldo_antes, valor):
+    saldo_base = saldo_antes - valor
+    try:
+        if not API: return -valor
+        # Força atualização do pool da API antes de ler o balanço
+        API.get_profile()
+        s = API.get_balance()
+        d = round(s - saldo_base, 2)
+        if d >= 1.0: return d
+    except: pass
+    return -valor
 
 def consumir_volt():
     global volt_ja_consumido
@@ -334,47 +374,9 @@ def consumir_volt():
     add_log(f"⚡ 1 VOLT consumido. Saldo: {usuario['moedas']} VOLTS", 'info')
     return True
 
-def aguardar_e_verificar_resultado(saldo_antes, valor_entrada, timeout_total=65, espera_inicial=50):
-    """
-    CORREÇÃO DO CACHE: Usa api.get_profile() para estourar o cache da IQ Option
-    e colher o saldo do milissegundo real.
-    """
-    add_log(f"   ⏳ Aguardando {espera_inicial}s antes de checar a banca...", 'info')
-    
-    for s in range(espera_inicial):
-        if not bot_rodando: return False, -valor_entrada
-        time.sleep(1)
-    
-    add_log(f"   🔍 Monitorando variação do saldo real a cada 1s...", 'info')
-    tempo_restante = timeout_total - espera_inicial
-    
-    for s in range(tempo_restante):
-        if not bot_rodando: return False, -valor_entrada
-        
-        try:
-            # FORÇA A CORRETORA A LIMPAR O CACHE DE MEMÓRIA DA CONTA
-            API.get_profile()
-        except: pass
-        
-        saldo_atual = API.get_balance()
-        if saldo_atual is not None:
-            diferenca = round(saldo_atual - saldo_antes, 2)
-            if abs(diferenca) >= 0.01:
-                if diferenca > 0:
-                    add_log(f"   ✅ Retorno positivo detectado após {espera_inicial + s + 1}s!", 'info')
-                    return True, diferenca
-                else:
-                    add_log(f"   ❌ Perda detectada após {espera_inicial + s + 1}s!", 'info')
-                    return False, -valor_entrada
-        
-        time.sleep(1)
-    
-    add_log(f"   ⏰ Tempo limite estourado! Computando LOSS por segurança.", 'warning')
-    return False, -valor_entrada
-
 def executar_ciclo(direcao):
+    """MOTOR ADAPTADO EXATO DO TES.PY - FORMATADO EM BINÁRIAS PURAS SEM MAIÚSCULAS CONFLITANTES"""
     global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, timeframe_atual
-
     if not bot_rodando or not API: return
 
     try:
@@ -386,8 +388,8 @@ def executar_ciclo(direcao):
         bi = API.get_balance()
         payout = Payout(par)
         entradas = calcular_entradas(bi, payout, MARTINGALE)
-        add_log(f"💰 Banca Inicial: ${bi:.2f} | Payout: {payout*100:.0f}%", 'info')
-        add_log(f"📐 Grade: E1:${entradas[0]:.2f} | E2:${entradas[1]:.2f} | E3:${entradas[2]:.2f}", 'info')
+        add_log(f"💰 Banca: ${bi:.2f} | Payout: {payout*100:.0f}%", 'info')
+        add_log(f"📐 E1:${entradas[0]:.2f} | E2:${entradas[1]:.2f} | E3:${entradas[2]:.2f}", 'info')
 
         for i in range(MARTINGALE + 1):
             if not bot_rodando: break
@@ -402,68 +404,71 @@ def executar_ciclo(direcao):
 
             add_log(f"🎯 {'ENTRADA' if i == 0 else f'GALE {i}'}: {direcao.upper()} ${valor:.2f}", 'info')
 
-            st, id_ordem = API.buy_digital_spot(par, valor, direcao, 1)
+            # FIX CRÍTICO: Removido buy_digital_spot e reestabelecido o buy clássico do tes.py
+            # Funciona perfeitamente com a string minuscula vinda das estratégias
+            st, id_ordem = API.buy(valor, par, direcao, 1)
+            
             if not st or not id_ordem:
-                try: st, id_ordem = API.buy(valor, par, direcao, 1)
+                # Fallback alternativo caso binarias trave em OTC
+                try: st, id_ordem = API.buy_digital_spot(par, valor, direcao.upper(), 1)
                 except: pass
 
             if not st or not id_ordem:
-                add_log("❌ Falha na transmissão da ordem!", 'error')
+                add_log("❌ Falha na ordem!", 'error')
                 break
 
-            add_log(f"   📝 Ordem transmitida com ID #{id_ordem}", 'info')
+            add_log(f"   📝 Ordem #{id_ordem}", 'info')
+            time.sleep(0.3)
+            
+            ts_real = pegar_timestamp()
+            if not aguardar_vela_fechar(ts_real): break
+            
+            # Executa a limpeza bruta de cache do tes.py para ler a mudança real de saldo
+            res = verificar_resultado(saldo_antes, valor)
+            lucro += round(res, 2)
+            saldo_depois = API.get_balance()
+            lucro_liquido = round(saldo_depois - saldo_antes, 2)
 
-            # Ativa o motor inteligente corrigido por estouro de cache de saldo
-            win, resultado = aguardar_e_verificar_resultado(saldo_antes, valor)
-
-            lucro += resultado
-            saldo_atual = API.get_balance()
-
-            if win:
-                add_log(f"🌟 WIN! +${resultado:.2f}", 'win')
+            if res > 0:
+                add_log(f"🌟 WIN! +${lucro_liquido:.2f}", 'win')
                 NumDeOperacoes += 1
                 u = carregar_usuario(email_usuario_atual)
                 if u:
                     u['total_wins'] = u.get('total_wins', 0) + 1
-                    u['total_ganho'] = u.get('total_ganho', 0) + abs(resultado)
+                    u['total_ganho'] = u.get('total_ganho', 0) + abs(lucro_liquido)
                     u['lucro_total'] = u['total_ganho'] - u.get('total_gasto', 0)
-                    u['banca_atual'] = round(saldo_atual, 2)
+                    u['banca_atual'] = round(saldo_depois, 2)
                     u.setdefault('historico_operacoes', []).append({
-                        'data': str(datetime.now())[:19], 'resultado': 'WIN',
-                        'valor': valor, 'lucro': resultado,
-                        'estrategia': estrategia_atual_global.upper()
+                        'data': str(datetime.now())[:19], 'resultado': 'WIN', 'valor': valor, 'lucro': lucro_liquido, 'estrategia': estrategia_atual_global.upper()
                     })
                     salvar_usuario(email_usuario_atual, u)
                 STOP_GAIN_ATINGIDO = True
                 add_log("🎯 STOP GAIN! Vitória alcançada!", 'win')
                 break
             else:
-                add_log(f"💀 LOSS! {resultado:.2f}", 'loss')
+                add_log(f"💀 LOSS! -${valor:.2f}", 'loss')
                 u = carregar_usuario(email_usuario_atual)
                 if u:
                     u['total_losses'] = u.get('total_losses', 0) + 1
                     u['total_gasto'] = u.get('total_gasto', 0) + valor
                     u['lucro_total'] = u['total_ganho'] - u['total_gasto']
-                    u['banca_atual'] = round(saldo_atual, 2)
+                    u['banca_atual'] = round(saldo_depois, 2)
                     u.setdefault('historico_operacoes', []).append({
-                        'data': str(datetime.now())[:19], 'resultado': 'LOSS',
-                        'valor': valor, 'lucro': resultado,
-                        'estrategia': estrategia_atual_global.upper()
+                        'data': str(datetime.now())[:19], 'resultado': 'LOSS', 'valor': valor, 'lucro': -valor, 'estrategia': estrategia_atual_global.upper()
                     })
                     salvar_usuario(email_usuario_atual, u)
-
+                    
                 if i < MARTINGALE and bot_rodando:
                     add_log(f"   ➡️ Indo para GALE {i + 1}...", 'loss')
-                    time.sleep(1)
                 else:
-                    add_log("   💀 CICLO ESGOTADO! Todas as entradas perdidas.", 'loss')
+                    add_log("   💀 CICLO COMPLETO PERDIDO!", 'loss')
 
         if bot_rodando:
             bf = API.get_balance() if API else bi
             add_log("=" * 50, 'info')
-            add_log(f"{'🌟 LUCRO' if bf > bi else '💀 PERDA'}: ${abs(bf - bi):.2f} | Banca: ${bf:.2f}", 'info')
+            add_log(f"{'🌟 LUCRO' if bf > bi else '💀 PERDA'}: ${abs(bf - bi):.2f} | Saldo: ${bf:.2f}", 'info')
             add_log("=" * 50, 'info')
-
+            
     except Exception as e:
         add_log(f"Erro: {e}", 'error')
     finally:
@@ -498,28 +503,40 @@ def bot_loop():
 
         BANCA_INICIAL_DO_BOT = API.get_balance()
         STOP_GAIN_ATINGIDO = False
-        lucro = 0.0
-        NumDeOperacoes = 0
+        lucro, NumDeOperacoes = 0.0, 0
         volt_ja_consumido = False
         sinal_pendente = None
         ultimo_sinal = "Aguardando..."
         add_log(f"📌 {par} | 💰 ${BANCA_INICIAL_DO_BOT:.2f}")
 
-        while bot_rodando and not STOP_GAIN_ATINGIDO:
+        def processar_estrategia():
+            global timeframe_atual, sinal_pendente
             try:
+                add_log(f"🔍 Analisando mercado em background...", "info")
                 resultado = estrategia_atual_executar(API, par, add_log)
                 if resultado and bot_rodando:
                     direcao = resultado.get('direcao', '').lower()
                     if direcao in ['call', 'put']:
-                        ultimo_sinal = f"GATILHO: {direcao.upper()}"
-                        add_log(f"🎯 SINAL: {direcao.upper()}!", 'sensitive')
-                        add_log(f"🎯 EXECUTANDO CICLO: {direcao.upper()}", 'sensitive')
-                        executar_ciclo(direcao)
-                        break
-                time.sleep(0.3)
-            except Exception as e:
-                add_log(f"Erro: {e}", 'error')
-                time.sleep(5)
+                        with sinal_lock:
+                            sinal_pendente = direcao
+            except Exception as e: add_log(f"❌ Erro na análise cloud: {e}", "error")
+
+        threading.Thread(target=processar_estrategia, daemon=True).start()
+
+        while bot_rodando and not STOP_GAIN_ATINGIDO:
+            if not bot_rodando: break
+            
+            with sinal_lock:
+                direcao = sinal_pendente
+                if direcao:
+                    sinal_pendente = None
+            
+            if direcao in ['call', 'put']:
+                ultimo_sinal = f"GATILHO: {direcao.upper()}"
+                executar_ciclo(direcao)
+                break
+            
+            time.sleep(0.3)
 
         bot_rodando = False
 
@@ -536,7 +553,7 @@ def analise_mercado_loop():
                     mm10 = calcular_media_movel(velas, 10)
                     mm20 = calcular_media_movel(velas, 20)
                     preco_atual = get_close(velas[-1])
-
+                    
                     if mm5 and mm10 and mm20:
                         if mm5 > mm10 and mm10 > mm20: fase = "TENDÊNCIA ALTA"
                         elif mm5 < mm10 and mm10 < mm20: fase = "TENDÊNCIA BAIXA"
@@ -544,7 +561,7 @@ def analise_mercado_loop():
                         elif rsi_val > 60: fase = "EXAUSTÃO"
                         else: fase = "CONSOLIDAÇÃO"
                     else: fase = "ANALISANDO..."
-
+                    
                     ultima_analise = {
                         'rsi': round(rsi_val, 1), 'mm5': round(mm5, 5) if mm5 else 0,
                         'mm10': round(mm10, 5) if mm10 else 0, 'mm20': round(mm20, 5) if mm20 else 0,
@@ -558,7 +575,6 @@ threading.Thread(target=analise_mercado_loop, daemon=True).start()
 def sincronizar_html_local():
     try:
         os.makedirs("templates", exist_ok=True)
-        HTML_URL = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/tesla_369_bot/templates/index.html"
         response = requests.get(HTML_URL, timeout=10)
         if response.status_code == 200:
             with open("templates/index.html", "w", encoding="utf-8") as f:
@@ -568,7 +584,7 @@ def sincronizar_html_local():
     except Exception as e: print(f"❌ Erro HTML: {e}")
     return False
 
-# ========== ROTAS FLASK ==========
+# ========== ROTAS FLASK INTERFACE ==========
 
 @app.route('/')
 def index():
@@ -581,8 +597,7 @@ def index():
         COR_BOTAO=skin.get('cor_botao', 'linear-gradient(135deg,#cc8800,#ffd700)'), COR_TAB_ATIVA=skin.get('cor_tab_ativa', '#ffd700'),
         COR_HEADER_BG=skin.get('cor_header_bg', 'linear-gradient(135deg,#1a0000,#331100,#553300,#331100,#1a0000)'),
         COR_HEADER_BORDA=skin.get('cor_header_borda', '#ffd700'), CSS_EXTRA=skin.get('css_extra', ''),
-        HEADER_EXTRA=skin.get('header_extra', '<div class="lightning"></div>'), PLANOS_JSON=planos_json,
-        BOT_VERSION=BOT_VERSION, BOT_NAME=BOT_NAME
+        HEADER_EXTRA=skin.get('header_extra', '<div class="lightning"></div>'), PLANOS_JSON=planos_json
     )
 
 @app.route('/sinal', methods=['POST'])
@@ -794,7 +809,7 @@ def activar_skin():
     skin_atual_global = skin_id
     return jsonify({'ok': True, 'refresh': True})
 
-# ========== PIX AND SYSTEM AUTOMATION ==========
+# ========== PIX AND AUTOMATION SYSTEM ==========
 
 @app.route('/criar_pix', methods=['POST'])
 def criar_pix():
@@ -803,7 +818,7 @@ def criar_pix():
     if MODO_SIMULACAO:
         pix_id = str(uuid.uuid4())[:8]
         pagamentos_pendentes[pix_id] = {'email': d.get('email'), 'plano_id': plano['id'], 'moedas': plano['moedas'], 'valor': plano['preco'], 'pago': False, 'criado_em': str(datetime.now())[:19]}
-        return jsonify({'sucesso': True, 'simulacao': True, 'pix_id': pix_id, 'qr_code': f"00020126360014BR.GOV.BCB.PIX0136{d.get('email')}5204000053039865404{plano['preco']:.2f}5802BR5909Tesla3696009Sao Paulo62070503***6304E3F9", 'qr_code_base64': '', 'valor': plano['preco'], 'moedas': plano['moedas']})
+        return jsonify({'sucesso': True, 'simulacao': True, 'pix_id': pix_id, 'qr_code': f"falso_{pix_id}", 'qr_code_base64': '', 'valor': plano['preco'], 'moedas': plano['moedas']})
     try:
         url = "https://api.mercadopago.com/v1/payments"
         headers = {"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}", "Content-Type": "application/json", "X-Idempotency-Key": str(uuid.uuid4())}
@@ -921,9 +936,9 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 70)
-    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - SINCRONIA DE BANCA POR GET_PROFILE ⚡")
+    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - ECOSSISTEMA COMPLETO SINC_FIX ⚡")
     print("✅ Firebase: SKINS e ESTRATÉGIAS carregadas da nuvem")
-    print("✅ CHECAGEM DE BANCA EM TEMPO REAL INDEPENDENTE DE CHECK_WIN")
+    print("✅ MOTOR COMPLETO CLONADO DO TES.PY COM ADAPTAÇÃO OTC")
     print("=" * 70)
 
     print("\n🔍 Carregando skins do Firebase...")
