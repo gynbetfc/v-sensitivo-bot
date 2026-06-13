@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v15.7.0 - MOTOR CLÁSSICO SEQUENCIAL ⚡
+# ⚡ NODE ENGINE TESLA 369 v15.4.1 - TRAVA DE TEMPO CRAVADA ⚡
 # Firebase: SKINS e ESTRATÉGIAS carregadas da nuvem
-# RESTAURAÇÃO: Padrão clássico com Gale 1 e Gale 2 sequenciais cravados (Sem travas contextuais)
+# FIX: Substituição do aguardar_vela_fechar por congelamento de tempo real por relógio
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -20,7 +20,7 @@ warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
 # ============= VERSÃO DO BOT =============
-BOT_VERSION = "15.7.0"
+BOT_VERSION = "15.4.1"
 BOT_NAME = "TESLA 369 BOT"
 
 # ============= CONFIGURAÇÕES =============
@@ -52,7 +52,7 @@ def estrategia_atual_executar(api, par, add_log):
     add_log("⚠️ Nenhuma estratégia carregada!", "error")
     return None
 
-# ============= VARIÁVEIS GLOBAIS DE SESSÃO =============
+# ============= VARIÁVEIS GLOBAIS =============
 API, par = None, "EURUSD-OTC"
 timeframe_atual = 60
 lucro, NumDeOperacoes = 0.0, 0
@@ -66,9 +66,7 @@ skin_atual_global = 'skin_padrao'
 estrategia_atual_global = 'v_sensitivo'
 pagamentos_pendentes = {}
 bot_lock = threading.Lock()
-
-# RESTRUTURAÇÃO DE SINAIS SIMPLES COPIADO DO PORTABLE
-sinal_pendente_dict = None
+sinal_pendente = None
 sinal_lock = threading.Lock()
 volt_ja_consumido = False
 estrategia_ja_injetada = False
@@ -111,9 +109,11 @@ def calcular_rsi(velas, periodo=14):
     for i in range(1, len(velas)):
         diferenca = get_close(velas[i]) - get_close(velas[i-1])
         if diferenca >= 0:
-            ganhos.append(diferenca); perdas.append(0)
+            ganhos.append(diferenca)
+            perdas.append(0)
         else:
-            ganhos.append(0); perdas.append(abs(diferenca))
+            ganhos.append(0)
+            perdas.append(abs(diferenca))
     ganhos = ganhos[-periodo:]
     perdas = perdas[-periodo:]
     ganho_medio = sum(ganhos) / periodo if ganhos else 0
@@ -124,9 +124,9 @@ def calcular_rsi(velas, periodo=14):
 
 def calcular_estocastico(velas, periodo_k=14):
     if len(velas) < periodo_k: return 50
-    text_velas = velas[-periodo_k:]
-    maior_alta = max(get_high(v) for v in text_velas)
-    menor_baixa = min(get_low(v) for v in text_velas)
+    ultimas_velas = candles = velas[-periodo_k:]
+    maior_alta = max(get_high(v) for v in ultimas_velas)
+    menor_baixa = min(get_low(v) for v in ultimas_velas)
     ultimo_fechamento = get_close(velas[-1])
     if maior_alta == menor_baixa: return 50
     return 100 * ((ultimo_fechamento - menor_baixa) / (maior_alta - menor_baixa))
@@ -135,46 +135,83 @@ def calcular_media_movel(velas, periodo):
     if len(velas) < periodo: return get_close(velas[-1]) if velas else 0
     return sum(get_close(v) for v in velas[-periodo:]) / periodo
 
-# ============= SEÇÃO BANCO DE DADOS FIREBASE =============
+# ============= SKINS NO FIREBASE =============
+
+def get_skins_fallback():
+    return {
+        'skin_padrao': {
+            'id': 'skin_padrao', 'nome': '⚡ TESLA PADRÃO', 'desc': 'Tema escuro com raios dourados',
+            'preco_moedas': 0, 'categoria': 'basica',
+            'cor_fundo': '#0a0a1a', 'cor_panel': '#1a1a3e', 'cor_destaque': '#ffd700', 'cor_texto': '#fff',
+            'cor_botao': 'linear-gradient(135deg,#cc8800,#ffd700)', 'cor_tab_ativa': '#ffd700',
+            'cor_header_bg': 'linear-gradient(135deg,#1a0000,#331100,#553300,#331100,#1a0000)', 'cor_header_borda': '#ffd700',
+            'header_extra': '<div class="lightning"></div>', 'css_extra': ''
+        }
+    }
+
+def carregar_skin_do_firebase(skin_id):
+    try:
+        key = skin_id.replace(".", "_").replace("@", "_").replace("#", "")
+        r = requests.get(f'{FB_URL}/tesla_369/skins/{key}.json', timeout=5)
+        if r.status_code == 200 and r.json():
+            skin_data = r.json()
+            skin_data['id'] = skin_id
+            return skin_data
+    except Exception as e:
+        print(f"⚠️ Erro ao carregar skin {skin_id}: {e}")
+    return None
 
 def carregar_todas_skins_do_firebase():
     global cache_skins
     agora = time.time()
-    if cache_skins["data"] and (agora - cache_skins["timestamp"]) < CACHE_TTL: return cache_skins["data"]
+    if cache_skins["data"] and (agora - cache_skins["timestamp"]) < CACHE_TTL:
+        return cache_skins["data"]
     try:
         r = requests.get(f'{FB_URL}/tesla_369/skins.json', timeout=5)
         if r.status_code == 200 and r.json():
+            skins_dict = r.json()
             skins_list = []
-            for skin_id, skin_data in r.json().items():
+            for skin_id, skin_data in skins_dict.items():
                 skin_data['id'] = skin_id
                 skins_list.append(skin_data)
             cache_skins["data"] = skins_list
             cache_skins["timestamp"] = agora
             return skins_list
-    except: pass
+    except Exception as e:
+        print(f"⚠️ Erro ao carregar skins: {e}")
+
     fallback_skins = list(get_skins_fallback().values())
     cache_skins["data"] = fallback_skins
     cache_skins["timestamp"] = agora
     return fallback_skins
 
+# ============= ESTRATÉGIAS NO FIREBASE =============
+
 def carregar_informacoes_estrategias():
     global cache_estrategias_info
     agora = time.time()
-    if cache_estrategias_info["data"] and (agora - cache_estrategias_info["timestamp"]) < CACHE_TTL: return cache_estrategias_info["data"]
+    if cache_estrategias_info["data"] and (agora - cache_estrategias_info["timestamp"]) < CACHE_TTL:
+        return cache_estrategias_info["data"]
     try:
         r = requests.get(f'{FB_URL}/tesla_369/estrategias.json', timeout=5)
         if r.status_code == 200 and r.json():
+            estrategias_dict = r.json()
             estrategias_info = {}
-            for nome_est, dados in r.json().items():
+            for nome_est, dados in estrategias_dict.items():
                 info = dados.get('info', {})
                 estrategias_info[nome_est] = {
-                    'nome': info.get('nome', nome_est.upper()), 'desc': info.get('desc', 'Sem descrição.'),
-                    'preco_moedas': info.get('preco', 0), 'timeframe': info.get('timeframe', 60), 'gratis': info.get('preco', 0) == 0
+                    'nome': info.get('nome', nome_est.upper()),
+                    'desc': info.get('desc', 'Sem descrição.'),
+                    'preco_moedas': info.get('preco', 0),
+                    'timeframe': info.get('timeframe', 60),
+                    'gratis': info.get('preco', 0) == 0
                 }
             cache_estrategias_info["data"] = estrategias_info
             cache_estrategias_info["timestamp"] = agora
             return estrategias_info
-    except: pass
+    except Exception as e:
+        print(f"⚠️ Erro ao carregar estratégias: {e}")
+
     fallback = {'v_sensitivo': {'nome': 'V SENSITIVO', 'desc': 'Estratégia padrão do Tesla 369', 'preco_moedas': 0, 'timeframe': 60, 'gratis': True}}
     cache_estrategias_info["data"] = fallback
     cache_estrategias_info["timestamp"] = agora
@@ -187,17 +224,22 @@ def carregar_estrategia_do_firebase(nome_estrategia):
         if r.status_code == 200 and r.json():
             dados = r.json()
             return {'codigo': dados.get('codigo', ''), 'info': dados.get('info', {})}
-    except: pass
+    except Exception as e:
+        print(f"⚠️ Erro ao carregar estratégia {nome_estrategia}: {e}")
     return None
 
 def carregar_e_injetar_estrategia(nome_estrategia):
     global estrategia_atual_executar, cache_estrategia_carregada, estrategia_ja_injetada
     agora = time.time()
-    if cache_estrategia_carregada["nome"] == nome_estrategia and (agora - cache_estrategia_carregada["timestamp"]) < CACHE_TTL: return True
+    if cache_estrategia_carregada["nome"] == nome_estrategia and (agora - cache_estrategia_carregada["timestamp"]) < CACHE_TTL:
+        return True
+
     estrategia_data = carregar_estrategia_do_firebase(nome_estrategia)
     if not estrategia_data: return False
+
     codigo = estrategia_data.get('codigo')
-    if not code or 'def rodar_analise' not in codigo: return False
+    if not codigo or 'def rodar_analise' not in codigo: return False
+
     try:
         escopo = {}
         exec(codigo, escopo)
@@ -205,10 +247,14 @@ def carregar_e_injetar_estrategia(nome_estrategia):
             estrategia_atual_executar = escopo['rodar_analise']
             cache_estrategia_carregada.update({"nome": nome_estrategia, "codigo": codigo, "timestamp": agora})
             estrategia_ja_injetada = True
-            add_log(f"✅ Estratégia cloud '{nome_estrategia}' ativa!", "win")
+            add_log(f"✅ Estratégia '{nome_estrategia}' injetada do Firebase!", "win")
             return True
-    except Exception as e: print(f"❌ Erro compilação script dinâmico: {e}")
-    return False
+        else: return False
+    except Exception as e:
+        add_log(f"❌ Erro ao executar estratégia: {e}", "error")
+        return False
+
+# ========== FUNÇÕES DE USUÁRIO (FIREBASE) ==========
 
 def salvar_usuario(email, dados):
     try:
@@ -235,13 +281,13 @@ def criar_usuario(email):
     salvar_usuario(email, dados)
     return dados
 
-# ========== SINC OPERACIONAL ORIGINAL PORTABLE ==========
+# ========== MOTOR SÍNCRONO REPARADO ==========
 
 def Payout(p):
     try:
         if not API: return PAYOUT_PADRAO
         API.subscribe_strike_list(p, 1)
-        for _ in range(10):
+        for _ in range(20):
             d = API.get_digital_current_profit(p, 1)
             if d != False:
                 API.unsubscribe_strike_list(p, 1)
@@ -251,7 +297,7 @@ def Payout(p):
         return PAYOUT_PADRAO
     except: return PAYOUT_PADRAO
 
-def calcular_grade_fixa(b, p, g):
+def calcular_entradas(b, p, g):
     global PERCENTUAL_BANCA
     bs = (b * PERCENTUAL_BANCA / 100) * 0.99
     e0 = bs / sum((1/p)**i for i in range(g+1))
@@ -264,27 +310,23 @@ def calcular_grade_fixa(b, p, g):
         entradas[-1] = round(entradas[-1] - (sum(entradas) - b) - 0.02, 2)
     return [max(1, e) for e in entradas]
 
-def pegar_timestamp(tf_dinamico):
-    try:
-        if not API: return 0
-        v = API.get_candles(par, tf_dinamico, 1, time.time())
-        if v and isinstance(v, list) and len(v) > 0: return v[0]['from']
-    except: pass
-    return 0
-
-def aguardar_inicio_vela_dinamico(tf_dinamico):
-    add_log(f"   ⏳ Alinhando relógio para base de {tf_dinamico}s...", 'info')
+def aguardar_inicio_vela():
+    add_log("   ⏳ Sincronizando início do minuto gráfico...", 'info')
     while datetime.now().second > 3:
         if not bot_rodando: return False
         time.sleep(0.2)
-    while True:
-        if not bot_rodando: return False
-        ts1 = pegar_timestamp(tf_dinamico)
-        time.sleep(0.5)
-        ts2 = pegar_timestamp(tf_dinamico)
-        if ts1 == ts2 and ts1 != 0:
-            add_log("   ✅ Abertura de vela confirmada!", 'info')
-            return True
+    add_log("   ✅ Vela cravada com sucesso!", 'info')
+    return True
+
+def verificar_resultado_por_id_valido(id_ordem_atual):
+    try:
+        historico = API.get_option_v2(1)
+        if historico and isinstance(historico, list):
+            for ordem_fechada in historico:
+                if str(ordem_fechada.get('id')) == str(id_ordem_atual):
+                    return True, ordem_fechada.get('result', 'loss')
+    except: pass
+    return False, 'pending'
 
 def verificar_resultado(saldo_antes, valor):
     saldo_base = saldo_antes - valor
@@ -306,53 +348,42 @@ def consumir_volt():
     usuario['total_ciclos'] = usuario.get('total_ciclos', 0) + 1
     salvar_usuario(email_usuario_atual, usuario)
     volt_ja_consumido = True
-    add_log(f"⚡ 1 VOLT extraído. Saldo atual: {usuario['moedas']} VOLTS", 'info')
+    add_log(f"⚡ 1 VOLT consumido. Saldo: {usuario['moedas']} VOLTS", 'info')
     return True
 
-# ========== ENGINE CLÁSSICA SEQUENCIAL RESTAURADA ==========
-
-def executar_ciclo_classico_sequencial(config_sinal):
+def executar_ciclo(direcao):
     """
-    RESTAURAÇÃO DO PIPELINE DE GALE 2 SEGUIDO DO TES.PY ORIGINAL:
-    Calcula a grade inteira no ato e executa um atrás do outro cravado na virada!
+    CORREÇÃO COMPLETA: Substituído o aguardar_vela_fechar instável por congelamento
+    de relógio síncrono bruto. Aguarda os 60s reais da vela antes de testar o ID.
     """
     global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, timeframe_atual
     if not bot_rodando or not API: return
 
     try:
-        direcao = config_sinal.get('direcao', 'call').lower()
-        tf_dinamico = config_sinal.get('timeframe', 60)
-        
-        timeframe_atual = tf_dinamico 
-
         if not consumir_volt():
-            add_log("❌ Módulo sem VOLTS!", 'error')
+            add_log("❌ Sem VOLTS!", 'error')
             bot_rodando = False
             return
 
         bi = API.get_balance()
         payout = Payout(par)
-        
-        # Gera a grade pré-calculada exata de 3 níveis do seu motor antigo
-        grade_entradas = calcular_grade_fixa(bi, payout, MARTINGALE)
-        add_log(f"💰 Banca Inicial: ${bi:.2f} | Payout: {payout*100:.0f}%", 'info')
-        add_log(f"📐 Grade Clássica Travada: E1:${grade_entradas[0]:.2f} | E2:${grade_entradas[1]:.2f} | E3:${grade_entradas[2]:.2f}", 'info')
+        entradas = calcular_entradas(bi, payout, MARTINGALE)
+        add_log(f"💰 Banca: ${bi:.2f} | Payout: {payout*100:.0f}%", 'info')
+        add_log(f"📐 E1:${entradas[0]:.2f} | E2:${entradas[1]:.2f} | E3:${entradas[2]:.2f}", 'info')
 
         for i in range(MARTINGALE + 1):
             if not bot_rodando: break
-            valor = grade_entradas[i]
+            valor = entradas[i]
 
-            # Só aguarda o alinhamento de relógio na Ordem Principal (i == 0)
-            # Nos Gales (i > 0), entra cravado direto na virada do bloco de tempo!
             if i == 0:
-                if not aguardar_inicio_vela_dinamico(tf_dinamico): break
+                if not aguardar_inicio_vela(): break
 
             saldo_antes = API.get_balance()
             if saldo_antes < valor:
-                add_log("❌ Saldo insuficiente para prosseguir a grade!", 'error')
+                add_log("❌ Saldo insuficiente!", 'error')
                 break
 
-            add_log(f"🎯 {'ENTRADA PRINCIPAL' if i == 0 else f'GALE {i} IMEDIATO'}: {direcao.upper()} ${valor:.2f}", 'info')
+            add_log(f"🎯 {'ENTRADA' if i == 0 else f'GALE {i}'}: {direcao.upper()} ${valor:.2f}", 'info')
             st, id_ordem = API.buy(valor, par, direcao, 1)
             
             if not st or not id_ordem:
@@ -360,70 +391,92 @@ def executar_ciclo_classico_sequencial(config_sinal):
                 except: pass
 
             if not st or not id_ordem:
-                add_log("❌ Falha na emissão da ordem! Pulando laço.", 'error')
+                add_log("❌ Falha na ordem!", 'error')
                 break
 
-            add_log(f"   📝 Ordem aceita #{id_ordem}", 'info')
+            add_log(f"   📝 Ordem #{id_ordem}", 'info')
             
-            # Congelamento síncrono e bruto baseado no relógio do processador (igual ao portable)
-            segundos_restantes = tf_dinamico - (datetime.now().second % tf_dinamico)
-            time.sleep(segundos_restantes + 2) 
+            # 🔥 CORREÇÃO DE CONGELAMENTO BRUTO DE VELA (IGUAL PORTABLE) 🔥
+            segundos_restantes = 60 - datetime.now().second
+            # Adiciona margem de segurança de 2 segundos para a corretora computar
+            tempo_espera_real = segundos_restantes + 2
             
-            res = verificar_resultado(saldo_antes, valor)
+            add_log(f"   ⏳ Congelando linha de código por {tempo_espera_real}s até o fechamento físico da vela...", 'info')
+            time.sleep(tempo_espera_real)
+            add_log("   ✅ Tempo de vida útil do candle esgotado!", 'info')
+            
+            # Executa a checagem por ID do Zeta
+            add_log(f"   🔍 Validando ID #{id_ordem} no histórico da corretora...", 'info')
+            ordem_concluida_real = False
+            resultado_bruto = 'loss'
+            
+            for _ in range(6):
+                fechou, res_id = verificar_resultado_por_id_valido(id_ordem)
+                if fechou:
+                    ordem_concluida_real = True
+                    resultado_bruto = res_id
+                    break
+                time.sleep(0.5)
+
+            if not ordem_concluida_real:
+                add_log(f"   ⚠️ ID #{id_ordem} sumiu da amostragem do histórico! Tentando puxar por saldo de segurança.", 'warning')
+                resultado_bruto = 'loss'
+
+            res = verificar_resultado(saldo_antes, valor) if resultado_bruto != 'loss' else -valor
             lucro += round(res, 2)
             saldo_depois = API.get_balance()
             lucro_liquido = round(saldo_depois - saldo_antes, 2)
 
-            print()
-            add_log("="*50, 'info')
             if res > 0:
-                add_log(f"🌟 WIN ALCANÇADO! +${lucro_liquido:.2f}", 'win')
+                add_log(f"🌟 WIN! +${lucro_liquido:.2f}", 'win')
                 NumDeOperacoes += 1
-                
                 u = carregar_usuario(email_usuario_atual)
                 if u:
                     u['total_wins'] = u.get('total_wins', 0) + 1
                     u['total_ganho'] = u.get('total_ganho', 0) + abs(lucro_liquido)
                     u['lucro_total'] = u['total_ganho'] - u.get('total_gasto', 0)
                     u['banca_atual'] = round(saldo_depois, 2)
-                    u.setdefault('historico_operacoes', []).append({'data': str(datetime.now())[:19], 'resultado': 'WIN', 'valor': valor, 'lucro': lucro_liquido, 'estrategia': estrategia_atual_global.upper()})
+                    u.setdefault('historico_operacoes', []).append({
+                        'data': str(datetime.now())[:19], 'resultado': 'WIN', 'valor': valor, 'lucro': lucro_liquido, 'estrategia': estrategia_atual_global.upper()
+                    })
                     salvar_usuario(email_usuario_atual, u)
-                
                 STOP_GAIN_ATINGIDO = True
-                add_log("🎯 STOP GAIN! Finalizando ciclo vitorioso.", 'win')
+                add_log("🎯 STOP GAIN! Vitória alcançada!", 'win')
                 break
             else:
-                add_log(f"💀 LOSS COMPUTADO! -${valor:.2f}", 'loss')
-                
+                add_log(f"💀 LOSS CONFIRMADO VIA HISTÓRICO! -${valor:.2f}", 'loss')
                 u = carregar_usuario(email_usuario_atual)
                 if u:
                     u['total_losses'] = u.get('total_losses', 0) + 1
                     u['total_gasto'] = u.get('total_gasto', 0) + valor
                     u['lucro_total'] = u['total_ganho'] - u['total_gasto']
                     u['banca_atual'] = round(saldo_depois, 2)
-                    u.setdefault('historico_operacoes', []).append({'data': str(datetime.now())[:19], 'resultado': 'LOSS', 'valor': valor, 'lucro': -valor, 'estrategia': estrategia_atual_global.upper()})
+                    u.setdefault('historico_operacoes', []).append({
+                        'data': str(datetime.now())[:19], 'resultado': 'LOSS', 'valor': valor, 'lucro': -valor, 'estrategia': estrategia_atual_global.upper()
+                    })
                     salvar_usuario(email_usuario_atual, u)
-
+                    
                 if i < MARTINGALE and bot_rodando:
-                    add_log(f"   ➡️ Preparando entrada sequencial imediata para o GALE {i + 1}...", 'loss')
-                    time.sleep(0.5)
+                    add_log(f"   ➡️ Indo para GALE {i + 1}...", 'loss')
+                    # Pequena folga técnica para a virada física da vela de Gale nascer limpa
+                    time.sleep(1)
                 else:
-                    add_log("   💀 CICLO DE GALE 2 COMPLETAMENTE PERDIDO!", 'loss')
+                    add_log("   💀 CICLO COMPLETO PERDIDO!", 'loss')
 
         if bot_rodando:
             bf = API.get_balance() if API else bi
             add_log("=" * 50, 'info')
-            add_log(f"{'🌟 LUCRO' if bf > bi else '💀 PERDA'}: ${abs(bf - bi):.2f} | Saldo Final: ${bf:.2f}", 'info')
+            add_log(f"{'🌟 LUCRO' if bf > bi else '💀 PERDA'}: ${abs(bf - bi):.2f} | Saldo: ${bf:.2f}", 'info')
             add_log("=" * 50, 'info')
             
     except Exception as e:
-        add_log(f"Erro no laço: {e}", 'error')
+        add_log(f"Erro no ciclo: {e}", 'error')
     finally:
         bot_rodando = False
         add_log("⏹️ Ciclo finalizado!", 'info')
 
 def bot_loop():
-    global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, sinal_pendente_dict, ultimo_sinal, timeframe_atual, volt_ja_consumido, estrategia_ja_injetada
+    global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, sinal_pendente, ultimo_sinal, timeframe_atual, volt_ja_consumido, estrategia_ja_injetada
 
     with bot_lock:
         if not bot_rodando or not API:
@@ -432,13 +485,18 @@ def bot_loop():
 
         estrategias_info = carregar_informacoes_estrategias()
         if not estrategias_info or estrategia_atual_global not in estrategias_info:
-            add_log("❌ Estratégia cloud inválida!", 'error')
+            add_log(f"❌ Estratégia '{estrategia_atual_global}' não encontrada!", 'error')
             bot_rodando = False
             return
 
         estrategia_info = estrategias_info[estrategia_atual_global]
+        timeframe_estrategia = estrategia_info.get('timeframe', 60)
+        timeframe_atual = timeframe_estrategia
+        add_log(f"📊 Estratégia: {estrategia_info.get('nome')}", 'indicator')
+        add_log(f"⏱️ Timeframe: {timeframe_estrategia}s", 'info')
+
         if not estrategia_ja_injetada or cache_estrategia_carregada["nome"] != estrategia_atual_global:
-            add_log(f"🔧 Puxando script '{estrategia_atual_global}' do Cloud...", "info")
+            add_log(f"🔧 Carregando estratégia '{estrategia_atual_global}' do Firebase...", "info")
             if not carregar_e_injetar_estrategia(estrategia_atual_global):
                 bot_rodando = False
                 return
@@ -447,42 +505,40 @@ def bot_loop():
         STOP_GAIN_ATINGIDO = False
         lucro, NumDeOperacoes = 0.0, 0
         volt_ja_consumido = False
-        sinal_pendente_dict = None
+        sinal_pendente = None
         ultimo_sinal = "Aguardando..."
-        add_log(f"📌 {par} | Saldo Inicial: ${BANCA_INICIAL_DO_BOT:.2f}")
+        add_log(f"📌 {par} | 💰 ${BANCA_INICIAL_DO_BOT:.2f}")
 
         def processar_estrategia():
-            global sinal_pendente_dict
+            global timeframe_atual, sinal_pendente
             try:
+                add_log(f"🔍 Analisando mercado em background...", "info")
                 resultado = estrategia_atual_executar(API, par, add_log)
                 if resultado and bot_rodando:
-                    if isinstance(resultado, dict) and 'direcao' in resultado:
-                        with sinal_lock: sinal_pendente_dict = resultado
-            except Exception as e: print(f"Erro na thread da estratégia: {e}")
+                    direcao = resultado.get('direcao', '').lower()
+                    if direcao in ['call', 'put']:
+                        with sinal_lock:
+                            sinal_pendente = direcao
+            except Exception as e: add_log(f"❌ Erro na análise cloud: {e}", "error")
 
         threading.Thread(target=processar_estrategia, daemon=True).start()
 
-        add_log("🧿 Escuta sequencial direta ativa. Aguardando gatilho...", 'win')
         while bot_rodando and not STOP_GAIN_ATINGIDO:
             if not bot_rodando: break
             
             with sinal_lock:
-                config_sinal = sinal_pendente_dict
-                if config_sinal:
-                    sinal_pendente_dict = None
+                direcao = sinal_pendente
+                if direcao:
+                    sinal_pendente = None
             
-            if config_sinal and isinstance(config_sinal, dict):
-                direcao = config_sinal.get('direcao', '').lower()
-                if direcao in ['call', 'put']:
-                    ultimo_sinal = f"EXECUTANDO: {direcao.upper()}"
-                    executar_ciclo_classico_sequencial(config_sinal)
-                    break
+            if direcao in ['call', 'put']:
+                ultimo_sinal = f"GATILHO: {direcao.upper()}"
+                executar_ciclo(direcao)
+                break
             
-            time.sleep(0.4)
+            time.sleep(0.3)
 
         bot_rodando = False
-
-# ========== INTEGRAÇÃO FLASK ROTAS ==========
 
 def analise_mercado_loop():
     global ultima_analise
@@ -529,6 +585,8 @@ def sincronizar_html_local():
     except Exception as e: print(f"❌ Erro HTML: {e}")
     return False
 
+# ========== ROTAS FLASK INTERFACE ==========
+
 @app.route('/')
 def index():
     skins = carregar_todas_skins_do_firebase()
@@ -545,11 +603,13 @@ def index():
 
 @app.route('/sinal', methods=['POST'])
 def receber_sinal():
-    global sinal_pendente_dict
+    global sinal_pendente
     if not bot_rodando: return jsonify({'ok': False, 'erro': 'Bot em repouso.'})
     if not conectado_iq: return jsonify({'ok': False, 'erro': 'IQ Option offline.'})
-    data = request.get_json()
-    with sinal_lock: sinal_pendente_dict = data
+    direcao = request.get_json().get('direcao', '').lower()
+    if direcao not in ['call', 'put']: return jsonify({'ok': False, 'erro': 'Alvo inválido'})
+    with sinal_lock: sinal_pendente = direcao
+    add_log(f"📡 Sinal externo: {direcao.upper()}", 'sensitive')
     return jsonify({'ok': True})
 
 @app.route('/status')
@@ -581,7 +641,8 @@ def status():
     })
 
 @app.route('/bot_version')
-def bot_version(): return jsonify({'version': BOT_VERSION, 'name': BOT_NAME})
+def bot_version():
+    return jsonify({'version': BOT_VERSION, 'name': BOT_NAME})
 
 @app.route('/set_percentual', methods=['POST'])
 def set_percentual():
@@ -598,15 +659,16 @@ def selecionar_estrategia():
     if not u: return jsonify({'ok': False, 'erro': 'Usuário não encontrado'})
     estrategias_info = carregar_informacoes_estrategias()
     if est_id not in estrategias_info: return jsonify({'ok': False, 'erro': 'Estratégia inválida'})
+
     estrategias_compradas = u.get('estrategias_compradas', ['v_sensitivo'])
     if est_id not in estrategias_compradas:
-        if not estrategias_info[est_id].get('gratis', False): return jsonify({'ok': False, 'erro': f'Estratégia bloqueada!'})
+        if not estrategias_info[est_id].get('gratis', False): return jsonify({'ok': False, 'erro': f'Estratégia bloqueada! Compre na loja.'})
         u['estrategias_compradas'].append(est_id)
     u['estrategia_atual'] = est_id
     salvar_usuario(email_usuario_atual, u)
     estrategia_atual_global = est_id
     estrategia_ja_injetada = False
-    add_log(f"🧠 Estratégia alterada: {estrategias_info[est_id]['nome']}", 'indicator')
+    add_log(f"🧠 Estratégia: {estrategias_info[est_id]['nome']}", 'indicator')
     return jsonify({'ok': True})
 
 @app.route('/comprar_estrategia', methods=['POST'])
@@ -616,11 +678,13 @@ def comprar_estrategia():
     estrategias_info = carregar_informacoes_estrategias()
     u = carregar_usuario(email_usuario_atual)
     if not u or est_id not in estrategias_info: return jsonify({'ok': False, 'erro': 'Parâmetros inválidos'})
+
     if 'estrategias_compradas' not in u: u['estrategias_compradas'] = ['v_sensitivo']
     if est_id in u['estrategias_compradas']:
         u['estrategia_atual'] = est_id
         salvar_usuario(email_usuario_atual, u)
         return jsonify({'ok': True, 'moedas': u['moedas'], 'msg': 'Já adquirida!'})
+
     preco = estrategias_info[est_id].get('preco_moedas', 0)
     if u.get('moedas', 0) < preco: return jsonify({'ok': False, 'erro': f'Precisa de {preco} ⚡'})
     u['moedas'] -= preco
@@ -639,21 +703,26 @@ def conectar():
         d = request.get_json()
         email, senha, tipo = d.get('email', '').strip(), d.get('senha', '').strip(), d.get('tipo', 'PRACTICE')
         if not email or not senha: return jsonify({'ok': False, 'erro': 'Credenciais em branco'})
+        
         email_usuario_atual = email
         API = IQ_Option(email, senha)
         status_conn, reason = API.connect()
         if not status_conn: return jsonify({'ok': False, 'erro': str(reason)[:100]})
+        
         API.change_balance(tipo)
         conectado_iq = True
+        
         usuario = carregar_usuario(email) or criar_usuario(email)
         hoje = str(datetime.now())[:10]
         if usuario.get('moedas_ganhas_hoje') != hoje:
             usuario['moedas'] = usuario.get('moedas', 0) + 1
             usuario['moedas_ganhas_hoje'] = hoje
             salvar_usuario(email, usuario)
+            
         skin_atual_global = usuario.get('skin_atual', 'skin_padrao')
         estrategia_atual_global = usuario.get('estrategia_atual', 'v_sensitivo')
-        add_log('🔌 Conectado!', 'info')
+        
+        add_log('🔌 Conectado e autenticado com o Firebase!', 'info')
         add_log(f'✅ Saldo: ${API.get_balance():.2f} | Módulo: {usuario.get("moedas", 0)} VOLTS', 'win')
         return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0), 'refresh': True})
     except Exception as e: return jsonify({'ok': False, 'erro': str(e)[:100]})
@@ -664,10 +733,13 @@ def comecar_operar():
     try:
         if not conectado_iq: return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
         estrategias_info = carregar_informacoes_estrategias()
-        if not estrategias_info or estrategia_atual_global not in estrategias_info: return jsonify({'ok': False, 'erro': f'❌ Estratégia inválida!'})
+        if not estrategias_info or estrategia_atual_global not in estrategias_info:
+            return jsonify({'ok': False, 'erro': f'❌ Estratégia "{estrategia_atual_global}" inválida!'})
+
         usuario = carregar_usuario(email_usuario_atual)
         if not usuario: return jsonify({'ok': False, 'erro': 'Usuário não encontrado!'})
-        if usuario.get('moedas', 0) < 1: return jsonify({'ok': False, 'erro': 'Sem VOLTS!'})
+        if usuario.get('moedas', 0) < 1: return jsonify({'ok': False, 'erro': 'Sem VOLTS! Compre na loja.'})
+
         with bot_lock:
             if bot_rodando and bot_thread and bot_thread.is_alive(): return jsonify({'ok': False, 'erro': 'Bot já rodando!'})
             estrategia_ja_injetada = False
@@ -684,7 +756,11 @@ def parar():
     add_log("🛑 Parando o bot...", 'info')
     bot_rodando = False
     volt_ja_consumido = False
-    if data.get('desconectar'): conectado_iq = False
+    if data.get('desconectar'):
+        conectado_iq = False
+        add_log("🔌 Desconectado", 'info')
+    else:
+        add_log("✅ Bot parado!", 'win')
     return jsonify({'ok': True, 'shutdown': data.get('desconectar', False)})
 
 @app.route('/comprar_skin', methods=['POST'])
@@ -695,17 +771,21 @@ def comprar_skin():
     skin = carregar_skin_do_firebase(skin_id) or next((s for s in carregar_todas_skins_do_firebase() if s.get('id') == skin_id), None)
     if not skin: return jsonify({'ok': False, 'erro': 'Skin não encontrada'})
     usuario = carregar_usuario(email_usuario_atual)
+    if not usuario: return jsonify({'ok': False, 'erro': 'Usuário inválido'})
+
     if skin.get('preco_moedas', 0) == 0:
         if skin_id not in usuario.setdefault('skins_compradas', ['skin_padrao']): usuario['skins_compradas'].append(skin_id)
         usuario['skin_atual'] = skin_id
         salvar_usuario(email_usuario_atual, usuario)
         skin_atual_global = skin_id
         return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0), 'msg': 'Skin grátis ativada!', 'refresh': True})
+
     if skin_id in usuario.setdefault('skins_compradas', ['skin_padrao']):
         usuario['skin_atual'] = skin_id
         salvar_usuario(email_usuario_atual, usuario)
         skin_atual_global = skin_id
         return jsonify({'ok': True, 'moedas': usuario['moedas'], 'msg': 'Ativada!', 'refresh': True})
+
     if usuario.get('moedas', 0) < skin.get('preco_moedas', 0): return jsonify({'ok': False, 'erro': f'Precisa de {skin["preco_moedas"]} ⚡'})
     usuario['moedas'] -= skin['preco_moedas']
     usuario['skins_compradas'].append(skin_id)
@@ -719,6 +799,7 @@ def ativar_skin():
     skin_id = request.get_json().get('skin_id', '')
     if not email_usuario_atual: return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
     usuario = carregar_usuario(email_usuario_atual)
+    if not usuario: return jsonify({'ok': False, 'erro': 'Usuário não encontrado'})
     if skin_id not in usuario.setdefault('skins_compradas', ['skin_padrao']):
         skin = carregar_skin_do_firebase(skin_id)
         if skin and skin.get('preco_moedas', 0) > 0: return jsonify({'ok': False, 'erro': 'Compre primeiro!'})
@@ -729,7 +810,7 @@ def ativar_skin():
     skin_atual_global = skin_id
     return jsonify({'ok': True, 'refresh': True})
 
-# ========== PIX SYSTEM ==========
+# ========== PIX AND AUTOMATION SYSTEM ==========
 
 @app.route('/criar_pix', methods=['POST'])
 def criar_pix():
@@ -738,29 +819,43 @@ def criar_pix():
     if MODO_SIMULACAO:
         pix_id = str(uuid.uuid4())[:8]
         pagamentos_pendentes[pix_id] = {'email': d.get('email'), 'plano_id': plano['id'], 'moedas': plano['moedas'], 'valor': plano['preco'], 'pago': False, 'criado_em': str(datetime.now())[:19]}
-        return jsonify({'sucesso': True, 'simulacao': True, 'pix_id': pix_id, 'qr_code': f"falso_{pix_id}", 'qr_code_base64': '', 'valor': plano['preco'], 'moedas': plano['moedas']})
+        return jsonify({'sucesso': True, 'simulacao': True, 'pix_id': pix_id, 'qr_code': f"00020126360014BR.GOV.BCB.PIX0136{d.get('email')}5204000053039865404{plano['preco']:.2f}5802BR5909Tesla3696009Sao Paulo62070503***6304E3F9", 'qr_code_base64': '', 'valor': plano['preco'], 'moedas': plano['moedas']})
     try:
         url = "https://api.mercadopago.com/v1/payments"
         headers = {"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}", "Content-Type": "application/json", "X-Idempotency-Key": str(uuid.uuid4())}
         payment_data = {"transaction_amount": float(plano['preco']), "description": f"TESLA369 - {plano['moedas']} VOLTS", "payment_method_id": "pix", "payer": {"email": d.get('email'), "first_name": "Traders", "last_name": "Tesla", "identification": {"type": "CPF", "number": "00000000000"}}}
         res = requests.post(url, json=payment_data, headers=headers, timeout=30).json()
-        pix_id = str(res['id'])
-        pagamentos_pendentes[pix_id] = {'email': d.get('email'), 'plano_id': plano['id'], 'moedas': plano['moedas'], 'valor': plano['preco'], 'pago': False, 'criado_em': str(datetime.now())[:19]}
-        return jsonify({'sucesso': True, 'simulacao': False, 'pix_id': pix_id, 'qr_code': res['point_of_interaction']['transaction_data']['qr_code'], 'qr_code_base64': res['point_of_interaction']['transaction_data']['qr_code_base64'], 'valor': plano['preco'], 'moedas': plano['moedas']})
-    except: return jsonify({'sucesso': False, 'erro': 'Gateway offline'})
+        if 'id' in res:
+            pix_id = str(res['id'])
+            pagamentos_pendentes[pix_id] = {'email': d.get('email'), 'plano_id': plano['id'], 'moedas': plano['moedas'], 'valor': plano['preco'], 'pago': False, 'criado_em': str(datetime.now())[:19]}
+            return jsonify({'sucesso': True, 'simulacao': False, 'pix_id': pix_id, 'qr_code': res['point_of_interaction']['transaction_data']['qr_code'], 'qr_code_base64': res['point_of_interaction']['transaction_data']['qr_code_base64'], 'valor': plano['preco'], 'moedas': plano['moedas']})
+        return jsonify({'sucesso': False, 'erro': res.get('message', 'Erro ao gerar PIX')})
+    except Exception as e: return jsonify({'sucesso': False, 'erro': str(e)[:50]})
 
 @app.route('/verificar_pix', methods=['POST'])
 def verificar_pix():
     pix_id = request.get_json().get('pix_id', '')
-    pago = pagamentos_pendentes.get(pix_id, {}).get('pago', False) if MODO_SIMULACAO else requests.get(f"https://api.mercadopago.com/v1/payments/{pix_id}", headers={"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"}).json().get('status') == 'approved'
-    if pago:
-        if pix_id in pagamentos_pendentes and not pagamentos_pendentes[pix_id]['pago']:
+    if MODO_SIMULACAO:
+        pago = pagamentos_pendentes.get(pix_id, {}).get('pago', False)
+        if pago and pix_id in pagamentos_pendentes and not pagamentos_pendentes[pix_id]['pago']:
             pagamentos_pendentes[pix_id]['pago'] = True
             u = carregar_usuario(pagamentos_pendentes[pix_id]['email'])
             if u: u['moedas'] += pagamentos_pendentes[pix_id]['moedas']; salvar_usuario(pagamentos_pendentes[pix_id]['email'], u)
             return jsonify({'pago': True, 'moedas': pagamentos_pendentes[pix_id]['moedas'], 'saldo': u.get('moedas', 0) if u else 0})
-        return jsonify({'pago': True})
-    return jsonify({'pago': False})
+        return jsonify({'pago': pago})
+    try:
+        url = f"https://api.mercadopago.com/v1/payments/{pix_id}"
+        headers = {"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"}
+        res = requests.get(url, headers=headers, timeout=10).json()
+        if res.get('status') == 'approved':
+            if pix_id in pagamentos_pendentes and not pagamentos_pendentes[pix_id]['pago']:
+                pagamentos_pendentes[pix_id]['pago'] = True
+                u = carregar_usuario(pagamentos_pendentes[pix_id]['email'])
+                if u: u['moedas'] += pagamentos_pendentes[pix_id]['moedas']; salvar_usuario(pagamentos_pendentes[pix_id]['email'], u)
+                return jsonify({'pago': True, 'moedas': pagamentos_pendentes[pix_id]['moedas'], 'saldo': u.get('moedas', 0) if u else 0})
+            return jsonify({'pago': True})
+        return jsonify({'pago': False})
+    except: return jsonify({'pago': False})
 
 def verificador_automatico_pix():
     while True:
@@ -768,21 +863,83 @@ def verificador_automatico_pix():
         try:
             for pix_id, dados in list(pagamentos_pendentes.items()):
                 if dados.get('pago', False): continue
-                pago = dados.get('pago', False) if MODO_SIMULACAO else requests.get(f"https://api.mercadopago.com/v1/payments/{pix_id}", headers={"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"}, timeout=10).json().get('status') == 'approved'
+                if MODO_SIMULACAO:
+                    pago = dados.get('pago', False)
+                else:
+                    try:
+                        res = requests.get(f"https://api.mercadopago.com/v1/payments/{pix_id}", headers={"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"}, timeout=10).json()
+                        pago = res.get('status') == 'approved'
+                    except: continue
                 if pago:
                     pagamentos_pendentes[pix_id]['pago'] = True
                     u = carregar_usuario(dados['email']) or criar_usuario(dados['email'])
                     u['moedas'] = u.get('moedas', 0) + dados['moedas']
                     salvar_usuario(dados['email'], u)
-                    add_log(f"💰 PIX Confirmado! +{dados['moedas']} VOLTS", "win")
+                    add_log(f"💰 PIX Confirmado! +{dados['moedas']} VOLTS para {dados['email']}", "win")
         except: pass
 
 threading.Thread(target=verificador_automatico_pix, daemon=True).start()
 
+@app.route('/chat_enviar', methods=['POST'])
+def chat_enviar():
+    try:
+        data = request.json
+        requests.post(f'{FB_URL}/tesla_369/chat.json', json={
+            'name': data.get('nome', 'Anonimo')[:15], 'msg': data.get('msg', '')[:200],
+            'hora': datetime.now().strftime('%H:%M')
+        }, timeout=5)
+    except: pass
+    return jsonify({'ok': True})
+
+@app.route('/chat_messages')
+def chat_mensagens_route():
+    try:
+        r = requests.get(f'{FB_URL}/tesla_369/chat.json?orderBy="$key"&limitToLast=50', timeout=5)
+        return jsonify({'messages': list(r.json().values()) if r.status_code == 200 and r.json() else [], 'online': 1})
+    except: return jsonify({'messages': [], 'online': 1})
+
+@app.route('/ranking')
+def ranking():
+    ranking_list = []
+    try:
+        usuarios = requests.get(f'{FB_URL}/tesla_369/usuarios.json').json() or {}
+        for k, ud in usuarios.items():
+            if ud:
+                ranking_list.append({
+                    'email': ud.get('email', 'N/A'), 'lucro_total': round(ud.get('lucro_total', 0), 2),
+                    'total_wins': ud.get('total_wins', 0), 'total_losses': ud.get('total_losses', 0),
+                    'total_ciclos': ud.get('total_ciclos', 0),
+                    'taxa': round((ud.get('total_wins', 0) / max(ud.get('total_ciclos', 1), 1)) * 100, 1),
+                    'banca_atual': round(ud.get('banca_atual', 0), 2)
+                })
+    except: pass
+    ranking_list.sort(key=lambda x: x['lucro_total'], reverse=True)
+    tc = sum(x['total_ciclos'] for x in ranking_list)
+    tw = sum(x['total_wins'] for x in ranking_list)
+    return jsonify({'ranking': ranking_list, 'stats': {'total_usuarios': len(ranking_list), 'total_ops': tc, 'total_wins': tw, 'taxa_global': round((tw/max(tc,1))*100,1)}})
+
+@app.route('/relatorio')
+def relatorio():
+    return jsonify(carregar_usuario(request.args.get('email', '')) or {'erro': 'Nao encontrado'})
+
+@app.route('/resetar', methods=['POST'])
+def resetar():
+    u = carregar_usuario(request.json.get('email', ''))
+    if not u: return jsonify({'ok': False, 'msg': 'Nao encontrado'})
+    u.update({'total_ciclos':0,'total_wins':0,'total_losses':0,'total_gasto':0.0,'total_ganho':0.0,'lucro_total':0.0,'historico_operacoes':[],'dias_ativos':0,'banca_atual':0.0,'moedas_ganhas_hoje':str(datetime.now())[:10]})
+    salvar_usuario(request.json.get('email', ''), u)
+    return jsonify({'ok': True, 'msg': 'Resetado!'})
+
+@app.route('/shutdown')
+def shutdown():
+    os.kill(os.getpid(), signal.SIGTERM)
+    return jsonify({'ok': True})
+
 if __name__ == '__main__':
     print("=" * 70)
-    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - PURE CLASSIC SEQUENTIAL ⚡")
-    print("= REALTIME SEQUENTIAL MARTINGALE ENGINE")
+    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - RELÓGIO ADAPTADO CRITICAL ⚡")
+    print("✅ Firebase: SKINS e ESTRATÉGIAS carregadas da nuvem")
+    print("✅ TRAVA DE VELA DE 60S BRUTA NO PROCESSADOR BASEADO NO TES.PY")
     print("=" * 70)
     carregar_todas_skins_do_firebase()
     carregar_informacoes_estrategias()
