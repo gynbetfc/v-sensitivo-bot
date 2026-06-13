@@ -245,8 +245,8 @@ var emailLogado = '';
 var planoSelecionado = 0;
 var pixAtual = null;
 var estrategiaSel = 'v_sensitivo';
+var valorEstimadoAtual = 0;
 
-// --- Funções de UI e Loja (mantidas iguais ao seu original para garantir funcionamento) ---
 function mostrarLojaCategoria(categoria) {
     var botoes = document.querySelectorAll('.loja-cat-btn');
     for(var i = 0; i < botoes.length; i++) botoes[i].classList.remove('active');
@@ -283,13 +283,18 @@ function openTab(tab) {
         renderEstrategias();
     }
 }
-function atualizarPercentual() { var perc = document.getElementById('percentualBanca').value; fetch('/set_percentual', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({percentual: parseInt(perc)}) }); calcularMinimo(); }
+function atualizarPercentual() { 
+    var perc = document.getElementById('percentualBanca').value; 
+    fetch('/set_percentual', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({percentual: parseInt(perc)}) });
+    calcularMinimo(); 
+}
 function calcularMinimo() {
     var bancaTexto = document.getElementById('banca').textContent;
     var banca = parseFloat(bancaTexto.replace('$','')) || 0;
     var perc = parseInt(document.getElementById('percentualBanca').value);
     var valor = (banca * perc / 100).toFixed(2);
     document.getElementById('valorEstimado').textContent = '($' + valor + ')';
+    valorEstimadoAtual = banca * perc / 100;
     var payout = 0.85;
     var minimo = (valor / (1 + (1/payout) + (1/payout)*(1/payout))).toFixed(2);
     if (banca < parseFloat(minimo) * 3) { document.getElementById('avisoMinimo').textContent = '⚠️ Min: $' + (parseFloat(minimo)*3).toFixed(2); }
@@ -550,7 +555,10 @@ function verRanking(){
 }
 function atualizar() {
     fetch('/status').then(r=>r.json()).then(d=>{
-        if(d.banca) document.getElementById('banca').textContent = '$' + d.banca.toFixed(2);
+        if(d.banca) {
+            document.getElementById('banca').textContent = '$' + d.banca.toFixed(2);
+            calcularMinimo();
+        }
         if(d.lucro !== undefined){ var el=document.getElementById('lucro'); el.textContent='$'+d.lucro.toFixed(2); el.style.color=d.lucro>=0?'#00ff88':'#ff4444'; }
         if(d.ops !== undefined) document.getElementById('ops').textContent = d.ops;
         if(d.moedas !== undefined) document.getElementById('moedasSaldo').textContent = d.moedas;
@@ -591,16 +599,47 @@ function atualizarChat(){
     });
 }
 
-// 🔥 FUNÇÃO DE EFEITOS DAS SKINS - VERSÃO COMPLETA E PREPARADA PARA NOVAS SKINS 🔥
+// 🔥 FUNÇÃO DE EFEITOS DAS SKINS - VERSÃO COMPLETA 🔥
 function initSkinEffects() {
     console.log("🎨 [SKIN] Inicializando efeitos visuais...");
+    
     // Helper para redimensionamento responsivo
     function resizeCanvas(canvas, parent) {
         if(!canvas || !parent) return;
         canvas.width = parent.offsetWidth;
         canvas.height = parent.offsetHeight;
     }
-    // === MATRIX ===
+    
+    // ⚡ TESLA THUNDER - Raios (SKIN PADRÃO)
+    var thunderCanvas = document.getElementById('thunderCanvas');
+    if(thunderCanvas && thunderCanvas.getContext) {
+        try {
+            var tCtx = thunderCanvas.getContext('2d');
+            var tParent = thunderCanvas.parentElement;
+            resizeCanvas(thunderCanvas, tParent);
+            function drawThunder() {
+                if(!thunderCanvas || !thunderCanvas.getContext) return;
+                tCtx.clearRect(0, 0, thunderCanvas.width, thunderCanvas.height);
+                if(Math.random() < 0.03) {
+                    tCtx.strokeStyle = 'rgba(255,255,100,0.8)';
+                    tCtx.lineWidth = 2;
+                    tCtx.beginPath();
+                    var x = Math.random() * thunderCanvas.width;
+                    tCtx.moveTo(x, 0);
+                    for(var y = 0; y < thunderCanvas.height; y += 25) {
+                        x += (Math.random() - 0.5) * 50;
+                        tCtx.lineTo(x, y);
+                    }
+                    tCtx.stroke();
+                }
+                requestAnimationFrame(drawThunder);
+            }
+            drawThunder();
+            window.addEventListener('resize', () => { resizeCanvas(thunderCanvas, tParent); });
+        } catch(e) { console.warn("Thunder effect error:", e); }
+    }
+    
+    // 🧬 TESLA MATRIX - Chuva de caracteres
     var matrixCanvas = document.getElementById('matrixCanvas');
     if(matrixCanvas && matrixCanvas.getContext) {
         try {
@@ -630,7 +669,8 @@ function initSkinEffects() {
             window.addEventListener('resize', () => { resizeCanvas(matrixCanvas, mParent); });
         } catch(e) { console.warn("Matrix effect error:", e); }
     }
-    // === SAKURA ===
+    
+    // 🌸 TESLA SAKURA - Pétalas caindo
     var sakuraCanvas = document.getElementById('sakuraCanvas');
     if(sakuraCanvas && sakuraCanvas.getContext) {
         try {
@@ -664,7 +704,8 @@ function initSkinEffects() {
             window.addEventListener('resize', () => { resizeCanvas(sakuraCanvas, sParent); });
         } catch(e) { console.warn("Sakura effect error:", e); }
     }
-    // === DARK (partículas escuras) ===
+    
+    // 🖤 TESLA DARK - Partículas escuras
     var darkCanvas = document.getElementById('darkCanvas');
     if(darkCanvas && darkCanvas.getContext) {
         try {
@@ -696,7 +737,8 @@ function initSkinEffects() {
             window.addEventListener('resize', () => { resizeCanvas(darkCanvas, dParent); });
         } catch(e) { console.warn("Dark effect error:", e); }
     }
-    // === OCEAN (ondas) ===
+    
+    // 🌊 TESLA OCEAN - Ondas
     var oceanCanvas = document.getElementById('oceanCanvas');
     if(oceanCanvas && oceanCanvas.getContext) {
         try {
@@ -724,7 +766,8 @@ function initSkinEffects() {
             window.addEventListener('resize', () => { resizeCanvas(oceanCanvas, oParent); });
         } catch(e) { console.warn("Ocean effect error:", e); }
     }
-    // === FIRE ===
+    
+    // 🔥 TESLA FIRE - Chamas
     var fireCanvas = document.getElementById('fireCanvas');
     if(fireCanvas && fireCanvas.getContext) {
         try {
@@ -762,7 +805,8 @@ function initSkinEffects() {
             window.addEventListener('resize', () => { resizeCanvas(fireCanvas, fParent); });
         } catch(e) { console.warn("Fire effect error:", e); }
     }
-    // === SNOW / ICE ===
+    
+    // ❄️ TESLA ICE - Neve
     var snowCanvas = document.getElementById('snowCanvas');
     if(snowCanvas && snowCanvas.getContext) {
         try {
@@ -792,34 +836,36 @@ function initSkinEffects() {
             window.addEventListener('resize', () => { resizeCanvas(snowCanvas, snParent); });
         } catch(e) { console.warn("Snow effect error:", e); }
     }
-    // === THUNDER ===
-    var thunderCanvas = document.getElementById('thunderCanvas');
-    if(thunderCanvas && thunderCanvas.getContext) {
-        try {
-            var tCtx = thunderCanvas.getContext('2d');
-            var tParent = thunderCanvas.parentElement;
-            resizeCanvas(thunderCanvas, tParent);
-            function drawThunder() {
-                if(!thunderCanvas || !thunderCanvas.getContext) return;
-                tCtx.clearRect(0, 0, thunderCanvas.width, thunderCanvas.height);
-                if(Math.random() < 0.03) {
-                    tCtx.strokeStyle = 'rgba(255,255,100,0.8)';
-                    tCtx.lineWidth = 2;
-                    tCtx.beginPath();
-                    var x = Math.random() * thunderCanvas.width;
-                    tCtx.moveTo(x, 0);
-                    for(var y = 0; y < thunderCanvas.height; y += 25) {
-                        x += (Math.random() - 0.5) * 50;
-                        tCtx.lineTo(x, y);
-                    }
-                    tCtx.stroke();
-                }
-                requestAnimationFrame(drawThunder);
+    
+    // 👻 SKIN FANTASMA - Efeitos especiais
+    var ghostOverlay = document.getElementById('ghostOverlay');
+    var ghostTotalOverlay = document.getElementById('ghostTotalOverlay');
+    if(ghostOverlay || ghostTotalOverlay) {
+        console.log("👻 Ativando skin FANTASMA...");
+        if(window.ghostTimers) { window.ghostTimers.forEach(function(timer) { clearInterval(timer); clearTimeout(timer); }); }
+        window.ghostTimers = [];
+        document.body.classList.add('ghost-shake-active');
+        var fadeInterval = setInterval(function() { if(Math.random() < 0.3) { document.body.classList.add('ghost-fade-active'); setTimeout(function() { document.body.classList.remove('ghost-fade-active'); }, 1000); } }, 3000);
+        window.ghostTimers.push(fadeInterval);
+        var blurInterval = setInterval(function() { if(Math.random() < 0.2) { document.body.classList.add('ghost-blur-active'); setTimeout(function() { document.body.classList.remove('ghost-blur-active'); }, 1500); } }, 5000);
+        window.ghostTimers.push(blurInterval);
+        var disappearInterval = setInterval(function() {
+            if(Math.random() < 0.15) {
+                if(ghostTotalOverlay) ghostTotalOverlay.style.opacity = '0.95';
+                document.body.style.opacity = '0';
+                document.body.style.transition = 'opacity 0.5s ease';
+                setTimeout(function() { document.body.style.opacity = '1'; if(ghostTotalOverlay) ghostTotalOverlay.style.opacity = '0'; }, 2000);
+            } else if(Math.random() < 0.25) {
+                if(ghostOverlay) ghostOverlay.style.opacity = '0.8';
+                document.body.style.opacity = '0.8';
+                setTimeout(function() { if(ghostOverlay) ghostOverlay.style.opacity = '0.5'; document.body.style.opacity = '0.9'; }, 800);
+                setTimeout(function() { if(ghostOverlay) ghostOverlay.style.opacity = '0.2'; }, 1200);
+                setTimeout(function() { if(ghostOverlay) ghostOverlay.style.opacity = '0'; document.body.style.opacity = '1'; }, 1600);
             }
-            drawThunder();
-            window.addEventListener('resize', () => { resizeCanvas(thunderCanvas, tParent); });
-        } catch(e) { console.warn("Thunder effect error:", e); }
+        }, 8000);
+        window.ghostTimers.push(disappearInterval);
     }
+    
     console.log("🎨 [SKIN] Efeitos visuais inicializados com sucesso!");
 }
 
@@ -855,4 +901,4 @@ window.onload = function() {
 };
 </script>
 </body>
-                                                                  </html>
+    </html>
