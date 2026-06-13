@@ -2,11 +2,11 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ TESLA 369 BOT v15.0.0 Cloud</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>⚡ TESLA 369 BOT v{{ BOT_VERSION }} Cloud</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
-        body{background:{{ COR_FUNDO }};color:{{ COR_TEXTO }};font-family:'Courier New',monospace;padding:10px;min-height:100vh}
+        body{background:{{ COR_FUNDO }};color:{{ COR_TEXTO }};font-family:'Courier New',monospace;padding:10px;min-height:100vh;transition:background 0.3s ease}
         .container{max-width:950px;margin:0 auto;position:relative;z-index:10}
         .tabs{display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap}
         .tab{padding:10px 14px;background:{{ COR_PANEL }};border:1px solid #333;border-radius:10px 10px 0 0;cursor:pointer;color:#888;font-size:10px;transition:all 0.3s}
@@ -14,7 +14,7 @@
         .tab:hover{background:#2a2a4a;color:#fff}
         .panel{display:none;background:{{ COR_PANEL }};padding:15px;border-radius:0 10px 10px 10px;border:1px solid #333;margin-bottom:10px;animation:fadeIn 0.3s ease}
         .panel.active{display:block}
-        .header{background:{{ COR_HEADER_BG }};padding:20px;border-radius:20px;text-align:center;border:3px solid {{ COR_HEADER_BORDA }};position:relative;overflow:hidden;margin-bottom:15px}
+        .header{background:{{ COR_HEADER_BG }};padding:20px;border-radius:20px;text-align:center;border:3px solid {{ COR_HEADER_BORDA }};position:relative;overflow:hidden;margin-bottom:15px;transition:all 0.3s ease}
         {{ CSS_EXTRA | safe }}
         .header h1{color:{{ COR_DESTAQUE }};font-size:22px;text-shadow:0 0 30px {{ COR_TAB_ATIVA }};position:relative;z-index:3}
         .header p{color:{{ COR_DESTAQUE }};font-size:10px;position:relative;z-index:3;opacity:0.8}
@@ -24,8 +24,8 @@
         .config-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
         .config-row label{color:#888;font-size:11px}
         .config-row select,.config-row input{padding:8px;background:#111;border:1px solid #333;border-radius:8px;color:#fff;font-size:11px;font-family:'Courier New',monospace}
-        .btn{padding:10px 14px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:11px;font-family:'Courier New',monospace;transition:all 0.3s ease}
-        .btn:hover{transform:translateY(-2px);filter:brightness(1.1)}
+        .btn{padding:10px 14px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:11px;font-family:'Courier New',monospace;transition:all 0.3s ease;opacity:{{ BOT_OPACITY | default(1) }};}
+        .btn:hover{transform:translateY(-2px);filter:brightness(1.1);opacity:1}
         .btn-start{background:{{ COR_BOTAO }};color:#000;font-weight:bold}
         .btn-stop{background:linear-gradient(135deg,#cc0000,#ff4444);color:#fff}
         .btn-info{background:linear-gradient(135deg,#0066cc,#3399ff);color:#fff;font-size:11px;padding:8px 14px}
@@ -110,11 +110,11 @@
 <div class="container">
     <div class="header">
         {{ HEADER_EXTRA | safe }}
-        <h1>⚡ TESLA 369 BOT v15.0.0 ⚡</h1>
+        <h1>⚡ TESLA 369 BOT v{{ BOT_VERSION }} ⚡</h1>
         <p>O PODER DOS NÚMEROS - SISTEMA CLOUD</p>
     </div>
     <div class="mantra">🌀 O DINHEIRO VEM ATÉ MIM DE TODOS OS LADOS 🌀</div>
-    
+
     <div class="tabs">
         <div class="tab active" onclick="openTab('bot')">🤖 BOT</div>
         <div class="tab" onclick="openTab('relatorio')">📊 RELATÓRIO</div>
@@ -139,11 +139,7 @@
                 <div style="margin-top:5px;display:flex;gap:8px;align-items:center">
                     <label style="color:#888;font-size:9px">% Banca:</label>
                     <select id="percentualBanca" onchange="atualizarPercentual()" style="padding:5px;background:#111;border:1px solid #333;border-radius:5px;color:#fff;font-size:10px;width:70px">
-                        <option value="15" selected>15%</option>
-                        <option value="20">20%</option>
-                        <option value="30">30%</option>
-                        <option value="50">50%</option>
-                        <option value="100">100%</option>
+                        <option value="15" selected>15%</option><option value="20">20%</option><option value="30">30%</option><option value="50">50%</option><option value="100">100%</option>
                     </select>
                     <span style="color:#ffd700;font-size:9px" id="valorEstimado">($0.00)</span>
                     <span style="color:#ff4444;font-size:8px" id="avisoMinimo"></span>
@@ -154,7 +150,7 @@
                 <button class="btn btn-stop" id="btnParar" onclick="pararBot()" style="display:none">⏹️ PARAR</button>
             </div>
         </div>
-        
+
         <div class="dashboard">
             <div class="card"><div class="label">💰 BANCA</div><div class="value" id="banca" style="color:#00ff88">--</div></div>
             <div class="card"><div class="label">📈 LUCRO</div><div class="value" id="lucro">$0.00</div></div>
@@ -163,7 +159,7 @@
             <div class="card"><div class="label">📊 ESTRATÉGIA</div><div class="value" id="estrategiaAtiva" style="font-size:10px">--</div></div>
             <div class="card"><div class="label">🔮 SINAL</div><div class="value" id="sinal" style="font-size:11px">--</div></div>
         </div>
-        
+
         <div class="indicators">
             <div class="ind-card"><div class="ind-label">📊 RSI</div><div class="ind-value" id="rsi">--</div></div>
             <div class="ind-card"><div class="ind-label">📈 MM5</div><div class="ind-value" id="mm5">--</div></div>
@@ -173,9 +169,9 @@
             <div class="ind-card"><div class="ind-label">🌅 FASE</div><div class="ind-value" id="fase">--</div></div>
             <div class="ind-card"><div class="ind-label">💵 PREÇO</div><div class="ind-value" id="preco">--</div></div>
         </div>
-        
+
         <div class="terminal" id="terminal">📡 Aguardando...</div>
-        
+
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
             <span id="botVersionDisplay">⚡ TESLA 369 v{{ BOT_VERSION }}</span>
@@ -185,36 +181,23 @@
 
     <!-- PAINEL ESTRATÉGIAS -->
     <div class="panel" id="panel-estrategias">
-        <div class="config-section">
-            <h3>📊 SELECIONAR ESTRATÉGIA</h3>
-            <p style="color:#888;font-size:10px">Escolha uma estratégia antes de clicar em COMEÇAR OPERAR</p>
-        </div>
+        <div class="config-section"><h3>📊 SELECIONAR ESTRATÉGIA</h3><p style="color:#888;font-size:10px">Escolha antes de clicar em COMEÇAR OPERAR</p></div>
         <div class="estrategia-grid" id="estrategiaGrid"></div>
     </div>
 
-    <!-- PAINEL LOJA -->
+    <!-- PAINEL LOJA (skins, volts, estratégias premium) -->
     <div class="panel" id="panel-loja">
         <div class="loja-categorias">
             <div class="loja-cat-btn active" onclick="mostrarLojaCategoria('volts')">💳 COMPRAR VOLTS</div>
             <div class="loja-cat-btn" onclick="mostrarLojaCategoria('skins')">🎨 LOJA DE SKINS</div>
             <div class="loja-cat-btn" onclick="mostrarLojaCategoria('estrategias')">📊 ESTRATÉGIAS PREMIUM</div>
         </div>
-        
         <div class="loja-sub-panel active" id="loja-volts">
-            <div class="config-section">
-                <h3>💳 COMPRAR VOLTS COM PIX</h3>
-                <p style="color:#888;font-size:10px">📧 <input type="email" id="emailCompra" placeholder="Seu email" style="width:220px;padding:6px;background:#111;border:1px solid #333;color:#fff;border-radius:5px"></p>
-                <p style="color:#ffd700;font-size:10px;margin-top:5px">⚡ 1 VOLT = 1 ciclo | +1 VOLT grátis/dia</p>
-                <p style="color:#888;font-size:9px;margin-top:3px">⭐ Selecione o plano e pague com PIX</p>
-            </div>
+            <div class="config-section"><h3>💳 COMPRAR VOLTS COM PIX</h3><p style="color:#888;font-size:10px">📧 <input type="email" id="emailCompra" placeholder="Seu email" style="width:220px;padding:6px;background:#111;border:1px solid #333;color:#fff;border-radius:5px"></p><p style="color:#ffd700;font-size:10px;margin-top:5px">⚡ 1 VOLT = 1 ciclo | +1 VOLT grátis/dia</p><p style="color:#888;font-size:9px;margin-top:3px">⭐ Selecione o plano e pague com PIX</p></div>
             <div class="planos-grid" id="planosGridContainer"></div>
         </div>
-        
         <div class="loja-sub-panel" id="loja-skins">
-            <div class="config-section">
-                <h3>🎨 LOJA DE SKINS</h3>
-                <p style="color:#888;font-size:10px">Personalize seu bot com skins exclusivas!</p>
-            </div>
+            <div class="config-section"><h3>🎨 LOJA DE SKINS</h3><p style="color:#888;font-size:10px">Personalize seu bot com skins exclusivas!</p></div>
             <div class="loja-categorias" style="margin-bottom:10px;border-bottom:none;padding-bottom:0">
                 <div class="loja-cat-btn active" style="font-size:10px;padding:6px 12px" onclick="mostrarSubCategoriaSkin('basica', event)">⚡ BÁSICAS</div>
                 <div class="loja-cat-btn" style="font-size:10px;padding:6px 12px" onclick="mostrarSubCategoriaSkin('premium', event)">🔮 PREMIUM</div>
@@ -224,126 +207,34 @@
             <div class="skins-grid" id="skinsGridPremium" style="display:none"></div>
             <div class="skins-grid" id="skinsGridLendarias" style="display:none"></div>
         </div>
-        
         <div class="loja-sub-panel" id="loja-estrategias">
-            <div class="config-section">
-                <h3>📊 ESTRATÉGIAS PREMIUM</h3>
-                <p style="color:#888;font-size:10px">Compre estratégias avançadas com suas VOLTS! ⚡</p>
-            </div>
+            <div class="config-section"><h3>📊 ESTRATÉGIAS PREMIUM</h3><p style="color:#888;font-size:10px">Compre estratégias avançadas com suas VOLTS! ⚡</p></div>
             <div class="skins-grid" id="estrategiasLojaGrid"></div>
         </div>
     </div>
 
     <!-- PAINEL CHAT -->
     <div class="panel" id="panel-chat">
-        <div class="config-section">
-            <h3>💬 CHAT DOS TRADERS</h3>
-            <p style="color:#888;font-size:9px" id="chatInfo">Conecte na IQ Option para entrar</p>
-        </div>
-        <div id="chatMensagens" style="background:#000;border:1px solid #333;border-radius:10px;height:300px;overflow-y:auto;padding:10px;margin-bottom:10px;font-size:10px">
-            <p style="color:#888;text-align:center">💬 Envie uma mensagem para começar</p>
-        </div>
-        <div style="display:flex;gap:8px">
-            <input type="text" id="chatMsg" placeholder="Digite sua mensagem..." style="flex:1;padding:10px;background:#111;border:1px solid #333;border-radius:8px;color:#fff;font-size:11px" onkeypress="if(event.key==='Enter')enviarChatMsg()">
-            <button onclick="enviarChatMsg()" class="btn btn-info" style="padding:10px 20px">ENVIAR</button>
-        </div>
-        <div style="text-align:center;margin-top:5px">
-            <span style="color:#888;font-size:9px" id="chatOnline">0 online</span>
-        </div>
+        <div class="config-section"><h3>💬 CHAT DOS TRADERS</h3><p style="color:#888;font-size:9px" id="chatInfo">Conecte na IQ Option para entrar</p></div>
+        <div id="chatMensagens" style="background:#000;border:1px solid #333;border-radius:10px;height:300px;overflow-y:auto;padding:10px;margin-bottom:10px;font-size:10px"><p style="color:#888;text-align:center">💬 Envie uma mensagem para começar</p></div>
+        <div style="display:flex;gap:8px"><input type="text" id="chatMsg" placeholder="Digite sua mensagem..." style="flex:1;padding:10px;background:#111;border:1px solid #333;border-radius:8px;color:#fff;font-size:11px" onkeypress="if(event.key==='Enter')enviarChatMsg()"><button onclick="enviarChatMsg()" class="btn btn-info" style="padding:10px 20px">ENVIAR</button></div>
+        <div style="text-align:center;margin-top:5px"><span style="color:#888;font-size:9px" id="chatOnline">0 online</span></div>
     </div>
 
     <!-- PAINEL RELATÓRIO -->
     <div class="panel" id="panel-relatorio">
-        <div class="config-section">
-            <h3>📊 RELATÓRIO</h3>
-            <div class="config-row">
-                <input type="email" id="emailRelatorio" placeholder="Email" style="flex:2">
-                <button class="btn btn-info" onclick="verRelatorio()">🔍 BUSCAR</button>
-                <button class="btn btn-info" onclick="verRanking()" style="background:linear-gradient(135deg,#ff8c00,#ffd700);color:#000">🏆 RANKING</button>
-            </div>
-        </div>
+        <div class="config-section"><h3>📊 RELATÓRIO</h3><div class="config-row"><input type="email" id="emailRelatorio" placeholder="Email" style="flex:2"><button class="btn btn-info" onclick="verRelatorio()">🔍 BUSCAR</button><button class="btn btn-info" onclick="verRanking()" style="background:linear-gradient(135deg,#ff8c00,#ffd700);color:#000">🏆 RANKING</button></div></div>
         <div id="relatorioContent"></div>
     </div>
 
-    <!-- PAINEL TUTORIAL -->
-    <div class="panel" id="panel-leia-me">
-        <div class="config-section"><h3>📖 TUTORIAL & ⚠️ AVISOS IMPORTANTES</h3></div>
-        <div style="background:#0a0a1a;border:1px solid #00ff88;border-radius:15px;padding:20px;margin:10px 0">
-            <p style="color:#ffd700;font-size:18px;font-weight:bold;margin-bottom:15px;text-align:center">📖 COMO USAR O TESLA 369</p>
-            <p style="color:#ffd700;font-size:13px;font-weight:bold;margin-bottom:10px">🔰 PRIMEIROS PASSOS</p>
-            <p style="color:#ccc;font-size:11px;line-height:2.0;text-align:justify">
-                <span style="color:#00ff88">1.</span> Crie uma conta na <span style="color:#ffd700">IQ Option</span> (use conta PRACTICE para testes).<br>
-                <span style="color:#00ff88">2.</span> Digite seu <span style="color:#ffd700">email e senha</span> no bot e clique em <span style="color:#00ff88">CONECTAR</span>.<br>
-                <span style="color:#00ff88">3.</span> Selecione a <span style="color:#ffd700">% da banca</span> que deseja usar (mínimo 15%).<br>
-                <span style="color:#00ff88">4.</span> Vá na aba <span style="color:#ffd700">ESTRATÉGIAS</span> e escolha uma estratégia.<br>
-                <span style="color:#00ff88">5.</span> Clique em <span style="color:#00ff88;font-weight:bold">COMEÇAR OPERAR</span> e aguarde o sinal.<br>
-                <span style="color:#00ff88">6.</span> O bot opera automaticamente em segundo plano.
-            </p>
-            <p style="color:#ffd700;font-size:13px;font-weight:bold;margin-bottom:10px;margin-top:15px">🤖 COMO O ROBÔ FUNCIONA</p>
-            <p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify">
-                O Tesla 369 analisa <span style="color:#00ff88">padrões de velas</span> em tempo real usando indicadores técnicos. Cada estratégia tem seu próprio <span style="color:#ffd700">timeframe e gatilho</span> de entrada. Quando encontra um padrão com alta probabilidade, ele <span style="color:#ffd700">abre uma ordem automaticamente</span>. O robô busca <span style="color:#ffd700;font-weight:bold">+10% de retorno</span> sobre o valor que você definir como entrada. Se perder, ele aplica <span style="color:#ff4444">Martingale (Gale 2)</span> dobrando o valor por até 2 vezes. <span style="color:#00ff88;font-weight:bold">Stop Gain:</span> 1 WIN = bot para automaticamente.
-            </p>
-        </div>
-        <div style="background:#0a1a0a;border:1px solid #00ff88;border-radius:15px;padding:20px;margin:10px 0">
-            <p style="color:#00ff88;font-size:14px;font-weight:bold;margin-bottom:10px">💰 RISCOS REAIS</p>
-            <p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify">
-                <span style="color:#ff4444">• Você pode PERDER TODO seu dinheiro.</span><br>
-                • Opções binárias são proibidas em vários países.<br>
-                • O Martingale é perigoso: 3 perdas seguidas consomem 7x o valor inicial.<br>
-                • <span style="color:#ffd700">NUNCA invista dinheiro que você não pode perder.</span><br>
-                • Resultados passados não garantem resultados futuros.<br>
-                • O robô é uma ferramenta de <span style="color:#ffd700">análise automatizada</span>, não uma garantia de lucro.
-            </p>
-        </div>
-        <div style="background:#1a0000;border:2px solid #ff4444;border-radius:15px;padding:20px;margin:10px 0">
-            <p style="color:#ff4444;font-size:16px;text-align:center;font-weight:bold;margin-bottom:15px">⚠️ A VERDADE SOBRE A IQ OPTION</p>
-            <p style="color:#ff8888;font-size:12px;line-height:1.8;text-align:justify">
-                A <span style="color:#ffd700;font-weight:bold">IQ Option</span> <span style="color:#ff4444;font-weight:bold">NÃO É</span> o mercado financeiro real. Ela é uma <span style="color:#ffd700;font-weight:bold">corretora de opções binárias</span> - um modelo onde você aposta se o preço vai subir ou descer. Não há compra real de ativos. É uma <span style="color:#ff4444;font-weight:bold">aposta</span> contra a própria corretora.
-            </p>
-        </div>
-        <div style="text-align:center;margin-top:15px">
-            <p style="color:#ffd700;font-size:12px;font-weight:bold">🎯 A INTENÇÃO É GANHAR DINHEIRO - MAS COM CONSCIÊNCIA</p>
-            <p style="color:#888;font-size:10px;margin-top:5px">Use com responsabilidade. Conheça os riscos. Comece pela conta PRACTICE.</p>
-        </div>
-    </div>
+    <!-- PAINEL TUTORIAL (mantido igual ao original para não gerar erros) -->
+    <div class="panel" id="panel-leia-me"><div class="config-section"><h3>📖 TUTORIAL & ⚠️ AVISOS IMPORTANTES</h3></div><div style="background:#0a0a1a;border:1px solid #00ff88;border-radius:15px;padding:20px;margin:10px 0"><p style="color:#ffd700;font-size:18px;font-weight:bold;margin-bottom:15px;text-align:center">📖 COMO USAR O TESLA 369</p><p style="color:#ffd700;font-size:13px;font-weight:bold;margin-bottom:10px">🔰 PRIMEIROS PASSOS</p><p style="color:#ccc;font-size:11px;line-height:2.0;text-align:justify"><span style="color:#00ff88">1.</span> Crie uma conta na <span style="color:#ffd700">IQ Option</span> (use conta PRACTICE para testes).<br><span style="color:#00ff88">2.</span> Digite seu <span style="color:#ffd700">email e senha</span> no bot e clique em <span style="color:#00ff88">CONECTAR</span>.<br><span style="color:#00ff88">3.</span> Selecione a <span style="color:#ffd700">% da banca</span> que deseja usar (mínimo 15%).<br><span style="color:#00ff88">4.</span> Vá na aba <span style="color:#ffd700">ESTRATÉGIAS</span> e escolha uma estratégia.<br><span style="color:#00ff88">5.</span> Clique em <span style="color:#00ff88;font-weight:bold">COMEÇAR OPERAR</span> e aguarde o sinal.<br><span style="color:#00ff88">6.</span> O bot opera automaticamente em segundo plano.</p><p style="color:#ffd700;font-size:13px;font-weight:bold;margin-bottom:10px;margin-top:15px">🤖 COMO O ROBÔ FUNCIONA</p><p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify">O Tesla 369 analisa <span style="color:#00ff88">padrões de velas</span> em tempo real usando indicadores técnicos. Cada estratégia tem seu próprio <span style="color:#ffd700">timeframe e gatilho</span> de entrada. Quando encontra um padrão com alta probabilidade, ele <span style="color:#ffd700">abre uma ordem automaticamente</span>. O robô busca <span style="color:#ffd700;font-weight:bold">+10% de retorno</span> sobre o valor que você definir como entrada. Se perder, ele aplica <span style="color:#ff4444">Martingale (Gale 2)</span> dobrando o valor por até 2 vezes. <span style="color:#00ff88;font-weight:bold">Stop Gain:</span> 1 WIN = bot para automaticamente.</p></div><div style="background:#0a1a0a;border:1px solid #00ff88;border-radius:15px;padding:20px;margin:10px 0"><p style="color:#00ff88;font-size:14px;font-weight:bold;margin-bottom:10px">💰 RISCOS REAIS</p><p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify"><span style="color:#ff4444">• Você pode PERDER TODO seu dinheiro.</span><br>• Opções binárias são proibidas em vários países.<br>• O Martingale é perigoso: 3 perdas seguidas consomem 7x o valor inicial.<br>• <span style="color:#ffd700">NUNCA invista dinheiro que você não pode perder.</span><br>• Resultados passados não garantem resultados futuros.<br>• O robô é uma ferramenta de <span style="color:#ffd700">análise automatizada</span>, não uma garantia de lucro.</p></div><div style="background:#1a0000;border:2px solid #ff4444;border-radius:15px;padding:20px;margin:10px 0"><p style="color:#ff4444;font-size:16px;text-align:center;font-weight:bold;margin-bottom:15px">⚠️ A VERDADE SOBRE A IQ OPTION</p><p style="color:#ff8888;font-size:12px;line-height:1.8;text-align:justify">A <span style="color:#ffd700;font-weight:bold">IQ Option</span> <span style="color:#ff4444;font-weight:bold">NÃO É</span> o mercado financeiro real. Ela é uma <span style="color:#ffd700;font-weight:bold">corretora de opções binárias</span> - um modelo onde você aposta se o preço vai subir ou descer. Não há compra real de ativos. É uma <span style="color:#ff4444;font-weight:bold">aposta</span> contra a própria corretora.</p></div><div style="text-align:center;margin-top:15px"><p style="color:#ffd700;font-size:12px;font-weight:bold">🎯 A INTENÇÃO É GANHAR DINHEIRO - MAS COM CONSCIÊNCIA</p><p style="color:#888;font-size:10px;margin-top:5px">Use com responsabilidade. Conheça os riscos. Comece pela conta PRACTICE.</p></div></div>
 
-    <!-- PAINEL CONTATO -->
-    <div class="panel" id="panel-contato">
-        <div class="config-section"><h3>📞 ENTRE EM CONTATO</h3></div>
-        <div style="background:linear-gradient(135deg,#1a1a2e,#0d0d1a);border:2px solid #ffd700;border-radius:15px;padding:20px;margin:10px 0;text-align:center">
-            <p style="color:#ffd700;font-size:18px;font-weight:bold;margin-bottom:10px">⚡ POR QUE ESCOLHER O TESLA 369?</p>
-            <p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify">
-                🔹 <span style="color:#ffd700">Automatizacao real:</span> Enquanto outros bots dependem de sinais manuais, o Tesla 369 opera com <span style="color:#00ff88">inteligencia automatizada</span> baseada em multiplos indicadores tecnicos.<br><br>
-                🔹 <span style="color:#ffd700">Custo-beneficio imbativel:</span> Bots similares custam <span style="color:#ff4444">R$50 a R$200 por mes</span>. O Tesla 369 e <span style="color:#00ff88">GRATIS para comecar</span>.<br><br>
-                🔹 <span style="color:#ffd700">Personalizacao total:</span> <span style="color:#00ff88">Skins exclusivas</span> para deixar o bot com a sua cara.<br><br>
-                🔹 <span style="color:#ffd700">Suporte direto:</span> Voce <span style="color:#00ff88">fala direto com o desenvolvedor</span>.<br><br>
-                🔹 <span style="color:#ffd700">Seguranca:</span> Seus dados salvos na nuvem.
-            </p>
-        </div>
-        <div style="background:linear-gradient(135deg,#1a0000,#0d0000);border:2px solid #ff4444;border-radius:15px;padding:20px;margin:10px 0;text-align:center">
-            <p style="color:#ff4444;font-size:14px;font-weight:bold;margin-bottom:10px">⚠️ CUIDADO COM BOTS GRATUITOS!</p>
-            <p style="color:#ff8888;font-size:11px;line-height:1.8;text-align:justify">
-                Muitos bots gratuitos sao <span style="color:#ffd700">abandonados</span>, contem <span style="color:#ffd700">virus</span> ou simplesmente <span style="color:#ffd700">nao funcionam</span>. O Tesla 369 e <span style="color:#00ff88">atualizado constantemente</span>.
-            </p>
-        </div>
-        <div style="background:linear-gradient(135deg,#1a1a2e,#0d0d1a);border:2px solid #25D366;border-radius:15px;padding:20px;margin:15px 0;text-align:center">
-            <p style="color:#25D366;font-size:16px;font-weight:bold;margin-bottom:10px">💬 FALE COM O DESENVOLVEDOR</p>
-            <p style="color:#ccc;font-size:12px;margin:5px 0">📧 <span style="color:#00ff88">gyn.bet.fc@gmail.com</span></p>
-            <a href="https://wa.me/5562981728653?text=Ola!%20Vim%20do%20Tesla%20369%20Bot%20v15.0.0%20e%20gostaria%20de%20saber%20mais!" target="_blank" style="text-decoration:none">
-                <button style="background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;padding:14px 28px;border-radius:12px;font-size:15px;font-weight:bold;cursor:pointer;margin-top:10px;font-family:monospace;box-shadow:0 4px 15px rgba(37,211,102,0.3);transition:all 0.3s ease" onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 6px 20px rgba(37,211,102,0.5)'" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 4px 15px rgba(37,211,102,0.3)'">💬 WHATSAPP</button>
-            </a>
-            <p style="color:#888;font-size:10px;margin-top:10px">Duvidas, sugestoes ou interesse em recursos premium? Fale comigo!</p>
-        </div>
-    </div>
+    <!-- PAINEL CONTATO (mantido igual ao original para não gerar erros) -->
+    <div class="panel" id="panel-contato"><div class="config-section"><h3>📞 ENTRE EM CONTATO</h3></div><div style="background:linear-gradient(135deg,#1a1a2e,#0d0d1a);border:2px solid #ffd700;border-radius:15px;padding:20px;margin:10px 0;text-align:center"><p style="color:#ffd700;font-size:18px;font-weight:bold;margin-bottom:10px">⚡ POR QUE ESCOLHER O TESLA 369?</p><p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify">🔹 <span style="color:#ffd700">Automatizacao real:</span> Enquanto outros bots dependem de sinais manuais, o Tesla 369 opera com <span style="color:#00ff88">inteligencia automatizada</span> baseada em multiplos indicadores tecnicos.<br><br>🔹 <span style="color:#ffd700">Custo-beneficio imbativel:</span> Bots similares custam <span style="color:#ff4444">R$50 a R$200 por mes</span>. O Tesla 369 e <span style="color:#00ff88">GRATIS para comecar</span>.<br><br>🔹 <span style="color:#ffd700">Personalizacao total:</span> <span style="color:#00ff88">Skins exclusivas</span> para deixar o bot com a sua cara.<br><br>🔹 <span style="color:#ffd700">Suporte direto:</span> Voce <span style="color:#00ff88">fala direto com o desenvolvedor</span>.<br><br>🔹 <span style="color:#ffd700">Seguranca:</span> Seus dados salvos na nuvem.</p></div><div style="background:linear-gradient(135deg,#1a0000,#0d0000);border:2px solid #ff4444;border-radius:15px;padding:20px;margin:10px 0;text-align:center"><p style="color:#ff4444;font-size:14px;font-weight:bold;margin-bottom:10px">⚠️ CUIDADO COM BOTS GRATUITOS!</p><p style="color:#ff8888;font-size:11px;line-height:1.8;text-align:justify">Muitos bots gratuitos sao <span style="color:#ffd700">abandonados</span>, contem <span style="color:#ffd700">virus</span> ou simplesmente <span style="color:#ffd700">nao funcionam</span>. O Tesla 369 e <span style="color:#00ff88">atualizado constantemente</span>.</p></div><div style="background:linear-gradient(135deg,#1a1a2e,#0d0d1a);border:2px solid #25D366;border-radius:15px;padding:20px;margin:15px 0;text-align:center"><p style="color:#25D366;font-size:16px;font-weight:bold;margin-bottom:10px">💬 FALE COM O DESENVOLVEDOR</p><p style="color:#ccc;font-size:12px;margin:5px 0">📧 <span style="color:#00ff88">gyn.bet.fc@gmail.com</span></p><a href="https://wa.me/5562981728653?text=Ola!%20Vim%20do%20Tesla%20369%20Bot%20v{{ BOT_VERSION }}%20e%20gostaria%20de%20saber%20mais!" target="_blank" style="text-decoration:none"><button style="background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;padding:14px 28px;border-radius:12px;font-size:15px;font-weight:bold;cursor:pointer;margin-top:10px;font-family:monospace;box-shadow:0 4px 15px rgba(37,211,102,0.3);transition:all 0.3s ease" onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 6px 20px rgba(37,211,102,0.5)'" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 4px 15px rgba(37,211,102,0.3)'">💬 WHATSAPP</button></a><p style="color:#888;font-size:10px;margin-top:10px">Duvidas, sugestoes ou interesse em recursos premium? Fale comigo!</p></div></div>
 </div>
 
-<div class="modal-overlay" id="modalPix">
-    <div class="modal-pagamento">
-        <h3>💳 Pagamento PIX</h3>
-        <div id="pixContent"><p style="color:#888">Carregando QR Code...</p></div>
-        <button class="btn-fechar" onclick="fecharModal()">❌ Fechar</button>
-    </div>
-</div>
+<div class="modal-overlay" id="modalPix"><div class="modal-pagamento"><h3>💳 Pagamento PIX</h3><div id="pixContent"><p style="color:#888">Carregando QR Code...</p></div><button class="btn-fechar" onclick="fecharModal()">❌ Fechar</button></div></div>
 
 <script>
 var PLANOS = [{{ PLANOS_JSON | safe }}];
@@ -355,6 +246,7 @@ var planoSelecionado = 0;
 var pixAtual = null;
 var estrategiaSel = 'v_sensitivo';
 
+// --- Funções de UI e Loja (mantidas iguais ao seu original para garantir funcionamento) ---
 function mostrarLojaCategoria(categoria) {
     var botoes = document.querySelectorAll('.loja-cat-btn');
     for(var i = 0; i < botoes.length; i++) botoes[i].classList.remove('active');
@@ -366,7 +258,6 @@ function mostrarLojaCategoria(categoria) {
     if(categoria === 'skins') mostrarSubCategoriaSkin('basica', null);
     if(categoria === 'estrategias') renderLojaEstrategias();
 }
-
 function mostrarSubCategoriaSkin(categoria, evento) {
     if(evento && evento.target) {
         var botoes = document.querySelectorAll('#loja-skins .loja-cat-btn');
@@ -378,7 +269,6 @@ function mostrarSubCategoriaSkin(categoria, evento) {
     document.getElementById('skinsGridLendarias').style.display = categoria === 'lendaria' ? 'grid' : 'none';
     renderLojaCategoria(categoria);
 }
-
 function openTab(tab) {
     var tabs = document.querySelectorAll('.tab');
     for(var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
@@ -386,31 +276,14 @@ function openTab(tab) {
     for(var i = 0; i < panels.length; i++) panels[i].classList.remove('active');
     event.target.classList.add('active');
     document.getElementById('panel-' + tab).classList.add('active');
-    if(tab == 'relatorio' && emailLogado) {
-        document.getElementById('emailRelatorio').value = emailLogado;
-        verRelatorio();
-    }
+    if(tab == 'relatorio' && emailLogado) { document.getElementById('emailRelatorio').value = emailLogado; verRelatorio(); }
     if(tab == 'loja') mostrarLojaCategoria('volts');
     if(tab == 'estrategias') {
-        if(botAtivo) {
-            alert('⚠️ Pare o bot antes de trocar de estratégia!');
-            openTab('bot');
-            return;
-        }
+        if(botAtivo){ alert('⚠️ Pare o bot antes de trocar de estratégia!'); openTab('bot'); return; }
         renderEstrategias();
     }
 }
-
-function atualizarPercentual() {
-    var perc = document.getElementById('percentualBanca').value;
-    fetch('/set_percentual', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({percentual: parseInt(perc)})
-    });
-    calcularMinimo();
-}
-
+function atualizarPercentual() { var perc = document.getElementById('percentualBanca').value; fetch('/set_percentual', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({percentual: parseInt(perc)}) }); calcularMinimo(); }
 function calcularMinimo() {
     var bancaTexto = document.getElementById('banca').textContent;
     var banca = parseFloat(bancaTexto.replace('$','')) || 0;
@@ -419,33 +292,21 @@ function calcularMinimo() {
     document.getElementById('valorEstimado').textContent = '($' + valor + ')';
     var payout = 0.85;
     var minimo = (valor / (1 + (1/payout) + (1/payout)*(1/payout))).toFixed(2);
-    if (banca < parseFloat(minimo) * 3) {
-        document.getElementById('avisoMinimo').textContent = '⚠️ Min: $' + (parseFloat(minimo)*3).toFixed(2);
-    } else {
-        document.getElementById('avisoMinimo').textContent = '';
-    }
+    if (banca < parseFloat(minimo) * 3) { document.getElementById('avisoMinimo').textContent = '⚠️ Min: $' + (parseFloat(minimo)*3).toFixed(2); }
+    else { document.getElementById('avisoMinimo').textContent = ''; }
 }
-
 function conectarIQ() {
     var email = document.getElementById('email').value.trim();
     var senha = document.getElementById('senha').value.trim();
     var tipo = document.getElementById('tipo').value;
-    if(!email || !senha) {
-        alert('Preencha email e senha!');
-        return;
-    }
+    if(!email || !senha){ alert('Preencha email e senha!'); return; }
     emailLogado = email;
     var btnConectar = document.getElementById('btnConectar');
     btnConectar.disabled = true;
     btnConectar.textContent = 'Conectando...';
-    fetch('/conectar', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({email: email, senha: senha, tipo: tipo})
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-        if(d.ok) {
+    fetch('/conectar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,senha:senha,tipo:tipo})})
+    .then(r=>r.json()).then(d=>{
+        if(d.ok){
             conectadoIQ = true;
             btnConectar.style.display = 'none';
             document.getElementById('btnDesconectar').style.display = 'inline-block';
@@ -454,45 +315,21 @@ function conectarIQ() {
             document.getElementById('statusDot').className = 'status-dot active';
             document.getElementById('moedasSaldo').textContent = d.moedas || 0;
             if(intervalo) clearInterval(intervalo);
-            intervalo = setInterval(atualizar, 2000);
+            intervalo = setInterval(atualizar,2000);
             atualizar();
             iniciarChat();
             alert('✅ Conectado com sucesso!');
-            if(d.refresh) {
-                setTimeout(function() { location.reload(); }, 1500);
-            }
-        } else {
-            alert('ERRO: ' + d.erro);
-            btnConectar.disabled = false;
-            btnConectar.textContent = '🔌 CONECTAR';
-        }
-    })
-    .catch(function(err) {
-        alert('Erro de conexão: ' + err.message);
-        btnConectar.disabled = false;
-        btnConectar.textContent = '🔌 CONECTAR';
-    });
+            if(d.refresh) { setTimeout(function() { location.reload(); }, 1500); }
+        } else { alert('ERRO: '+d.erro); btnConectar.disabled=false; btnConectar.textContent='🔌 CONECTAR'; }
+    }).catch(err => { alert('Erro de conexão: ' + err.message); btnConectar.disabled=false; btnConectar.textContent='🔌 CONECTAR'; });
 }
-
 function desconectarIQ() {
-    if(botAtivo) {
-        alert('⚠️ Pare o bot primeiro antes de desconectar!');
-        return;
-    }
+    if(botAtivo){ alert('⚠️ Pare o bot primeiro antes de desconectar!'); return; }
     if(!confirm('Deseja realmente desconectar da IQ Option? O servidor será encerrado.')) return;
-    fetch('/parar', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({desconectar: true})
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-        if(d.shutdown) {
-            alert('🔌 Desconectado! O servidor será encerrado.');
-            setTimeout(function() { window.close(); }, 1000);
-        }
-        conectadoIQ = false;
-        botAtivo = false;
+    fetch('/parar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({desconectar: true}) })
+    .then(r=>r.json()).then(d=>{
+        if(d.shutdown){ alert('🔌 Desconectado! O servidor será encerrado.'); setTimeout(()=>window.close(),1000); }
+        conectadoIQ = false; botAtivo = false;
         document.getElementById('btnConectar').style.display = 'inline-block';
         document.getElementById('btnConectar').disabled = false;
         document.getElementById('btnConectar').textContent = '🔌 CONECTAR';
@@ -502,28 +339,16 @@ function desconectarIQ() {
         document.getElementById('statusTexto').textContent = '⏸️ Desconectado';
         document.getElementById('statusDot').className = 'status-dot inactive';
         if(intervalo) clearInterval(intervalo);
-    })
-    .catch(function(err) {
-        alert('Erro ao desconectar: ' + err.message);
-    });
+    }).catch(err => alert('Erro ao desconectar: ' + err.message));
 }
-
 function comecarOperar() {
-    if(!conectadoIQ) {
-        alert('Conecte primeiro!');
-        return;
-    }
+    if(!conectadoIQ){ alert('Conecte primeiro!'); return; }
     var btnOperar = document.getElementById('btnOperar');
     btnOperar.disabled = true;
     btnOperar.textContent = 'Iniciando...';
-    fetch('/comecar_operar', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({})
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-        if(d.ok) {
+    fetch('/comecar_operar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({}) })
+    .then(r=>r.json()).then(d=>{
+        if(d.ok){
             botAtivo = true;
             btnOperar.style.display = 'none';
             document.getElementById('btnParar').style.display = 'inline-block';
@@ -531,26 +356,16 @@ function comecarOperar() {
             document.getElementById('statusDot').className = 'status-dot active';
             document.getElementById('moedasSaldo').textContent = d.moedas;
             alert('🚀 Bot iniciado! Aguardando sinais...');
-        } else {
-            alert('ERRO: ' + d.erro);
-            btnOperar.disabled = false;
-            btnOperar.textContent = '🚀 COMEÇAR OPERAR';
-        }
+        } else { alert('ERRO: '+d.erro); btnOperar.disabled=false; btnOperar.textContent='🚀 COMEÇAR OPERAR'; }
     });
 }
-
 function pararBot() {
     if(!confirm('Parar o bot? O ciclo atual será interrompido.')) return;
     var btnParar = document.getElementById('btnParar');
     btnParar.disabled = true;
     btnParar.textContent = 'Parando...';
-    fetch('/parar', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({desconectar: false})
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
+    fetch('/parar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({desconectar: false}) })
+    .then(r=>r.json()).then(d=>{
         botAtivo = false;
         document.getElementById('btnOperar').style.display = 'inline-block';
         document.getElementById('btnOperar').disabled = false;
@@ -558,422 +373,191 @@ function pararBot() {
         document.getElementById('btnParar').style.display = 'none';
         document.getElementById('statusTexto').textContent = '🟢 Conectado';
         document.getElementById('statusDot').className = 'status-dot active';
-        btnParar.disabled = false;
-        btnParar.textContent = '⏹️ PARAR';
+        btnParar.disabled = false; btnParar.textContent = '⏹️ PARAR';
         alert('⏹️ Bot parado com sucesso!');
         atualizar();
     });
 }
-
 function renderEstrategias() {
-    fetch('/status')
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
+    fetch('/status').then(r=>r.json()).then(d=>{
         var estrategiasCompradas = d.estrategias_compradas || ['v_sensitivo'];
         var disponiveis = d.estrategias_disponiveis || {};
         var estrategiaAtual = d.estrategia || 'v_sensitivo';
         var grid = document.getElementById('estrategiaGrid');
         if(!grid) return;
         var html = '';
-        for(var key in disponiveis) {
-            if(estrategiasCompradas.includes(key)) {
+        for(var key in disponiveis){
+            if(estrategiasCompradas.includes(key)){
                 var e = disponiveis[key];
                 var ativa = key == estrategiaAtual ? ' ativa' : '';
-                html += '<div class="estrategia-card' + ativa + '" onclick="selecionarEstrategia(\'' + key + '\')" id="est_' + key + '">';
-                html += '<div style="font-size:14px;font-weight:bold">' + e.nome + '</div>';
-                html += '<div style="font-size:9px;color:#888;margin-top:5px">' + e.desc + '</div>';
-                html += '</div>';
+                html += '<div class="estrategia-card'+ativa+'" onclick="selecionarEstrategia(\''+key+'\')" id="est_'+key+'"><div style="font-size:14px;font-weight:bold">'+e.nome+'</div><div style="font-size:9px;color:#888;margin-top:5px">'+e.desc+'</div></div>';
             }
         }
-        if(html === '') {
-            html = '<p style="color:#ff4444;text-align:center">⚠️ NENHUMA ESTRATÉGIA ADQUIRIDA! Vá na LOJA e compre uma estratégia.</p>';
-        }
-        grid.innerHTML = html;
-        if(disponiveis[estrategiaAtual]) {
-            document.getElementById('estrategiaAtiva').textContent = disponiveis[estrategiaAtual].nome;
-        }
+        grid.innerHTML = html || '<p style="color:#ff4444;text-align:center">⚠️ NENHUMA ESTRATÉGIA ADQUIRIDA! Vá na LOJA e compre uma estratégia.</p>';
+        if(disponiveis[estrategiaAtual]) document.getElementById('estrategiaAtiva').textContent = disponiveis[estrategiaAtual].nome;
     });
 }
-
 function selecionarEstrategia(key) {
     estrategiaSel = key;
     var cards = document.querySelectorAll('.estrategia-card');
-    for(var i = 0; i < cards.length; i++) cards[i].classList.remove('ativa');
-    var card = document.getElementById('est_' + key);
+    for(var i=0;i<cards.length;i++) cards[i].classList.remove('ativa');
+    var card = document.getElementById('est_'+key);
     if(card) card.classList.add('ativa');
-    fetch('/selecionar_estrategia', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({estrategia: key})
-    })
-    .then(function() {
-        document.getElementById('estrategiaAtiva').textContent = key.toUpperCase();
-        alert('✅ Estratégia alterada para: ' + key);
-    });
+    fetch('/selecionar_estrategia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estrategia:key})}).then(()=>{ document.getElementById('estrategiaAtiva').textContent=key.toUpperCase(); alert('✅ Estratégia alterada para: '+key); });
 }
-
 function renderLojaEstrategias() {
-    fetch('/status')
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
+    fetch('/status').then(r=>r.json()).then(d=>{
         var grid = document.getElementById('estrategiasLojaGrid');
         if(!grid) return;
         var html = '';
         var estrategiasCompradas = d.estrategias_compradas || ['v_sensitivo'];
         var disponiveis = d.estrategias_disponiveis || {};
-        for(var key in disponiveis) {
+        for(var key in disponiveis){
             var est = disponiveis[key];
             var comprado = estrategiasCompradas.includes(key);
-            if(!comprado && key !== 'v_sensitivo') {
-                var btnHtml = '';
-                if(est.gratis) {
-                    btnHtml = '<button class="btn-loja btn-comprar-est" onclick="comprarEstrategia(\'' + key + '\')">🆓 ATIVAR GRÁTIS</button>';
-                } else {
-                    btnHtml = '<button class="btn-loja btn-comprar-est" onclick="comprarEstrategia(\'' + key + '\')">🛒 COMPRAR (' + est.preco_moedas + ' ⚡)</button>';
-                }
-                html += '<div class="skin-card">';
-                html += '<div class="skin-nome">' + est.nome + '</div>';
-                html += '<div class="skin-desc">' + est.desc + '</div>';
-                html += '<div style="margin-top:5px"><span class="badge-pago">⚡ ' + est.preco_moedas + ' VOLTS</span></div>';
-                html += btnHtml;
-                html += '</div>';
+            if(!comprado && key !== 'v_sensitivo'){
+                var btnHtml = est.gratis ? '<button class="btn-loja btn-comprar-est" onclick="comprarEstrategia(\''+key+'\')">🆓 ATIVAR GRÁTIS</button>' : '<button class="btn-loja btn-comprar-est" onclick="comprarEstrategia(\''+key+'\')">🛒 COMPRAR ('+est.preco_moedas+' ⚡)</button>';
+                html += '<div class="skin-card"><div class="skin-nome">'+est.nome+'</div><div class="skin-desc">'+est.desc+'</div><div style="margin-top:5px"><span class="badge-pago">⚡ '+est.preco_moedas+' VOLTS</span></div>'+btnHtml+'</div>';
             }
         }
-        if(html === '') {
-            html = '<p style="color:#00ff88;text-align:center">✅ Você já possui todas as estratégias disponíveis!</p>';
-        }
-        grid.innerHTML = html;
+        grid.innerHTML = html || '<p style="color:#00ff88;text-align:center">✅ Você já possui todas as estratégias disponíveis!</p>';
     });
 }
-
 function comprarEstrategia(estrategiaId) {
-    if(!emailLogado) {
-        alert('Conecte primeiro!');
-        return;
-    }
+    if(!emailLogado){ alert('Conecte primeiro!'); return; }
     if(!confirm('Comprar esta estratégia com VOLTS?')) return;
-    fetch('/comprar_estrategia', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({estrategia_id: estrategiaId})
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-        if(d.ok) {
-            alert(d.msg || 'Adquirida com sucesso!');
-            document.getElementById('moedasSaldo').textContent = d.moedas;
-            renderLojaEstrategias();
-            renderEstrategias();
-        } else {
-            alert('ERRO: ' + d.erro);
-        }
-    });
+    fetch('/comprar_estrategia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estrategia_id:estrategiaId})})
+    .then(r=>r.json()).then(d=>{ if(d.ok){ alert(d.msg||'Adquirida com sucesso!'); document.getElementById('moedasSaldo').textContent=d.moedas; renderLojaEstrategias(); renderEstrategias(); } else { alert('ERRO: '+d.erro); } });
 }
-
 function renderPlanos() {
     var grid = document.getElementById('planosGridContainer');
     if(!grid) return;
     var html = '';
-    for(var i = 0; i < PLANOS.length; i++) {
+    for(var i=0;i<PLANOS.length;i++){
         var p = PLANOS[i];
-        html += '<div class="plano-card" id="plano' + p.id + '" onclick="selecionarPlano(' + p.id + ')">';
-        html += '<div class="plano-nome">' + p.nome + '</div>';
-        html += '<div class="plano-moedas">⚡ ' + p.moedas + '</div>';
-        html += '<div class="plano-preco">R$ ' + p.preco.toFixed(2) + '</div>';
-        html += '<div class="plano-desc">' + p.desc + '</div>';
-        if(p.desconto) html += '<div><span class="plano-desconto">' + p.desconto + '</span></div>';
-        if(p.tag) html += '<div class="plano-tag">' + p.tag + '</div>';
-        html += '<button class="btn-loja btn-comprar-volts" style="display:none;margin-top:10px" id="btnPlano' + p.id + '" onclick="event.stopPropagation();pagarComPix(' + p.id + ')">💳 PAGAR COM PIX</button>';
-        html += '</div>';
+        html += '<div class="plano-card" id="plano'+p.id+'" onclick="selecionarPlano('+p.id+')"><div class="plano-nome">'+p.nome+'</div><div class="plano-moedas">⚡ '+p.moedas+'</div><div class="plano-preco">R$ '+p.preco.toFixed(2)+'</div><div class="plano-desc">'+p.desc+'</div>'+(p.desconto?'<div><span class="plano-desconto">'+p.desconto+'</span></div>':'')+(p.tag?'<div class="plano-tag">'+p.tag+'</div>':'')+'<button class="btn-loja btn-comprar-volts" style="display:none;margin-top:10px" id="btnPlano'+p.id+'" onclick="event.stopPropagation();pagarComPix('+p.id+')">💳 PAGAR COM PIX</button></div>';
     }
     grid.innerHTML = html;
 }
-
 function renderLojaCategoria(categoria) {
-    fetch('/status')
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
+    fetch('/status').then(r=>r.json()).then(d=>{
         var skinsStatus = d.skins_status || [];
         var gridId = categoria === 'basica' ? 'skinsGridBasicas' : (categoria === 'premium' ? 'skinsGridPremium' : 'skinsGridLendarias');
         var grid = document.getElementById(gridId);
         if(!grid) return;
         var html = '';
-        var skinsFiltradas = [];
-        for(var i = 0; i < skinsStatus.length; i++) {
-            if(skinsStatus[i].categoria === categoria) skinsFiltradas.push(skinsStatus[i]);
-        }
-        for(var i = 0; i < skinsFiltradas.length; i++) {
+        var skinsFiltradas = skinsStatus.filter(s=>s.categoria===categoria);
+        for(var i=0;i<skinsFiltradas.length;i++){
             var skin = skinsFiltradas[i];
             var ativa = skin.ativo ? ' ativo' : '';
             var btnHtml = '';
-            if(skin.ativo) {
-                btnHtml = '<button class="btn-loja btn-comprado" style="width:100%;cursor:default">✅ EM USO</button>';
-            } else if(skin.comprado) {
-                btnHtml = '<button class="btn-loja btn-usar" onclick="ativarSkin(\'' + skin.id + '\')">🎨 USAR</button>';
-            } else {
-                if(skin.preco_moedas == 0) {
-                    btnHtml = '<button class="btn-loja btn-usar" onclick="ativarSkin(\'' + skin.id + '\')">🆓 ATIVAR</button>';
-                } else {
-                    btnHtml = '<button class="btn-loja btn-comprar-skin" onclick="comprarSkin(\'' + skin.id + '\')">🛒 COMPRAR (' + skin.preco_moedas + ' ⚡)</button>';
-                }
-            }
-            html += '<div class="skin-card' + ativa + '">';
-            html += '<div class="skin-nome">' + skin.nome + '</div>';
-            html += '<div class="skin-desc">' + skin.desc + '</div>';
-            html += '<div style="margin-top:5px">';
-            if(skin.preco_moedas == 0) {
-                html += '<span class="badge-gratis">GRÁTIS</span>';
-            } else if(skin.comprado) {
-                html += '<span class="badge-gratis">✅ COMPRADO</span>';
-            } else {
-                html += '<span class="badge-pago">⚡ ' + skin.preco_moedas + ' VOLTS</span>';
-            }
-            html += '</div>';
-            html += btnHtml;
-            html += '</div>';
+            if(skin.ativo) btnHtml = '<button class="btn-loja btn-comprado" style="width:100%;cursor:default">✅ EM USO</button>';
+            else if(skin.comprado) btnHtml = '<button class="btn-loja btn-usar" onclick="ativarSkin(\''+skin.id+'\')">🎨 USAR</button>';
+            else if(skin.preco_moedas==0) btnHtml = '<button class="btn-loja btn-usar" onclick="ativarSkin(\''+skin.id+'\')">🆓 ATIVAR</button>';
+            else btnHtml = '<button class="btn-loja btn-comprar-skin" onclick="comprarSkin(\''+skin.id+'\')">🛒 COMPRAR ('+skin.preco_moedas+' ⚡)</button>';
+            html += '<div class="skin-card'+ativa+'"><div class="skin-nome">'+skin.nome+'</div><div class="skin-desc">'+skin.desc+'</div><div style="margin-top:5px">'+(skin.preco_moedas==0?'<span class="badge-gratis">GRÁTIS</span>':(skin.comprado?'<span class="badge-gratis">✅ COMPRADO</span>':'<span class="badge-pago">⚡ '+skin.preco_moedas+' VOLTS</span>'))+'</div>'+btnHtml+'</div>';
         }
         grid.innerHTML = html || '<p style="color:#888;text-align:center">Nenhuma skin nesta categoria</p>';
     });
 }
-
 function comprarSkin(skinId) {
-    if(!emailLogado) {
-        alert('Conecte primeiro!');
-        return;
-    }
+    if(!emailLogado){ alert('Conecte primeiro!'); return; }
     if(!confirm('Comprar esta skin?')) return;
-    fetch('/comprar_skin', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({skin_id: skinId})
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-        if(d.ok) {
-            alert('✅ ' + (d.msg || 'Skin adquirida com sucesso!'));
-            document.getElementById('moedasSaldo').textContent = d.moedas;
-            var categoriaAtiva = document.querySelector('#loja-skins .loja-cat-btn.active');
-            var categoria = categoriaAtiva ? categoriaAtiva.textContent.trim().replace('⚡', '').replace('🔮', '').replace('💎', '').trim().toLowerCase() : 'basica';
-            if(categoria === 'básicas') categoria = 'basica';
-            if(categoria === 'premium') categoria = 'premium';
-            if(categoria === 'lendárias') categoria = 'lendaria';
-            renderLojaCategoria(categoria);
-        } else {
-            alert('❌ ERRO: ' + d.erro);
-        }
+    fetch('/comprar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId})})
+    .then(r=>r.json()).then(d=>{
+        if(d.ok){ alert('✅ '+(d.msg||'Skin adquirida com sucesso!')); document.getElementById('moedasSaldo').textContent=d.moedas; var categoriaAtiva = document.querySelector('#loja-skins .loja-cat-btn.active'); var categoria = categoriaAtiva ? categoriaAtiva.textContent.trim().replace('⚡','').replace('🔮','').replace('💎','').trim().toLowerCase() : 'basica'; if(categoria==='básicas') categoria='basica'; if(categoria==='premium') categoria='premium'; if(categoria==='lendárias') categoria='lendaria'; renderLojaCategoria(categoria); } else { alert('❌ ERRO: '+d.erro); }
     });
 }
-
 function ativarSkin(skinId) {
-    if(!emailLogado) {
-        alert('Conecte primeiro!');
-        return;
-    }
+    if(!emailLogado){ alert('Conecte primeiro!'); return; }
     if(!confirm('Ativar esta skin? O visual será atualizado.')) return;
-    fetch('/ativar_skin', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({skin_id: skinId})
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-        if(d.ok) {
-            alert('🎨 Skin ativada! A página será recarregada.');
-            setTimeout(function() { location.reload(); }, 500);
-        } else {
-            alert('❌ ERRO: ' + d.erro);
-        }
-    });
+    fetch('/ativar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId})})
+    .then(r=>r.json()).then(d=>{ if(d.ok){ alert('🎨 Skin ativada! A página será recarregada.'); setTimeout(()=>location.reload(),500); } else { alert('❌ ERRO: '+d.erro); } });
 }
-
-function selecionarPlano(id) {
-    var cards = document.querySelectorAll('.plano-card');
-    for(var i = 0; i < cards.length; i++) cards[i].classList.remove('selecionado');
-    var btns = document.querySelectorAll('[id^="btnPlano"]');
-    for(var i = 0; i < btns.length; i++) btns[i].style.display = 'none';
-    document.getElementById('plano' + id).classList.add('selecionado');
-    document.getElementById('btnPlano' + id).style.display = 'block';
-    planoSelecionado = id;
+function selecionarPlano(id){
+    document.querySelectorAll('.plano-card').forEach(c=>c.classList.remove('selecionado'));
+    document.querySelectorAll('[id^="btnPlano"]').forEach(b=>b.style.display='none');
+    document.getElementById('plano'+id).classList.add('selecionado');
+    document.getElementById('btnPlano'+id).style.display='block';
+    planoSelecionado=id;
 }
-
-function pagarComPix(planoId) {
-    var email = document.getElementById('emailCompra').value.trim() || emailLogado;
-    if(!email) {
-        alert('Digite seu email!');
-        return;
-    }
+function pagarComPix(planoId){
+    var email=document.getElementById('emailCompra').value.trim()||emailLogado;
+    if(!email){ alert('Digite seu email!'); return; }
     document.getElementById('modalPix').classList.add('active');
-    document.getElementById('pixContent').innerHTML = '<p style="color:#ffd700">⏳ Gerando QR Code...</p>';
-    fetch('/criar_pix', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({email: email, plano_id: planoId})
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-        if(d.sucesso) {
-            pixAtual = d;
-            var html = '<p style="font-size:18px;color:#ffd700">R$ ' + d.valor.toFixed(2) + '</p>';
-            html += '<p style="color:#00ff88">⚡ ' + d.moedas + ' VOLTS</p>';
-            if(d.qr_code_base64) {
-                html += '<div class="pix-qrcode"><img src="data:image/png;base64,' + d.qr_code_base64 + '" style="max-width:200px"></div>';
-            }
-            if(d.qr_code) {
-                html += '<div class="pix-copiavel" onclick="copiarPix()">📋 ' + d.qr_code.substring(0,50) + '...</div>';
-            }
-            html += '<button class="btn-confirmar" onclick="verificarPagamento(\'' + d.pix_id + '\')">🔄 VERIFICAR PAGAMENTO</button>';
-            document.getElementById('pixContent').innerHTML = html;
-        } else {
-            document.getElementById('pixContent').innerHTML = '<p style="color:#ff4444">❌ Erro: ' + (d.erro || 'Falha ao gerar PIX') + '</p>';
-        }
+    document.getElementById('pixContent').innerHTML='<p style="color:#ffd700">⏳ Gerando QR Code...</p>';
+    fetch('/criar_pix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,plano_id:planoId})})
+    .then(r=>r.json()).then(d=>{
+        if(d.sucesso){
+            pixAtual=d;
+            var html='<p style="font-size:18px;color:#ffd700">R$ '+d.valor.toFixed(2)+'</p><p style="color:#00ff88">⚡ '+d.moedas+' VOLTS</p>';
+            if(d.qr_code_base64) html+='<div class="pix-qrcode"><img src="data:image/png;base64,'+d.qr_code_base64+'" style="max-width:200px"></div>';
+            if(d.qr_code) html+='<div class="pix-copiavel" onclick="copiarPix()">📋 '+d.qr_code.substring(0,50)+'...</div>';
+            html+='<button class="btn-confirmar" onclick="verificarPagamento(\''+d.pix_id+'\')">🔄 VERIFICAR PAGAMENTO</button>';
+            document.getElementById('pixContent').innerHTML=html;
+        } else { document.getElementById('pixContent').innerHTML='<p style="color:#ff4444">❌ Erro: '+(d.erro||'Falha ao gerar PIX')+'</p>'; }
     });
 }
-
-function copiarPix() {
-    if(pixAtual && pixAtual.qr_code) {
-        navigator.clipboard.writeText(pixAtual.qr_code).then(function() { alert('📋 Código PIX copiado!'); });
-    }
-}
-
-function verificarPagamento(pixId) {
+function copiarPix(){ navigator.clipboard.writeText(pixAtual.qr_code).then(()=>alert('📋 Código PIX copiado!')); }
+function verificarPagamento(pixId){
     document.getElementById('pixContent').innerHTML += '<p style="color:#ffd700">⏳ Verificando...</p>';
-    fetch('/verificar_pix', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({pix_id: pixId})
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-        if(d.pago) {
-            alert('✅ PAGAMENTO CONFIRMADO! +' + d.moedas + ' VOLTS adicionados!');
-            document.getElementById('moedasSaldo').textContent = d.saldo;
-            fecharModal();
-            location.reload();
-        } else {
-            alert('⏰ Ainda não confirmado. Aguarde alguns minutos e tente novamente.');
-        }
-    });
+    fetch('/verificar_pix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pix_id:pixId})})
+    .then(r=>r.json()).then(d=>{ if(d.pago){ alert('✅ PAGAMENTO CONFIRMADO! +'+d.moedas+' VOLTS adicionados!'); document.getElementById('moedasSaldo').textContent=d.saldo; fecharModal(); location.reload(); } else { alert('⏰ Ainda não confirmado. Aguarde alguns minutos e tente novamente.'); } });
 }
-
-function fecharModal() {
-    document.getElementById('modalPix').classList.remove('active');
-    pixAtual = null;
-}
-
-function verRelatorio() {
-    var email = document.getElementById('emailRelatorio').value.trim();
-    if(!email) {
-        alert('Digite o email!');
-        return;
-    }
-    document.getElementById('relatorioContent').innerHTML = '<p style="color:#ffd700">⏳ Carregando...</p>';
-    fetch('/relatorio?email=' + email)
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-        if(d.erro) {
-            alert(d.erro);
-            return;
-        }
-        var h = '<div class="relatorio-grid">';
-        h += '<div class="relatorio-card"><div class="rlabel">⚡ VOLTS</div><div class="rvalue">' + (d.moedas || 0) + '</div></div>';
-        h += '<div class="relatorio-card"><div class="rlabel">📈 LUCRO TOTAL</div><div class="rvalue" style="color:' + (d.lucro_total >= 0 ? '#00ff88' : '#ff4444') + '">$' + (d.lucro_total || 0).toFixed(2) + '</div></div>';
-        h += '<div class="relatorio-card"><div class="rlabel">✅ WINS</div><div class="rvalue" style="color:#00ff88">' + (d.total_wins || 0) + '</div></div>';
-        h += '<div class="relatorio-card"><div class="rlabel">❌ LOSSES</div><div class="rvalue" style="color:#ff4444">' + (d.total_losses || 0) + '</div></div>';
-        h += '<div class="relatorio-card"><div class="rlabel">🔄 CICLOS</div><div class="rvalue">' + (d.total_ciclos || 0) + '</div></div>';
-        h += '<div class="relatorio-card"><div class="rlabel">💵 GASTO</div><div class="rvalue">$' + (d.total_gasto || 0).toFixed(2) + '</div></div>';
-        h += '<div class="relatorio-card"><div class="rlabel">💰 GANHO</div><div class="rvalue">$' + (d.total_ganho || 0).toFixed(2) + '</div></div>';
-        h += '<div class="relatorio-card"><div class="rlabel">📅 DIAS</div><div class="rvalue">' + (d.dias_ativos || 0) + '</div></div>';
-        h += '<div class="relatorio-card"><div class="rlabel">🎯 TAXA</div><div class="rvalue">' + (d.total_ciclos > 0 ? ((d.total_wins / d.total_ciclos) * 100).toFixed(1) : 0) + '%</div></div>';
-        h += '<div class="relatorio-card"><div class="rlabel">💰 BANCA</div><div class="rvalue">$' + (d.banca_atual || 0).toFixed(2) + '</div></div>';
-        h += '<div class="relatorio-card"><div class="rlabel">📅 CADASTRO</div><div class="rvalue" style="font-size:10px">' + (d.data_cadastro || '--') + '</div></div>';
-        h += '</div>';
-        if(d.historico_operacoes && d.historico_operacoes.length > 0) {
-            h += '<h4 style="margin-top:10px">📋 ÚLTIMAS OPERAÇÕES</h4>';
-            h += '<table class="historico-table">';
-            h += '<tr><th>Data</th><th>Resultado</th><th>Valor</th><th>Lucro</th><th>Estratégia</th></tr>';
-            var historico = d.historico_operacoes.slice(-15).reverse();
-            for(var i = 0; i < historico.length; i++) {
-                var op = historico[i];
-                var corRes = op.resultado == 'WIN' ? '#00ff88' : '#ff4444';
-                var corLucro = op.lucro >= 0 ? '#00ff88' : '#ff4444';
-                h += '<tr>';
-                h += '<td>' + op.data + '</td>';
-                h += '<td style="color:' + corRes + '">' + op.resultado + '</td>';
-                h += '<td>$' + op.valor.toFixed(2) + '</td>';
-                h += '<td style="color:' + corLucro + '">$' + op.lucro.toFixed(2) + '</td>';
-                h += '<td style="font-size:8px">' + (op.estrategia || '--') + '</td>';
-                h += '</tr>';
-            }
-            h += '</table>';
+function fecharModal(){ document.getElementById('modalPix').classList.remove('active'); pixAtual=null; }
+function verRelatorio(){
+    var email=document.getElementById('emailRelatorio').value.trim();
+    if(!email){ alert('Digite o email!'); return; }
+    fetch('/relatorio?email='+email).then(r=>r.json()).then(d=>{
+        if(d.erro){ alert(d.erro); return; }
+        var h='<div class="relatorio-grid">'+
+        '<div class="relatorio-card"><div class="rlabel">⚡ VOLTS</div><div class="rvalue">'+(d.moedas||0)+'</div></div>'+
+        '<div class="relatorio-card"><div class="rlabel">📈 LUCRO TOTAL</div><div class="rvalue" style="color:'+(d.lucro_total>=0?'#00ff88':'#ff4444')+'">$'+(d.lucro_total||0).toFixed(2)+'</div></div>'+
+        '<div class="relatorio-card"><div class="rlabel">✅ WINS</div><div class="rvalue" style="color:#00ff88">'+(d.total_wins||0)+'</div></div>'+
+        '<div class="relatorio-card"><div class="rlabel">❌ LOSSES</div><div class="rvalue" style="color:#ff4444">'+(d.total_losses||0)+'</div></div>'+
+        '<div class="relatorio-card"><div class="rlabel">🔄 CICLOS</div><div class="rvalue">'+(d.total_ciclos||0)+'</div></div>'+
+        '<div class="relatorio-card"><div class="rlabel">💵 GASTO</div><div class="rvalue">$'+(d.total_gasto||0).toFixed(2)+'</div></div>'+
+        '<div class="relatorio-card"><div class="rlabel">💰 GANHO</div><div class="rvalue">$'+(d.total_ganho||0).toFixed(2)+'</div></div>'+
+        '<div class="relatorio-card"><div class="rlabel">📅 DIAS</div><div class="rvalue">'+(d.dias_ativos||0)+'</div></div>'+
+        '<div class="relatorio-card"><div class="rlabel">🎯 TAXA</div><div class="rvalue">'+(d.total_ciclos>0?((d.total_wins/d.total_ciclos)*100).toFixed(1):0)+'%</div></div>'+
+        '<div class="relatorio-card"><div class="rlabel">💰 BANCA</div><div class="rvalue">$'+(d.banca_atual||0).toFixed(2)+'</div></div>'+
+        '<div class="relatorio-card"><div class="rlabel">📅 CADASTRO</div><div class="rvalue" style="font-size:10px">'+(d.data_cadastro||'--')+'</div></div></div>';
+        if(d.historico_operacoes && d.historico_operacoes.length>0){
+            h+='<h4 style="margin-top:10px">📋 ÚLTIMAS OPERAÇÕES</h4><table class="historico-table"><tr><th>Data</th><th>Resultado</th><th>Valor</th><th>Lucro</th><th>Estratégia</th></tr>';
+            d.historico_operacoes.slice(-15).reverse().forEach(op=>{ h+='<tr><td>'+op.data+'</td><td style="color:'+(op.resultado=='WIN'?'#00ff88':'#ff4444')+'">'+op.resultado+'</td><td>$'+op.valor.toFixed(2)+'</td><td style="color:'+(op.lucro>=0?'#00ff88':'#ff4444')+'">$'+op.lucro.toFixed(2)+'</td><td style="font-size:8px">'+(op.estrategia||'--')+'</td></tr>'; });
+            h+='</table>';
         }
         document.getElementById('relatorioContent').innerHTML = h;
     });
 }
-
-function verRanking() {
+function verRanking(){
     document.getElementById('relatorioContent').innerHTML = '<p style="color:#ffd700;text-align:center">🏆 Carregando ranking...</p>';
-    fetch('/ranking')
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-        var h = '';
-        h += '<div style="background:#1a1a0a;border:2px solid #ffd700;border-radius:15px;padding:15px;margin-bottom:15px">';
-        h += '<p style="color:#ffd700;font-size:14px;font-weight:bold;text-align:center;margin-bottom:10px">📊 ESTATÍSTICAS GLOBAIS</p>';
-        h += '<div class="relatorio-grid">';
-        h += '<div class="relatorio-card"><div class="rlabel">👥 USUÁRIOS</div><div class="rvalue" style="color:#ffd700">' + d.stats.total_usuarios + '</div></div>';
-        h += '<div class="relatorio-card"><div class="rlabel">🔄 TOTAL OPS</div><div class="rvalue" style="color:#ffd700">' + d.stats.total_ops + '</div></div>';
-        h += '<div class="relatorio-card"><div class="rlabel">✅ WINS</div><div class="rvalue" style="color:#00ff88">' + d.stats.total_wins + '</div></div>';
-        h += '<div class="relatorio-card"><div class="rlabel">🎯 TAXA GLOBAL</div><div class="rvalue" style="color:#ffd700">' + d.stats.taxa_global + '%</div></div>';
-        h += '</div></div>';
-        h += '<p style="color:#ffd700;font-size:14px;font-weight:bold;text-align:center;margin-bottom:10px">🏆 TOP TRADERS</p>';
-        h += '<div style="background:#000;border:1px solid #333;border-radius:10px;overflow:hidden">';
-        h += '<table class="historico-table">';
-        h += '<tr><th>#</th><th>EMAIL</th><th>LUCRO</th><th>WINS</th><th>LOSS</th><th>TAXA</th><th>BANCA</th></tr>';
-        for(var i = 0; i < d.ranking.length && i < 20; i++) {
-            var u = d.ranking[i];
-            var cor = i === 0 ? '#ffd700' : (i === 1 ? '#c0c0c0' : (i === 2 ? '#cd7f32' : '#fff'));
-            var medalha = i === 0 ? '🥇' : (i === 1 ? '🥈' : (i === 2 ? '🥉' : (i + 1)));
-            h += '<tr>';
-            h += '<td style="color:' + cor + ';font-weight:bold">' + medalha + '</td>';
-            h += '<td style="color:#ccc;font-size:8px">' + (u.email || '---').substring(0,20) + '</td>';
-            h += '<td style="color:' + (u.lucro_total >= 0 ? '#00ff88' : '#ff4444') + '">$' + u.lucro_total.toFixed(2) + '</td>';
-            h += '<td style="color:#00ff88">' + u.total_wins + '</td>';
-            h += '<td style="color:#ff4444">' + u.total_losses + '</td>';
-            h += '<td style="color:#ffd700">' + u.taxa + '%</td>';
-            h += '<td style="color:#00ff88">$' + u.banca_atual.toFixed(2) + '</td>';
-            h += '</tr>';
-        }
-        h += '</table></div>';
+    fetch('/ranking').then(r=>r.json()).then(d=>{
+        var h='<div style="background:#1a1a0a;border:2px solid #ffd700;border-radius:15px;padding:15px;margin-bottom:15px"><p style="color:#ffd700;font-size:14px;font-weight:bold;text-align:center;margin-bottom:10px">📊 ESTATÍSTICAS GLOBAIS</p><div class="relatorio-grid">'+
+            '<div class="relatorio-card"><div class="rlabel">👥 USUÁRIOS</div><div class="rvalue" style="color:#ffd700">'+d.stats.total_usuarios+'</div></div>'+
+            '<div class="relatorio-card"><div class="rlabel">🔄 TOTAL OPS</div><div class="rvalue" style="color:#ffd700">'+d.stats.total_ops+'</div></div>'+
+            '<div class="relatorio-card"><div class="rlabel">✅ WINS</div><div class="rvalue" style="color:#00ff88">'+d.stats.total_wins+'</div></div>'+
+            '<div class="relatorio-card"><div class="rlabel">🎯 TAXA GLOBAL</div><div class="rvalue" style="color:#ffd700">'+d.stats.taxa_global+'%</div></div></div></div>'+
+            '<p style="color:#ffd700;font-size:14px;font-weight:bold;text-align:center;margin-bottom:10px">🏆 TOP TRADERS</p><div style="background:#000;border:1px solid #333;border-radius:10px;overflow:hidden"><table class="historico-table"><tr><th>#</th><th>EMAIL</th><th>LUCRO</th><th>WINS</th><th>LOSS</th><th>TAXA</th><th>BANCA</th></tr>';
+        d.ranking.forEach((u,i)=>{
+            var cor = i===0?'#ffd700':(i===1?'#c0c0c0':(i===2?'#cd7f32':'#fff'));
+            var medalha = i===0?'🥇':(i===1?'🥈':(i===2?'🥉':(i+1)));
+            h+='<tr><td style="color:'+cor+';font-weight:bold">'+medalha+'</td><td style="color:#ccc;font-size:8px">'+(u.email||'---').substring(0,20)+'</td><td style="color:'+(u.lucro_total>=0?'#00ff88':'#ff4444')+'">$'+u.lucro_total.toFixed(2)+'</td><td style="color:#00ff88">'+u.total_wins+'</td><td style="color:#ff4444">'+u.total_losses+'</td><td style="color:#ffd700">'+u.taxa+'%</td><td style="color:#00ff88">$'+u.banca_atual.toFixed(2)+'</td></tr>';
+        });
+        h+='</table></div>';
         document.getElementById('relatorioContent').innerHTML = h;
-    })
-    .catch(function(err) {
-        document.getElementById('relatorioContent').innerHTML = '<p style="color:#ff4444;text-align:center">Erro ao carregar ranking</p>';
-    });
+    }).catch(()=>{ document.getElementById('relatorioContent').innerHTML = '<p style="color:#ff4444;text-align:center">Erro ao carregar ranking</p>'; });
 }
-
 function atualizar() {
-    fetch('/status')
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
+    fetch('/status').then(r=>r.json()).then(d=>{
         if(d.banca) document.getElementById('banca').textContent = '$' + d.banca.toFixed(2);
-        if(d.lucro !== undefined) {
-            var el = document.getElementById('lucro');
-            el.textContent = '$' + d.lucro.toFixed(2);
-            el.style.color = d.lucro >= 0 ? '#00ff88' : '#ff4444';
-        }
+        if(d.lucro !== undefined){ var el=document.getElementById('lucro'); el.textContent='$'+d.lucro.toFixed(2); el.style.color=d.lucro>=0?'#00ff88':'#ff4444'; }
         if(d.ops !== undefined) document.getElementById('ops').textContent = d.ops;
         if(d.moedas !== undefined) document.getElementById('moedasSaldo').textContent = d.moedas;
         if(d.sinal) document.getElementById('sinal').textContent = d.sinal;
-        if(d.estrategia_nome) {
-            document.getElementById('estrategiaAtiva').textContent = d.estrategia_nome;
-            estrategiaSel = d.estrategia;
-        }
-        
-        // Atualiza a versão do bot na barra de status
-        if(d.bot_version) {
-            document.getElementById('botVersionDisplay').innerHTML = '⚡ TESLA 369 v' + d.bot_version;
-        }
-        
-        if(d.analise) {
+        if(d.estrategia_nome){ document.getElementById('estrategiaAtiva').textContent = d.estrategia_nome; estrategiaSel = d.estrategia; }
+        if(d.bot_version) document.getElementById('botVersionDisplay').innerHTML = '⚡ TESLA 369 v' + d.bot_version;
+        if(d.analise){
             document.getElementById('rsi').textContent = d.analise.rsi ? d.analise.rsi.toFixed(1) : '--';
             document.getElementById('mm5').textContent = d.analise.mm5 ? d.analise.mm5.toFixed(5) : '--';
             document.getElementById('mm10').textContent = d.analise.mm10 ? d.analise.mm10.toFixed(5) : '--';
@@ -982,191 +566,274 @@ function atualizar() {
             document.getElementById('fase').textContent = d.analise.fase || '--';
             document.getElementById('preco').textContent = d.analise.preco ? d.analise.preco.toFixed(5) : '--';
         }
-        if(d.logs) {
-            var terminal = document.getElementById('terminal');
-            terminal.innerHTML = d.logs;
-            terminal.scrollTop = terminal.scrollHeight;
-        }
-        
-        // Lógica de estado dos botões
-        if(d.rodando && !botAtivo) {
-            botAtivo = true;
-            document.getElementById('btnOperar').style.display = 'none';
-            document.getElementById('btnParar').style.display = 'inline-block';
-            document.getElementById('statusTexto').textContent = '🤖 Operando';
-            document.getElementById('statusDot').className = 'status-dot active';
-        } else if(!d.rodando && botAtivo) {
-            botAtivo = false;
-            if(conectadoIQ) {
-                document.getElementById('btnOperar').style.display = 'inline-block';
-                document.getElementById('btnOperar').disabled = false;
-                document.getElementById('btnOperar').textContent = '🚀 COMEÇAR OPERAR';
-                document.getElementById('btnParar').style.display = 'none';
-                document.getElementById('statusTexto').textContent = '🟢 Conectado';
-                document.getElementById('statusDot').className = 'status-dot active';
-            } else {
-                document.getElementById('btnOperar').style.display = 'none';
-                document.getElementById('btnParar').style.display = 'none';
-                document.getElementById('statusTexto').textContent = '⏸️ Desconectado';
-                document.getElementById('statusDot').className = 'status-dot inactive';
-            }
-        }
+        if(d.logs){ var terminal = document.getElementById('terminal'); terminal.innerHTML = d.logs; terminal.scrollTop = terminal.scrollHeight; }
+        if(d.rodando && !botAtivo){ botAtivo=true; document.getElementById('btnOperar').style.display='none'; document.getElementById('btnParar').style.display='inline-block'; document.getElementById('statusTexto').textContent='🤖 Operando'; document.getElementById('statusDot').className='status-dot active'; }
+        else if(!d.rodando && botAtivo){ botAtivo=false; if(conectadoIQ){ document.getElementById('btnOperar').style.display='inline-block'; document.getElementById('btnOperar').disabled=false; document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR'; document.getElementById('btnParar').style.display='none'; document.getElementById('statusTexto').textContent='🟢 Conectado'; document.getElementById('statusDot').className='status-dot active'; } else { document.getElementById('btnOperar').style.display='none'; document.getElementById('btnParar').style.display='none'; document.getElementById('statusTexto').textContent='⏸️ Desconectado'; document.getElementById('statusDot').className='status-dot inactive'; } }
     });
 }
-
-function iniciarChat() {
-    if(emailLogado) {
-        atualizarChat();
-        setInterval(atualizarChat, 5000);
-    }
-}
-
-function enviarChatMsg() {
+function iniciarChat(){ if(emailLogado){ atualizarChat(); setInterval(atualizarChat,5000); } }
+function enviarChatMsg(){
     var msg = document.getElementById('chatMsg').value.trim();
     if(!msg) return;
-    if(!emailLogado) {
-        alert('Conecte-se primeiro para enviar mensagens!');
-        return;
-    }
+    if(!emailLogado){ alert('Conecte-se primeiro para enviar mensagens!'); return; }
     var nome = emailLogado.split('@')[0];
-    fetch('/chat_enviar', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({nome: nome, msg: msg})
-    })
-    .then(function() {
-        document.getElementById('chatMsg').value = '';
-        atualizarChat();
-    });
+    fetch('/chat_enviar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:nome,msg:msg})}).then(()=>{ document.getElementById('chatMsg').value=''; atualizarChat(); });
 }
-
-function atualizarChat() {
-    fetch('/chat_mensagens')
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-        var html = '';
-        if(d.messages && d.messages.length > 0) {
-            var mensagens = d.messages.slice(-30);
-            for(var i = 0; i < mensagens.length; i++) {
-                var m = mensagens[i];
-                html += '<div style="margin-bottom:8px;border-bottom:1px solid #222;padding-bottom:5px">';
-                html += '<span style="color:#ffd700;font-weight:bold">' + (m.nome || 'Anon') + '</span> ';
-                html += '<span style="color:#888;font-size:9px">' + (m.hora || '') + '</span><br>';
-                html += '<span style="color:#ccc;font-size:11px">' + (m.msg || '') + '</span>';
-                html += '</div>';
-            }
-        } else {
-            html = '<p style="color:#888;text-align:center">💬 Nenhuma mensagem ainda. Seja o primeiro!</p>';
-        }
+function atualizarChat(){
+    fetch('/chat_mensagens').then(r=>r.json()).then(d=>{
+        var html='';
+        if(d.messages && d.messages.length>0){
+            d.messages.slice(-30).forEach(m=>{ html+='<div style="margin-bottom:8px;border-bottom:1px solid #222;padding-bottom:5px"><span style="color:#ffd700;font-weight:bold">'+(m.nome||'Anon')+'</span> <span style="color:#888;font-size:9px">'+(m.hora||'')+'</span><br><span style="color:#ccc;font-size:11px">'+(m.msg||'')+'</span></div>'; });
+        } else { html='<p style="color:#888;text-align:center">💬 Nenhuma mensagem ainda. Seja o primeiro!</p>'; }
         var chatDiv = document.getElementById('chatMensagens');
-        if(chatDiv) {
-            chatDiv.innerHTML = html;
-            chatDiv.scrollTop = chatDiv.scrollHeight;
-        }
+        if(chatDiv){ chatDiv.innerHTML=html; chatDiv.scrollTop=chatDiv.scrollHeight; }
         document.getElementById('chatOnline').textContent = '🟢 ' + (d.online || 1) + ' online';
     });
 }
 
+// 🔥 FUNÇÃO DE EFEITOS DAS SKINS - VERSÃO COMPLETA E PREPARADA PARA NOVAS SKINS 🔥
 function initSkinEffects() {
+    console.log("🎨 [SKIN] Inicializando efeitos visuais...");
+    // Helper para redimensionamento responsivo
+    function resizeCanvas(canvas, parent) {
+        if(!canvas || !parent) return;
+        canvas.width = parent.offsetWidth;
+        canvas.height = parent.offsetHeight;
+    }
+    // === MATRIX ===
     var matrixCanvas = document.getElementById('matrixCanvas');
     if(matrixCanvas && matrixCanvas.getContext) {
-        var ctx = matrixCanvas.getContext('2d');
-        var width = matrixCanvas.parentElement.offsetWidth;
-        var height = matrixCanvas.parentElement.offsetHeight;
-        matrixCanvas.width = width;
-        matrixCanvas.height = height;
-        var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*";
-        var fontSize = 14;
-        var columns = Math.floor(width / fontSize);
-        var drops = [];
-        for(var i = 0; i < columns; i++) drops[i] = Math.random() * -100;
-        function drawMatrix() {
-            if(!matrixCanvas || !matrixCanvas.getContext) return;
-            ctx.fillStyle = 'rgba(0,0,0,0.04)';
-            ctx.fillRect(0, 0, width, height);
-            ctx.fillStyle = '#00ff00';
-            ctx.font = fontSize + 'px monospace';
-            for(var i = 0; i < drops.length; i++) {
-                var text = chars[Math.floor(Math.random() * chars.length)];
-                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-                if(drops[i] * fontSize > height && Math.random() > 0.975) drops[i] = 0;
-                drops[i]++;
+        try {
+            var mctx = matrixCanvas.getContext('2d');
+            var mParent = matrixCanvas.parentElement;
+            resizeCanvas(matrixCanvas, mParent);
+            var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*()";
+            var fontSize = 14;
+            var columns = Math.floor(matrixCanvas.width / fontSize);
+            var drops = [];
+            for(var i = 0; i < columns; i++) drops[i] = Math.random() * -100;
+            function drawMatrix() {
+                if(!matrixCanvas || !matrixCanvas.getContext) return;
+                mctx.fillStyle = 'rgba(0,0,0,0.05)';
+                mctx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
+                mctx.fillStyle = '#00ff00';
+                mctx.font = fontSize + 'px monospace';
+                for(var i = 0; i < drops.length; i++) {
+                    var text = chars[Math.floor(Math.random() * chars.length)];
+                    mctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                    if(drops[i] * fontSize > matrixCanvas.height && Math.random() > 0.975) drops[i] = 0;
+                    drops[i]++;
+                }
+                requestAnimationFrame(drawMatrix);
             }
-            requestAnimationFrame(drawMatrix);
-        }
-        drawMatrix();
+            drawMatrix();
+            window.addEventListener('resize', () => { resizeCanvas(matrixCanvas, mParent); });
+        } catch(e) { console.warn("Matrix effect error:", e); }
     }
+    // === SAKURA ===
     var sakuraCanvas = document.getElementById('sakuraCanvas');
     if(sakuraCanvas && sakuraCanvas.getContext) {
-        var sCtx = sakuraCanvas.getContext('2d');
-        var sWidth = sakuraCanvas.parentElement.offsetWidth;
-        var sHeight = sakuraCanvas.parentElement.offsetHeight;
-        sakuraCanvas.width = sWidth;
-        sakuraCanvas.height = sHeight;
-        var petals = [];
-        for(var i = 0; i < 25; i++) {
-            petals.push({x: Math.random() * sWidth, y: Math.random() * sHeight, r: Math.random() * 4 + 2, speed: Math.random() * 1 + 0.5, angle: Math.random() * Math.PI * 2});
-        }
-        function drawSakura() {
-            if(!sakuraCanvas || !sakuraCanvas.getContext) return;
-            sCtx.clearRect(0, 0, sWidth, sHeight);
-            for(var i = 0; i < petals.length; i++) {
-                var p = petals[i];
-                sCtx.fillStyle = 'rgba(255,105,180,0.7)';
-                sCtx.beginPath();
-                sCtx.ellipse(p.x, p.y, p.r, p.r * 0.6, p.angle, 0, Math.PI * 2);
-                sCtx.fill();
-                p.y += p.speed;
-                if(p.y > sHeight) { p.y = -10; p.x = Math.random() * sWidth; }
+        try {
+            var sCtx = sakuraCanvas.getContext('2d');
+            var sParent = sakuraCanvas.parentElement;
+            resizeCanvas(sakuraCanvas, sParent);
+            var petals = [];
+            for(var i = 0; i < 30; i++) {
+                petals.push({ x: Math.random() * sakuraCanvas.width, y: Math.random() * sakuraCanvas.height, r: Math.random() * 5 + 2, speed: Math.random() * 0.8 + 0.3, angle: Math.random() * Math.PI * 2, rotSpeed: (Math.random() - 0.5) * 0.03 });
             }
-            requestAnimationFrame(drawSakura);
-        }
-        drawSakura();
+            function drawSakura() {
+                if(!sakuraCanvas || !sakuraCanvas.getContext) return;
+                sCtx.clearRect(0, 0, sakuraCanvas.width, sakuraCanvas.height);
+                for(var i = 0; i < petals.length; i++) {
+                    var p = petals[i];
+                    sCtx.save();
+                    sCtx.translate(p.x, p.y);
+                    sCtx.rotate(p.angle);
+                    sCtx.fillStyle = 'rgba(255,105,180,0.7)';
+                    sCtx.beginPath();
+                    sCtx.ellipse(0, 0, p.r, p.r * 0.6, 0, 0, Math.PI * 2);
+                    sCtx.fill();
+                    sCtx.restore();
+                    p.y += p.speed;
+                    p.angle += p.rotSpeed;
+                    if(p.y > sakuraCanvas.height + 20) { p.y = -20; p.x = Math.random() * sakuraCanvas.width; }
+                }
+                requestAnimationFrame(drawSakura);
+            }
+            drawSakura();
+            window.addEventListener('resize', () => { resizeCanvas(sakuraCanvas, sParent); });
+        } catch(e) { console.warn("Sakura effect error:", e); }
     }
+    // === DARK (partículas escuras) ===
     var darkCanvas = document.getElementById('darkCanvas');
     if(darkCanvas && darkCanvas.getContext) {
-        var dCtx = darkCanvas.getContext('2d');
-        var dWidth = darkCanvas.parentElement.offsetWidth;
-        var dHeight = darkCanvas.parentElement.offsetHeight;
-        darkCanvas.width = dWidth;
-        darkCanvas.height = dHeight;
-        var particles = [];
-        for(var i = 0; i < 40; i++) {
-            particles.push({x: Math.random() * dWidth, y: Math.random() * dHeight, r: Math.random() * 3 + 1, vx: (Math.random() - 0.5) * 0.5, vy: Math.random() * 0.5 + 0.2});
-        }
-        function drawDark() {
-            if(!darkCanvas || !darkCanvas.getContext) return;
-            dCtx.clearRect(0, 0, dWidth, dHeight);
-            for(var i = 0; i < particles.length; i++) {
-                var p = particles[i];
-                dCtx.beginPath();
-                dCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-                dCtx.fillStyle = 'rgba(153,51,255,0.5)';
-                dCtx.fill();
-                p.x += p.vx;
-                p.y += p.vy;
-                if(p.y > dHeight) { p.y = 0; p.x = Math.random() * dWidth; }
-                if(p.x > dWidth) p.x = 0;
-                if(p.x < 0) p.x = dWidth;
+        try {
+            var dCtx = darkCanvas.getContext('2d');
+            var dParent = darkCanvas.parentElement;
+            resizeCanvas(darkCanvas, dParent);
+            var particles = [];
+            for(var i = 0; i < 50; i++) {
+                particles.push({ x: Math.random() * darkCanvas.width, y: Math.random() * darkCanvas.height, r: Math.random() * 3 + 1, vx: (Math.random() - 0.5) * 0.5, vy: Math.random() * 0.5 + 0.2, alpha: Math.random() * 0.5 + 0.2 });
             }
-            requestAnimationFrame(drawDark);
-        }
-        drawDark();
+            function drawDark() {
+                if(!darkCanvas || !darkCanvas.getContext) return;
+                dCtx.clearRect(0, 0, darkCanvas.width, darkCanvas.height);
+                for(var i = 0; i < particles.length; i++) {
+                    var p = particles[i];
+                    dCtx.beginPath();
+                    dCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    dCtx.fillStyle = 'rgba(80,80,80,' + p.alpha + ')';
+                    dCtx.fill();
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    if(p.y > darkCanvas.height + 10) { p.y = -10; p.x = Math.random() * darkCanvas.width; }
+                    if(p.x > darkCanvas.width + 10) p.x = -10;
+                    if(p.x < -10) p.x = darkCanvas.width + 10;
+                }
+                requestAnimationFrame(drawDark);
+            }
+            drawDark();
+            window.addEventListener('resize', () => { resizeCanvas(darkCanvas, dParent); });
+        } catch(e) { console.warn("Dark effect error:", e); }
     }
+    // === OCEAN (ondas) ===
+    var oceanCanvas = document.getElementById('oceanCanvas');
+    if(oceanCanvas && oceanCanvas.getContext) {
+        try {
+            var octx = oceanCanvas.getContext('2d');
+            var oParent = oceanCanvas.parentElement;
+            resizeCanvas(oceanCanvas, oParent);
+            var offset = 0;
+            function drawOcean() {
+                if(!oceanCanvas || !oceanCanvas.getContext) return;
+                octx.clearRect(0, 0, oceanCanvas.width, oceanCanvas.height);
+                octx.beginPath();
+                octx.moveTo(0, oceanCanvas.height);
+                for(var x = 0; x < oceanCanvas.width; x += 5) {
+                    var y = oceanCanvas.height / 2 + Math.sin(x * 0.02 + offset) * 12 + Math.sin(x * 0.05 + offset * 1.3) * 8;
+                    octx.lineTo(x, y);
+                }
+                octx.lineTo(oceanCanvas.width, oceanCanvas.height);
+                octx.closePath();
+                octx.fillStyle = 'rgba(0,170,204,0.3)';
+                octx.fill();
+                offset += 0.03;
+                requestAnimationFrame(drawOcean);
+            }
+            drawOcean();
+            window.addEventListener('resize', () => { resizeCanvas(oceanCanvas, oParent); });
+        } catch(e) { console.warn("Ocean effect error:", e); }
+    }
+    // === FIRE ===
+    var fireCanvas = document.getElementById('fireCanvas');
+    if(fireCanvas && fireCanvas.getContext) {
+        try {
+            var fctx = fireCanvas.getContext('2d');
+            var fParent = fireCanvas.parentElement;
+            resizeCanvas(fireCanvas, fParent);
+            var fireParticles = [];
+            for(var i = 0; i < 50; i++) {
+                fireParticles.push({ x: Math.random() * fireCanvas.width, y: fireCanvas.height - Math.random() * 30, vx: (Math.random() - 0.5) * 0.8, vy: -Math.random() * 2 - 0.8, life: Math.random() * 40 + 20, maxLife: 60, size: Math.random() * 5 + 2 });
+            }
+            function drawFire() {
+                if(!fireCanvas || !fireCanvas.getContext) return;
+                fctx.clearRect(0, 0, fireCanvas.width, fireCanvas.height);
+                for(var i = 0; i < fireParticles.length; i++) {
+                    var p = fireParticles[i];
+                    var progress = p.life / p.maxLife;
+                    var gradient = fctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * progress);
+                    gradient.addColorStop(0, 'rgba(255,200,50,' + progress + ')');
+                    gradient.addColorStop(0.5, 'rgba(255,80,0,' + progress * 0.7 + ')');
+                    gradient.addColorStop(1, 'rgba(255,0,0,0)');
+                    fctx.beginPath();
+                    fctx.arc(p.x, p.y, p.size * progress, 0, Math.PI * 2);
+                    fctx.fillStyle = gradient;
+                    fctx.fill();
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.life--;
+                    if(p.life <= 0) {
+                        fireParticles[i] = { x: Math.random() * fireCanvas.width, y: fireCanvas.height - Math.random() * 10, vx: (Math.random() - 0.5) * 0.8, vy: -Math.random() * 2 - 0.8, life: Math.random() * 40 + 20, maxLife: 60, size: Math.random() * 5 + 2 };
+                    }
+                }
+                requestAnimationFrame(drawFire);
+            }
+            drawFire();
+            window.addEventListener('resize', () => { resizeCanvas(fireCanvas, fParent); });
+        } catch(e) { console.warn("Fire effect error:", e); }
+    }
+    // === SNOW / ICE ===
+    var snowCanvas = document.getElementById('snowCanvas');
+    if(snowCanvas && snowCanvas.getContext) {
+        try {
+            var snCtx = snowCanvas.getContext('2d');
+            var snParent = snowCanvas.parentElement;
+            resizeCanvas(snowCanvas, snParent);
+            var snowflakes = [];
+            for(var i = 0; i < 70; i++) {
+                snowflakes.push({ x: Math.random() * snowCanvas.width, y: Math.random() * snowCanvas.height, r: Math.random() * 3 + 1, speed: Math.random() * 0.8 + 0.3, wind: (Math.random() - 0.5) * 0.3, opacity: Math.random() * 0.6 + 0.3 });
+            }
+            function drawSnow() {
+                if(!snowCanvas || !snowCanvas.getContext) return;
+                snCtx.clearRect(0, 0, snowCanvas.width, snowCanvas.height);
+                for(var i = 0; i < snowflakes.length; i++) {
+                    var f = snowflakes[i];
+                    snCtx.beginPath();
+                    snCtx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+                    snCtx.fillStyle = 'rgba(255,255,255,' + f.opacity + ')';
+                    snCtx.fill();
+                    f.y += f.speed;
+                    f.x += f.wind;
+                    if(f.y > snowCanvas.height + 10) { f.y = -10; f.x = Math.random() * snowCanvas.width; }
+                }
+                requestAnimationFrame(drawSnow);
+            }
+            drawSnow();
+            window.addEventListener('resize', () => { resizeCanvas(snowCanvas, snParent); });
+        } catch(e) { console.warn("Snow effect error:", e); }
+    }
+    // === THUNDER ===
+    var thunderCanvas = document.getElementById('thunderCanvas');
+    if(thunderCanvas && thunderCanvas.getContext) {
+        try {
+            var tCtx = thunderCanvas.getContext('2d');
+            var tParent = thunderCanvas.parentElement;
+            resizeCanvas(thunderCanvas, tParent);
+            function drawThunder() {
+                if(!thunderCanvas || !thunderCanvas.getContext) return;
+                tCtx.clearRect(0, 0, thunderCanvas.width, thunderCanvas.height);
+                if(Math.random() < 0.03) {
+                    tCtx.strokeStyle = 'rgba(255,255,100,0.8)';
+                    tCtx.lineWidth = 2;
+                    tCtx.beginPath();
+                    var x = Math.random() * thunderCanvas.width;
+                    tCtx.moveTo(x, 0);
+                    for(var y = 0; y < thunderCanvas.height; y += 25) {
+                        x += (Math.random() - 0.5) * 50;
+                        tCtx.lineTo(x, y);
+                    }
+                    tCtx.stroke();
+                }
+                requestAnimationFrame(drawThunder);
+            }
+            drawThunder();
+            window.addEventListener('resize', () => { resizeCanvas(thunderCanvas, tParent); });
+        } catch(e) { console.warn("Thunder effect error:", e); }
+    }
+    console.log("🎨 [SKIN] Efeitos visuais inicializados com sucesso!");
 }
 
+// Inicialização
 window.onload = function() {
     renderPlanos();
-    fetch('/status')
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-        if(d.conectado && d.email) {
+    fetch('/status').then(r=>r.json()).then(d=>{
+        if(d.conectado && d.email){
             conectadoIQ = true;
             emailLogado = d.email;
             document.getElementById('email').value = d.email;
             document.getElementById('btnConectar').style.display = 'none';
             document.getElementById('btnDesconectar').style.display = 'inline-block';
-            if(d.rodando) {
+            if(d.rodando){
                 botAtivo = true;
                 document.getElementById('btnOperar').style.display = 'none';
                 document.getElementById('btnParar').style.display = 'inline-block';
@@ -1177,17 +844,15 @@ window.onload = function() {
             }
             document.getElementById('statusDot').className = 'status-dot active';
             document.getElementById('moedasSaldo').textContent = d.moedas || 0;
-            if(d.bot_version) {
-                document.getElementById('botVersionDisplay').innerHTML = '⚡ TESLA 369 v' + d.bot_version;
-            }
-            intervalo = setInterval(atualizar, 2000);
+            if(d.bot_version) document.getElementById('botVersionDisplay').innerHTML = '⚡ TESLA 369 v' + d.bot_version;
+            intervalo = setInterval(atualizar,2000);
             atualizar();
             iniciarChat();
         }
     });
-    setInterval(atualizarChat, 5000);
+    setInterval(atualizarChat,5000);
     setTimeout(initSkinEffects, 300);
 };
 </script>
 </body>
-                                                  </html>
+                                                                  </html>
