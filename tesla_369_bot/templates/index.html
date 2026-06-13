@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ TESLA 369 BOT v11.0.0 Cloud</title>
+    <title>⚡ TESLA 369 BOT v15.0.0 Cloud</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{background:{{ COR_FUNDO }};color:{{ COR_TEXTO }};font-family:'Courier New',monospace;padding:10px;min-height:100vh}
@@ -110,7 +110,7 @@
 <div class="container">
     <div class="header">
         {{ HEADER_EXTRA | safe }}
-        <h1>⚡ TESLA 369 BOT v11.0.0 ⚡</h1>
+        <h1>⚡ TESLA 369 BOT v15.0.0 ⚡</h1>
         <p>O PODER DOS NÚMEROS - SISTEMA CLOUD</p>
     </div>
     <div class="mantra">🌀 O DINHEIRO VEM ATÉ MIM DE TODOS OS LADOS 🌀</div>
@@ -178,7 +178,7 @@
         
         <div class="barra-status">
             <span><span class="status-dot inactive" id="statusDot"></span> <span id="statusTexto">⏸️ Desconectado</span></span>
-            <span>⚡ TESLA 369 v11.0.0</span>
+            <span id="botVersionDisplay">⚡ TESLA 369 v{{ BOT_VERSION }}</span>
             <span>GALE 2 | SG: 1 WIN | ☁️ CLOUD</span>
         </div>
     </div>
@@ -329,7 +329,7 @@
         <div style="background:linear-gradient(135deg,#1a1a2e,#0d0d1a);border:2px solid #25D366;border-radius:15px;padding:20px;margin:15px 0;text-align:center">
             <p style="color:#25D366;font-size:16px;font-weight:bold;margin-bottom:10px">💬 FALE COM O DESENVOLVEDOR</p>
             <p style="color:#ccc;font-size:12px;margin:5px 0">📧 <span style="color:#00ff88">gyn.bet.fc@gmail.com</span></p>
-            <a href="https://wa.me/5562981728653?text=Ola!%20Vim%20do%20Tesla%20369%20Bot%20v11.0.0%20e%20gostaria%20de%20saber%20mais!" target="_blank" style="text-decoration:none">
+            <a href="https://wa.me/5562981728653?text=Ola!%20Vim%20do%20Tesla%20369%20Bot%20v15.0.0%20e%20gostaria%20de%20saber%20mais!" target="_blank" style="text-decoration:none">
                 <button style="background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;padding:14px 28px;border-radius:12px;font-size:15px;font-weight:bold;cursor:pointer;margin-top:10px;font-family:monospace;box-shadow:0 4px 15px rgba(37,211,102,0.3);transition:all 0.3s ease" onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 6px 20px rgba(37,211,102,0.5)'" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 4px 15px rgba(37,211,102,0.3)'">💬 WHATSAPP</button>
             </a>
             <p style="color:#888;font-size:10px;margin-top:10px">Duvidas, sugestoes ou interesse em recursos premium? Fale comigo!</p>
@@ -479,13 +479,18 @@ function desconectarIQ() {
         alert('⚠️ Pare o bot primeiro antes de desconectar!');
         return;
     }
-    if(!confirm('Deseja realmente desconectar da IQ Option?')) return;
+    if(!confirm('Deseja realmente desconectar da IQ Option? O servidor será encerrado.')) return;
     fetch('/parar', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({desconectar: true})
     })
-    .then(function() {
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if(d.shutdown) {
+            alert('🔌 Desconectado! O servidor será encerrado.');
+            setTimeout(function() { window.close(); }, 1000);
+        }
         conectadoIQ = false;
         botAtivo = false;
         document.getElementById('btnConectar').style.display = 'inline-block';
@@ -497,8 +502,6 @@ function desconectarIQ() {
         document.getElementById('statusTexto').textContent = '⏸️ Desconectado';
         document.getElementById('statusDot').className = 'status-dot inactive';
         if(intervalo) clearInterval(intervalo);
-        alert('🔌 Desconectado da IQ Option');
-        setTimeout(function() { location.reload(); }, 500);
     })
     .catch(function(err) {
         alert('Erro ao desconectar: ' + err.message);
@@ -525,6 +528,7 @@ function comecarOperar() {
             btnOperar.style.display = 'none';
             document.getElementById('btnParar').style.display = 'inline-block';
             document.getElementById('statusTexto').textContent = '🤖 Operando';
+            document.getElementById('statusDot').className = 'status-dot active';
             document.getElementById('moedasSaldo').textContent = d.moedas;
             alert('🚀 Bot iniciado! Aguardando sinais...');
         } else {
@@ -532,11 +536,6 @@ function comecarOperar() {
             btnOperar.disabled = false;
             btnOperar.textContent = '🚀 COMEÇAR OPERAR';
         }
-    })
-    .catch(function(err) {
-        alert('Erro: ' + err.message);
-        btnOperar.disabled = false;
-        btnOperar.textContent = '🚀 COMEÇAR OPERAR';
     });
 }
 
@@ -548,7 +547,7 @@ function pararBot() {
     fetch('/parar', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({})
+        body: JSON.stringify({desconectar: false})
     })
     .then(function(r) { return r.json(); })
     .then(function(d) {
@@ -558,16 +557,11 @@ function pararBot() {
         document.getElementById('btnOperar').textContent = '🚀 COMEÇAR OPERAR';
         document.getElementById('btnParar').style.display = 'none';
         document.getElementById('statusTexto').textContent = '🟢 Conectado';
+        document.getElementById('statusDot').className = 'status-dot active';
         btnParar.disabled = false;
         btnParar.textContent = '⏹️ PARAR';
         alert('⏹️ Bot parado com sucesso!');
         atualizar();
-        setTimeout(function() { location.reload(); }, 500);
-    })
-    .catch(function(err) {
-        alert('Erro ao parar: ' + err.message);
-        btnParar.disabled = false;
-        btnParar.textContent = '⏹️ PARAR';
     });
 }
 
@@ -973,6 +967,12 @@ function atualizar() {
             document.getElementById('estrategiaAtiva').textContent = d.estrategia_nome;
             estrategiaSel = d.estrategia;
         }
+        
+        // Atualiza a versão do bot na barra de status
+        if(d.bot_version) {
+            document.getElementById('botVersionDisplay').innerHTML = '⚡ TESLA 369 v' + d.bot_version;
+        }
+        
         if(d.analise) {
             document.getElementById('rsi').textContent = d.analise.rsi ? d.analise.rsi.toFixed(1) : '--';
             document.getElementById('mm5').textContent = d.analise.mm5 ? d.analise.mm5.toFixed(5) : '--';
@@ -987,17 +987,29 @@ function atualizar() {
             terminal.innerHTML = d.logs;
             terminal.scrollTop = terminal.scrollHeight;
         }
+        
+        // Lógica de estado dos botões
         if(d.rodando && !botAtivo) {
             botAtivo = true;
             document.getElementById('btnOperar').style.display = 'none';
             document.getElementById('btnParar').style.display = 'inline-block';
             document.getElementById('statusTexto').textContent = '🤖 Operando';
+            document.getElementById('statusDot').className = 'status-dot active';
         } else if(!d.rodando && botAtivo) {
             botAtivo = false;
-            document.getElementById('btnOperar').style.display = 'inline-block';
-            document.getElementById('btnOperar').disabled = false;
-            document.getElementById('btnParar').style.display = 'none';
-            document.getElementById('statusTexto').textContent = '🟢 Conectado';
+            if(conectadoIQ) {
+                document.getElementById('btnOperar').style.display = 'inline-block';
+                document.getElementById('btnOperar').disabled = false;
+                document.getElementById('btnOperar').textContent = '🚀 COMEÇAR OPERAR';
+                document.getElementById('btnParar').style.display = 'none';
+                document.getElementById('statusTexto').textContent = '🟢 Conectado';
+                document.getElementById('statusDot').className = 'status-dot active';
+            } else {
+                document.getElementById('btnOperar').style.display = 'none';
+                document.getElementById('btnParar').style.display = 'none';
+                document.getElementById('statusTexto').textContent = '⏸️ Desconectado';
+                document.getElementById('statusDot').className = 'status-dot inactive';
+            }
         }
     });
 }
@@ -1165,6 +1177,9 @@ window.onload = function() {
             }
             document.getElementById('statusDot').className = 'status-dot active';
             document.getElementById('moedasSaldo').textContent = d.moedas || 0;
+            if(d.bot_version) {
+                document.getElementById('botVersionDisplay').innerHTML = '⚡ TESLA 369 v' + d.bot_version;
+            }
             intervalo = setInterval(atualizar, 2000);
             atualizar();
             iniciarChat();
@@ -1175,4 +1190,4 @@ window.onload = function() {
 };
 </script>
 </body>
-                                                                                                                                         </html>
+                                                  </html>
