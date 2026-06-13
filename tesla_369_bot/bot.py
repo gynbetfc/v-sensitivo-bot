@@ -143,15 +143,16 @@ def calcular_media_movel(velas, periodo):
 # ============= SKINS NO FIREBASE =============
 
 def get_skins_fallback():
+    # SKIN PADRAO AGORA E THUNDER!
     return {
         'skin_padrao': {
-            'id': 'skin_padrao', 'nome': '⚡ TESLA PADRAO', 'desc': 'Tema escuro com raios dourados',
-            'preco_moedas': 0, 'categoria': 'basica',
-            'cor_fundo': '#0a0a1a', 'cor_panel': '#1a1a3e', 'cor_destaque': '#ffd700', 'cor_texto': '#fff',
-            'cor_botao': 'linear-gradient(135deg,#cc8800,#ffd700)', 'cor_tab_ativa': '#ffd700',
-            'cor_header_bg': 'linear-gradient(135deg,#1a0000,#331100,#553300,#331100,#1a0000)', 'cor_header_borda': '#ffd700',
-            'header_extra': '<div class="lightning"></div>', 
-            'css_extra': '.lightning{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:150px;height:150px;background:radial-gradient(circle at 30% 30%,rgba(255,215,0,0.3) 0%,rgba(255,165,0,0.15) 30%,transparent 100%);border-radius:50%;z-index:0;animation:glow 3s ease-in-out infinite;pointer-events:none}@keyframes glow{0%,100%{box-shadow:0 0 30px rgba(255,215,0,0.3)}50%{box-shadow:0 0 50px rgba(255,165,0,0.5)}}.lightning::after{content:"⚡";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:50px;animation:float 2s ease-in-out infinite}@keyframes float{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-60%) scale(1.1)}}'
+            'id': 'skin_padrao', 'nome': '⚡ TESLA THUNDER', 'desc': 'Raios eletricos na tela - Skin Padrao',
+            'preco_moedas': 0, 'categoria': 'lendaria',
+            'cor_fundo': '#000011', 'cor_panel': '#0a0a1a', 'cor_destaque': '#ffff00', 'cor_texto': '#ffffff',
+            'cor_botao': 'linear-gradient(135deg,#aaaa00,#ffff00)', 'cor_tab_ativa': '#ffff00',
+            'cor_header_bg': 'linear-gradient(135deg,#000011,#111122,#222244,#111122,#000011)', 'cor_header_borda': '#ffff00',
+            'header_extra': '<canvas id="thunderCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none"></canvas>',
+            'css_extra': 'body{background:#000011!important}.header{border-color:#ffff00!important;box-shadow:0 0 50px rgba(255,255,0,0.3)}'
         }
     }
 
@@ -409,7 +410,7 @@ def executar_ciclo(direcao):
                 if not bot_rodando:
                     return False
                 time.sleep(1)
-            
+
             # Verifica resultado comparando saldo
             saldo_depois = API.get_balance()
             lucro_liquido = round(saldo_depois - saldo_antes, 2)
@@ -734,7 +735,6 @@ def parar():
     if data.get('desconectar'):
         conectado_iq = False
         add_log("🔌 Desconectado e finalizando servidor...", 'info')
-        # Encerra o servidor Flask após um pequeno delay
         def shutdown_server():
             time.sleep(1)
             os.kill(os.getpid(), signal.SIGTERM)
@@ -923,6 +923,7 @@ if __name__ == '__main__':
     print("✅ ENTRADA: guarda ID da ordem (referencia)")
     print("✅ RESULTADO: comparacao de saldo APOS 60 segundos")
     print("✅ GALES: nova ordem, novo saldo, nova verificacao")
+    print("✅ SKIN PADRAO: TESLA THUNDER (raios)")
     print("✅ SEM TIMESTAMP - SEM CRONOMETROS DESNECESSARIOS")
     print("=" * 70)
 
