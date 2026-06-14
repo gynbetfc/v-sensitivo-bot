@@ -228,10 +228,10 @@ def carregar_informacoes_estrategias():
     except Exception as e:
         print(f"⚠️ Erro ao carregar estrategias: {e}")
 
-    fallback = {'v_sensitivo': {'nome': 'V SENSITIVO', 'desc': 'Estrategia padrao do Tesla 369', 'preco_moedas': 0, 'timeframe': 60, 'gratis': True}}
-    cache_estrategias_info["data"] = fallback
-    cache_estrategias_info["timestamp"] = agora
-    return fallback
+    #fallback = {'v_sensitivo': {'nome': 'V SENSITIVO', 'desc': 'Estrategia padrao do Tesla 369', 'preco_moedas': 0, 'timeframe': 60, 'gratis': True}}
+    #cache_estrategias_info["data"] = fallback
+    #cache_estrategias_info["timestamp"] = agora
+    #return fallback
 
 def carregar_estrategia_do_firebase(nome_estrategia):
     try:
