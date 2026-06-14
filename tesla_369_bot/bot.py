@@ -290,8 +290,8 @@ def criar_usuario(email):
         'email': email, 'moedas': 12, 'moedas_ganhas_hoje': str(datetime.now())[:10],
         'total_ciclos': 0, 'total_wins': 0, 'total_losses': 0, 'total_gasto': 0.0, 'total_ganho': 0.0,
         'lucro_total': 0.0, 'banca_atual': 0.0, 'data_cadastro': str(datetime.now())[:19],
-        'historico_operacoes': [], 'dias_ativos': 0, 'skin_atual': 'skin_padrao',
-        'skins_compradas': ['skin_padrao'], 'estrategia_atual': 'v_sensitivo', 'estrategias_compradas': []
+        'historico_operacoes': [], 'dias_ativos': 0, 'skin_atual': 'THUNDER',
+        'skins_compradas': ['THUNDER'], 'estrategia_atual': '', 'estrategias_compradas': []
     }
     salvar_usuario(email, dados)
     return dados
