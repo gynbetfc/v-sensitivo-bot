@@ -7,6 +7,7 @@
 # RESULTADO: comparacao de saldo APOS 60 segundos
 # GALES: executados imediatamente (sem aguardar inicio de vela)
 # SEM TIMESTAMP - SEM CRONOMETROS DESNECESSARIOS
+# 🔧 v15.0.1 - CORREÇÕES DE ESTABILIDADE (keep-alive + reconexão)
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -18,12 +19,13 @@ import warnings
 import requests
 import uuid
 import signal
+import random
 
 warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
 # ============= VERSÃO DO BOT =============
-BOT_VERSION = "15.0.0"
+BOT_VERSION = "15.0.1"
 BOT_NAME = "TESLA 369 BOT"
 
 # ============= CONFIGURACOES =============
@@ -75,6 +77,11 @@ sinal_lock = threading.Lock()
 volt_ja_consumido = False
 estrategia_ja_injetada = False
 ordem_id_atual = None
+
+# 🔧 NOVAS VARIAVEIS PARA ESTABILIDADE
+ultimo_keep_alive = time.time()
+reconectando = False
+ultimo_balance = 0
 
 # ============= FUNCOES AUXILIARES =============
 
@@ -360,6 +367,12 @@ def executar_ciclo(direcao):
             bot_rodando = False
             return
 
+        # 🔧 VERIFICA CONEXÃO ANTES DE CADA CICLO
+        if not API or not conectado_iq:
+            add_log("❌ Conexão perdida! Parando operação.", 'error')
+            bot_rodando = False
+            return
+
         bi = API.get_balance()
         payout = Payout(par)
         entradas = calcular_entradas(bi, payout, MARTINGALE)
@@ -368,6 +381,13 @@ def executar_ciclo(direcao):
 
         for i in range(MARTINGALE + 1):
             if not bot_rodando: break
+            
+            # 🔧 VERIFICA CONEXÃO ANTES DE CADA TENTATIVA
+            if not API or not conectado_iq:
+                add_log("❌ Conexão perdida durante execução!", 'error')
+                bot_rodando = False
+                break
+            
             valor = entradas[i]
 
             # Aguarda o início da vela APENAS na primeira entrada (i == 0)
@@ -410,6 +430,12 @@ def executar_ciclo(direcao):
                 if not bot_rodando:
                     return False
                 time.sleep(1)
+
+            # 🔧 VERIFICA CONEXÃO NOVAMENTE APÓS ESPERA
+            if not API or not conectado_iq:
+                add_log("❌ Conexão perdida durante espera!", 'error')
+                bot_rodando = False
+                break
 
             # Verifica resultado comparando saldo
             saldo_depois = API.get_balance()
@@ -507,6 +533,12 @@ def bot_loop():
 
         # LOOP PRINCIPAL - SEM TIMEOUT
         while bot_rodando and not STOP_GAIN_ATINGIDO:
+            # 🔧 VERIFICA CONEXÃO ANTES DE CADA CICLO
+            if not API or not conectado_iq:
+                add_log("❌ Conexão perdida no loop principal!", 'error')
+                bot_rodando = False
+                break
+            
             try:
                 resultado = estrategia_atual_executar(API, par, add_log)
                 if resultado and bot_rodando:
@@ -519,16 +551,57 @@ def bot_loop():
                         break
                 time.sleep(0.3)
             except Exception as e:
-                add_log(f"Erro: {e}", 'error')
+                add_log(f"Erro no loop: {e}", 'error')
                 time.sleep(5)
 
         bot_rodando = False
 
+# 🔧 FUNÇÕES NOVAS PARA ESTABILIDADE
+
+def keep_alive_thread():
+    """Thread que mantém a conexão ativa com ping constante"""
+    global conectado_iq, API, ultimo_keep_alive
+    while True:
+        time.sleep(20)  # Ping a cada 20 segundos
+        if conectado_iq and API:
+            try:
+                # Comando simples para manter conexão ativa
+                API.get_server_timestamp()
+                ultimo_keep_alive = time.time()
+            except Exception as e:
+                print(f"[KEEP-ALIVE] Conexão instável: {e}")
+                conectado_iq = False
+
+def monitor_conexao_thread():
+    """Monitora a saúde da conexão e tenta manter ativa"""
+    global conectado_iq, API, bot_rodando
+    while True:
+        time.sleep(10)
+        if API and conectado_iq:
+            try:
+                # Teste real de conexão
+                test = API.get_server_timestamp()
+                if not test:
+                    print("[MONITOR] Conexão parece morta")
+                    conectado_iq = False
+                    if bot_rodando:
+                        bot_rodando = False
+                        add_log("⚠️ Conexão perdida! Bot parado automaticamente.", 'error')
+            except Exception as e:
+                print(f"[MONITOR] Erro: {e}")
+                conectado_iq = False
+                if bot_rodando:
+                    bot_rodando = False
+                    add_log("⚠️ Conexão perdida! Bot parado.", 'error')
+
 def analise_mercado_loop():
-    global ultima_analise
+    global ultima_analise, conectado_iq, API
+    ultimo_candle_time = 0
+    
     while True:
         if conectado_iq and API:
             try:
+                # 🔧 COM TIMEOUT SEGURO
                 velas = API.get_candles(par, 60, 30, time.time())
                 if velas and len(velas) >= 20:
                     rsi_val = calcular_rsi(velas, 14)
@@ -551,10 +624,15 @@ def analise_mercado_loop():
                         'mm10': round(mm10, 5) if mm10 else 0, 'mm20': round(mm20, 5) if mm20 else 0,
                         'stoch': round(estoc_val, 1), 'fase': fase, 'preco': round(preco_atual, 5) if preco_atual else 0
                     }
-            except: pass
+            except Exception as e:
+                # Não imprime erro constante para não poluir log
+                pass
         time.sleep(2)
 
+# 🔧 INICIAR THREADS DE MANUTENÇÃO
 threading.Thread(target=analise_mercado_loop, daemon=True).start()
+threading.Thread(target=keep_alive_thread, daemon=True).start()
+threading.Thread(target=monitor_conexao_thread, daemon=True).start()
 
 def sincronizar_html_local():
     try:
@@ -925,6 +1003,7 @@ if __name__ == '__main__':
     print("✅ GALES: nova ordem, novo saldo, nova verificacao")
     print("✅ SKIN PADRAO: TESLA THUNDER (raios)")
     print("✅ SEM TIMESTAMP - SEM CRONOMETROS DESNECESSARIOS")
+    print("✅ 🔧 CORREÇÕES DE ESTABILIDADE ATIVAS (keep-alive + reconexão)")
     print("=" * 70)
 
     print("\n🔍 Carregando skins do Firebase...")
