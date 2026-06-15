@@ -23,7 +23,7 @@ warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
 # ============= VERSÃO DO BOT =============
-BOT_VERSION = "15.0.2"
+BOT_VERSION = "15.1.3"
 BOT_NAME = "TESLA 369 BOT"
 
 # ============= CONFIGURACOES =============
@@ -290,8 +290,8 @@ def criar_usuario(email):
         'email': email, 'moedas': 12, 'moedas_ganhas_hoje': str(datetime.now())[:10],
         'total_ciclos': 0, 'total_wins': 0, 'total_losses': 0, 'total_gasto': 0.0, 'total_ganho': 0.0,
         'lucro_total': 0.0, 'banca_atual': 0.0, 'data_cadastro': str(datetime.now())[:19],
-        'historico_operacoes': [], 'dias_ativos': 0, 'skin_atual': '01_thunder',
-        'skins_compradas': ['01_thunder'], 'estrategia_atual': 'v-sensitivo', 'estrategias_compradas': []
+        'historico_operacoes': [], 'dias_ativos': 0, 'skin_atual': 'skin_padrao',
+        'skins_compradas': ['skin_padrao'], 'estrategia_atual': 'v_sensitivo', 'estrategias_compradas': []
     }
     salvar_usuario(email, dados)
     return dados
@@ -988,10 +988,10 @@ if __name__ == '__main__':
     print("=" * 70)
     print(f"⚡ {BOT_NAME} v{BOT_VERSION} - SEM ESTRATÉGIAS HARCODED ⚡")
     print("✅ Firebase: SKINS e ESTRATEGIAS carregadas da nuvem")
-    print("❌ SEM FALLBACK - Tudo carregado do Firebase")
-    print("✅ ENTRADA: guarda ID da ordem (referencia)")
-    print("✅ RESULTADO: comparacao de saldo APOS 60 segundos")
-    print("✅ GALES: nova ordem, novo saldo, nova verificacao")
+    #print("❌ SEM FALLBACK - Tudo carregado do Firebase")
+    #print("✅ ENTRADA: guarda ID da ordem (referencia)")
+    #print("✅ RESULTADO: comparacao de saldo APOS 60 segundos")
+    #print("✅ GALES: nova ordem, novo saldo, nova verificacao")
     print("=" * 70)
 
     print("\n🔍 Carregando skins do Firebase...")
