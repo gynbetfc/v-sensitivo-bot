@@ -49,7 +49,7 @@
         .status-dot.active{background:#00ff88;animation:pulse 1s infinite}.status-dot.inactive{background:#888}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
         @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-        .planos-grid,.skins-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:10px}
+        .planos-grid,.skins-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:10px}
         .plano-card,.skin-card{background:linear-gradient(135deg,#111122,#0a0a15);padding:15px;border-radius:12px;border:2px solid #1a1a2e;text-align:center;cursor:pointer;transition:all 0.3s ease}
         .plano-card:hover,.skin-card:hover{transform:translateY(-5px);border-color:{{ COR_DESTAQUE }};box-shadow:0 10px 20px rgba(0,0,0,0.3)}
         .plano-card.selecionado,.skin-card.selecionado{border-color:#ffd700!important;box-shadow:0 0 20px rgba(255,215,0,0.4)}
@@ -92,7 +92,6 @@
         .loja-sub-panel{display:none;animation:fadeIn 0.4s ease}
         .loja-sub-panel.active{display:block}
         .canvas-full{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-2;pointer-events:none}
-        .canvas-full canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
         .canvas-banner{position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none}
         .effect-element{position:absolute;pointer-events:none;z-index:2}
         .pix-copiavel{background:#000;color:#00ff88;padding:10px;border-radius:8px;font-size:9px;word-break:break-all;margin:10px 0;cursor:pointer;transition:all 0.3s}
@@ -105,45 +104,6 @@
         .btn-comprado{background:linear-gradient(135deg,#1a1a2e,#0d0d1a);color:#00ff88;border:1px solid #00ff8844;cursor:default}
         .btn-usar{background:linear-gradient(135deg,#006699,#3399cc);color:#fff}
         .skin-card .btn{width:100%;margin-top:8px}
-        /* Toast notifications */
-        #toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 10000;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            pointer-events: none;
-        }
-        .toast {
-            min-width: 280px;
-            padding: 16px 20px;
-            border-radius: 12px;
-            color: #fff;
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            animation: toastSlideIn 0.4s ease forwards, toastFadeOut 0.4s 3.6s forwards;
-            opacity: 0;
-            transform: translateX(100%);
-        }
-        .toast.win { background: linear-gradient(135deg, #00aa44, #00cc66); border-left: 5px solid #00ff88; }
-        .toast.loss { background: linear-gradient(135deg, #cc0000, #ff4444); border-left: 5px solid #ff6666; }
-        .toast.gale { background: linear-gradient(135deg, #cc8800, #ffaa00); border-left: 5px solid #ffd700; }
-        .toast.info { background: linear-gradient(135deg, #0066cc, #3399ff); border-left: 5px solid #66ccff; }
-        .toast.error { background: linear-gradient(135deg, #aa0000, #ff0000); border-left: 5px solid #ff6666; }
-        @keyframes toastSlideIn {
-            from { transform: translateX(120%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes toastFadeOut {
-            from { opacity: 1; }
-            to { opacity: 0; transform: translateY(-20px); }
-        }
     </style>
 </head>
 <body>
@@ -276,9 +236,6 @@
 
 <div class="modal-overlay" id="modalPix"><div class="modal-pagamento"><h3>💳 Pagamento PIX</h3><div id="pixContent"><p style="color:#888">Carregando QR Code...</p></div><button class="btn-fechar" onclick="fecharModal()">❌ Fechar</button></div></div>
 
-<!-- Toast Container -->
-<div id="toast-container"></div>
-
 <script>
 var PLANOS = [{{ PLANOS_JSON | safe }}];
 var intervalo = null;
@@ -289,7 +246,6 @@ var planoSelecionado = 0;
 var pixAtual = null;
 var estrategiaSel = 'v_sensitivo';
 var valorEstimadoAtual = 0;
-var activeSkinEffect = null;
 
 function mostrarLojaCategoria(categoria) {
     var botoes = document.querySelectorAll('.loja-cat-btn');
@@ -323,7 +279,7 @@ function openTab(tab) {
     if(tab == 'relatorio' && emailLogado) { document.getElementById('emailRelatorio').value = emailLogado; verRelatorio(); }
     if(tab == 'loja') mostrarLojaCategoria('volts');
     if(tab == 'estrategias') {
-        if(botAtivo){ showToast('⚠️ Pare o bot antes de trocar de estratégia!', 'error'); openTab('bot'); return; }
+        if(botAtivo){ alert('⚠️ Pare o bot antes de trocar de estratégia!'); openTab('bot'); return; }
         renderEstrategias();
     }
 }
@@ -348,7 +304,7 @@ function conectarIQ() {
     var email = document.getElementById('email').value.trim();
     var senha = document.getElementById('senha').value.trim();
     var tipo = document.getElementById('tipo').value;
-    if(!email || !senha){ showToast('Preencha email e senha!', 'error'); return; }
+    if(!email || !senha){ alert('Preencha email e senha!'); return; }
     emailLogado = email;
     var btnConectar = document.getElementById('btnConectar');
     btnConectar.disabled = true;
@@ -367,17 +323,17 @@ function conectarIQ() {
             intervalo = setInterval(atualizar,2000);
             atualizar();
             iniciarChat();
-            showToast('✅ Conectado com sucesso!', 'info');
+            alert('✅ Conectado com sucesso!');
             if(d.refresh) { setTimeout(function() { location.reload(); }, 1500); }
-        } else { showToast('ERRO: '+d.erro, 'error'); btnConectar.disabled=false; btnConectar.textContent='🔌 CONECTAR'; }
-    }).catch(err => { showToast('Erro de conexão: ' + err.message, 'error'); btnConectar.disabled=false; btnConectar.textContent='🔌 CONECTAR'; });
+        } else { alert('ERRO: '+d.erro); btnConectar.disabled=false; btnConectar.textContent='🔌 CONECTAR'; }
+    }).catch(err => { alert('Erro de conexão: ' + err.message); btnConectar.disabled=false; btnConectar.textContent='🔌 CONECTAR'; });
 }
 function desconectarIQ() {
-    if(botAtivo){ showToast('⚠️ Pare o bot primeiro antes de desconectar!', 'error'); return; }
+    if(botAtivo){ alert('⚠️ Pare o bot primeiro antes de desconectar!'); return; }
     if(!confirm('Deseja realmente desconectar da IQ Option? O servidor será encerrado.')) return;
     fetch('/parar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({desconectar: true}) })
     .then(r=>r.json()).then(d=>{
-        if(d.shutdown){ showToast('🔌 Desconectado! O servidor será encerrado.', 'info'); setTimeout(()=>window.close(),1000); }
+        if(d.shutdown){ alert('🔌 Desconectado! O servidor será encerrado.'); setTimeout(()=>window.close(),1000); }
         conectadoIQ = false; botAtivo = false;
         document.getElementById('btnConectar').style.display = 'inline-block';
         document.getElementById('btnConectar').disabled = false;
@@ -388,10 +344,10 @@ function desconectarIQ() {
         document.getElementById('statusTexto').textContent = '⏸️ Desconectado';
         document.getElementById('statusDot').className = 'status-dot inactive';
         if(intervalo) clearInterval(intervalo);
-    }).catch(err => showToast('Erro ao desconectar: ' + err.message, 'error'));
+    }).catch(err => alert('Erro ao desconectar: ' + err.message));
 }
 function comecarOperar() {
-    if(!conectadoIQ){ showToast('Conecte primeiro!', 'error'); return; }
+    if(!conectadoIQ){ alert('Conecte primeiro!'); return; }
     var btnOperar = document.getElementById('btnOperar');
     btnOperar.disabled = true;
     btnOperar.textContent = 'Iniciando...';
@@ -404,8 +360,8 @@ function comecarOperar() {
             document.getElementById('statusTexto').textContent = '🤖 Operando';
             document.getElementById('statusDot').className = 'status-dot active';
             document.getElementById('moedasSaldo').textContent = d.moedas;
-            showToast('🚀 Bot iniciado! Aguardando sinais...', 'info');
-        } else { showToast('ERRO: '+d.erro, 'error'); btnOperar.disabled=false; btnOperar.textContent='🚀 COMEÇAR OPERAR'; }
+            alert('🚀 Bot iniciado! Aguardando sinais...');
+        } else { alert('ERRO: '+d.erro); btnOperar.disabled=false; btnOperar.textContent='🚀 COMEÇAR OPERAR'; }
     });
 }
 function pararBot() {
@@ -423,7 +379,7 @@ function pararBot() {
         document.getElementById('statusTexto').textContent = '🟢 Conectado';
         document.getElementById('statusDot').className = 'status-dot active';
         btnParar.disabled = false; btnParar.textContent = '⏹️ PARAR';
-        showToast('⏹️ Bot parado com sucesso!', 'info');
+        alert('⏹️ Bot parado com sucesso!');
         atualizar();
     });
 }
@@ -452,7 +408,7 @@ function selecionarEstrategia(key) {
     for(var i=0;i<cards.length;i++) cards[i].classList.remove('ativa');
     var card = document.getElementById('est_'+key);
     if(card) card.classList.add('ativa');
-    fetch('/selecionar_estrategia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estrategia:key})}).then(()=>{ document.getElementById('estrategiaAtiva').textContent=key.toUpperCase(); showToast('✅ Estratégia alterada para: '+key, 'info'); });
+    fetch('/selecionar_estrategia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estrategia:key})}).then(()=>{ document.getElementById('estrategiaAtiva').textContent=key.toUpperCase(); alert('✅ Estratégia alterada para: '+key); });
 }
 function renderLojaEstrategias() {
     fetch('/status').then(r=>r.json()).then(d=>{
@@ -473,10 +429,10 @@ function renderLojaEstrategias() {
     });
 }
 function comprarEstrategia(estrategiaId) {
-    if(!emailLogado){ showToast('Conecte primeiro!', 'error'); return; }
+    if(!emailLogado){ alert('Conecte primeiro!'); return; }
     if(!confirm('Comprar esta estratégia com VOLTS?')) return;
     fetch('/comprar_estrategia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estrategia_id:estrategiaId})})
-    .then(r=>r.json()).then(d=>{ if(d.ok){ showToast(d.msg||'Adquirida com sucesso!', 'win'); document.getElementById('moedasSaldo').textContent=d.moedas; renderLojaEstrategias(); renderEstrategias(); } else { showToast('ERRO: '+d.erro, 'error'); } });
+    .then(r=>r.json()).then(d=>{ if(d.ok){ alert(d.msg||'Adquirida com sucesso!'); document.getElementById('moedasSaldo').textContent=d.moedas; renderLojaEstrategias(); renderEstrategias(); } else { alert('ERRO: '+d.erro); } });
 }
 function renderPlanos() {
     var grid = document.getElementById('planosGridContainer');
@@ -510,18 +466,18 @@ function renderLojaCategoria(categoria) {
     });
 }
 function comprarSkin(skinId) {
-    if(!emailLogado){ showToast('Conecte primeiro!', 'error'); return; }
+    if(!emailLogado){ alert('Conecte primeiro!'); return; }
     if(!confirm('Comprar esta skin?')) return;
     fetch('/comprar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId})})
     .then(r=>r.json()).then(d=>{
-        if(d.ok){ showToast('✅ '+(d.msg||'Skin adquirida com sucesso!'), 'win'); document.getElementById('moedasSaldo').textContent=d.moedas; var categoriaAtiva = document.querySelector('#loja-skins .loja-cat-btn.active'); var categoria = categoriaAtiva ? categoriaAtiva.textContent.trim().replace('⚡','').replace('🔮','').replace('💎','').trim().toLowerCase() : 'basica'; if(categoria==='básicas') categoria='basica'; if(categoria==='premium') categoria='premium'; if(categoria==='lendárias') categoria='lendaria'; renderLojaCategoria(categoria); } else { showToast('❌ ERRO: '+d.erro, 'error'); }
+        if(d.ok){ alert('✅ '+(d.msg||'Skin adquirida com sucesso!')); document.getElementById('moedasSaldo').textContent=d.moedas; var categoriaAtiva = document.querySelector('#loja-skins .loja-cat-btn.active'); var categoria = categoriaAtiva ? categoriaAtiva.textContent.trim().replace('⚡','').replace('🔮','').replace('💎','').trim().toLowerCase() : 'basica'; if(categoria==='básicas') categoria='basica'; if(categoria==='premium') categoria='premium'; if(categoria==='lendárias') categoria='lendaria'; renderLojaCategoria(categoria); } else { alert('❌ ERRO: '+d.erro); }
     });
 }
 function ativarSkin(skinId) {
-    if(!emailLogado){ showToast('Conecte primeiro!', 'error'); return; }
+    if(!emailLogado){ alert('Conecte primeiro!'); return; }
     if(!confirm('Ativar esta skin? O visual será atualizado.')) return;
     fetch('/ativar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId})})
-    .then(r=>r.json()).then(d=>{ if(d.ok){ showToast('🎨 Skin ativada! A página será recarregada.', 'info'); setTimeout(()=>location.reload(),500); } else { showToast('❌ ERRO: '+d.erro, 'error'); } });
+    .then(r=>r.json()).then(d=>{ if(d.ok){ alert('🎨 Skin ativada! A página será recarregada.'); setTimeout(()=>location.reload(),500); } else { alert('❌ ERRO: '+d.erro); } });
 }
 function selecionarPlano(id){
     document.querySelectorAll('.plano-card').forEach(c=>c.classList.remove('selecionado'));
@@ -532,7 +488,7 @@ function selecionarPlano(id){
 }
 function pagarComPix(planoId){
     var email=document.getElementById('emailCompra').value.trim()||emailLogado;
-    if(!email){ showToast('Digite seu email!', 'error'); return; }
+    if(!email){ alert('Digite seu email!'); return; }
     document.getElementById('modalPix').classList.add('active');
     document.getElementById('pixContent').innerHTML='<p style="color:#ffd700">⏳ Gerando QR Code...</p>';
     fetch('/criar_pix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,plano_id:planoId})})
@@ -547,18 +503,18 @@ function pagarComPix(planoId){
         } else { document.getElementById('pixContent').innerHTML='<p style="color:#ff4444">❌ Erro: '+(d.erro||'Falha ao gerar PIX')+'</p>'; }
     });
 }
-function copiarPix(){ navigator.clipboard.writeText(pixAtual.qr_code).then(()=>showToast('📋 Código PIX copiado!', 'info')); }
+function copiarPix(){ navigator.clipboard.writeText(pixAtual.qr_code).then(()=>alert('📋 Código PIX copiado!')); }
 function verificarPagamento(pixId){
     document.getElementById('pixContent').innerHTML += '<p style="color:#ffd700">⏳ Verificando...</p>';
     fetch('/verificar_pix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pix_id:pixId})})
-    .then(r=>r.json()).then(d=>{ if(d.pago){ showToast('✅ PAGAMENTO CONFIRMADO! +'+d.moedas+' VOLTS adicionados!', 'win'); document.getElementById('moedasSaldo').textContent=d.saldo; fecharModal(); location.reload(); } else { showToast('⏰ Ainda não confirmado. Aguarde alguns minutos e tente novamente.', 'info'); } });
+    .then(r=>r.json()).then(d=>{ if(d.pago){ alert('✅ PAGAMENTO CONFIRMADO! +'+d.moedas+' VOLTS adicionados!'); document.getElementById('moedasSaldo').textContent=d.saldo; fecharModal(); location.reload(); } else { alert('⏰ Ainda não confirmado. Aguarde alguns minutos e tente novamente.'); } });
 }
 function fecharModal(){ document.getElementById('modalPix').classList.remove('active'); pixAtual=null; }
 function verRelatorio(){
     var email=document.getElementById('emailRelatorio').value.trim();
-    if(!email){ showToast('Digite o email!', 'error'); return; }
+    if(!email){ alert('Digite o email!'); return; }
     fetch('/relatorio?email='+email).then(r=>r.json()).then(d=>{
-        if(d.erro){ showToast(d.erro, 'error'); return; }
+        if(d.erro){ alert(d.erro); return; }
         var h='<div class="relatorio-grid">'+
         '<div class="relatorio-card"><div class="rlabel">⚡ VOLTS</div><div class="rvalue">'+(d.moedas||0)+'</div></div>'+
         '<div class="relatorio-card"><div class="rlabel">📈 LUCRO TOTAL</div><div class="rvalue" style="color:'+(d.lucro_total>=0?'#00ff88':'#ff4444')+'">$'+(d.lucro_total||0).toFixed(2)+'</div></div>'+
@@ -573,7 +529,7 @@ function verRelatorio(){
         '<div class="relatorio-card"><div class="rlabel">📅 CADASTRO</div><div class="rvalue" style="font-size:10px">'+(d.data_cadastro||'--')+'</div></div></div>';
         if(d.historico_operacoes && d.historico_operacoes.length>0){
             h+='<h4 style="margin-top:10px">📋 ÚLTIMAS OPERAÇÕES</h4><table class="historico-table"><tr><th>Data</th><th>Resultado</th><th>Valor</th><th>Lucro</th><th>Estratégia</th></tr>';
-            d.historico_operacoes.slice(-15).reverse().forEach(op=>{ h+='<tr><td>'+op.data+'</td><td style="color:'+(op.resultado=='WIN'?'#00ff88':'#ff4444')+'">'+op.resultado+'</td><td>\( '+op.valor.toFixed(2)+'</td><td style="color:'+(op.lucro>=0?'#00ff88':'#ff4444')+'"> \)'+op.lucro.toFixed(2)+'</td><td style="font-size:8px">'+(op.estrategia||'--')+'</td></tr>'; });
+            d.historico_operacoes.slice(-15).reverse().forEach(op=>{ h+='<tr><td>'+op.data+'</td><td style="color:'+(op.resultado=='WIN'?'#00ff88':'#ff4444')+'">'+op.resultado+'</td><td>$'+op.valor.toFixed(2)+'</td><td style="color:'+(op.lucro>=0?'#00ff88':'#ff4444')+'">$'+op.lucro.toFixed(2)+'</td><td style="font-size:8px">'+(op.estrategia||'--')+'</td></tr>'; });
             h+='</table>';
         }
         document.getElementById('relatorioContent').innerHTML = h;
@@ -591,7 +547,7 @@ function verRanking(){
         d.ranking.forEach((u,i)=>{
             var cor = i===0?'#ffd700':(i===1?'#c0c0c0':(i===2?'#cd7f32':'#fff'));
             var medalha = i===0?'🥇':(i===1?'🥈':(i===2?'🥉':(i+1)));
-            h+='<tr><td style="color:'+cor+';font-weight:bold">'+medalha+'</td><td style="color:#ccc;font-size:8px">'+(u.email||'---').substring(0,20)+'</td><td style="color:'+(u.lucro_total>=0?'#00ff88':'#ff4444')+'">\( '+u.lucro_total.toFixed(2)+'</td><td style="color:#00ff88">'+u.total_wins+'</td><td style="color:#ff4444">'+u.total_losses+'</td><td style="color:#ffd700">'+u.taxa+'%</td><td style="color:#00ff88"> \)'+u.banca_atual.toFixed(2)+'</td></tr>';
+            h+='<tr><td style="color:'+cor+';font-weight:bold">'+medalha+'</td><td style="color:#ccc;font-size:8px">'+(u.email||'---').substring(0,20)+'</td><td style="color:'+(u.lucro_total>=0?'#00ff88':'#ff4444')+'">$'+u.lucro_total.toFixed(2)+'</td><td style="color:#00ff88">'+u.total_wins+'</td><td style="color:#ff4444">'+u.total_losses+'</td><td style="color:#ffd700">'+u.taxa+'%</td><td style="color:#00ff88">$'+u.banca_atual.toFixed(2)+'</td></tr>';
         });
         h+='</table></div>';
         document.getElementById('relatorioContent').innerHTML = h;
@@ -621,21 +577,13 @@ function atualizar() {
         if(d.logs){ var terminal = document.getElementById('terminal'); terminal.innerHTML = d.logs; terminal.scrollTop = terminal.scrollHeight; }
         if(d.rodando && !botAtivo){ botAtivo=true; document.getElementById('btnOperar').style.display='none'; document.getElementById('btnParar').style.display='inline-block'; document.getElementById('statusTexto').textContent='🤖 Operando'; document.getElementById('statusDot').className='status-dot active'; }
         else if(!d.rodando && botAtivo){ botAtivo=false; if(conectadoIQ){ document.getElementById('btnOperar').style.display='inline-block'; document.getElementById('btnOperar').disabled=false; document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR'; document.getElementById('btnParar').style.display='none'; document.getElementById('statusTexto').textContent='🟢 Conectado'; document.getElementById('statusDot').className='status-dot active'; } else { document.getElementById('btnOperar').style.display='none'; document.getElementById('btnParar').style.display='none'; document.getElementById('statusTexto').textContent='⏸️ Desconectado'; document.getElementById('statusDot').className='status-dot inactive'; } }
-        // Check for active skin and apply effects
-        if (d.skins_status) {
-            const activeSkin = d.skins_status.find(s => s.ativo);
-            if (activeSkin && activeSkin.id !== activeSkinEffect) {
-                activeSkinEffect = activeSkin.id;
-                initSkinEffects(activeSkin);
-            }
-        }
     });
 }
 function iniciarChat(){ if(emailLogado){ atualizarChat(); setInterval(atualizarChat,5000); } }
 function enviarChatMsg(){
     var msg = document.getElementById('chatMsg').value.trim();
     if(!msg) return;
-    if(!emailLogado){ showToast('Conecte-se primeiro para enviar mensagens!', 'error'); return; }
+    if(!emailLogado){ alert('Conecte-se primeiro para enviar mensagens!'); return; }
     var nome = emailLogado.split('@')[0];
     fetch('/chat_enviar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:nome,msg:msg})}).then(()=>{ document.getElementById('chatMsg').value=''; atualizarChat(); });
 }
@@ -651,145 +599,271 @@ function atualizarChat(){
     });
 }
 
-function showToast(message, type = 'info') {
-    const container = document.getElementById('toast-container');
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.innerHTML = `
-        <span style="font-size:18px;">${getToastIcon(type)}</span>
-        <span>${message}</span>
-    `;
-    container.appendChild(toast);
-    setTimeout(() => {
-        if (toast.parentNode) toast.parentNode.removeChild(toast);
-    }, 4000);
-}
-
-function getToastIcon(type) {
-    switch(type) {
-        case 'win': return '✅';
-        case 'loss': return '❌';
-        case 'gale': return '⚠️';
-        case 'error': return '🚫';
-        default: return 'ℹ️';
-    }
-}
-
-// 🔥 FUNÇÃO DE EFEITOS DAS SKINS - DINÂMICA E FULLSCREEN 🔥
-function initSkinEffects(activeSkin = null) {
-    console.log("🎨 [SKIN] Inicializando efeitos visuais para:", activeSkin ? activeSkin.nome : 'Padrão');
+// 🔥 FUNÇÃO DE EFEITOS DAS SKINS - VERSÃO COMPLETA 🔥
+function initSkinEffects() {
+    console.log("🎨 [SKIN] Inicializando efeitos visuais...");
     
-    // Limpar efeitos anteriores
-    document.querySelectorAll('.canvas-full').forEach(c => c.remove());
-    
-    // Criar container fullscreen para efeitos
-    const canvasContainer = document.createElement('div');
-    canvasContainer.className = 'canvas-full';
-    document.body.appendChild(canvasContainer);
-    
-    // Mapear skin para efeito
-    let effectType = 'thunder'; // default
-    if (activeSkin) {
-        const skinId = activeSkin.id.toLowerCase();
-        if (skinId.includes('matrix') || skinId.includes('02')) effectType = 'matrix';
-        else if (skinId.includes('sakura')) effectType = 'sakura';
-        else if (skinId.includes('dark') || skinId.includes('black')) effectType = 'dark';
-        else if (skinId.includes('ocean')) effectType = 'ocean';
-        else if (skinId.includes('fire')) effectType = 'fire';
-        else if (skinId.includes('ice') || skinId.includes('snow')) effectType = 'snow';
-        else if (skinId.includes('ghost')) effectType = 'ghost';
+    // Helper para redimensionamento responsivo
+    function resizeCanvas(canvas, parent) {
+        if(!canvas || !parent) return;
+        canvas.width = parent.offsetWidth;
+        canvas.height = parent.offsetHeight;
     }
     
-    console.log(`🎨 Aplicando efeito: ${effectType}`);
-    
-    // Helper resize
-    function resizeCanvas(canvas) {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-    }
-    
-    // Função para criar canvas
-    function createEffectCanvas() {
-        const canvas = document.createElement('canvas');
-        canvas.style.position = 'absolute';
-        canvas.style.top = '0';
-        canvas.style.left = '0';
-        canvas.style.width = '100%';
-        canvas.style.height = '100%';
-        canvasContainer.appendChild(canvas);
-        resizeCanvas(canvas);
-        window.addEventListener('resize', () => resizeCanvas(canvas));
-        return canvas;
-    }
-    
-    if (effectType === 'thunder') {
-        const canvas = createEffectCanvas();
-        const ctx = canvas.getContext('2d');
-        function drawThunder() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            if(Math.random() < 0.03) {
-                ctx.strokeStyle = 'rgba(255,255,100,0.8)';
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                let x = Math.random() * canvas.width;
-                ctx.moveTo(x, 0);
-                for(let y = 0; y < canvas.height; y += 25) {
-                    x += (Math.random() - 0.5) * 50;
-                    ctx.lineTo(x, y);
+    // ⚡ TESLA THUNDER - Raios (SKIN PADRÃO)
+    var thunderCanvas = document.getElementById('thunderCanvas');
+    if(thunderCanvas && thunderCanvas.getContext) {
+        try {
+            var tCtx = thunderCanvas.getContext('2d');
+            var tParent = thunderCanvas.parentElement;
+            resizeCanvas(thunderCanvas, tParent);
+            function drawThunder() {
+                if(!thunderCanvas || !thunderCanvas.getContext) return;
+                tCtx.clearRect(0, 0, thunderCanvas.width, thunderCanvas.height);
+                if(Math.random() < 0.03) {
+                    tCtx.strokeStyle = 'rgba(255,255,100,0.8)';
+                    tCtx.lineWidth = 2;
+                    tCtx.beginPath();
+                    var x = Math.random() * thunderCanvas.width;
+                    tCtx.moveTo(x, 0);
+                    for(var y = 0; y < thunderCanvas.height; y += 25) {
+                        x += (Math.random() - 0.5) * 50;
+                        tCtx.lineTo(x, y);
+                    }
+                    tCtx.stroke();
                 }
-                ctx.stroke();
+                requestAnimationFrame(drawThunder);
             }
-            requestAnimationFrame(drawThunder);
-        }
-        drawThunder();
-    } 
-    else if (effectType === 'matrix') {
-        const canvas = createEffectCanvas();
-        const ctx = canvas.getContext('2d');
-        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*()";
-        const fontSize = 14;
-        let columns = Math.floor(canvas.width / fontSize);
-        let drops = [];
-        for(let i = 0; i < columns; i++) drops[i] = Math.random() * -100;
-        function drawMatrix() {
-            ctx.fillStyle = 'rgba(0,0,0,0.05)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#00ff00';
-            ctx.font = fontSize + 'px monospace';
-            for(let i = 0; i < drops.length; i++) {
-                const text = chars[Math.floor(Math.random() * chars.length)];
-                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-                if(drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
-                drops[i]++;
-            }
-            requestAnimationFrame(drawMatrix);
-        }
-        drawMatrix();
-    } 
-    // Adicione outros efeitos de forma similar (sakura, dark, etc.) conforme necessário
-    // Para brevidade, implementando apenas thunder e matrix como exemplo; expanda conforme Firebase
+            drawThunder();
+            window.addEventListener('resize', () => { resizeCanvas(thunderCanvas, tParent); });
+        } catch(e) { console.warn("Thunder effect error:", e); }
+    }
     
-    else {
-        // Efeito padrão thunder
-        const canvas = createEffectCanvas();
-        const ctx = canvas.getContext('2d');
-        function drawDefault() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            if(Math.random() < 0.03) {
-                ctx.strokeStyle = 'rgba(255,255,100,0.8)';
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                let x = Math.random() * canvas.width;
-                ctx.moveTo(x, 0);
-                for(let y = 0; y < canvas.height; y += 25) {
-                    x += (Math.random() - 0.5) * 50;
-                    ctx.lineTo(x, y);
+    // 🧬 TESLA MATRIX - Chuva de caracteres
+    var matrixCanvas = document.getElementById('matrixCanvas');
+    if(matrixCanvas && matrixCanvas.getContext) {
+        try {
+            var mctx = matrixCanvas.getContext('2d');
+            var mParent = matrixCanvas.parentElement;
+            resizeCanvas(matrixCanvas, mParent);
+            var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*()";
+            var fontSize = 14;
+            var columns = Math.floor(matrixCanvas.width / fontSize);
+            var drops = [];
+            for(var i = 0; i < columns; i++) drops[i] = Math.random() * -100;
+            function drawMatrix() {
+                if(!matrixCanvas || !matrixCanvas.getContext) return;
+                mctx.fillStyle = 'rgba(0,0,0,0.05)';
+                mctx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
+                mctx.fillStyle = '#00ff00';
+                mctx.font = fontSize + 'px monospace';
+                for(var i = 0; i < drops.length; i++) {
+                    var text = chars[Math.floor(Math.random() * chars.length)];
+                    mctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                    if(drops[i] * fontSize > matrixCanvas.height && Math.random() > 0.975) drops[i] = 0;
+                    drops[i]++;
                 }
-                ctx.stroke();
+                requestAnimationFrame(drawMatrix);
             }
-            requestAnimationFrame(drawDefault);
-        }
-        drawDefault();
+            drawMatrix();
+            window.addEventListener('resize', () => { resizeCanvas(matrixCanvas, mParent); });
+        } catch(e) { console.warn("Matrix effect error:", e); }
+    }
+    
+    // 🌸 TESLA SAKURA - Pétalas caindo
+    var sakuraCanvas = document.getElementById('sakuraCanvas');
+    if(sakuraCanvas && sakuraCanvas.getContext) {
+        try {
+            var sCtx = sakuraCanvas.getContext('2d');
+            var sParent = sakuraCanvas.parentElement;
+            resizeCanvas(sakuraCanvas, sParent);
+            var petals = [];
+            for(var i = 0; i < 30; i++) {
+                petals.push({ x: Math.random() * sakuraCanvas.width, y: Math.random() * sakuraCanvas.height, r: Math.random() * 5 + 2, speed: Math.random() * 0.8 + 0.3, angle: Math.random() * Math.PI * 2, rotSpeed: (Math.random() - 0.5) * 0.03 });
+            }
+            function drawSakura() {
+                if(!sakuraCanvas || !sakuraCanvas.getContext) return;
+                sCtx.clearRect(0, 0, sakuraCanvas.width, sakuraCanvas.height);
+                for(var i = 0; i < petals.length; i++) {
+                    var p = petals[i];
+                    sCtx.save();
+                    sCtx.translate(p.x, p.y);
+                    sCtx.rotate(p.angle);
+                    sCtx.fillStyle = 'rgba(255,105,180,0.7)';
+                    sCtx.beginPath();
+                    sCtx.ellipse(0, 0, p.r, p.r * 0.6, 0, 0, Math.PI * 2);
+                    sCtx.fill();
+                    sCtx.restore();
+                    p.y += p.speed;
+                    p.angle += p.rotSpeed;
+                    if(p.y > sakuraCanvas.height + 20) { p.y = -20; p.x = Math.random() * sakuraCanvas.width; }
+                }
+                requestAnimationFrame(drawSakura);
+            }
+            drawSakura();
+            window.addEventListener('resize', () => { resizeCanvas(sakuraCanvas, sParent); });
+        } catch(e) { console.warn("Sakura effect error:", e); }
+    }
+    
+    // 🖤 TESLA DARK - Partículas escuras
+    var darkCanvas = document.getElementById('darkCanvas');
+    if(darkCanvas && darkCanvas.getContext) {
+        try {
+            var dCtx = darkCanvas.getContext('2d');
+            var dParent = darkCanvas.parentElement;
+            resizeCanvas(darkCanvas, dParent);
+            var particles = [];
+            for(var i = 0; i < 50; i++) {
+                particles.push({ x: Math.random() * darkCanvas.width, y: Math.random() * darkCanvas.height, r: Math.random() * 3 + 1, vx: (Math.random() - 0.5) * 0.5, vy: Math.random() * 0.5 + 0.2, alpha: Math.random() * 0.5 + 0.2 });
+            }
+            function drawDark() {
+                if(!darkCanvas || !darkCanvas.getContext) return;
+                dCtx.clearRect(0, 0, darkCanvas.width, darkCanvas.height);
+                for(var i = 0; i < particles.length; i++) {
+                    var p = particles[i];
+                    dCtx.beginPath();
+                    dCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    dCtx.fillStyle = 'rgba(80,80,80,' + p.alpha + ')';
+                    dCtx.fill();
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    if(p.y > darkCanvas.height + 10) { p.y = -10; p.x = Math.random() * darkCanvas.width; }
+                    if(p.x > darkCanvas.width + 10) p.x = -10;
+                    if(p.x < -10) p.x = darkCanvas.width + 10;
+                }
+                requestAnimationFrame(drawDark);
+            }
+            drawDark();
+            window.addEventListener('resize', () => { resizeCanvas(darkCanvas, dParent); });
+        } catch(e) { console.warn("Dark effect error:", e); }
+    }
+    
+    // 🌊 TESLA OCEAN - Ondas
+    var oceanCanvas = document.getElementById('oceanCanvas');
+    if(oceanCanvas && oceanCanvas.getContext) {
+        try {
+            var octx = oceanCanvas.getContext('2d');
+            var oParent = oceanCanvas.parentElement;
+            resizeCanvas(oceanCanvas, oParent);
+            var offset = 0;
+            function drawOcean() {
+                if(!oceanCanvas || !oceanCanvas.getContext) return;
+                octx.clearRect(0, 0, oceanCanvas.width, oceanCanvas.height);
+                octx.beginPath();
+                octx.moveTo(0, oceanCanvas.height);
+                for(var x = 0; x < oceanCanvas.width; x += 5) {
+                    var y = oceanCanvas.height / 2 + Math.sin(x * 0.02 + offset) * 12 + Math.sin(x * 0.05 + offset * 1.3) * 8;
+                    octx.lineTo(x, y);
+                }
+                octx.lineTo(oceanCanvas.width, oceanCanvas.height);
+                octx.closePath();
+                octx.fillStyle = 'rgba(0,170,204,0.3)';
+                octx.fill();
+                offset += 0.03;
+                requestAnimationFrame(drawOcean);
+            }
+            drawOcean();
+            window.addEventListener('resize', () => { resizeCanvas(oceanCanvas, oParent); });
+        } catch(e) { console.warn("Ocean effect error:", e); }
+    }
+    
+    // 🔥 TESLA FIRE - Chamas
+    var fireCanvas = document.getElementById('fireCanvas');
+    if(fireCanvas && fireCanvas.getContext) {
+        try {
+            var fctx = fireCanvas.getContext('2d');
+            var fParent = fireCanvas.parentElement;
+            resizeCanvas(fireCanvas, fParent);
+            var fireParticles = [];
+            for(var i = 0; i < 50; i++) {
+                fireParticles.push({ x: Math.random() * fireCanvas.width, y: fireCanvas.height - Math.random() * 30, vx: (Math.random() - 0.5) * 0.8, vy: -Math.random() * 2 - 0.8, life: Math.random() * 40 + 20, maxLife: 60, size: Math.random() * 5 + 2 });
+            }
+            function drawFire() {
+                if(!fireCanvas || !fireCanvas.getContext) return;
+                fctx.clearRect(0, 0, fireCanvas.width, fireCanvas.height);
+                for(var i = 0; i < fireParticles.length; i++) {
+                    var p = fireParticles[i];
+                    var progress = p.life / p.maxLife;
+                    var gradient = fctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * progress);
+                    gradient.addColorStop(0, 'rgba(255,200,50,' + progress + ')');
+                    gradient.addColorStop(0.5, 'rgba(255,80,0,' + progress * 0.7 + ')');
+                    gradient.addColorStop(1, 'rgba(255,0,0,0)');
+                    fctx.beginPath();
+                    fctx.arc(p.x, p.y, p.size * progress, 0, Math.PI * 2);
+                    fctx.fillStyle = gradient;
+                    fctx.fill();
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.life--;
+                    if(p.life <= 0) {
+                        fireParticles[i] = { x: Math.random() * fireCanvas.width, y: fireCanvas.height - Math.random() * 10, vx: (Math.random() - 0.5) * 0.8, vy: -Math.random() * 2 - 0.8, life: Math.random() * 40 + 20, maxLife: 60, size: Math.random() * 5 + 2 };
+                    }
+                }
+                requestAnimationFrame(drawFire);
+            }
+            drawFire();
+            window.addEventListener('resize', () => { resizeCanvas(fireCanvas, fParent); });
+        } catch(e) { console.warn("Fire effect error:", e); }
+    }
+    
+    // ❄️ TESLA ICE - Neve
+    var snowCanvas = document.getElementById('snowCanvas');
+    if(snowCanvas && snowCanvas.getContext) {
+        try {
+            var snCtx = snowCanvas.getContext('2d');
+            var snParent = snowCanvas.parentElement;
+            resizeCanvas(snowCanvas, snParent);
+            var snowflakes = [];
+            for(var i = 0; i < 70; i++) {
+                snowflakes.push({ x: Math.random() * snowCanvas.width, y: Math.random() * snowCanvas.height, r: Math.random() * 3 + 1, speed: Math.random() * 0.8 + 0.3, wind: (Math.random() - 0.5) * 0.3, opacity: Math.random() * 0.6 + 0.3 });
+            }
+            function drawSnow() {
+                if(!snowCanvas || !snowCanvas.getContext) return;
+                snCtx.clearRect(0, 0, snowCanvas.width, snowCanvas.height);
+                for(var i = 0; i < snowflakes.length; i++) {
+                    var f = snowflakes[i];
+                    snCtx.beginPath();
+                    snCtx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+                    snCtx.fillStyle = 'rgba(255,255,255,' + f.opacity + ')';
+                    snCtx.fill();
+                    f.y += f.speed;
+                    f.x += f.wind;
+                    if(f.y > snowCanvas.height + 10) { f.y = -10; f.x = Math.random() * snowCanvas.width; }
+                }
+                requestAnimationFrame(drawSnow);
+            }
+            drawSnow();
+            window.addEventListener('resize', () => { resizeCanvas(snowCanvas, snParent); });
+        } catch(e) { console.warn("Snow effect error:", e); }
+    }
+    
+    // 👻 SKIN FANTASMA - Efeitos especiais
+    var ghostOverlay = document.getElementById('ghostOverlay');
+    var ghostTotalOverlay = document.getElementById('ghostTotalOverlay');
+    if(ghostOverlay || ghostTotalOverlay) {
+        console.log("👻 Ativando skin FANTASMA...");
+        if(window.ghostTimers) { window.ghostTimers.forEach(function(timer) { clearInterval(timer); clearTimeout(timer); }); }
+        window.ghostTimers = [];
+        document.body.classList.add('ghost-shake-active');
+        var fadeInterval = setInterval(function() { if(Math.random() < 0.3) { document.body.classList.add('ghost-fade-active'); setTimeout(function() { document.body.classList.remove('ghost-fade-active'); }, 1000); } }, 3000);
+        window.ghostTimers.push(fadeInterval);
+        var blurInterval = setInterval(function() { if(Math.random() < 0.2) { document.body.classList.add('ghost-blur-active'); setTimeout(function() { document.body.classList.remove('ghost-blur-active'); }, 1500); } }, 5000);
+        window.ghostTimers.push(blurInterval);
+        var disappearInterval = setInterval(function() {
+            if(Math.random() < 0.15) {
+                if(ghostTotalOverlay) ghostTotalOverlay.style.opacity = '0.95';
+                document.body.style.opacity = '0';
+                document.body.style.transition = 'opacity 0.5s ease';
+                setTimeout(function() { document.body.style.opacity = '1'; if(ghostTotalOverlay) ghostTotalOverlay.style.opacity = '0'; }, 2000);
+            } else if(Math.random() < 0.25) {
+                if(ghostOverlay) ghostOverlay.style.opacity = '0.8';
+                document.body.style.opacity = '0.8';
+                setTimeout(function() { if(ghostOverlay) ghostOverlay.style.opacity = '0.5'; document.body.style.opacity = '0.9'; }, 800);
+                setTimeout(function() { if(ghostOverlay) ghostOverlay.style.opacity = '0.2'; }, 1200);
+                setTimeout(function() { if(ghostOverlay) ghostOverlay.style.opacity = '0'; document.body.style.opacity = '1'; }, 1600);
+            }
+        }, 8000);
+        window.ghostTimers.push(disappearInterval);
     }
     
     console.log("🎨 [SKIN] Efeitos visuais inicializados com sucesso!");
@@ -821,12 +895,10 @@ window.onload = function() {
             atualizar();
             iniciarChat();
         }
-        // Inicializar skin effects
-        const activeSkin = d.skins_status ? d.skins_status.find(s => s.ativo) : null;
-        initSkinEffects(activeSkin);
     });
     setInterval(atualizarChat,5000);
+    setTimeout(initSkinEffects, 300);
 };
 </script>
 </body>
-            </html>
+    </html>
