@@ -15,7 +15,10 @@
         .panel{display:none;background:{{ COR_PANEL }};padding:15px;border-radius:0 10px 10px 10px;border:1px solid #333;margin-bottom:10px;animation:fadeIn 0.3s ease}
         .panel.active{display:block}
         .header{background:{{ COR_HEADER_BG }};padding:20px;border-radius:20px;text-align:center;border:3px solid {{ COR_HEADER_BORDA }};position:relative;overflow:hidden;margin-bottom:15px;transition:all 0.3s ease}
+        
+        /* 🎨 REQUISITO CRÍTICO: INJEÇÃO DINÂMICA BRUTA DO CSS DO FIREBASE */
         {{ CSS_EXTRA | safe }}
+        
         .header h1{color:{{ COR_DESTAQUE }};font-size:22px;text-shadow:0 0 30px {{ COR_TAB_ATIVA }};position:relative;z-index:3}
         .header p{color:{{ COR_DESTAQUE }};font-size:10px;position:relative;z-index:3;opacity:0.8}
         .mantra{color:{{ COR_DESTAQUE }};text-align:center;margin:8px 0;font-size:10px;animation:pulse 2s infinite}
@@ -35,10 +38,12 @@
         .dashboard{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:8px;margin-bottom:10px}
         .card{background:{{ COR_PANEL }};padding:10px;border-radius:10px;border:1px solid #333;text-align:center;transition:all 0.3s}
         .card:hover{transform:translateY(-3px);border-color:{{ COR_DESTAQUE }}}
-        .card .label{color:#888;font-size:9px}.card .value{color:{{ COR_DESTAQUE }};font-size:14px;font-weight:bold;margin-top:4px}
+        .card .label{color:#888;font-size:9px}
+        .card .value{color:{{ COR_DESTAQUE }};font-size:14px;font-weight:bold;margin-top:4px}
         .indicators{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px;margin-bottom:10px}
         .ind-card{background:#111;padding:6px;border-radius:8px;border:1px solid #222;text-align:center;font-size:10px}
-        .ind-card .ind-label{color:#666;font-size:9px}.ind-card .ind-value{color:{{ COR_DESTAQUE }};font-size:11px;font-weight:bold}
+        .ind-card .ind-label{color:#666;font-size:9px}
+        .ind-card .ind-value{color:{{ COR_DESTAQUE }};font-size:11px;font-weight:bold}
         .terminal{background:#000;color:#00ff88;padding:12px;border-radius:10px;height:200px;overflow-y:auto;font-size:10px;line-height:1.4;white-space:pre-wrap;border:1px solid #333;position:relative;overflow:hidden}
         .terminal span{position:relative;z-index:1}
         .terminal::-webkit-scrollbar{width:5px}
@@ -65,7 +70,6 @@
         .modal-pagamento h3{color:{{ COR_DESTAQUE }};margin-bottom:15px}
         .pix-qrcode{background:#fff;padding:15px;border-radius:10px;display:inline-block;margin:10px 0}
         .pix-qrcode img{max-width:200px}
-        .pix-copiavel{background:#000;color:#00ff88;padding:10px;border-radius:8px;font-size:9px;word-break:break-all;margin:10px 0;max-height:60px;overflow-y:auto;cursor:pointer}
         .btn-fechar{background:#444;color:#fff;padding:8px 20px;border-radius:8px;cursor:pointer;margin-top:10px;border:none;font-family:'Courier New',monospace}
         .btn-confirmar{background:{{ COR_DESTAQUE }};color:#000;padding:8px 20px;border-radius:8px;cursor:pointer;margin-top:10px;font-weight:bold;border:none;font-family:'Courier New',monospace}
         .relatorio-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:6px}
@@ -74,7 +78,7 @@
         .historico-table{width:100%;font-size:9px;border-collapse:collapse;margin-top:10px}
         .historico-table th{background:{{ COR_TAB_ATIVA }};color:#000;padding:6px}.historico-table td{padding:4px;border-bottom:1px solid #222;text-align:center}
         .estrategia-card{background:linear-gradient(135deg,#111122,#0a0a15);padding:12px;border-radius:10px;border:2px solid #1a1a2e;cursor:pointer;transition:all 0.3s ease;text-align:center}
-        .estrategia-card:hover{transform:translateY(-3px);border-color:{{ COR_DESTAQUE }}}
+        .estrategia-card:hover{border-color:{{ COR_DESTAQUE }}}
         .estrategia-card.ativa{border-color:#00ff88;box-shadow:0 0 15px rgba(0,255,136,0.3);background:#0a1a0a}
         .estrategia-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
         .badge-gratis{background:#00ff88;color:#000;font-size:9px;padding:2px 6px;border-radius:10px;display:inline-block}
@@ -91,9 +95,6 @@
         .loja-cat-btn.active{background:linear-gradient(135deg,#1a1a0a,#0d0d05);color:{{ COR_DESTAQUE }};border-color:{{ COR_DESTAQUE }};box-shadow:0 -3px 15px rgba(255,215,0,.1)}
         .loja-sub-panel{display:none;animation:fadeIn 0.4s ease}
         .loja-sub-panel.active{display:block}
-        .canvas-full{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-2;pointer-events:none}
-        .canvas-banner{position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none}
-        .effect-element{position:absolute;pointer-events:none;z-index:2}
         .pix-copiavel{background:#000;color:#00ff88;padding:10px;border-radius:8px;font-size:9px;word-break:break-all;margin:10px 0;cursor:pointer;transition:all 0.3s}
         .pix-copiavel:hover{background:#1a1a1a}
         .btn-loja{padding:12px 18px;border:none;border-radius:12px;font-weight:bold;cursor:pointer;font-size:11px;width:100%;margin-top:10px;transition:all 0.25s ease;text-transform:uppercase;letter-spacing:1.5px}
@@ -103,7 +104,7 @@
         .btn-comprar-est{background:linear-gradient(135deg,#006644,#00aa55);color:#fff}
         .btn-comprado{background:linear-gradient(135deg,#1a1a2e,#0d0d1a);color:#00ff88;border:1px solid #00ff8844;cursor:default}
         .btn-usar{background:linear-gradient(135deg,#006699,#3399cc);color:#fff}
-        .skin-card .btn{width:100%;margin-top:8px}
+        .skin-card .btn { width:100%; margin-top:8px; }
     </style>
 </head>
 <body>
@@ -125,7 +126,6 @@
         <div class="tab" onclick="openTab('contato')">📞 CONTATO</div>
     </div>
 
-    <!-- PAINEL BOT -->
     <div class="panel active" id="panel-bot">
         <div class="config-section">
             <h3>🔐 IQ OPTION</h3>
@@ -167,7 +167,7 @@
             <div class="ind-card"><div class="ind-label">📉 MM20</div><div class="ind-value" id="mm20">--</div></div>
             <div class="ind-card"><div class="ind-label">📊 ESTOC</div><div class="ind-value" id="stoch">--</div></div>
             <div class="ind-card"><div class="ind-label">🌅 FASE</div><div class="ind-value" id="fase">--</div></div>
-            <div class="ind-card"><div class="ind-label">💵 PREÇO</div><div class="ind-value" id="preco">--</div></div>
+            <div class="card" style="display:none"><div class="ind-label">💵 PREÇO</div><div class="ind-value" id="preco">--</div></div>
         </div>
 
         <div class="terminal" id="terminal">📡 Aguardando...</div>
@@ -179,13 +179,11 @@
         </div>
     </div>
 
-    <!-- PAINEL ESTRATÉGIAS -->
     <div class="panel" id="panel-estrategias">
         <div class="config-section"><h3>📊 SELECIONAR ESTRATÉGIA</h3><p style="color:#888;font-size:10px">Escolha antes de clicar em COMEÇAR OPERAR</p></div>
         <div class="estrategia-grid" id="estrategiaGrid"></div>
     </div>
 
-    <!-- PAINEL LOJA (skins, volts, estratégias premium) -->
     <div class="panel" id="panel-loja">
         <div class="loja-categorias">
             <div class="loja-cat-btn active" onclick="mostrarLojaCategoria('volts')">💳 COMPRAR VOLTS</div>
@@ -213,7 +211,6 @@
         </div>
     </div>
 
-    <!-- PAINEL CHAT -->
     <div class="panel" id="panel-chat">
         <div class="config-section"><h3>💬 CHAT DOS TRADERS</h3><p style="color:#888;font-size:9px" id="chatInfo">Conecte na IQ Option para entrar</p></div>
         <div id="chatMensagens" style="background:#000;border:1px solid #333;border-radius:10px;height:300px;overflow-y:auto;padding:10px;margin-bottom:10px;font-size:10px"><p style="color:#888;text-align:center">💬 Envie uma mensagem para começar</p></div>
@@ -221,16 +218,13 @@
         <div style="text-align:center;margin-top:5px"><span style="color:#888;font-size:9px" id="chatOnline">0 online</span></div>
     </div>
 
-    <!-- PAINEL RELATÓRIO -->
     <div class="panel" id="panel-relatorio">
         <div class="config-section"><h3>📊 RELATÓRIO</h3><div class="config-row"><input type="email" id="emailRelatorio" placeholder="Email" style="flex:2"><button class="btn btn-info" onclick="verRelatorio()">🔍 BUSCAR</button><button class="btn btn-info" onclick="verRanking()" style="background:linear-gradient(135deg,#ff8c00,#ffd700);color:#000">🏆 RANKING</button></div></div>
         <div id="relatorioContent"></div>
     </div>
 
-    <!-- PAINEL TUTORIAL (mantido igual ao original para não gerar erros) -->
     <div class="panel" id="panel-leia-me"><div class="config-section"><h3>📖 TUTORIAL & ⚠️ AVISOS IMPORTANTES</h3></div><div style="background:#0a0a1a;border:1px solid #00ff88;border-radius:15px;padding:20px;margin:10px 0"><p style="color:#ffd700;font-size:18px;font-weight:bold;margin-bottom:15px;text-align:center">📖 COMO USAR O TESLA 369</p><p style="color:#ffd700;font-size:13px;font-weight:bold;margin-bottom:10px">🔰 PRIMEIROS PASSOS</p><p style="color:#ccc;font-size:11px;line-height:2.0;text-align:justify"><span style="color:#00ff88">1.</span> Crie uma conta na <span style="color:#ffd700">IQ Option</span> (use conta PRACTICE para testes).<br><span style="color:#00ff88">2.</span> Digite seu <span style="color:#ffd700">email e senha</span> no bot e clique em <span style="color:#00ff88">CONECTAR</span>.<br><span style="color:#00ff88">3.</span> Selecione a <span style="color:#ffd700">% da banca</span> que deseja usar (mínimo 15%).<br><span style="color:#00ff88">4.</span> Vá na aba <span style="color:#ffd700">ESTRATÉGIAS</span> e escolha uma estratégia.<br><span style="color:#00ff88">5.</span> Clique em <span style="color:#00ff88;font-weight:bold">COMEÇAR OPERAR</span> e aguarde o sinal.<br><span style="color:#00ff88">6.</span> O bot opera automaticamente em segundo plano.</p><p style="color:#ffd700;font-size:13px;font-weight:bold;margin-bottom:10px;margin-top:15px">🤖 COMO O ROBÔ FUNCIONA</p><p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify">O Tesla 369 analisa <span style="color:#00ff88">padrões de velas</span> em tempo real usando indicadores técnicos. Cada estratégia tem seu próprio <span style="color:#ffd700">timeframe e gatilho</span> de entrada. Quando encontra um padrão com alta probabilidade, ele <span style="color:#ffd700">abre uma ordem automaticamente</span>. O robô busca <span style="color:#ffd700;font-weight:bold">+10% de retorno</span> sobre o valor que você definir como entrada. Se perder, ele aplica <span style="color:#ff4444">Martingale (Gale 2)</span> dobrando o valor por até 2 vezes. <span style="color:#00ff88;font-weight:bold">Stop Gain:</span> 1 WIN = bot para automaticamente.</p></div><div style="background:#0a1a0a;border:1px solid #00ff88;border-radius:15px;padding:20px;margin:10px 0"><p style="color:#00ff88;font-size:14px;font-weight:bold;margin-bottom:10px">💰 RISCOS REAIS</p><p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify"><span style="color:#ff4444">• Você pode PERDER TODO seu dinheiro.</span><br>• Opções binárias são proibidas em vários países.<br>• O Martingale é perigoso: 3 perdas seguidas consomem 7x o valor inicial.<br>• <span style="color:#ffd700">NUNCA invista dinheiro que você não pode perder.</span><br>• Resultados passados não garantem resultados futuros.<br>• O robô é uma ferramenta de <span style="color:#ffd700">análise automatizada</span>, não uma garantia de lucro.</p></div><div style="background:#1a0000;border:2px solid #ff4444;border-radius:15px;padding:20px;margin:10px 0"><p style="color:#ff4444;font-size:16px;text-align:center;font-weight:bold;margin-bottom:15px">⚠️ A VERDADE SOBRE A IQ OPTION</p><p style="color:#ff8888;font-size:12px;line-height:1.8;text-align:justify">A <span style="color:#ffd700;font-weight:bold">IQ Option</span> <span style="color:#ff4444;font-weight:bold">NÃO É</span> o mercado financeiro real. Ela é uma <span style="color:#ffd700;font-weight:bold">corretora de opções binárias</span> - um modelo onde você aposta se o preço vai subir ou descer. Não há compra real de ativos. É uma <span style="color:#ff4444;font-weight:bold">aposta</span> contra a própria corretora.</p></div><div style="text-align:center;margin-top:15px"><p style="color:#ffd700;font-size:12px;font-weight:bold">🎯 A INTENÇÃO É GANHAR DINHEIRO - MAS COM CONSCIÊNCIA</p><p style="color:#888;font-size:10px;margin-top:5px">Use com responsabilidade. Conheça os riscos. Comece pela conta PRACTICE.</p></div></div>
 
-    <!-- PAINEL CONTATO (mantido igual ao original para não gerar erros) -->
     <div class="panel" id="panel-contato"><div class="config-section"><h3>📞 ENTRE EM CONTATO</h3></div><div style="background:linear-gradient(135deg,#1a1a2e,#0d0d1a);border:2px solid #ffd700;border-radius:15px;padding:20px;margin:10px 0;text-align:center"><p style="color:#ffd700;font-size:18px;font-weight:bold;margin-bottom:10px">⚡ POR QUE ESCOLHER O TESLA 369?</p><p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify">🔹 <span style="color:#ffd700">Automatizacao real:</span> Enquanto outros bots dependem de sinais manuais, o Tesla 369 opera com <span style="color:#00ff88">inteligencia automatizada</span> baseada em multiplos indicadores tecnicos.<br><br>🔹 <span style="color:#ffd700">Custo-beneficio imbativel:</span> Bots similares custam <span style="color:#ff4444">R$50 a R$200 por mes</span>. O Tesla 369 e <span style="color:#00ff88">GRATIS para comecar</span>.<br><br>🔹 <span style="color:#ffd700">Personalizacao total:</span> <span style="color:#00ff88">Skins exclusivas</span> para deixar o bot com a sua cara.<br><br>🔹 <span style="color:#ffd700">Suporte direto:</span> Voce <span style="color:#00ff88">fala direto com o desenvolvedor</span>.<br><br>🔹 <span style="color:#ffd700">Seguranca:</span> Seus dados salvos na nuvem.</p></div><div style="background:linear-gradient(135deg,#1a0000,#0d0000);border:2px solid #ff4444;border-radius:15px;padding:20px;margin:10px 0;text-align:center"><p style="color:#ff4444;font-size:14px;font-weight:bold;margin-bottom:10px">⚠️ CUIDADO COM BOTS GRATUITOS!</p><p style="color:#ff8888;font-size:11px;line-height:1.8;text-align:justify">Muitos bots gratuitos sao <span style="color:#ffd700">abandonados</span>, contem <span style="color:#ffd700">virus</span> ou simplesmente <span style="color:#ffd700">nao funcionam</span>. O Tesla 369 e <span style="color:#00ff88">atualizado constantemente</span>.</p></div><div style="background:linear-gradient(135deg,#1a1a2e,#0d0d1a);border:2px solid #25D366;border-radius:15px;padding:20px;margin:15px 0;text-align:center"><p style="color:#25D366;font-size:16px;font-weight:bold;margin-bottom:10px">💬 FALE COM O DESENVOLVEDOR</p><p style="color:#ccc;font-size:12px;margin:5px 0">📧 <span style="color:#00ff88">gyn.bet.fc@gmail.com</span></p><a href="https://wa.me/5562981728653?text=Ola!%20Vim%20do%20Tesla%20369%20Bot%20v{{ BOT_VERSION }}%20e%20gostaria%20de%20saber%20mais!" target="_blank" style="text-decoration:none"><button style="background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;padding:14px 28px;border-radius:12px;font-size:15px;font-weight:bold;cursor:pointer;margin-top:10px;font-family:monospace;box-shadow:0 4px 15px rgba(37,211,102,0.3);transition:all 0.3s ease" onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 6px 20px rgba(37,211,102,0.5)'" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 4px 15px rgba(37,211,102,0.3)'">💬 WHATSAPP</button></a><p style="color:#888;font-size:10px;margin-top:10px">Duvidas, sugestoes ou interesse em recursos premium? Fale comigo!</p></div></div>
 </div>
 
@@ -295,10 +289,6 @@ function calcularMinimo() {
     var valor = (banca * perc / 100).toFixed(2);
     document.getElementById('valorEstimado').textContent = '($' + valor + ')';
     valorEstimadoAtual = banca * perc / 100;
-    var payout = 0.85;
-    var minimo = (valor / (1 + (1/payout) + (1/payout)*(1/payout))).toFixed(2);
-    if (banca < parseFloat(minimo) * 3) { document.getElementById('avisoMinimo').textContent = '⚠️ Min: $' + (parseFloat(minimo)*3).toFixed(2); }
-    else { document.getElementById('avisoMinimo').textContent = ''; }
 }
 function conectarIQ() {
     var email = document.getElementById('email').value.trim();
@@ -324,7 +314,6 @@ function conectarIQ() {
             atualizar();
             iniciarChat();
             alert('✅ Conectado com sucesso!');
-            if(d.refresh) { setTimeout(function() { location.reload(); }, 1500); }
         } else { alert('ERRO: '+d.erro); btnConectar.disabled=false; btnConectar.textContent='🔌 CONECTAR'; }
     }).catch(err => { alert('Erro de conexão: ' + err.message); btnConectar.disabled=false; btnConectar.textContent='🔌 CONECTAR'; });
 }
@@ -334,16 +323,6 @@ function desconectarIQ() {
     fetch('/parar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({desconectar: true}) })
     .then(r=>r.json()).then(d=>{
         if(d.shutdown){ alert('🔌 Desconectado! O servidor será encerrado.'); setTimeout(()=>window.close(),1000); }
-        conectadoIQ = false; botAtivo = false;
-        document.getElementById('btnConectar').style.display = 'inline-block';
-        document.getElementById('btnConectar').disabled = false;
-        document.getElementById('btnConectar').textContent = '🔌 CONECTAR';
-        document.getElementById('btnDesconectar').style.display = 'none';
-        document.getElementById('btnOperar').style.display = 'none';
-        document.getElementById('btnParar').style.display = 'none';
-        document.getElementById('statusTexto').textContent = '⏸️ Desconectado';
-        document.getElementById('statusDot').className = 'status-dot inactive';
-        if(intervalo) clearInterval(intervalo);
     }).catch(err => alert('Erro ao desconectar: ' + err.message));
 }
 function comecarOperar() {
@@ -360,7 +339,6 @@ function comecarOperar() {
             document.getElementById('statusTexto').textContent = '🤖 Operando';
             document.getElementById('statusDot').className = 'status-dot active';
             document.getElementById('moedasSaldo').textContent = d.moedas;
-            alert('🚀 Bot iniciado! Aguardando sinais...');
         } else { alert('ERRO: '+d.erro); btnOperar.disabled=false; btnOperar.textContent='🚀 COMEÇAR OPERAR'; }
     });
 }
@@ -379,7 +357,6 @@ function pararBot() {
         document.getElementById('statusTexto').textContent = '🟢 Conectado';
         document.getElementById('statusDot').className = 'status-dot active';
         btnParar.disabled = false; btnParar.textContent = '⏹️ PARAR';
-        alert('⏹️ Bot parado com sucesso!');
         atualizar();
     });
 }
@@ -408,7 +385,7 @@ function selecionarEstrategia(key) {
     for(var i=0;i<cards.length;i++) cards[i].classList.remove('ativa');
     var card = document.getElementById('est_'+key);
     if(card) card.classList.add('ativa');
-    fetch('/selecionar_estrategia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estrategia:key})}).then(()=>{ document.getElementById('estrategiaAtiva').textContent=key.toUpperCase(); alert('✅ Estratégia alterada para: '+key); });
+    fetch('/selecionar_estrategia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estrategia:key})}).then(()=>{ document.getElementById('estrategiaAtiva').textContent=key.toUpperCase(); });
 }
 function renderLojaEstrategias() {
     fetch('/status').then(r=>r.json()).then(d=>{
@@ -432,7 +409,7 @@ function comprarEstrategia(estrategiaId) {
     if(!emailLogado){ alert('Conecte primeiro!'); return; }
     if(!confirm('Comprar esta estratégia com VOLTS?')) return;
     fetch('/comprar_estrategia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estrategia_id:estrategiaId})})
-    .then(r=>r.json()).then(d=>{ if(d.ok){ alert(d.msg||'Adquirida com sucesso!'); document.getElementById('moedasSaldo').textContent=d.moedas; renderLojaEstrategias(); renderEstrategias(); } else { alert('ERRO: '+d.erro); } });
+    .then(r=>r.json()).then(d=>{ if(d.ok){ alert('Adquirida com sucesso!'); document.getElementById('moedasSaldo').textContent=d.moedas; renderLojaEstrategias(); renderEstrategias(); } else { alert('ERRO: '+d.erro); } });
 }
 function renderPlanos() {
     var grid = document.getElementById('planosGridContainer');
@@ -470,14 +447,14 @@ function comprarSkin(skinId) {
     if(!confirm('Comprar esta skin?')) return;
     fetch('/comprar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId})})
     .then(r=>r.json()).then(d=>{
-        if(d.ok){ alert('✅ '+(d.msg||'Skin adquirida com sucesso!')); document.getElementById('moedasSaldo').textContent=d.moedas; var categoriaAtiva = document.querySelector('#loja-skins .loja-cat-btn.active'); var categoria = categoriaAtiva ? categoriaAtiva.textContent.trim().replace('⚡','').replace('🔮','').replace('💎','').trim().toLowerCase() : 'basica'; if(categoria==='básicas') categoria='basica'; if(categoria==='premium') categoria='premium'; if(categoria==='lendárias') categoria='lendaria'; renderLojaCategoria(categoria); } else { alert('❌ ERRO: '+d.erro); }
+        if(d.ok){ alert('Skin adquirida com sucesso!'); document.getElementById('moedasSaldo').textContent=d.moedas; var categoriaAtiva = document.querySelector('#loja-skins .loja-cat-btn.active'); var categoria = categoriaAtiva ? categoriaAtiva.textContent.trim().replace('⚡','').replace('🔮','').replace('💎','').trim().toLowerCase() : 'basica'; if(categoria==='básicas') categoria='basica'; if(categoria==='premium') categoria='premium'; if(categoria==='lendárias') categoria='lendaria'; renderLojaCategoria(categoria); } else { alert('❌ ERRO: '+d.erro); }
     });
 }
-function ativarSkin(skinId) {
+function activarSkin(skinId) {
     if(!emailLogado){ alert('Conecte primeiro!'); return; }
     if(!confirm('Ativar esta skin? O visual será atualizado.')) return;
     fetch('/ativar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId})})
-    .then(r=>r.json()).then(d=>{ if(d.ok){ alert('🎨 Skin ativada! A página será recarregada.'); setTimeout(()=>location.reload(),500); } else { alert('❌ ERRO: '+d.erro); } });
+    .then(r=>r.json()).then(d=>{ if(d.ok){ alert('🎨 Skin ativada!'); setTimeout(()=>location.reload(),500); } else { alert('❌ ERRO: '+d.erro); } });
 }
 function selecionarPlano(id){
     document.querySelectorAll('.plano-card').forEach(c=>c.classList.remove('selecionado'));
@@ -507,7 +484,7 @@ function copiarPix(){ navigator.clipboard.writeText(pixAtual.qr_code).then(()=>a
 function verificarPagamento(pixId){
     document.getElementById('pixContent').innerHTML += '<p style="color:#ffd700">⏳ Verificando...</p>';
     fetch('/verificar_pix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pix_id:pixId})})
-    .then(r=>r.json()).then(d=>{ if(d.pago){ alert('✅ PAGAMENTO CONFIRMADO! +'+d.moedas+' VOLTS adicionados!'); document.getElementById('moedasSaldo').textContent=d.saldo; fecharModal(); location.reload(); } else { alert('⏰ Ainda não confirmado. Aguarde alguns minutos e tente novamente.'); } });
+    .then(r=>r.json()).then(d=>{ if(d.pago){ alert('✅ PAGAMENTO CONFIRMADO! +'+d.moedas+' VOLTS adicionados!'); document.getElementById('moedasSaldo').textContent=d.saldo; fecharModal(); location.reload(); } else { alert('⏰ Ainda não confirmado.'); } });
 }
 function fecharModal(){ document.getElementById('modalPix').classList.remove('active'); pixAtual=null; }
 function verRelatorio(){
@@ -540,7 +517,7 @@ function verRanking(){
     fetch('/ranking').then(r=>r.json()).then(d=>{
         var h='<div style="background:#1a1a0a;border:2px solid #ffd700;border-radius:15px;padding:15px;margin-bottom:15px"><p style="color:#ffd700;font-size:14px;font-weight:bold;text-align:center;margin-bottom:10px">📊 ESTATÍSTICAS GLOBAIS</p><div class="relatorio-grid">'+
             '<div class="relatorio-card"><div class="rlabel">👥 USUÁRIOS</div><div class="rvalue" style="color:#ffd700">'+d.stats.total_usuarios+'</div></div>'+
-            '<div class="relatorio-card"><div class="rlabel">🔄 TOTAL OPS</div><div class="rvalue" style="color:#ffd700">'+d.stats.total_ops+'</div></div>'+
+            '<div class="relatorio-grid"><div class="relatorio-card"><div class="rlabel">🔄 TOTAL OPS</div><div class="rvalue" style="color:#ffd700">'+d.stats.total_ops+'</div></div>'+
             '<div class="relatorio-card"><div class="rlabel">✅ WINS</div><div class="rvalue" style="color:#00ff88">'+d.stats.total_wins+'</div></div>'+
             '<div class="relatorio-card"><div class="rlabel">🎯 TAXA GLOBAL</div><div class="rvalue" style="color:#ffd700">'+d.stats.taxa_global+'%</div></div></div></div>'+
             '<p style="color:#ffd700;font-size:14px;font-weight:bold;text-align:center;margin-bottom:10px">🏆 TOP TRADERS</p><div style="background:#000;border:1px solid #333;border-radius:10px;overflow:hidden"><table class="historico-table"><tr><th>#</th><th>EMAIL</th><th>LUCRO</th><th>WINS</th><th>LOSS</th><th>TAXA</th><th>BANCA</th></tr>';
@@ -572,11 +549,26 @@ function atualizar() {
             document.getElementById('mm20').textContent = d.analise.mm20 ? d.analise.mm20.toFixed(5) : '--';
             document.getElementById('stoch').textContent = d.analise.stoch ? d.analise.stoch.toFixed(1) : '--';
             document.getElementById('fase').textContent = d.analise.fase || '--';
-            document.getElementById('preco').textContent = d.analise.preco ? d.analise.preco.toFixed(5) : '--';
         }
         if(d.logs){ var terminal = document.getElementById('terminal'); terminal.innerHTML = d.logs; terminal.scrollTop = terminal.scrollHeight; }
-        if(d.rodando && !botAtivo){ botAtivo=true; document.getElementById('btnOperar').style.display='none'; document.getElementById('btnParar').style.display='inline-block'; document.getElementById('statusTexto').textContent='🤖 Operando'; document.getElementById('statusDot').className='status-dot active'; }
-        else if(!d.rodando && botAtivo){ botAtivo=false; if(conectadoIQ){ document.getElementById('btnOperar').style.display='inline-block'; document.getElementById('btnOperar').disabled=false; document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR'; document.getElementById('btnParar').style.display='none'; document.getElementById('statusTexto').textContent='🟢 Conectado'; document.getElementById('statusDot').className='status-dot active'; } else { document.getElementById('btnOperar').style.display='none'; document.getElementById('btnParar').style.display='none'; document.getElementById('statusTexto').textContent='⏸️ Desconectado'; document.getElementById('statusDot').className='status-dot inactive'; } }
+        
+        // 🔥 REQUISITO 2: SE O CORE DESLIGOU O BOT POR STOP GAIN, O BOTÃO RETORNA IMEDIATAMENTE PARA "🚀 COMEÇAR OPERAR"
+        if(!d.rodando && botAtivo){ 
+            botAtivo = false; 
+            if(conectadoIQ){ 
+                document.getElementById('btnOperar').style.display = 'inline-block'; 
+                document.getElementById('btnOperar').disabled = false; 
+                document.getElementById('btnOperar').textContent = '🚀 COMEÇAR OPERAR'; 
+                document.getElementById('btnParar').style.display = 'none'; 
+                document.getElementById('statusTexto').textContent = '🟢 Conectado'; 
+                document.getElementById('statusDot').className = 'status-dot active'; 
+            } else { 
+                document.getElementById('btnOperar').style.display = 'none'; 
+                document.getElementById('btnParar').style.display = 'none'; 
+                document.getElementById('statusTexto').textContent = '⏸️ Desconectado'; 
+                document.getElementById('statusDot').className = 'status-dot inactive'; 
+            } 
+        }
     });
 }
 function iniciarChat(){ if(emailLogado){ atualizarChat(); setInterval(atualizarChat,5000); } }
@@ -599,277 +591,6 @@ function atualizarChat(){
     });
 }
 
-// 🔥 FUNÇÃO DE EFEITOS DAS SKINS - VERSÃO COMPLETA 🔥
-function initSkinEffects() {
-    console.log("🎨 [SKIN] Inicializando efeitos visuais...");
-    
-    // Helper para redimensionamento responsivo
-    function resizeCanvas(canvas, parent) {
-        if(!canvas || !parent) return;
-        canvas.width = parent.offsetWidth;
-        canvas.height = parent.offsetHeight;
-    }
-    
-    // ⚡ TESLA THUNDER - Raios (SKIN PADRÃO)
-    var thunderCanvas = document.getElementById('thunderCanvas');
-    if(thunderCanvas && thunderCanvas.getContext) {
-        try {
-            var tCtx = thunderCanvas.getContext('2d');
-            var tParent = thunderCanvas.parentElement;
-            resizeCanvas(thunderCanvas, tParent);
-            function drawThunder() {
-                if(!thunderCanvas || !thunderCanvas.getContext) return;
-                tCtx.clearRect(0, 0, thunderCanvas.width, thunderCanvas.height);
-                if(Math.random() < 0.03) {
-                    tCtx.strokeStyle = 'rgba(255,255,100,0.8)';
-                    tCtx.lineWidth = 2;
-                    tCtx.beginPath();
-                    var x = Math.random() * thunderCanvas.width;
-                    tCtx.moveTo(x, 0);
-                    for(var y = 0; y < thunderCanvas.height; y += 25) {
-                        x += (Math.random() - 0.5) * 50;
-                        tCtx.lineTo(x, y);
-                    }
-                    tCtx.stroke();
-                }
-                requestAnimationFrame(drawThunder);
-            }
-            drawThunder();
-            window.addEventListener('resize', () => { resizeCanvas(thunderCanvas, tParent); });
-        } catch(e) { console.warn("Thunder effect error:", e); }
-    }
-    
-    // 🧬 TESLA MATRIX - Chuva de caracteres
-    var matrixCanvas = document.getElementById('matrixCanvas');
-    if(matrixCanvas && matrixCanvas.getContext) {
-        try {
-            var mctx = matrixCanvas.getContext('2d');
-            var mParent = matrixCanvas.parentElement;
-            resizeCanvas(matrixCanvas, mParent);
-            var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*()";
-            var fontSize = 14;
-            var columns = Math.floor(matrixCanvas.width / fontSize);
-            var drops = [];
-            for(var i = 0; i < columns; i++) drops[i] = Math.random() * -100;
-            function drawMatrix() {
-                if(!matrixCanvas || !matrixCanvas.getContext) return;
-                mctx.fillStyle = 'rgba(0,0,0,0.05)';
-                mctx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
-                mctx.fillStyle = '#00ff00';
-                mctx.font = fontSize + 'px monospace';
-                for(var i = 0; i < drops.length; i++) {
-                    var text = chars[Math.floor(Math.random() * chars.length)];
-                    mctx.fillText(text, i * fontSize, drops[i] * fontSize);
-                    if(drops[i] * fontSize > matrixCanvas.height && Math.random() > 0.975) drops[i] = 0;
-                    drops[i]++;
-                }
-                requestAnimationFrame(drawMatrix);
-            }
-            drawMatrix();
-            window.addEventListener('resize', () => { resizeCanvas(matrixCanvas, mParent); });
-        } catch(e) { console.warn("Matrix effect error:", e); }
-    }
-    
-    // 🌸 TESLA SAKURA - Pétalas caindo
-    var sakuraCanvas = document.getElementById('sakuraCanvas');
-    if(sakuraCanvas && sakuraCanvas.getContext) {
-        try {
-            var sCtx = sakuraCanvas.getContext('2d');
-            var sParent = sakuraCanvas.parentElement;
-            resizeCanvas(sakuraCanvas, sParent);
-            var petals = [];
-            for(var i = 0; i < 30; i++) {
-                petals.push({ x: Math.random() * sakuraCanvas.width, y: Math.random() * sakuraCanvas.height, r: Math.random() * 5 + 2, speed: Math.random() * 0.8 + 0.3, angle: Math.random() * Math.PI * 2, rotSpeed: (Math.random() - 0.5) * 0.03 });
-            }
-            function drawSakura() {
-                if(!sakuraCanvas || !sakuraCanvas.getContext) return;
-                sCtx.clearRect(0, 0, sakuraCanvas.width, sakuraCanvas.height);
-                for(var i = 0; i < petals.length; i++) {
-                    var p = petals[i];
-                    sCtx.save();
-                    sCtx.translate(p.x, p.y);
-                    sCtx.rotate(p.angle);
-                    sCtx.fillStyle = 'rgba(255,105,180,0.7)';
-                    sCtx.beginPath();
-                    sCtx.ellipse(0, 0, p.r, p.r * 0.6, 0, 0, Math.PI * 2);
-                    sCtx.fill();
-                    sCtx.restore();
-                    p.y += p.speed;
-                    p.angle += p.rotSpeed;
-                    if(p.y > sakuraCanvas.height + 20) { p.y = -20; p.x = Math.random() * sakuraCanvas.width; }
-                }
-                requestAnimationFrame(drawSakura);
-            }
-            drawSakura();
-            window.addEventListener('resize', () => { resizeCanvas(sakuraCanvas, sParent); });
-        } catch(e) { console.warn("Sakura effect error:", e); }
-    }
-    
-    // 🖤 TESLA DARK - Partículas escuras
-    var darkCanvas = document.getElementById('darkCanvas');
-    if(darkCanvas && darkCanvas.getContext) {
-        try {
-            var dCtx = darkCanvas.getContext('2d');
-            var dParent = darkCanvas.parentElement;
-            resizeCanvas(darkCanvas, dParent);
-            var particles = [];
-            for(var i = 0; i < 50; i++) {
-                particles.push({ x: Math.random() * darkCanvas.width, y: Math.random() * darkCanvas.height, r: Math.random() * 3 + 1, vx: (Math.random() - 0.5) * 0.5, vy: Math.random() * 0.5 + 0.2, alpha: Math.random() * 0.5 + 0.2 });
-            }
-            function drawDark() {
-                if(!darkCanvas || !darkCanvas.getContext) return;
-                dCtx.clearRect(0, 0, darkCanvas.width, darkCanvas.height);
-                for(var i = 0; i < particles.length; i++) {
-                    var p = particles[i];
-                    dCtx.beginPath();
-                    dCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-                    dCtx.fillStyle = 'rgba(80,80,80,' + p.alpha + ')';
-                    dCtx.fill();
-                    p.x += p.vx;
-                    p.y += p.vy;
-                    if(p.y > darkCanvas.height + 10) { p.y = -10; p.x = Math.random() * darkCanvas.width; }
-                    if(p.x > darkCanvas.width + 10) p.x = -10;
-                    if(p.x < -10) p.x = darkCanvas.width + 10;
-                }
-                requestAnimationFrame(drawDark);
-            }
-            drawDark();
-            window.addEventListener('resize', () => { resizeCanvas(darkCanvas, dParent); });
-        } catch(e) { console.warn("Dark effect error:", e); }
-    }
-    
-    // 🌊 TESLA OCEAN - Ondas
-    var oceanCanvas = document.getElementById('oceanCanvas');
-    if(oceanCanvas && oceanCanvas.getContext) {
-        try {
-            var octx = oceanCanvas.getContext('2d');
-            var oParent = oceanCanvas.parentElement;
-            resizeCanvas(oceanCanvas, oParent);
-            var offset = 0;
-            function drawOcean() {
-                if(!oceanCanvas || !oceanCanvas.getContext) return;
-                octx.clearRect(0, 0, oceanCanvas.width, oceanCanvas.height);
-                octx.beginPath();
-                octx.moveTo(0, oceanCanvas.height);
-                for(var x = 0; x < oceanCanvas.width; x += 5) {
-                    var y = oceanCanvas.height / 2 + Math.sin(x * 0.02 + offset) * 12 + Math.sin(x * 0.05 + offset * 1.3) * 8;
-                    octx.lineTo(x, y);
-                }
-                octx.lineTo(oceanCanvas.width, oceanCanvas.height);
-                octx.closePath();
-                octx.fillStyle = 'rgba(0,170,204,0.3)';
-                octx.fill();
-                offset += 0.03;
-                requestAnimationFrame(drawOcean);
-            }
-            drawOcean();
-            window.addEventListener('resize', () => { resizeCanvas(oceanCanvas, oParent); });
-        } catch(e) { console.warn("Ocean effect error:", e); }
-    }
-    
-    // 🔥 TESLA FIRE - Chamas
-    var fireCanvas = document.getElementById('fireCanvas');
-    if(fireCanvas && fireCanvas.getContext) {
-        try {
-            var fctx = fireCanvas.getContext('2d');
-            var fParent = fireCanvas.parentElement;
-            resizeCanvas(fireCanvas, fParent);
-            var fireParticles = [];
-            for(var i = 0; i < 50; i++) {
-                fireParticles.push({ x: Math.random() * fireCanvas.width, y: fireCanvas.height - Math.random() * 30, vx: (Math.random() - 0.5) * 0.8, vy: -Math.random() * 2 - 0.8, life: Math.random() * 40 + 20, maxLife: 60, size: Math.random() * 5 + 2 });
-            }
-            function drawFire() {
-                if(!fireCanvas || !fireCanvas.getContext) return;
-                fctx.clearRect(0, 0, fireCanvas.width, fireCanvas.height);
-                for(var i = 0; i < fireParticles.length; i++) {
-                    var p = fireParticles[i];
-                    var progress = p.life / p.maxLife;
-                    var gradient = fctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * progress);
-                    gradient.addColorStop(0, 'rgba(255,200,50,' + progress + ')');
-                    gradient.addColorStop(0.5, 'rgba(255,80,0,' + progress * 0.7 + ')');
-                    gradient.addColorStop(1, 'rgba(255,0,0,0)');
-                    fctx.beginPath();
-                    fctx.arc(p.x, p.y, p.size * progress, 0, Math.PI * 2);
-                    fctx.fillStyle = gradient;
-                    fctx.fill();
-                    p.x += p.vx;
-                    p.y += p.vy;
-                    p.life--;
-                    if(p.life <= 0) {
-                        fireParticles[i] = { x: Math.random() * fireCanvas.width, y: fireCanvas.height - Math.random() * 10, vx: (Math.random() - 0.5) * 0.8, vy: -Math.random() * 2 - 0.8, life: Math.random() * 40 + 20, maxLife: 60, size: Math.random() * 5 + 2 };
-                    }
-                }
-                requestAnimationFrame(drawFire);
-            }
-            drawFire();
-            window.addEventListener('resize', () => { resizeCanvas(fireCanvas, fParent); });
-        } catch(e) { console.warn("Fire effect error:", e); }
-    }
-    
-    // ❄️ TESLA ICE - Neve
-    var snowCanvas = document.getElementById('snowCanvas');
-    if(snowCanvas && snowCanvas.getContext) {
-        try {
-            var snCtx = snowCanvas.getContext('2d');
-            var snParent = snowCanvas.parentElement;
-            resizeCanvas(snowCanvas, snParent);
-            var snowflakes = [];
-            for(var i = 0; i < 70; i++) {
-                snowflakes.push({ x: Math.random() * snowCanvas.width, y: Math.random() * snowCanvas.height, r: Math.random() * 3 + 1, speed: Math.random() * 0.8 + 0.3, wind: (Math.random() - 0.5) * 0.3, opacity: Math.random() * 0.6 + 0.3 });
-            }
-            function drawSnow() {
-                if(!snowCanvas || !snowCanvas.getContext) return;
-                snCtx.clearRect(0, 0, snowCanvas.width, snowCanvas.height);
-                for(var i = 0; i < snowflakes.length; i++) {
-                    var f = snowflakes[i];
-                    snCtx.beginPath();
-                    snCtx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
-                    snCtx.fillStyle = 'rgba(255,255,255,' + f.opacity + ')';
-                    snCtx.fill();
-                    f.y += f.speed;
-                    f.x += f.wind;
-                    if(f.y > snowCanvas.height + 10) { f.y = -10; f.x = Math.random() * snowCanvas.width; }
-                }
-                requestAnimationFrame(drawSnow);
-            }
-            drawSnow();
-            window.addEventListener('resize', () => { resizeCanvas(snowCanvas, snParent); });
-        } catch(e) { console.warn("Snow effect error:", e); }
-    }
-    
-    // 👻 SKIN FANTASMA - Efeitos especiais
-    var ghostOverlay = document.getElementById('ghostOverlay');
-    var ghostTotalOverlay = document.getElementById('ghostTotalOverlay');
-    if(ghostOverlay || ghostTotalOverlay) {
-        console.log("👻 Ativando skin FANTASMA...");
-        if(window.ghostTimers) { window.ghostTimers.forEach(function(timer) { clearInterval(timer); clearTimeout(timer); }); }
-        window.ghostTimers = [];
-        document.body.classList.add('ghost-shake-active');
-        var fadeInterval = setInterval(function() { if(Math.random() < 0.3) { document.body.classList.add('ghost-fade-active'); setTimeout(function() { document.body.classList.remove('ghost-fade-active'); }, 1000); } }, 3000);
-        window.ghostTimers.push(fadeInterval);
-        var blurInterval = setInterval(function() { if(Math.random() < 0.2) { document.body.classList.add('ghost-blur-active'); setTimeout(function() { document.body.classList.remove('ghost-blur-active'); }, 1500); } }, 5000);
-        window.ghostTimers.push(blurInterval);
-        var disappearInterval = setInterval(function() {
-            if(Math.random() < 0.15) {
-                if(ghostTotalOverlay) ghostTotalOverlay.style.opacity = '0.95';
-                document.body.style.opacity = '0';
-                document.body.style.transition = 'opacity 0.5s ease';
-                setTimeout(function() { document.body.style.opacity = '1'; if(ghostTotalOverlay) ghostTotalOverlay.style.opacity = '0'; }, 2000);
-            } else if(Math.random() < 0.25) {
-                if(ghostOverlay) ghostOverlay.style.opacity = '0.8';
-                document.body.style.opacity = '0.8';
-                setTimeout(function() { if(ghostOverlay) ghostOverlay.style.opacity = '0.5'; document.body.style.opacity = '0.9'; }, 800);
-                setTimeout(function() { if(ghostOverlay) ghostOverlay.style.opacity = '0.2'; }, 1200);
-                setTimeout(function() { if(ghostOverlay) ghostOverlay.style.opacity = '0'; document.body.style.opacity = '1'; }, 1600);
-            }
-        }, 8000);
-        window.ghostTimers.push(disappearInterval);
-    }
-    
-    console.log("🎨 [SKIN] Efeitos visuais inicializados com sucesso!");
-}
-
-// Inicialização
 window.onload = function() {
     renderPlanos();
     fetch('/status').then(r=>r.json()).then(d=>{
@@ -896,9 +617,7 @@ window.onload = function() {
             iniciarChat();
         }
     });
-    setInterval(atualizarChat,5000);
-    setTimeout(initSkinEffects, 300);
 };
 </script>
 </body>
-    </html>
+</html>
