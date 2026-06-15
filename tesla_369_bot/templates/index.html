@@ -116,6 +116,11 @@
         .btn-usar{background:linear-gradient(135deg,#006699,#3399cc);color:#fff}
         
         .canvas-full{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-2;pointer-events:none}
+        .chat-mensagens{background:#000;border:1px solid #333;border-radius:10px;height:300px;overflow-y:auto;padding:10px;margin-bottom:10px;font-size:10px}
+        .chat-mensagem{margin-bottom:8px;border-bottom:1px solid #222;padding-bottom:5px}
+        .chat-nome{color:#ffd700;font-weight:bold}
+        .chat-hora{color:#888;font-size:9px}
+        .chat-msg{color:#ccc;font-size:11px;margin-top:3px}
     </style>
 </head>
 <body>
@@ -134,7 +139,7 @@
         <div class="tab" onclick="openTab('estrategias')">📊 ESTRATÉGIAS</div>
         <div class="tab" onclick="openTab('loja')">🛍️ LOJA</div>
         <div class="tab" onclick="openTab('chat')">💬 CHAT</div>
-        <div class="tab" onclick="openTab('leia-me')">📖 TUTORIAL</div>
+        <div class="tab" onclick="openTab('tutorial')">📖 TUTORIAL</div>
         <div class="tab" onclick="openTab('contato')">📞 CONTATO</div>
     </div>
 
@@ -222,7 +227,7 @@
     <!-- PAINEL CHAT -->
     <div class="panel" id="panel-chat">
         <div class="config-section"><h3>💬 CHAT DOS TRADERS</h3><p style="color:#888;font-size:9px" id="chatInfo">Conecte na IQ Option para entrar</p></div>
-        <div id="chatMensagens" style="background:#000;border:1px solid #333;border-radius:10px;height:300px;overflow-y:auto;padding:10px;margin-bottom:10px;font-size:10px"></div>
+        <div id="chatMensagens" class="chat-mensagens"><p style="color:#888;text-align:center">💬 Envie uma mensagem para começar</p></div>
         <div style="display:flex;gap:8px"><input type="text" id="chatMsg" placeholder="Digite sua mensagem..." style="flex:1;padding:10px;background:#111;border:1px solid #333;border-radius:8px;color:#fff;font-size:11px" onkeypress="if(event.key==='Enter')enviarChatMsg()"><button onclick="enviarChatMsg()" class="btn btn-info" style="padding:10px 20px">ENVIAR</button></div>
         <div style="text-align:center;margin-top:5px"><span style="color:#888;font-size:9px" id="chatOnline">0 online</span></div>
     </div>
@@ -233,23 +238,74 @@
         <div id="relatorioContent"></div>
     </div>
 
-    <!-- PAINEL TUTORIAL -->
-    <div class="panel" id="panel-leia-me">
+    <!-- PAINEL TUTORIAL - COMPLETO -->
+    <div class="panel" id="panel-tutorial">
         <div class="config-section"><h3>📖 TUTORIAL & ⚠️ AVISOS IMPORTANTES</h3></div>
         <div style="background:#0a0a1a;border:1px solid #00ff88;border-radius:15px;padding:20px;margin:10px 0">
             <p style="color:#ffd700;font-size:18px;font-weight:bold;margin-bottom:15px;text-align:center">📖 COMO USAR O TESLA 369</p>
             <p style="color:#ffd700;font-size:13px;font-weight:bold;margin-bottom:10px">🔰 PRIMEIROS PASSOS</p>
-            <p style="color:#ccc;font-size:11px;line-height:2.0;text-align:justify"><span style="color:#00ff88">1.</span> Crie uma conta na <span style="color:#ffd700">IQ Option</span> (use conta PRACTICE para testes).<br><span style="color:#00ff88">2.</span> Digite seu <span style="color:#ffd700">email e senha</span> no bot e clique em <span style="color:#00ff88">CONECTAR</span>.<br><span style="color:#00ff88">3.</span> Selecione a <span style="color:#ffd700">% da banca</span> que deseja usar (mínimo 15%).<br><span style="color:#00ff88">4.</span> Vá na aba <span style="color:#ffd700">ESTRATÉGIAS</span> e escolha uma estratégia.<br><span style="color:#00ff88">5.</span> Clique em <span style="color:#00ff88;font-weight:bold">COMEÇAR OPERAR</span> e aguarde o sinal.<br><span style="color:#00ff88">6.</span> O bot opera automaticamente em segundo plano.</p>
+            <p style="color:#ccc;font-size:11px;line-height:2.0;text-align:justify">
+                <span style="color:#00ff88">1.</span> Crie uma conta na <span style="color:#ffd700">IQ Option</span> (use conta PRACTICE para testes).<br>
+                <span style="color:#00ff88">2.</span> Digite seu <span style="color:#ffd700">email e senha</span> no bot e clique em <span style="color:#00ff88">CONECTAR</span>.<br>
+                <span style="color:#00ff88">3.</span> Selecione a <span style="color:#ffd700">% da banca</span> que deseja usar (mínimo 15%).<br>
+                <span style="color:#00ff88">4.</span> Vá na aba <span style="color:#ffd700">ESTRATÉGIAS</span> e escolha uma estratégia.<br>
+                <span style="color:#00ff88">5.</span> Clique em <span style="color:#00ff88;font-weight:bold">COMEÇAR OPERAR</span> e aguarde o sinal.<br>
+                <span style="color:#00ff88">6.</span> O bot opera automaticamente em segundo plano.
+            </p>
+            <p style="color:#ffd700;font-size:13px;font-weight:bold;margin-bottom:10px;margin-top:15px">🤖 COMO O ROBÔ FUNCIONA</p>
+            <p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify">
+                O Tesla 369 analisa <span style="color:#00ff88">padrões de velas</span> em tempo real usando indicadores técnicos. Cada estratégia tem seu próprio <span style="color:#ffd700">timeframe e gatilho</span> de entrada. Quando encontra um padrão com alta probabilidade, ele <span style="color:#ffd700">abre uma ordem automaticamente</span>. O robô busca <span style="color:#ffd700;font-weight:bold">+10% de retorno</span> sobre o valor que você definir como entrada. Se perder, ele aplica <span style="color:#ff4444">Martingale (Gale 2)</span> dobrando o valor por até 2 vezes. <span style="color:#00ff88;font-weight:bold">Stop Gain:</span> 1 WIN = bot para automaticamente.
+            </p>
+        </div>
+        <div style="background:#0a1a0a;border:1px solid #00ff88;border-radius:15px;padding:20px;margin:10px 0">
+            <p style="color:#00ff88;font-size:14px;font-weight:bold;margin-bottom:10px">💰 RISCOS REAIS</p>
+            <p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify">
+                <span style="color:#ff4444">• Você pode PERDER TODO seu dinheiro.</span><br>
+                • Opções binárias são proibidas em vários países.<br>
+                • O Martingale é perigoso: 3 perdas seguidas consomem 7x o valor inicial.<br>
+                • <span style="color:#ffd700">NUNCA invista dinheiro que você não pode perder.</span><br>
+                • Resultados passados não garantem resultados futuros.<br>
+                • O robô é uma ferramenta de <span style="color:#ffd700">análise automatizada</span>, não uma garantia de lucro.
+            </p>
+        </div>
+        <div style="background:#1a0000;border:2px solid #ff4444;border-radius:15px;padding:20px;margin:10px 0">
+            <p style="color:#ff4444;font-size:16px;text-align:center;font-weight:bold;margin-bottom:15px">⚠️ A VERDADE SOBRE A IQ OPTION</p>
+            <p style="color:#ff8888;font-size:12px;line-height:1.8;text-align:justify">
+                A <span style="color:#ffd700;font-weight:bold">IQ Option</span> <span style="color:#ff4444;font-weight:bold">NÃO É</span> o mercado financeiro real. Ela é uma <span style="color:#ffd700;font-weight:bold">corretora de opções binárias</span> - um modelo onde você aposta se o preço vai subir ou descer. Não há compra real de ativos. É uma <span style="color:#ff4444;font-weight:bold">aposta</span> contra a própria corretora.
+            </p>
+        </div>
+        <div style="text-align:center;margin-top:15px">
+            <p style="color:#ffd700;font-size:12px;font-weight:bold">🎯 A INTENÇÃO É GANHAR DINHEIRO - MAS COM CONSCIÊNCIA</p>
+            <p style="color:#888;font-size:10px;margin-top:5px">Use com responsabilidade. Conheça os riscos. Comece pela conta PRACTICE.</p>
         </div>
     </div>
 
-    <!-- PAINEL CONTATO -->
+    <!-- PAINEL CONTATO - COMPLETO -->
     <div class="panel" id="panel-contato">
         <div class="config-section"><h3>📞 ENTRE EM CONTATO</h3></div>
+        <div style="background:linear-gradient(135deg,#1a1a2e,#0d0d1a);border:2px solid #ffd700;border-radius:15px;padding:20px;margin:10px 0;text-align:center">
+            <p style="color:#ffd700;font-size:18px;font-weight:bold;margin-bottom:10px">⚡ POR QUE ESCOLHER O TESLA 369?</p>
+            <p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify">
+                🔹 <span style="color:#ffd700">Automatizacao real:</span> Enquanto outros bots dependem de sinais manuais, o Tesla 369 opera com <span style="color:#00ff88">inteligencia automatizada</span> baseada em multiplos indicadores tecnicos.<br><br>
+                🔹 <span style="color:#ffd700">Custo-beneficio imbativel:</span> Bots similares custam <span style="color:#ff4444">R$50 a R$200 por mes</span>. O Tesla 369 e <span style="color:#00ff88">GRATIS para comecar</span>.<br><br>
+                🔹 <span style="color:#ffd700">Personalizacao total:</span> <span style="color:#00ff88">Skins exclusivas</span> para deixar o bot com a sua cara.<br><br>
+                🔹 <span style="color:#ffd700">Suporte direto:</span> Voce <span style="color:#00ff88">fala direto com o desenvolvedor</span>.<br><br>
+                🔹 <span style="color:#ffd700">Seguranca:</span> Seus dados salvos na nuvem.
+            </p>
+        </div>
+        <div style="background:linear-gradient(135deg,#1a0000,#0d0000);border:2px solid #ff4444;border-radius:15px;padding:20px;margin:10px 0;text-align:center">
+            <p style="color:#ff4444;font-size:14px;font-weight:bold;margin-bottom:10px">⚠️ CUIDADO COM BOTS GRATUITOS!</p>
+            <p style="color:#ff8888;font-size:11px;line-height:1.8;text-align:justify">
+                Muitos bots gratuitos sao <span style="color:#ffd700">abandonados</span>, contem <span style="color:#ffd700">virus</span> ou simplesmente <span style="color:#ffd700">nao funcionam</span>. O Tesla 369 e <span style="color:#00ff88">atualizado constantemente</span>.
+            </p>
+        </div>
         <div style="background:linear-gradient(135deg,#1a1a2e,#0d0d1a);border:2px solid #25D366;border-radius:15px;padding:20px;margin:15px 0;text-align:center">
             <p style="color:#25D366;font-size:16px;font-weight:bold;margin-bottom:10px">💬 FALE COM O DESENVOLVEDOR</p>
             <p style="color:#ccc;font-size:12px;margin:5px 0">📧 <span style="color:#00ff88">gyn.bet.fc@gmail.com</span></p>
-            <a href="https://wa.me/5562981728653" target="_blank"><button style="background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;padding:14px 28px;border-radius:12px;font-size:15px;font-weight:bold;cursor:pointer;margin-top:10px;font-family:monospace">💬 WHATSAPP</button></a>
+            <a href="https://wa.me/5562981728653?text=Ola!%20Vim%20do%20Tesla%20369%20Bot%20v{{ BOT_VERSION }}%20e%20gostaria%20de%20saber%20mais!" target="_blank" style="text-decoration:none">
+                <button style="background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;padding:14px 28px;border-radius:12px;font-size:15px;font-weight:bold;cursor:pointer;margin-top:10px;font-family:monospace;box-shadow:0 4px 15px rgba(37,211,102,0.3);transition:all 0.3s ease" onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 6px 20px rgba(37,211,102,0.5)'" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 4px 15px rgba(37,211,102,0.3)'">💬 WHATSAPP</button>
+            </a>
+            <p style="color:#888;font-size:10px;margin-top:10px">Duvidas, sugestoes ou interesse em recursos premium? Fale comigo!</p>
         </div>
     </div>
 </div>
@@ -694,7 +750,7 @@ function verRanking(){
             var u = d.ranking[i];
             var cor = i===0?'#ffd700':(i===1?'#c0c0c0':(i===2?'#cd7f32':'#fff'));
             var medalha = i===0?'🥇':(i===1?'🥈':(i===2?'🥉':(i+1)));
-            h+='<tr><td style="color:'+cor+';font-weight:bold">'+medalha+'</td><td style="color:#ccc;font-size:8px">'+(u.email||'---').substring(0,20)+'</td><td style="color:'+(u.lucro_total>=0?'#00ff88':'#ff4444')+'">$'+u.lucro_total.toFixed(2)+'</td><td style="color:#00ff88">'+u.total_wins+'</td><td style="color:#ff4444">'+u.total_losses+'</td><td style="color:#ffd700">'+u.taxa+'%</td><td style="color:#00ff88">$'+u.banca_atual.toFixed(2)+'</td></tr>';
+            h+='<tr><td style="color:'+cor+';font-weight:bold">'+medalha+'</td><td style="color:#ccc;font-size:8px">'+(u.email||'---').substring(0,20)+'<tr><td style="color:'+(u.lucro_total>=0?'#00ff88':'#ff4444')+'">$'+u.lucro_total.toFixed(2)+'</td><td style="color:#00ff88">'+u.total_wins+'</td><td style="color:#ff4444">'+u.total_losses+'</td><td style="color:#ffd700">'+u.taxa+'%</td><td style="color:#00ff88">$'+u.banca_atual.toFixed(2)+'</td></tr>';
         }
         h+='</table></div>';
         document.getElementById('relatorioContent').innerHTML = h;
@@ -722,7 +778,26 @@ function atualizar() {
             document.getElementById('fase').textContent = d.analise.fase || '--';
             document.getElementById('preco').textContent = d.analise.preco ? d.analise.preco.toFixed(5) : '--';
         }
-        if(d.logs){ var terminal = document.getElementById('terminal'); terminal.innerHTML = d.logs; terminal.scrollTop = terminal.scrollHeight; }
+        if(d.logs){ 
+            var terminal = document.getElementById('terminal'); 
+            terminal.innerHTML = d.logs; 
+            terminal.scrollTop = terminal.scrollHeight; 
+            
+            // ========== TOAST PARA EVENTOS DO BOT (WIN, LOSS, GALE) ==========
+            var lastLog = d.logs;
+            if(lastLog.indexOf('🌟 WIN!') > -1 && window.lastWin !== lastLog) {
+                window.lastWin = lastLog;
+                showToast('✅ OPERAÇÃO VENCEDORA! Lucro adicionado!', 'success', '🎯 WIN!');
+            }
+            if(lastLog.indexOf('💀 LOSS!') > -1 && window.lastLoss !== lastLog) {
+                window.lastLoss = lastLog;
+                showToast('❌ OPERAÇÃO PERDIDA! Indo para GALE...', 'error', '💀 LOSS!');
+            }
+            if(lastLog.indexOf('➡️ Indo para GALE') > -1 && window.lastGale !== lastLog) {
+                window.lastGale = lastLog;
+                showToast('🔄 ATIVANDO GALE! Tentando recuperação...', 'warning', '⚡ GALE!');
+            }
+        }
         if(d.rodando && !botAtivo){ botAtivo=true; document.getElementById('btnOperar').style.display='none'; document.getElementById('btnParar').style.display='inline-block'; document.getElementById('statusTexto').textContent='🤖 Operando'; document.getElementById('statusDot').className='status-dot active'; }
         else if(!d.rodando && botAtivo){ botAtivo=false; if(conectadoIQ){ document.getElementById('btnOperar').style.display='inline-block'; document.getElementById('btnOperar').disabled=false; document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR'; document.getElementById('btnParar').style.display='none'; document.getElementById('statusTexto').textContent='🟢 Conectado'; document.getElementById('statusDot').className='status-dot active'; } else { document.getElementById('btnOperar').style.display='none'; document.getElementById('btnParar').style.display='none'; document.getElementById('statusTexto').textContent='⏸️ Desconectado'; document.getElementById('statusDot').className='status-dot inactive'; } }
     });
@@ -744,7 +819,11 @@ function atualizarChat(){
         if(d.messages && d.messages.length>0){
             for(var i=Math.max(0,d.messages.length-30); i<d.messages.length; i++){
                 var m = d.messages[i];
-                html+='<div style="margin-bottom:8px;border-bottom:1px solid #222;padding-bottom:5px"><span style="color:#ffd700;font-weight:bold">'+(m.nome||'Anon')+'</span> <span style="color:#888;font-size:9px">'+(m.hora||'')+'</span><br><span style="color:#ccc;font-size:11px">'+(m.msg||'')+'</span></div>';
+                html+='<div class="chat-mensagem">' +
+                    '<span class="chat-nome">'+(m.nome||'Anon')+'</span> ' +
+                    '<span class="chat-hora">'+(m.hora||'')+'</span><br>' +
+                    '<div class="chat-msg">'+(m.msg||'')+'</div>' +
+                    '</div>';
             }
         } else { html='<p style="color:#888;text-align:center">💬 Nenhuma mensagem ainda. Seja o primeiro!</p>'; }
         var chatDiv = document.getElementById('chatMensagens');
@@ -785,4 +864,4 @@ window.onload = function() {
 };
 </script>
 </body>
-                    </html>
+            </html>
