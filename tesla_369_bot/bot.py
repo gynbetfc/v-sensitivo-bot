@@ -981,6 +981,25 @@ def ranking():
 def relatorio():
     return jsonify(carregar_usuario(request.args.get('email', '')) or {'erro': 'Nao encontrado'})
 
+
+
+@app.route('/skin_effects/<skin_id>')
+def get_skin_effects(skin_id):
+    """Retorna os efeitos CSS de uma skin via JSON"""
+    skin = carregar_skin_do_firebase(skin_id)
+    if not skin:
+        skin = carregar_skin_do_firebase('skin_padrao') or {}
+    
+    effects = {
+        'bodyCss': f"background: {skin.get('cor_fundo', '#0a0a1a')}; color: {skin.get('cor_texto', '#fff')};",
+        'cardCss': f"background: {skin.get('cor_panel', '#1a1a3e')}; border-color: {skin.get('cor_destaque', '#ffd700')};",
+        'buttonCss': f"background: {skin.get('cor_botao', 'linear-gradient(135deg,#cc8800,#ffd700)')};",
+        'customCss': skin.get('css_extra', '')
+    }
+    return jsonify(effects)
+
+
+
 @app.route('/resetar', methods=['POST'])
 def resetar():
     u = carregar_usuario(request.json.get('email', ''))
