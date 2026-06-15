@@ -25,7 +25,7 @@ warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
 # ============= VERSÃO DO BOT =============
-BOT_VERSION = "15.0.1"
+BOT_VERSION = "15.0.3"
 BOT_NAME = "TESLA-369"
 
 # ============= CONFIGURACOES =============
