@@ -26,7 +26,7 @@ app = Flask(__name__)
 
 # ============= VERSÃO DO BOT =============
 BOT_VERSION = "15.0.1"
-BOT_NAME = "TESLA 369 BOT"
+BOT_NAME = "TESLA-369"
 
 # ============= CONFIGURACOES =============
 FB_URL = "https://nexos-40654-default-rtdb.firebaseio.com"
