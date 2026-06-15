@@ -304,7 +304,7 @@
 <div class="container">
     <div class="header">
         {{ HEADER_EXTRA | safe }}
-        <h1>⚡ TESLA 369 BOT v{{ BOT_VERSION }} ⚡</h1>
+        <h1>⚡ TESLA 369 v{{ BOT_VERSION }} ⚡</h1>
         <p>O PODER DOS NÚMEROS - SISTEMA CLOUD</p>
     </div>
     <div class="mantra">🌀 O DINHEIRO VEM ATÉ MIM DE TODOS OS LADOS 🌀</div>
@@ -725,7 +725,7 @@ function comecarOperar() {
             document.getElementById('statusTexto').textContent = '🤖 Operando';
             document.getElementById('statusDot').className = 'status-dot active';
             document.getElementById('moedasSaldo').textContent = d.moedas;
-            alert('🚀 Bot iniciado! Aguardando sinais...');
+            //alert('🚀 Bot iniciado! Aguardando sinais...');
         } else { alert('ERRO: '+d.erro); btnOperar.disabled=false; btnOperar.textContent='🚀 COMEÇAR OPERAR'; }
     });
 }
@@ -745,7 +745,7 @@ function pararBot() {
         document.getElementById('statusTexto').textContent = '🟢 Conectado';
         document.getElementById('statusDot').className = 'status-dot active';
         btnParar.disabled = false; btnParar.textContent = '⏹️ PARAR';
-        alert('⏹️ Bot parado com sucesso!');
+        //alert('⏹️ Bot parado com sucesso!');
         atualizar();
     });
 }
