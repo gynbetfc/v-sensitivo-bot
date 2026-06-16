@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v15.0.0 - LOGICA DEFINITIVA ⚡
+# ⚡ TESLA 369 BOT v15.0.2 - LOGICA DE VERIFICAÇÃO DINÂMICA ⚡
 # Firebase: SKINS e ESTRATEGIAS carregadas da nuvem
 # ENTRADA: guarda ID da ordem (referencia)
-# RESULTADO: comparacao de saldo APOS 60 segundos
+# RESULTADO: verificação em loop após 45 segundos
 # GALES: executados imediatamente (sem aguardar inicio de vela)
-# SEM TIMESTAMP - SEM CRONOMETROS DESNECESSARIOS
-# 🔧 v15.0.1 - CORREÇÕES DE ESTABILIDADE (keep-alive + reconexão)
+# 🔧 v15.0.2 - NOVA LOGICA: 45s espera + verificação loop 25s
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -25,7 +24,7 @@ warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
 # ============= VERSÃO DO BOT =============
-BOT_VERSION = "15.0.1"
+BOT_VERSION = "15.0.2"
 BOT_NAME = "TESLA-369"
 
 # ============= CONFIGURACOES =============
@@ -227,11 +226,7 @@ def carregar_informacoes_estrategias():
             return estrategias_info
     except Exception as e:
         print(f"⚠️ Erro ao carregar estrategias: {e}")
-
-    #fallback = {'v_sensitivo': {'nome': 'V SENSITIVO', 'desc': 'Estrategia padrao do Tesla 369', 'preco_moedas': 0, 'timeframe': 60, 'gratis': True}}
-    #cache_estrategias_info["data"] = fallback
-    #cache_estrategias_info["timestamp"] = agora
-    #return fallback
+    return {}
 
 def carregar_estrategia_do_firebase(nome_estrategia):
     try:
@@ -347,19 +342,55 @@ def consumir_volt():
     add_log(f"⚡ 1 VOLT consumido. Saldo: {usuario['moedas']} VOLTS", 'info')
     return True
 
+def processar_resultado(resultado, lucro_liquido, valor, saldo_final):
+    """Processa o resultado de uma operação (WIN ou LOSS)"""
+    global lucro, NumDeOperacoes
+    
+    if resultado == 'WIN':
+        NumDeOperacoes += 1
+        u = carregar_usuario(email_usuario_atual)
+        if u:
+            u['total_wins'] = u.get('total_wins', 0) + 1
+            u['total_ganho'] = u.get('total_ganho', 0) + abs(lucro_liquido)
+            u['lucro_total'] = u['total_ganho'] - u.get('total_gasto', 0)
+            u['banca_atual'] = round(saldo_final, 2)
+            u.setdefault('historico_operacoes', []).append({
+                'data': str(datetime.now())[:19], 
+                'resultado': 'WIN',
+                'valor': valor, 
+                'lucro': lucro_liquido,
+                'estrategia': estrategia_atual_global.upper()
+            })
+            salvar_usuario(email_usuario_atual, u)
+    else:  # LOSS
+        u = carregar_usuario(email_usuario_atual)
+        if u:
+            u['total_losses'] = u.get('total_losses', 0) + 1
+            u['total_gasto'] = u.get('total_gasto', 0) + valor
+            u['lucro_total'] = u['total_ganho'] - u['total_gasto']
+            u['banca_atual'] = round(saldo_final, 2)
+            u.setdefault('historico_operacoes', []).append({
+                'data': str(datetime.now())[:19], 
+                'resultado': 'LOSS',
+                'valor': valor, 
+                'lucro': lucro_liquido,
+                'estrategia': estrategia_atual_global.upper()
+            })
+            salvar_usuario(email_usuario_atual, u)
+
 def executar_ciclo(direcao):
     """
-    LOGICA DEFINITIVA:
-    1. ENTRADA: Aguarda inicio da vela, guarda o ID da ordem e o saldo antes.
-    2. Aguarda 60 segundos.
-    3. Verifica resultado por SALDO.
-    4. Se WIN: para o bot (STOP GAIN).
-    5. Se LOSS: executa GALE 1 (NOVA ORDEM, SEM aguardar inicio da vela).
-    6. Repete para GALE 2.
+    LOGICA DE VERIFICACAO DINAMICA:
+    1. Aguarda 45 segundos iniciais
+    2. Após 45s, começa a verificar em loop se o saldo mudou
+    3. Verifica a cada 1 segundo por até 25 segundos
+    4. Se mudar -> WIN
+    5. Se não mudar em 25 segundos -> LOSS e PARA O BOT
     """
     global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, timeframe_atual, ordem_id_atual
 
-    if not bot_rodando or not API: return
+    if not bot_rodando or not API:
+        return
 
     try:
         if not consumir_volt():
@@ -367,7 +398,7 @@ def executar_ciclo(direcao):
             bot_rodando = False
             return
 
-        # 🔧 VERIFICA CONEXÃO ANTES DE CADA CICLO
+        # Verifica conexão
         if not API or not conectado_iq:
             add_log("❌ Conexão perdida! Parando operação.", 'error')
             bot_rodando = False
@@ -380,23 +411,23 @@ def executar_ciclo(direcao):
         add_log(f"📐 E1:${entradas[0]:.2f} | E2:${entradas[1]:.2f} | E3:${entradas[2]:.2f}", 'info')
 
         for i in range(MARTINGALE + 1):
-            if not bot_rodando: break
-            
-            # 🔧 VERIFICA CONEXÃO ANTES DE CADA TENTATIVA
+            if not bot_rodando:
+                break
+
+            # Verifica conexão
             if not API or not conectado_iq:
                 add_log("❌ Conexão perdida durante execução!", 'error')
                 bot_rodando = False
                 break
-            
+
             valor = entradas[i]
 
-            # Aguarda o início da vela APENAS na primeira entrada (i == 0)
+            # Aguarda início da vela APENAS na primeira entrada
             if i == 0:
                 if not aguardar_inicio_vela():
                     add_log("⚠️ Falha ao aguardar inicio da vela para a entrada principal.", 'error')
                     break
             else:
-                # Pequena pausa para não sobrecarregar a API nos Gales
                 time.sleep(0.5)
                 add_log(f"   🔄 Executando GALE {i} imediatamente...", 'info')
 
@@ -424,61 +455,73 @@ def executar_ciclo(direcao):
             else:
                 add_log(f"   📝 Ordem #{id_ordem} (GALE {i})", 'info')
 
-            # 🔥 SIMPLES: ESPERA 60 SEGUNDOS E COMPARA SALDO 🔥
-            add_log(f"   ⏳ Aguardando 60 segundos...", 'info')
-            for s in range(60):
+            # 🔥 NOVA LOGICA: Aguarda 45 segundos iniciais 🔥
+            add_log(f"   ⏳ Aguardando 45 segundos para começar a verificar...", 'info')
+            for s in range(45):
                 if not bot_rodando:
-                    return False
+                    return
                 time.sleep(1)
 
-            # 🔧 VERIFICA CONEXÃO NOVAMENTE APÓS ESPERA
+            # Verifica conexão após espera inicial
             if not API or not conectado_iq:
                 add_log("❌ Conexão perdida durante espera!", 'error')
                 bot_rodando = False
                 break
 
-            # Verifica resultado comparando saldo
-            saldo_depois = API.get_balance()
-            lucro_liquido = round(saldo_depois - saldo_antes, 2)
-            lucro += lucro_liquido
+            # 🔥 INICIA VERIFICAÇÃO EM LOOP POR ATÉ 25 SEGUNDOS 🔥
+            add_log(f"   🔍 Iniciando verificação de saldo em loop (até 25s)...", 'info')
+            lucro_liquido = 0
+            tempo_verificacao = 0
+            verificacao_win = False
 
-            if lucro_liquido > 0:
-                add_log(f"🌟 WIN! +${lucro_liquido:.2f}", 'win')
-                NumDeOperacoes += 1
-                u = carregar_usuario(email_usuario_atual)
-                if u:
-                    u['total_wins'] = u.get('total_wins', 0) + 1
-                    u['total_ganho'] = u.get('total_ganho', 0) + abs(lucro_liquido)
-                    u['lucro_total'] = u['total_ganho'] - u.get('total_gasto', 0)
-                    u['banca_atual'] = round(saldo_depois, 2)
-                    u.setdefault('historico_operacoes', []).append({
-                        'data': str(datetime.now())[:19], 'resultado': 'WIN',
-                        'valor': valor, 'lucro': lucro_liquido,
-                        'estrategia': estrategia_atual_global.upper()
-                    })
-                    salvar_usuario(email_usuario_atual, u)
-                STOP_GAIN_ATINGIDO = True
-                add_log("🎯 STOP GAIN! Vitoria alcancada!", 'win')
-                break
-            else:
-                add_log(f"💀 LOSS! {lucro_liquido:.2f}", 'loss')
-                u = carregar_usuario(email_usuario_atual)
-                if u:
-                    u['total_losses'] = u.get('total_losses', 0) + 1
-                    u['total_gasto'] = u.get('total_gasto', 0) + valor
-                    u['lucro_total'] = u['total_ganho'] - u['total_gasto']
-                    u['banca_atual'] = round(saldo_depois, 2)
-                    u.setdefault('historico_operacoes', []).append({
-                        'data': str(datetime.now())[:19], 'resultado': 'LOSS',
-                        'valor': valor, 'lucro': lucro_liquido,
-                        'estrategia': estrategia_atual_global.upper()
-                    })
-                    salvar_usuario(email_usuario_atual, u)
+            while tempo_verificacao < 25:
+                if not bot_rodando:
+                    return
+
+                # Verifica conexão
+                if not API or not conectado_iq:
+                    add_log("❌ Conexão perdida durante verificação!", 'error')
+                    bot_rodando = False
+                    break
+
+                saldo_depois = API.get_balance()
+                lucro_liquido = round(saldo_depois - saldo_antes, 2)
+
+                if lucro_liquido > 0:
+                    # WIN! Processa o sucesso
+                    add_log(f"🌟 WIN! +${lucro_liquido:.2f} (detectado após {45 + tempo_verificacao}s)", 'win')
+                    verificacao_win = True
+                    lucro += lucro_liquido
+                    processar_resultado('WIN', lucro_liquido, valor, saldo_depois)
+                    STOP_GAIN_ATINGIDO = True
+                    add_log("🎯 STOP GAIN! Vitoria alcancada!", 'win')
+                    break
+
+                # Aguarda 1 segundo antes da próxima verificação
+                time.sleep(1)
+                tempo_verificacao += 1
+
+                # Log a cada 5 segundos para acompanhamento
+                if tempo_verificacao % 5 == 0:
+                    add_log(f"   ⏳ Verificando... ({tempo_verificacao}s / 25s) Saldo: ${saldo_depois:.2f}", 'info')
+
+            # Se saiu do loop sem WIN (tempo esgotou ou conexão perdida)
+            if not verificacao_win and bot_rodando:
+                # LOSS confirmado - o bot para para proteger o capital
+                add_log(f"💀 LOSS confirmado! Após {45 + tempo_verificacao}s sem mudança no saldo.", 'loss')
+                saldo_final = API.get_balance() if API else saldo_antes
+                lucro_liquido = round(saldo_final - saldo_antes, 2)
+                lucro += lucro_liquido
+                processar_resultado('LOSS', lucro_liquido, valor, saldo_final)
 
                 if i < MARTINGALE and bot_rodando:
                     add_log(f"   ➡️ Indo para GALE {i + 1}...", 'loss')
                 else:
                     add_log("   💀 CICLO ESGOTADO! Todas as entradas perdidas.", 'loss')
+                    # PARA O BOT para proteger o capital
+                    bot_rodando = False
+                    add_log("🛑 BOT PARADO PARA PROTEGER O CAPITAL!", 'error')
+                    break
 
         if bot_rodando:
             bf = API.get_balance() if API else bi
@@ -491,9 +534,9 @@ def executar_ciclo(direcao):
         import traceback
         traceback.print_exc()
     finally:
-        bot_rodando = False
-        ordem_id_atual = None
-        add_log("⏹️ Ciclo finalizado!", 'info')
+        if not bot_rodando:
+            ordem_id_atual = None
+            add_log("⏹️ Ciclo finalizado!", 'info')
 
 def bot_loop():
     """Loop principal do bot - SEM TIMEOUT"""
@@ -538,7 +581,7 @@ def bot_loop():
                 add_log("❌ Conexão perdida no loop principal!", 'error')
                 bot_rodando = False
                 break
-            
+
             try:
                 resultado = estrategia_atual_executar(API, par, add_log)
                 if resultado and bot_rodando:
@@ -597,7 +640,7 @@ def monitor_conexao_thread():
 def analise_mercado_loop():
     global ultima_analise, conectado_iq, API
     ultimo_candle_time = 0
-    
+
     while True:
         if conectado_iq and API:
             try:
@@ -996,13 +1039,13 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 70)
-    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - LOGICA DEFINITIVA ⚡")
+    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - LOGICA DE VERIFICAÇÃO DINÂMICA ⚡")
     print("✅ Firebase: SKINS e ESTRATEGIAS carregadas da nuvem")
     print("✅ ENTRADA: guarda ID da ordem (referencia)")
-    print("✅ RESULTADO: comparacao de saldo APOS 60 segundos")
+    print("✅ RESULTADO: 45s espera + verificação em loop por 25s")
     print("✅ GALES: nova ordem, novo saldo, nova verificacao")
     print("✅ SKIN PADRAO: TESLA THUNDER (raios)")
-    print("✅ SEM TIMESTAMP - SEM CRONOMETROS DESNECESSARIOS")
+    print("✅ PROTEÇÃO DE CAPITAL: para o bot se não houver win em 70s")
     print("✅ 🔧 CORREÇÕES DE ESTABILIDADE ATIVAS (keep-alive + reconexão)")
     print("=" * 70)
 
