@@ -428,7 +428,7 @@ def executar_ciclo(direcao):
                     add_log("⚠️ Falha ao aguardar inicio da vela para a entrada principal.", 'error')
                     break
             else:
-                time.sleep(0.1)
+                time.sleep(0.5)
                 add_log(f"   🔄 Executando GALE {i} imediatamente...", 'info')
 
             saldo_antes = API.get_balance()
