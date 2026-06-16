@@ -9,7 +9,6 @@
         body{background:{{ COR_FUNDO }};color:{{ COR_TEXTO }};font-family:'Courier New',monospace;padding:10px;min-height:100vh;transition:background 0.3s ease}
         .container{max-width:1000px;margin:0 auto;position:relative;z-index:10}
 
-        /* TOAST NOTIFICATIONS */
         .toast-container{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px;max-width:350px}
         .toast{background:rgba(0,0,0,0.95);border-radius:12px;padding:12px 20px;margin-bottom:8px;box-shadow:0 5px 20px rgba(0,0,0,0.3);display:flex;align-items:center;gap:12px;animation:slideInRight 0.3s ease;border-left:4px solid;transform:translateX(0);transition:transform 0.3s ease,opacity 0.3s ease}
         .toast-hide{transform:translateX(100%);opacity:0}
@@ -46,101 +45,54 @@
         .btn-start{background:{{ COR_BOTAO }};color:#000;font-weight:bold}
         .btn-stop{background:linear-gradient(135deg,#cc0000,#ff4444);color:#fff}
         .btn-info{background:linear-gradient(135deg,#0066cc,#3399ff);color:#fff;font-size:11px;padding:8px 14px}
-        .btn-buy{background:linear-gradient(135deg,#00aa44,#00cc55);color:#fff;width:100%;padding:12px;font-size:13px}
-        .btn-reset{background:linear-gradient(135deg,#cc0000,#ff6600);color:#fff;font-size:11px;padding:8px 14px}
-        .btn-skin{background:linear-gradient(135deg,#9933ff,#cc66ff);color:#fff;font-size:11px;padding:8px 12px}
         .dashboard{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:8px;margin-bottom:10px}
         .card{background:{{ COR_PANEL }};padding:10px;border-radius:10px;border:1px solid #333;text-align:center;transition:all 0.3s}
         .card:hover{transform:translateY(-3px);border-color:{{ COR_DESTAQUE }}}
         .card .label{color:#888;font-size:9px}.card .value{color:{{ COR_DESTAQUE }};font-size:14px;font-weight:bold;margin-top:4px}
         .indicators{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px;margin-bottom:10px}
-        .ind-card{background:#111;padding:6px;border-radius:8px;border:1px solid #222;text-align:center;font-size:10px}
-        .ind-card .ind-label{color:#666;font-size:9px}.ind-card .ind-value{color:{{ COR_DESTAQUE }};font-size:11px;font-weight:bold}
         .terminal{background:#000;color:#00ff88;padding:12px;border-radius:10px;height:200px;overflow-y:auto;font-size:10px;line-height:1.4;white-space:pre-wrap;border:1px solid #333}
-        .terminal::-webkit-scrollbar{width:5px}
-        .terminal::-webkit-scrollbar-track{background:#111}
-        .terminal::-webkit-scrollbar-thumb{background:{{ COR_DESTAQUE }};border-radius:5px}
         .barra-status{display:flex;justify-content:space-between;padding:8px;background:{{ COR_PANEL }};border-radius:10px;margin-top:10px;font-size:10px;flex-wrap:wrap;gap:5px}
         .status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
         .status-dot.active{background:#00ff88;animation:pulse 1s infinite}.status-dot.inactive{background:#888}
-        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
-        @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-
+        
         /* LOJA PROFISSIONAL */
-        .loja-container{width:100%}
         .loja-tabs{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;border-bottom:1px solid #333;padding-bottom:12px}
         .loja-tab-btn{background:linear-gradient(135deg,#1a1a2e,#0d0d1a);border:1px solid #333;padding:10px 24px;cursor:pointer;color:#ccc;font-size:13px;font-weight:bold;border-radius:10px;transition:all 0.3s ease;font-family:inherit}
-        .loja-tab-btn:hover{background:linear-gradient(135deg,#2a2a3e,#1a1a2e);color:#ffd700;border-color:#ffd700}
-        .loja-tab-btn.active{background:{{ COR_TAB_ATIVA }};color:#000;border-color:{{ COR_TAB_ATIVA }};box-shadow:0 2px 8px rgba(0,0,0,0.2)}
+        .loja-tab-btn.active{background:{{ COR_TAB_ATIVA }};color:#000;border-color:{{ COR_TAB_ATIVA }}}
         
-        /* GRIDS */
-        .produtos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:15px;margin-top:15px}
+        .produtos-grid{display:grid;grid-template-columns:1fr;gap:15px;margin-top:15px}
         .produto-card{background:linear-gradient(135deg,#111122,#0a0a15);border-radius:14px;border:1px solid #2a2a3e;overflow:hidden;transition:all 0.3s ease}
-        .produto-card:hover{transform:translateY(-3px);border-color:{{ COR_DESTAQUE }};box-shadow:0 8px 20px rgba(0,0,0,0.3)}
         .produto-card.selecionado{border-color:#ffd700;box-shadow:0 0 15px rgba(255,215,0,0.3)}
-        .produto-card.ativo{border-color:#00ff88;box-shadow:0 0 12px rgba(0,255,136,0.3)}
         
-        .produto-header{background:rgba(0,0,0,0.4);padding:12px;text-align:center;border-bottom:1px solid #2a2a3e}
-        .produto-nome{font-size:15px;font-weight:bold;color:{{ COR_DESTAQUE }}}
-        .produto-preco{font-size:18px;font-weight:bold;color:#00ff88;margin-top:4px}
-        .produto-preco small{font-size:9px;color:#888}
-        
-        .produto-body{padding:12px;min-height:70px}
-        .produto-desc{font-size:10px;color:#aaa;line-height:1.4}
-        .produto-tag{display:inline-block;background:rgba(255,215,0,0.15);color:#ffd700;font-size:8px;padding:2px 8px;border-radius:10px;margin-top:6px}
-        .produto-desconto{background:#ff4444;color:#fff;font-size:8px;padding:2px 6px;border-radius:10px;margin-left:6px}
-        
-        .produto-footer{padding:12px;border-top:1px solid #2a2a3e}
-        .btn-produto{width:100%;padding:9px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:11px;transition:all 0.25s ease;text-transform:uppercase;font-family:inherit}
-        .btn-produto:hover{transform:translateY(-2px);filter:brightness(1.05)}
-        .btn-comprar{background:linear-gradient(135deg,#ff8c00,#ffd700);color:#000}
-        .btn-ativar{background:linear-gradient(135deg,#006699,#3399cc);color:#fff}
-        .btn-usando{background:#1a1a2e;color:#00ff88;border:1px solid #00ff8844;cursor:default}
-        .btn-indisponivel{background:#333;color:#888;cursor:not-allowed}
-        
-        /* ESTRATÉGIAS GRID */
         .estrategias-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:15px;margin-top:15px}
-        .estrategia-card{background:linear-gradient(135deg,#111122,#0a0a15);border-radius:14px;border:2px solid #2a2a3e;cursor:pointer;transition:all 0.3s ease;overflow:hidden}
-        .estrategia-card:hover{transform:translateY(-3px);border-color:{{ COR_DESTAQUE }}}
+        .estrategia-card{background:linear-gradient(135deg,#111122,#0a0a15);border-radius:14px;border:2px solid #2a2a3e;cursor:pointer;overflow:hidden}
         .estrategia-card.ativa{border-color:#00ff88;background:#0a1a0a}
-        .estrategia-header{background:rgba(0,0,0,0.3);padding:12px;text-align:center}
-        .estrategia-nome{font-size:14px;font-weight:bold;color:{{ COR_DESTAQUE }}}
-        .estrategia-body{padding:12px}
-        .estrategia-desc{font-size:10px;color:#aaa;line-height:1.4;margin-bottom:10px}
-        .estrategia-preco{margin-top:8px;text-align:center}
-        .badge-gratis{background:#00ff88;color:#000;font-size:9px;padding:3px 12px;border-radius:20px;display:inline-block}
-        .badge-pago{background:#ffd700;color:#000;font-size:9px;padding:3px 12px;border-radius:20px;display:inline-block}
         
         .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:1000;justify-content:center;align-items:center}
         .modal-overlay.active{display:flex}
         .modal-content{background:{{ COR_PANEL }};border:2px solid {{ COR_DESTAQUE }};border-radius:20px;padding:25px;max-width:400px;width:90%;text-align:center}
-        .modal-content h3{color:{{ COR_DESTAQUE }};margin-bottom:15px}
         .pix-qrcode{background:#fff;padding:15px;border-radius:10px;display:inline-block;margin:10px 0}
         .pix-qrcode img{max-width:200px}
         .pix-copiavel{background:#000;color:#00ff88;padding:10px;border-radius:8px;font-size:9px;word-break:break-all;margin:10px 0;cursor:pointer}
-        .btn-fechar{background:#444;color:#fff;padding:8px 20px;border-radius:8px;cursor:pointer;margin-top:10px;border:none;font-family:inherit}
-        .btn-confirmar{background:{{ COR_DESTAQUE }};color:#000;padding:8px 20px;border-radius:8px;cursor:pointer;margin-top:10px;font-weight:bold;border:none;font-family:inherit}
         
-        .relatorio-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:20px}
-        .relatorio-card{background:#111;padding:12px;border-radius:12px;border:1px solid #2a2a3e;text-align:center}
-        .relatorio-card .rlabel{color:#888;font-size:10px;margin-bottom:5px}
-        .relatorio-card .rvalue{color:{{ COR_DESTAQUE }};font-size:18px;font-weight:bold}
         .historico-table{width:100%;font-size:10px;border-collapse:collapse;margin-top:15px}
         .historico-table th{background:{{ COR_TAB_ATIVA }};color:#000;padding:10px;font-weight:bold}
         .historico-table td{padding:8px;border-bottom:1px solid #2a2a3e;text-align:center}
         
-        .chat-mensagens{background:#000;border:1px solid #333;border-radius:10px;height:300px;overflow-y:auto;padding:12px;margin-bottom:10px;font-size:11px}
+        .chat-mensagens{background:#000;border:1px solid #333;border-radius:10px;height:300px;overflow-y:auto;padding:12px;margin-bottom:10px}
         .chat-mensagem{margin-bottom:10px;border-bottom:1px solid #222;padding-bottom:8px}
-        .chat-nome{color:#ffd700;font-weight:bold}
-        .chat-hora{color:#888;font-size:9px;margin-left:8px}
-        .chat-msg{color:#ccc;font-size:11px;margin-top:5px}
         
         .tutorial-box{background:#0a0a1a;border:1px solid #00ff88;border-radius:15px;padding:20px;margin-bottom:15px}
         .contato-box{background:linear-gradient(135deg,#1a1a2e,#0d0d1a);border-radius:15px;padding:20px;margin-bottom:15px;text-align:center}
-        .whatsapp-btn{background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;padding:14px 28px;border-radius:12px;font-size:15px;font-weight:bold;cursor:pointer;margin-top:10px;font-family:monospace;transition:all 0.3s ease}
-        .whatsapp-btn:hover{transform:scale(1.05);box-shadow:0 6px 20px rgba(37,211,102,0.4)}
-        
+        .whatsapp-btn{background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;padding:14px 28px;border-radius:12px;font-weight:bold;cursor:pointer;font-family:monospace}
         .comprar-volts-input{background:#111;border:1px solid #333;border-radius:8px;padding:10px;color:#fff;width:100%;margin-bottom:15px;font-family:inherit}
+        
+        /* TABELA PLANOS DESIGN LIMPO */
+        .tesla-table-planos { width:100%; border-collapse:collapse; font-size:12px; color:#fff; text-align:left; background:#111122; border-radius:10px; overflow:hidden; }
+        .tesla-table-planos th { background:rgba(0,0,0,0.5); color:#ffd700; padding:12px; border-bottom:2px solid #2a2a3e; font-weight:bold; }
+        .tesla-table-planos tr { border-bottom:1px solid #1a1a32; transition: all 0.2s; cursor:pointer; }
+        .tesla-table-planos tr:hover { background: rgba(255,215,0,0.05); border-color:#ffd700; }
+        .tesla-table-planos td { padding:12px; vertical-align:middle; }
     </style>
 </head>
 <body>
@@ -163,7 +115,6 @@
         <div class="tab" onclick="openTab('contato')">📞 CONTATO</div>
     </div>
 
-    <!-- PAINEL BOT -->
     <div class="panel active" id="panel-bot">
         <div class="config-section">
             <h3>🔐 IQ OPTION</h3>
@@ -180,7 +131,6 @@
                         <option value="15" selected>15%</option><option value="20">20%</option><option value="30">30%</option><option value="50">50%</option><option value="100">100%</option>
                     </select>
                     <span style="color:#ffd700;font-size:9px" id="valorEstimado">($0.00)</span>
-                    <span style="color:#ff4444;font-size:8px" id="avisoMinimo"></span>
                 </div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:5px">
                     <button class="btn btn-info" id="btnConectar" onclick="conectarIQ()">🔌 CONECTAR</button>
@@ -201,13 +151,13 @@
         </div>
 
         <div class="indicators">
-            <div class="ind-card"><div class="ind-label">📊 RSI</div><div class="ind-value" id="rsi">--</div></div>
-            <div class="ind-card"><div class="ind-label">📈 MM5</div><div class="ind-value" id="mm5">--</div></div>
-            <div class="ind-card"><div class="ind-label">📈 MM10</div><div class="ind-value" id="mm10">--</div></div>
-            <div class="ind-card"><div class="ind-label">📉 MM20</div><div class="ind-value" id="mm20">--</div></div>
-            <div class="ind-card"><div class="ind-label">📊 ESTOC</div><div class="ind-value" id="stoch">--</div></div>
-            <div class="ind-card"><div class="ind-label">🌅 FASE</div><div class="ind-value" id="fase">--</div></div>
-            <div class="ind-card"><div class="ind-label">💵 PREÇO</div><div class="ind-value" id="preco">--</div></div>
+            <div id="rsi" style="display:none"></div>
+            <div id="mm5" style="display:none"></div>
+            <div id="mm10" style="display:none"></div>
+            <div id="mm20" style="display:none"></div>
+            <div id="stoch" style="display:none"></div>
+            <div id="fase" style="display:none"></div>
+            <div id="preco" style="display:none"></div>
         </div>
 
         <div class="terminal" id="terminal">📡 Aguardando...</div>
@@ -219,7 +169,6 @@
         </div>
     </div>
 
-    <!-- PAINEL RELATÓRIO - COMPLETO -->
     <div class="panel" id="panel-relatorio">
         <div class="config-section"><h3>📊 RELATÓRIO COMPLETO</h3></div>
         <div class="config-row">
@@ -230,13 +179,11 @@
         <div id="relatorioContent" style="margin-top:15px"></div>
     </div>
 
-    <!-- PAINEL ESTRATÉGIAS -->
     <div class="panel" id="panel-estrategias">
-        <div class="config-section"><h3>📈 SELECIONAR ESTRATÉGIA</h3><p style="color:#888;font-size:10px">Escolha antes de clicar em COMEÇAR OPERAR</p></div>
+        <div class="config-section"><h3>📈 SELECIONAR ESTRATÉGIA</h3></div>
         <div class="estrategias-grid" id="estrategiaGrid"></div>
     </div>
 
-    <!-- PAINEL LOJA PROFISSIONAL -->
     <div class="panel" id="panel-loja">
         <div class="loja-tabs">
             <button class="loja-tab-btn active" onclick="mostrarLojaTab('volts')">💳 COMPRAR VOLTS</button>
@@ -244,117 +191,37 @@
             <button class="loja-tab-btn" onclick="mostrarLojaTab('estrategias')">📊 ESTRATÉGIAS PREMIUM</button>
         </div>
         
-        <!-- Tab VOLTS -->
         <div id="lojaTabVolts" class="loja-tab-panel" style="display:block">
             <div class="config-section"><h3>💳 ADQUIRIR VOLTS</h3><p style="color:#888;font-size:10px">⚡ 1 VOLT = 1 ciclo de operação | +1 VOLT grátis por dia</p></div>
             <input type="email" id="emailCompra" placeholder="Seu email para receber os VOLTS" class="comprar-volts-input">
-            <div class="produtos-grid" id="planosGridContainer"></div>
+            <div id="planosGridContainer"></div>
         </div>
         
-        <!-- Tab SKINS -->
         <div id="lojaTabSkins" class="loja-tab-panel" style="display:none">
-            <div class="config-section"><h3>🎨 PERSONALIZE SEU BOT</h3><p style="color:#888;font-size:10px">Escolha uma skin para mudar a aparência completa do seu bot!</p></div>
-            <div style="display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap">
-                <button class="loja-tab-btn" style="padding:6px 16px;font-size:11px;background:#111" onclick="mostrarCategoriaSkin('basica')">⚡ BÁSICAS</button>
-                <button class="loja-tab-btn" style="padding:6px 16px;font-size:11px;background:#111" onclick="mostrarCategoriaSkin('premium')">🔮 PREMIUM</button>
-                <button class="loja-tab-btn" style="padding:6px 16px;font-size:11px;background:#111" onclick="mostrarCategoriaSkin('lendaria')">💎 LENDÁRIAS</button>
-            </div>
-            <div id="skinsGridBasicas" class="produtos-grid"></div>
-            <div id="skinsGridPremium" class="produtos-grid" style="display:none"></div>
-            <div id="skinsGridLendarias" class="produtos-grid" style="display:none"></div>
+            <div id="skinsGridBasicas" style="display:grid; grid-template-columns: repeat(auto-fill,minmax(170px,1fr)); gap:10px;"></div>
         </div>
         
-        <!-- Tab ESTRATÉGIAS PREMIUM -->
         <div id="lojaTabEstrategias" class="loja-tab-panel" style="display:none">
-            <div class="config-section"><h3>📊 ESTRATÉGIAS EXCLUSIVAS</h3><p style="color:#888;font-size:10px">Adquira estratégias avançadas com suas VOLTS!</p></div>
-            <div class="produtos-grid" id="estrategiasLojaGrid"></div>
+            <div id="estrategiasLojaGrid" style="display:grid; grid-template-columns: repeat(auto-fill,minmax(170px,1fr)); gap:10px;"></div>
         </div>
     </div>
 
-    <!-- PAINEL CHAT -->
     <div class="panel" id="panel-chat">
-        <div class="config-section"><h3>💬 CHAT DOS TRADERS</h3><p style="color:#888;font-size:9px" id="chatInfo">Conecte na IQ Option para entrar</p></div>
-        <div id="chatMensagens" class="chat-mensagens"><p style="color:#888;text-align:center">💬 Envie uma mensagem para começar</p></div>
-        <div style="display:flex;gap:8px"><input type="text" id="chatMsg" placeholder="Digite sua mensagem..." style="flex:1;padding:10px;background:#111;border:1px solid #333;border-radius:8px;color:#fff;font-size:11px" onkeypress="if(event.key==='Enter')enviarChatMsg()"><button onclick="enviarChatMsg()" class="btn btn-info" style="padding:10px 20px">ENVIAR</button></div>
-        <div style="text-align:center;margin-top:5px"><span style="color:#888;font-size:9px" id="chatOnline">0 online</span></div>
+        <div id="chatMensagens" class="chat-mensagens"></div>
+        <div style="display:flex;gap:8px"><input type="text" id="chatMsg" placeholder="Digite sua mensagem..." style="flex:1;padding:10px;background:#111;border:1px solid #333;color:#fff;" onkeypress="if(event.key==='Enter')enviarChatMsg()"><button onclick="enviarChatMsg()" class="btn btn-info">ENVIAR</button></div>
+        <div style="text-align:center;margin-top:5px"><span style="color:#888;font-size:9px" id="chatOnline">1 online</span></div>
     </div>
 
-    <!-- PAINEL TUTORIAL - COMPLETO -->
     <div class="panel" id="panel-tutorial">
-        <div class="config-section"><h3>📖 TUTORIAL COMPLETO</h3></div>
-        
-        <div class="tutorial-box">
-            <p style="color:#ffd700;font-size:16px;font-weight:bold;margin-bottom:15px;text-align:center">📖 COMO USAR O TESLA 369</p>
-            <p style="color:#ffd700;font-size:13px;font-weight:bold;margin-bottom:10px">🔰 PRIMEIROS PASSOS</p>
-            <p style="color:#ccc;font-size:11px;line-height:2.0;text-align:justify">
-                <span style="color:#00ff88">1.</span> Crie uma conta na <span style="color:#ffd700">IQ Option</span> (use conta PRACTICE para testes).<br>
-                <span style="color:#00ff88">2.</span> Digite seu <span style="color:#ffd700">email e senha</span> no bot e clique em <span style="color:#00ff88">CONECTAR</span>.<br>
-                <span style="color:#00ff88">3.</span> Selecione a <span style="color:#ffd700">% da banca</span> que deseja usar (mínimo 15%).<br>
-                <span style="color:#00ff88">4.</span> Vá na aba <span style="color:#ffd700">ESTRATÉGIAS</span> e escolha uma estratégia.<br>
-                <span style="color:#00ff88">5.</span> Clique em <span style="color:#00ff88;font-weight:bold">COMEÇAR OPERAR</span> e aguarde o sinal.<br>
-                <span style="color:#00ff88">6.</span> O bot opera automaticamente em segundo plano.
-            </p>
-            <p style="color:#ffd700;font-size:13px;font-weight:bold;margin-bottom:10px;margin-top:15px">🤖 COMO O ROBÔ FUNCIONA</p>
-            <p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify">
-                O Tesla 369 analisa <span style="color:#00ff88">padrões de velas</span> em tempo real usando indicadores técnicos. Cada estratégia tem seu próprio <span style="color:#ffd700">timeframe e gatilho</span> de entrada. Quando encontra um padrão com alta probabilidade, ele <span style="color:#ffd700">abre uma ordem automaticamente</span>. O robô busca <span style="color:#ffd700;font-weight:bold">+10% de retorno</span> sobre o valor que você definir como entrada. Se perder, ele aplica <span style="color:#ff4444">Martingale (Gale 2)</span> dobrando o valor por até 2 vezes. <span style="color:#00ff88;font-weight:bold">Stop Gain:</span> 1 WIN = bot para automaticamente.
-            </p>
-        </div>
-        
-        <div class="tutorial-box" style="background:#0a1a0a">
-            <p style="color:#00ff88;font-size:14px;font-weight:bold;margin-bottom:10px">💰 RISCOS REAIS</p>
-            <p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify">
-                <span style="color:#ff4444">• Você pode PERDER TODO seu dinheiro.</span><br>
-                • Opções binárias são proibidas em vários países.<br>
-                • O Martingale é perigoso: 3 perdas seguidas consomem 7x o valor inicial.<br>
-                • <span style="color:#ffd700">NUNCA invista dinheiro que você não pode perder.</span><br>
-                • Resultados passados não garantem resultados futuros.<br>
-                • O robô é uma ferramenta de <span style="color:#ffd700">análise automatizada</span>, não uma garantia de lucro.
-            </p>
-        </div>
-        
-        <div class="tutorial-box" style="background:#1a0000;border-color:#ff4444">
-            <p style="color:#ff4444;font-size:14px;text-align:center;font-weight:bold;margin-bottom:15px">⚠️ A VERDADE SOBRE A IQ OPTION</p>
-            <p style="color:#ff8888;font-size:12px;line-height:1.8;text-align:justify">
-                A <span style="color:#ffd700;font-weight:bold">IQ Option</span> <span style="color:#ff4444;font-weight:bold">NÃO É</span> o mercado financeiro real. Ela é uma <span style="color:#ffd700;font-weight:bold">corretora de opções binárias</span> - um modelo onde você aposta se o preço vai subir ou descer. Não há compra real de ativos. É uma <span style="color:#ff4444;font-weight:bold">aposta</span> contra a própria corretora.
-            </p>
-        </div>
+        <div class="tutorial-box"><p style="color:#ffd700;font-size:14px">📖 COMO OPERAR O SISTEMA AUTOMÁTICO</p></div>
     </div>
 
-    <!-- PAINEL CONTATO - COMPLETO -->
     <div class="panel" id="panel-contato">
-        <div class="config-section"><h3>📞 CONTATO E SUPORTE</h3></div>
-        
-        <div class="contato-box" style="border:2px solid #ffd700">
-            <p style="color:#ffd700;font-size:18px;font-weight:bold;margin-bottom:15px">⚡ POR QUE ESCOLHER O TESLA 369?</p>
-            <p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify">
-                🔹 <span style="color:#ffd700">Automatização real:</span> Operações 100% automáticas com inteligência de mercado.<br><br>
-                🔹 <span style="color:#ffd700">Custo-benefício imbatível:</span> Bots similares custam R$50 a R$200 por mês. O Tesla 369 é <span style="color:#00ff88">GRÁTIS para começar</span>.<br><br>
-                🔹 <span style="color:#ffd700">Personalização total:</span> <span style="color:#00ff88">Skins exclusivas</span> para deixar o bot com a sua cara.<br><br>
-                🔹 <span style="color:#ffd700">Suporte direto:</span> Você <span style="color:#00ff88">fala direto com o desenvolvedor</span>.<br><br>
-                🔹 <span style="color:#ffd700">Segurança:</span> Seus dados salvos na nuvem do Firebase.
-            </p>
-        </div>
-        
-        <div class="contato-box" style="border:2px solid #ff4444;background:#1a0000">
-            <p style="color:#ff4444;font-size:14px;font-weight:bold;margin-bottom:10px">⚠️ CUIDADO COM BOTS GRATUITOS!</p>
-            <p style="color:#ff8888;font-size:11px;line-height:1.8;text-align:justify">
-                Muitos bots gratuitos são <span style="color:#ffd700">abandonados</span>, contêm <span style="color:#ffd700">vírus</span> ou simplesmente <span style="color:#ffd700">não funcionam</span>. O Tesla 369 é <span style="color:#00ff88">atualizado constantemente</span> e você fala diretamente com o desenvolvedor.
-            </p>
-        </div>
-        
-        <div class="contato-box" style="border:2px solid #25D366">
-            <p style="color:#25D366;font-size:18px;font-weight:bold;margin-bottom:10px">💬 FALE COM O DESENVOLVEDOR</p>
-            <p style="color:#ccc;font-size:12px;margin:10px 0">📧 <span style="color:#00ff88">gyn.bet.fc@gmail.com</span></p>
-            <p style="color:#ccc;font-size:11px;margin:5px 0">📱 WhatsApp: <span style="color:#00ff88">(62) 98172-8653</span></p>
-            <a href="https://wa.me/5562981728653?text=Olá!%20Vim%20do%20Tesla%20369%20Bot%20e%20gostaria%20de%20saber%20mais!" target="_blank">
-                <button class="whatsapp-btn">💬 CHAMAR NO WHATSAPP</button>
-            </a>
-            <p style="color:#888;font-size:10px;margin-top:15px">Dúvidas, sugestões ou interesse em recursos premium? Fale comigo!</p>
-        </div>
+        <div class="contato-box">📱 WhatsApp: <span style="color:#00ff88">(62) 98172-8653</span></div>
     </div>
 </div>
 
-<div class="modal-overlay" id="modalPix"><div class="modal-content"><h3>💳 Pagamento PIX</h3><div id="pixContent"><p style="color:#888">Carregando QR Code...</p></div><button class="btn-fechar" onclick="fecharModal()">❌ Fechar</button></div></div>
+<div class="modal-overlay" id="modalPix"><div class="modal-content"><h3>💳 Pagamento PIX</h3><div id="pixContent"></div><button class="btn" style="background:#444;color:#fff;margin-top:10px;" onclick="fecharModal()">❌ Fechar</button></div></div>
 
 <script>
 var PLANOS = [{{ PLANOS_JSON | safe }}];
@@ -370,36 +237,14 @@ function showToast(message, type, title) {
     type = type || 'info';
     var container = document.getElementById('toastContainer');
     if (!container) return;
-    var titles = { success: '✅ Sucesso!', error: '❌ Erro!', warning: '⚠️ Atenção!', info: 'ℹ️ Informação' };
-    var icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
-    var finalTitle = title || titles[type] || 'Info';
-    var icon = icons[type] || 'ℹ️';
     var toast = document.createElement('div');
     toast.className = 'toast toast-' + type;
-    toast.innerHTML = '<div class="toast-icon">' + icon + '</div><div class="toast-content"><div class="toast-title">' + finalTitle + '</div><div class="toast-message">' + message + '</div></div><div class="toast-close" onclick="this.parentElement.remove()">✕</div>';
+    toast.innerHTML = '<div class="toast-content"><div class="toast-title">' + (title||'Aviso') + '</div><div class="toast-message">' + message + '</div></div><div class="toast-close" onclick="this.parentElement.remove()">✕</div>';
     container.appendChild(toast);
     setTimeout(function() { toast.classList.add('toast-hide'); }, 3000);
     setTimeout(function() { if(toast.parentElement) toast.remove(); }, 3500);
 }
 
-// FUNÇÃO VAZIA PARA SKIN EFFECTS (INJETADA DO FIREBASE)
-function initSkinEffects() { console.log("🎨 Aguardando efeitos do Firebase..."); }
-
-function carregarSkinEffectsDoFirebase() {
-    fetch('/status').then(function(r) { return r.json(); }).then(function(d) {
-        var skinId = d.skin_id || 'skin_padrao';
-        fetch('https://nexos-40654-default-rtdb.firebaseio.com/tesla_369/skins/' + skinId.replace(/\./g, '_') + '.json')
-            .then(function(r) { return r.json(); })
-            .then(function(skinData) {
-                if (skinData && skinData.effects_code) {
-                    try { eval(skinData.effects_code); if (typeof window.skinEffectsFunction === 'function') window.skinEffectsFunction(); }
-                    catch(e) { console.error('Erro:', e); }
-                }
-            }).catch(function() {});
-    }).catch(function() {});
-}
-
-// ========== LOJA PROFISSIONAL ==========
 function mostrarLojaTab(tab) {
     var botoes = document.querySelectorAll('#panel-loja .loja-tab-btn');
     for(var i=0;i<botoes.length;i++) botoes[i].classList.remove('active');
@@ -412,152 +257,101 @@ function mostrarLojaTab(tab) {
     if(tab === 'estrategias') { document.getElementById('lojaTabEstrategias').style.display = 'block'; renderLojaEstrategias(); }
 }
 
-function mostrarCategoriaSkin(categoria) {
-    var botoes = document.querySelectorAll('#lojaTabSkins .loja-tab-btn');
-    for(var i=0;i<botoes.length;i++) {
-        if(botoes[i].innerText.includes('BÁSICAS') && categoria === 'basica') botoes[i].classList.add('active');
-        else if(botoes[i].innerText.includes('PREMIUM') && categoria === 'premium') botoes[i].classList.add('active');
-        else if(botoes[i].innerText.includes('LENDÁRIAS') && categoria === 'lendaria') botoes[i].classList.add('active');
-        else botoes[i].classList.remove('active');
-    }
-    document.getElementById('skinsGridBasicas').style.display = 'none';
-    document.getElementById('skinsGridPremium').style.display = 'none';
-    document.getElementById('skinsGridLendarias').style.display = 'none';
-    if(categoria === 'basica') document.getElementById('skinsGridBasicas').style.display = 'grid';
-    if(categoria === 'premium') document.getElementById('skinsGridPremium').style.display = 'grid';
-    if(categoria === 'lendaria') document.getElementById('skinsGridLendarias').style.display = 'grid';
-}
-
+// ================= LAYOUT DE TABELA LIMPA FACILITADA PARA MOTOBOY NA RUA =================
 function renderPlanos() {
     var grid = document.getElementById('planosGridContainer');
     if(!grid) return;
-    var html = '';
-    for(var i=0;i<PLANOS.length;i++){
+    
+    var html = '<table class="tesla-table-planos">' +
+               '<thead>' +
+               '<tr>' +
+               '<th>PLANO</th>' +
+               '<th>CARGA</th>' +
+               '<th>VALOR</th>' +
+               '<th>BÔNUS</th>' +
+               '<th style="text-align:center">AÇÃO</th>' +
+               '</tr>' +
+               '</thead>' +
+               '<tbody>';
+
+    for(var i=0; i<PLANOS.length; i++){
         var p = PLANOS[i];
-        html += '<div class="produto-card" id="plano'+p.id+'" onclick="selecionarPlano('+p.id+')">' +
-            '<div class="produto-header"><div class="produto-nome">'+p.nome+'</div><div class="produto-preco">R$ '+p.preco.toFixed(2)+'<small>/'+p.moedas+' VOLTS</small></div></div>' +
-            '<div class="produto-body"><div class="produto-desc">'+p.desc+'</div>'+(p.tag?'<div class="produto-tag">'+p.tag+'</div>':'')+(p.desconto?'<span class="produto-desconto">'+p.desconto+'</span>':'')+'</div>' +
-            '<div class="produto-footer"><button class="btn-produto btn-comprar" style="display:none" id="btnPlano'+p.id+'" onclick="event.stopPropagation();pagarComPix('+p.id+')">💳 COMPRAR</button></div></div>';
+        var itemDesconto = p.desconto ? ' <span style="background:#ff4444; color:#fff; padding:2px 6px; border-radius:10px; font-size:9px;">' + p.desconto + '</span>' : '';
+        
+        html += '<tr onclick="selecionarPlano('+p.id+')">' +
+                '<td style="font-weight:bold; color:#ffd700;">' + p.nome + '</td>' +
+                '<td style="font-weight:bold; color:#00ff88;">⚡ ' + p.moedas + ' Cargas</td>' +
+                '<td>R$ ' + p.preco.toFixed(2) + '</td>' +
+                '<td style="color:#ccc; font-size:10px;">' + (p.bonus || 'Sem bônus') + itemDesconto + '</td>' +
+                '<td style="text-align:center;">' +
+                '<button class="btn" style="background:linear-gradient(135deg,#ff8c00,#ffd700); color:#000; padding:6px 12px; font-size:10px; border-radius:6px;" onclick="event.stopPropagation(); pagarComPix('+p.id+')">COMPRAR</button>' +
+                '</td>' +
+                '</tr>';
     }
+    html += '</tbody></table>';
     grid.innerHTML = html;
+}
+
+function selecionarPlano(id){
+    planoSelecionado=id;
+    showToast("Plano selecionado! Clique em COMPRAR na linha dele para gerar o PIX.", "info", "Tesla Loja");
 }
 
 function renderSkins() {
     fetch('/status').then(function(r) { return r.json(); }).then(function(d) {
         var skinsStatus = d.skins_status || [];
-        var skinsBasicas = skinsStatus.filter(function(s) { return s.categoria === 'basica'; });
-        var skinsPremium = skinsStatus.filter(function(s) { return s.categoria === 'premium'; });
-        var skinsLendarias = skinsStatus.filter(function(s) { return s.categoria === 'lendaria'; });
-        renderSkinGrid('skinsGridBasicas', skinsBasicas);
-        renderSkinGrid('skinsGridPremium', skinsPremium);
-        renderSkinGrid('skinsGridLendarias', skinsLendarias);
-        document.getElementById('skinsGridBasicas').style.display = 'grid';
+        var grid = document.getElementById('skinsGridBasicas');
+        var html = '';
+        for(var i=0;i<skinsStatus.length;i++){
+            var skin = skinsStatus[i];
+            var btnHtml = skin.ativo ? '<button class="btn" style="background:#222;color:#00ff88">EM USO</button>' : '<button class="btn" onclick="ativarSkin(\''+skin.id+'\')">ATIVAR</button>';
+            html += '<div style="background:#111;padding:10px;border-radius:10px;border:1px solid #333;"><h5>'+skin.nome+'</h5><p style="font-size:9px;color:#aaa">'+skin.desc+'</p><br>'+btnHtml+'</div>';
+        }
+        grid.innerHTML = html;
     });
-}
-
-function renderSkinGrid(gridId, skins) {
-    var grid = document.getElementById(gridId);
-    if(!grid) return;
-    var html = '';
-    for(var i=0;i<skins.length;i++){
-        var skin = skins[i];
-        var ativa = skin.ativo ? ' ativo' : '';
-        var btnHtml = '';
-        if(skin.ativo) btnHtml = '<button class="btn-produto btn-usando">✅ EM USO</button>';
-        else if(skin.comprado) btnHtml = '<button class="btn-produto btn-ativar" onclick="ativarSkin(\''+skin.id+'\')">🎨 ATIVAR</button>';
-        else if(skin.preco_moedas == 0) btnHtml = '<button class="btn-produto btn-ativar" onclick="ativarSkin(\''+skin.id+'\')">🆓 ATIVAR</button>';
-        else btnHtml = '<button class="btn-produto btn-comprar" onclick="comprarSkin(\''+skin.id+'\')">🛒 COMPRAR ('+skin.preco_moedas+' ⚡)</button>';
-        html += '<div class="produto-card'+ativa+'"><div class="produto-header"><div class="produto-nome">'+skin.nome+'</div></div><div class="produto-body"><div class="produto-desc">'+skin.desc+'</div></div><div class="produto-footer">'+btnHtml+'</div></div>';
-    }
-    grid.innerHTML = html || '<p style="color:#888;text-align:center;padding:20px">Nenhuma skin nesta categoria</p>';
 }
 
 function renderLojaEstrategias() {
     fetch('/status').then(function(r) { return r.json(); }).then(function(d) {
         var grid = document.getElementById('estrategiasLojaGrid');
-        if(!grid) return;
         var html = '';
-        var estrategiasCompradas = d.estrategias_compradas || ['v_sensitivo'];
         var disponiveis = d.estrategias_disponiveis || {};
         for(var key in disponiveis) {
             var est = disponiveis[key];
-            if(!estrategiasCompradas.includes(key) && key !== 'v_sensitivo') {
-                var btnHtml = est.gratis ? '<button class="btn-produto btn-ativar" onclick="comprarEstrategia(\''+key+'\')">🆓 ATIVAR GRÁTIS</button>' : '<button class="btn-produto btn-comprar" onclick="comprarEstrategia(\''+key+'\')">🛒 COMPRAR ('+est.preco_moedas+' ⚡)</button>';
-                html += '<div class="produto-card"><div class="produto-header"><div class="produto-nome">'+est.nome+'</div></div><div class="produto-body"><div class="produto-desc">'+est.desc+'</div></div><div class="produto-footer">'+btnHtml+'</div></div>';
-            }
+            html += '<div style="background:#111;padding:10px;border-radius:10px;border:1px solid #333;"><h5>'+est.nome+'</h5><p style="font-size:9px;color:#aaa">'+est.desc+'</p><button class="btn" onclick="comprarEstrategia(\''+key+'\')">ADQUIRIR</button></div>';
         }
-        grid.innerHTML = html || '<p style="color:#00ff88;text-align:center;padding:20px">✅ Você já possui todas as estratégias disponíveis!</p>';
+        grid.innerHTML = html;
     });
 }
 
 function renderEstrategias() {
     fetch('/status').then(function(r) { return r.json(); }).then(function(d) {
-        var estrategiasCompradas = d.estrategias_compradas || ['v_sensitivo'];
         var disponiveis = d.estrategias_disponiveis || {};
         var estrategiaAtual = d.estrategia || 'v_sensitivo';
         var grid = document.getElementById('estrategiaGrid');
-        if(!grid) return;
         var html = '';
         for(var key in disponiveis) {
-            if(estrategiasCompradas.includes(key)) {
-                var e = disponiveis[key];
-                var ativa = (key == estrategiaAtual) ? ' ativa' : '';
-                html += '<div class="estrategia-card'+ativa+'" onclick="selecionarEstrategia(\''+key+'\')" id="est_'+key+'">' +
-                    '<div class="estrategia-header"><div class="estrategia-nome">'+e.nome+'</div></div>' +
-                    '<div class="estrategia-body"><div class="estrategia-desc">'+e.desc+'</div><div class="estrategia-preco">'+(e.gratis ? '<span class="badge-gratis">GRÁTIS</span>' : '<span class="badge-pago">⚡ '+e.preco_moedas+' VOLTS</span>')+'</div></div></div>';
-            }
+            var e = disponiveis[key];
+            var ativa = (key == estrategiaAtual) ? ' ativa' : '';
+            html += '<div class="estrategia-card'+ativa+'" onclick="selecionarEstrategia(\''+key+'\')" id="est_'+key+'"><h4>'+e.nome+'</h4><p style="font-size:9px">'+e.desc+'</p></div>';
         }
-        grid.innerHTML = html || '<p style="color:#ff4444;text-align:center;padding:20px">⚠️ NENHUMA ESTRATÉGIA ADQUIRIDA! Vá na LOJA e compre uma estratégia.</p>';
-        if(disponiveis[estrategiaAtual]) document.getElementById('estrategiaAtiva').textContent = disponiveis[estrategiaAtual].nome;
+        grid.innerHTML = html;
     });
 }
 
 function selecionarEstrategia(key) {
-    estrategiaSel = key;
-    var cards = document.querySelectorAll('.estrategia-card');
-    for(var i=0;i<cards.length;i++) cards[i].classList.remove('ativa');
-    var card = document.getElementById('est_'+key);
-    if(card) card.classList.add('ativa');
     fetch('/selecionar_estrategia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estrategia:key})})
-        .then(function() { document.getElementById('estrategiaAtiva').textContent = key.toUpperCase(); showToast('Estratégia alterada para: '+key, 'success'); });
+    .then(function() { showToast('Estratégia alterada!', 'success'); openTab('bot'); });
 }
 
-function comprarEstrategia(estrategiaId) {
-    if(!emailLogado){ showToast('Conecte primeiro!', 'error'); return; }
-    if(!confirm('Comprar esta estratégia com VOLTS?')) return;
-    fetch('/comprar_estrategia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estrategia_id:estrategiaId})})
-    .then(function(r) { return r.json(); }).then(function(d) { 
-        if(d.ok){ showToast(d.msg||'Adquirida com sucesso!', 'success'); document.getElementById('moedasSaldo').textContent=d.moedas; renderLojaEstrategias(); renderEstrategias(); } 
-        else { showToast('ERRO: '+d.erro, 'error'); } 
-    });
+function comprarEstrategia(id) {
+    fetch('/comprar_estrategia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estrategia_id:id})})
+    .then(function(r){return r.json()}).then(function(d){ showToast(d.msg||'Processado', 'info') });
 }
 
-function comprarSkin(skinId) {
-    if(!emailLogado){ showToast('Conecte primeiro!', 'error'); return; }
-    if(!confirm('Comprar esta skin?')) return;
-    fetch('/comprar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId})})
-    .then(function(r) { return r.json(); }).then(function(d) {
-        if(d.ok){ showToast(d.msg||'Skin adquirida!', 'success'); document.getElementById('moedasSaldo').textContent=d.moedas; renderSkins(); } 
-        else { showToast('ERRO: '+d.erro, 'error'); }
-    });
-}
-
-function ativarSkin(skinId) {
-    if(!emailLogado){ showToast('Conecte primeiro!', 'error'); return; }
-    if(!confirm('Ativar esta skin? O visual será atualizado.')) return;
-    fetch('/ativar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId})})
-    .then(function(r) { return r.json(); }).then(function(d) { 
-        if(d.ok){ showToast('Skin ativada! Recarregando...', 'success'); setTimeout(function() { location.reload(); }, 800); } 
-        else { showToast('ERRO: '+d.erro, 'error'); } 
-    });
-}
-
-function selecionarPlano(id){
-    document.querySelectorAll('#planosGridContainer .produto-card').forEach(function(c) { c.classList.remove('selecionado'); });
-    document.querySelectorAll('#planosGridContainer .btn-produto').forEach(function(b) { b.style.display='none'; });
-    document.getElementById('plano'+id).classList.add('selecionado');
-    document.getElementById('btnPlano'+id).style.display='block';
-    planoSelecionado=id;
+function ativarSkin(id) {
+    fetch('/ativar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:id})})
+    .then(function(){ location.reload() });
 }
 
 function pagarComPix(planoId){
@@ -570,23 +364,21 @@ function pagarComPix(planoId){
         if(d.sucesso){
             pixAtual=d;
             var html='<p style="font-size:18px;color:#ffd700">R$ '+d.valor.toFixed(2)+'</p><p style="color:#00ff88">⚡ '+d.moedas+' VOLTS</p>';
-            if(d.qr_code_base64) html+='<div class="pix-qrcode"><img src="data:image/png;base64,'+d.qr_code_base64+'" style="max-width:200px"></div>';
             if(d.qr_code) html+='<div class="pix-copiavel" onclick="copiarPix()">📋 Clique para copiar o código PIX</div>';
-            html+='<button class="btn-confirmar" onclick="verificarPagamento(\''+d.pix_id+'\')">🔄 VERIFICAR PAGAMENTO</button>';
+            html+='<br><button class="btn" style="background:#00ff88;color:#000" onclick="verificarPagamento(\''+d.pix_id+'\')">🔄 VERIFICAR PAGAMENTO</button>';
             document.getElementById('pixContent').innerHTML=html;
-        } else { document.getElementById('pixContent').innerHTML='<p style="color:#ff4444">❌ Erro: '+(d.erro||'Falha')+'</p>'; }
+        }
     });
 }
 
-function copiarPix(){ if(pixAtual && pixAtual.qr_code){ navigator.clipboard.writeText(pixAtual.qr_code); showToast('Código PIX copiado!', 'success'); } }
+function copiarPix(){ if(pixAtual && pixAtual.qr_code){ navigator.clipboard.writeText(pixAtual.qr_code); showToast('Copiado!', 'success'); } }
 function verificarPagamento(pixId){
     fetch('/verificar_pix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pix_id:pixId})})
     .then(function(r) { return r.json(); }).then(function(d){ 
-        if(d.pago){ showToast('✅ PAGAMENTO CONFIRMADO! +'+d.moedas+' VOLTS!', 'success'); document.getElementById('moedasSaldo').textContent=d.saldo; fecharModal(); location.reload(); } 
-        else { showToast('⏰ Aguardando confirmação...', 'warning'); } 
+        if(d.pago){ showToast('PAGO!', 'success'); fecharModal(); } else { showToast('Aguardando...', 'warning'); }
     });
 }
-function fecharModal(){ document.getElementById('modalPix').classList.remove('active'); pixAtual=null; }
+function fecharModal(){ document.getElementById('modalPix').classList.remove('active'); }
 
 function openTab(tab) {
     var tabs = document.querySelectorAll('.tab');
@@ -595,241 +387,58 @@ function openTab(tab) {
     for(var i=0;i<panels.length;i++) panels[i].classList.remove('active');
     if(event && event.target) event.target.classList.add('active');
     document.getElementById('panel-' + tab).classList.add('active');
-    if(tab == 'relatorio' && emailLogado) { document.getElementById('emailRelatorio').value = emailLogado; verRelatorio(); }
-    if(tab == 'loja') mostrarLojaTab('volts');
-    if(tab == 'estrategias') { if(botAtivo){ showToast('⚠️ Pare o bot primeiro!', 'warning'); openTab('bot'); return; } renderEstrategias(); }
+    if(tab == 'estrategias') renderEstrategias();
+    if(tab == 'loja') renderPlanos();
 }
 
 function conectarIQ() {
     var email = document.getElementById('email').value.trim();
     var senha = document.getElementById('senha').value.trim();
     var tipo = document.getElementById('tipo').value;
-    if(!email || !senha){ showToast('Preencha email e senha!', 'warning'); return; }
     emailLogado = email;
-    var btnConectar = document.getElementById('btnConectar');
-    btnConectar.disabled = true;
-    btnConectar.textContent = 'Conectando...';
     fetch('/conectar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,senha:senha,tipo:tipo})})
     .then(function(r) { return r.json(); }).then(function(d){
         if(d.ok){
             conectadoIQ = true;
-            btnConectar.style.display = 'none';
+            document.getElementById('btnConectar').style.display = 'none';
             document.getElementById('btnDesconectar').style.display = 'inline-block';
             document.getElementById('btnOperar').style.display = 'inline-block';
             document.getElementById('statusTexto').textContent = '🟢 Conectado';
             document.getElementById('statusDot').className = 'status-dot active';
-            document.getElementById('moedasSaldo').textContent = d.moedas || 0;
-            if(intervalo) clearInterval(intervalo);
             intervalo = setInterval(atualizar,2000);
-            atualizar();
-            iniciarChat();
-            carregarSkinEffectsDoFirebase();
-            showToast('✅ Conectado!', 'success');
-            if(d.refresh) { setTimeout(function() { location.reload(); }, 1500); }
-        } else { showToast('ERRO: '+d.erro, 'error'); btnConectar.disabled=false; btnConectar.textContent='🔌 CONECTAR'; }
-    }).catch(function(err) { showToast('Erro: ' + err.message, 'error'); btnConectar.disabled=false; btnConectar.textContent='🔌 CONECTAR'; });
-}
-
-function desconectarIQ() {
-    if(botAtivo){ showToast('⚠️ Pare o bot primeiro!', 'warning'); return; }
-    if(!confirm('Desconectar? O servidor será encerrado.')) return;
-    fetch('/parar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({desconectar: true}) })
-    .then(function(r) { return r.json(); }).then(function(d){
-        if(d.shutdown){ showToast('Desconectado!', 'info'); setTimeout(function() { window.close(); }, 1000); }
-        conectadoIQ = false; botAtivo = false;
-        document.getElementById('btnConectar').style.display = 'inline-block';
-        document.getElementById('btnConectar').disabled = false;
-        document.getElementById('btnConectar').textContent = '🔌 CONECTAR';
-        document.getElementById('btnDesconectar').style.display = 'none';
-        document.getElementById('btnOperar').style.display = 'none';
-        document.getElementById('btnParar').style.display = 'none';
-        document.getElementById('statusTexto').textContent = '⏸️ Desconectado';
-        document.getElementById('statusDot').className = 'status-dot inactive';
-        if(intervalo) clearInterval(intervalo);
-    }).catch(function(err) { showToast('Erro: ' + err.message, 'error'); });
+        }
+    });
 }
 
 function comecarOperar() {
-    if(!conectadoIQ){ showToast('Conecte primeiro!', 'warning'); return; }
-    var btnOperar = document.getElementById('btnOperar');
-    btnOperar.disabled = true;
-    btnOperar.textContent = 'Iniciando...';
     fetch('/comecar_operar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({}) })
     .then(function(r) { return r.json(); }).then(function(d){
-        if(d.ok){
-            botAtivo = true;
-            btnOperar.style.display = 'none';
-            document.getElementById('btnParar').style.display = 'inline-block';
-            document.getElementById('statusTexto').textContent = '🤖 Operando';
-            document.getElementById('statusDot').className = 'status-dot active';
-            document.getElementById('moedasSaldo').textContent = d.moedas;
-            showToast('🚀 Bot iniciado!', 'success');
-        } else { showToast('ERRO: '+d.erro, 'error'); btnOperar.disabled=false; btnOperar.textContent='🚀 COMEÇAR OPERAR'; }
+        botAtivo = true;
+        document.getElementById('btnOperar').style.display = 'none';
+        document.getElementById('btnParar').style.display = 'inline-block';
     });
 }
 
 function pararBot() {
-    if(!confirm('Parar o bot?')) return;
-    var btnParar = document.getElementById('btnParar');
-    btnParar.disabled = true;
-    btnParar.textContent = 'Parando...';
     fetch('/parar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({desconectar: false}) })
-    .then(function(r) { return r.json(); }).then(function(d){
+    .then(function(){
         botAtivo = false;
         document.getElementById('btnOperar').style.display = 'inline-block';
-        document.getElementById('btnOperar').disabled = false;
-        document.getElementById('btnOperar').textContent = '🚀 COMEÇAR OPERAR';
         document.getElementById('btnParar').style.display = 'none';
-        document.getElementById('statusTexto').textContent = '🟢 Conectado';
-        document.getElementById('statusDot').className = 'status-dot active';
-        btnParar.disabled = false; btnParar.textContent = '⏹️ PARAR';
-        showToast('Bot parado!', 'info');
-        atualizar();
     });
-}
-
-function atualizarPercentual() { 
-    var perc = document.getElementById('percentualBanca').value; 
-    fetch('/set_percentual', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({percentual: parseInt(perc)}) });
-    calcularMinimo(); 
-}
-
-function calcularMinimo() {
-    var banca = parseFloat(document.getElementById('banca').textContent.replace('$','')) || 0;
-    var perc = parseInt(document.getElementById('percentualBanca').value);
-    var valor = (banca * perc / 100).toFixed(2);
-    document.getElementById('valorEstimado').textContent = '($' + valor + ')';
-}
-
-function verRelatorio(){
-    var email=document.getElementById('emailRelatorio').value.trim();
-    if(!email){ showToast('Digite o email!', 'warning'); return; }
-    fetch('/relatorio?email='+email).then(function(r) { return r.json(); }).then(function(d){
-        if(d.erro){ showToast(d.erro, 'error'); return; }
-        var h='<div class="relatorio-grid">'+
-            '<div class="relatorio-card"><div class="rlabel">⚡ VOLTS</div><div class="rvalue">'+(d.moedas||0)+'</div></div>'+
-            '<div class="relatorio-card"><div class="rlabel">📈 LUCRO TOTAL</div><div class="rvalue" style="color:'+(d.lucro_total>=0?'#00ff88':'#ff4444')+'">$'+(d.lucro_total||0).toFixed(2)+'</div></div>'+
-            '<div class="relatorio-card"><div class="rlabel">✅ WINS</div><div class="rvalue" style="color:#00ff88">'+(d.total_wins||0)+'</div></div>'+
-            '<div class="relatorio-card"><div class="rlabel">❌ LOSSES</div><div class="rvalue" style="color:#ff4444">'+(d.total_losses||0)+'</div></div>'+
-            '<div class="relatorio-card"><div class="rlabel">🔄 CICLOS</div><div class="rvalue">'+(d.total_ciclos||0)+'</div></div>'+
-            '<div class="relatorio-card"><div class="rlabel">💵 GASTO TOTAL</div><div class="rvalue">$'+(d.total_gasto||0).toFixed(2)+'</div></div>'+
-            '<div class="relatorio-card"><div class="rlabel">💰 GANHO TOTAL</div><div class="rvalue">$'+(d.total_ganho||0).toFixed(2)+'</div></div>'+
-            '<div class="relatorio-card"><div class="rlabel">🎯 TAXA ACERTO</div><div class="rvalue">'+(d.total_ciclos>0?((d.total_wins/d.total_ciclos)*100).toFixed(1):0)+'%</div></div>'+
-            '<div class="relatorio-card"><div class="rlabel">💰 BANCA ATUAL</div><div class="rvalue">$'+(d.banca_atual||0).toFixed(2)+'</div></div>'+
-            '<div class="relatorio-card"><div class="rlabel">📅 DIAS ATIVOS</div><div class="rvalue">'+(d.dias_ativos||0)+'</div></div>'+
-            '<div class="relatorio-card"><div class="rlabel">📅 CADASTRO</div><div class="rvalue" style="font-size:10px">'+(d.data_cadastro||'--')+'</div></div></div>';
-        if(d.historico_operacoes && d.historico_operacoes.length>0){
-            h+='<h4 style="margin-top:20px;color:#ffd700">📋 HISTÓRICO DE OPERAÇÕES</h4><table class="historico-table">'+
-                '<thead><tr><th>DATA</th><th>RESULTADO</th><th>VALOR</th><th>LUCRO</th><th>ESTRATÉGIA</th></tr></thead><tbody>';
-            for(var i=d.historico_operacoes.length-1; i>=Math.max(0,d.historico_operacoes.length-20); i--){
-                var op = d.historico_operacoes[i];
-                h+='<tr><td>'+op.data+'</td><td style="color:'+(op.resultado=='WIN'?'#00ff88':'#ff4444')+'">'+op.resultado+'</td><td>$'+op.valor.toFixed(2)+'</td><td style="color:'+(op.lucro>=0?'#00ff88':'#ff4444')+'">$'+op.lucro.toFixed(2)+'</td><td>'+op.estrategia+'</td></tr>';
-            }
-            h+='</tbody></table>';
-        }
-        document.getElementById('relatorioContent').innerHTML = h;
-    });
-}
-
-function verRanking(){
-    document.getElementById('relatorioContent').innerHTML = '<p style="color:#ffd700;text-align:center">🏆 Carregando ranking...</p>';
-    fetch('/ranking').then(function(r) { return r.json(); }).then(function(d){
-        var h='<div style="background:#1a1a0a;border:2px solid #ffd700;border-radius:15px;padding:20px;margin-bottom:20px">'+
-            '<p style="color:#ffd700;font-size:16px;font-weight:bold;text-align:center;margin-bottom:15px">📊 ESTATÍSTICAS GLOBAIS</p>'+
-            '<div class="relatorio-grid">'+
-            '<div class="relatorio-card"><div class="rlabel">👥 USUÁRIOS</div><div class="rvalue">'+d.stats.total_usuarios+'</div></div>'+
-            '<div class="relatorio-card"><div class="rlabel">🔄 TOTAL OPS</div><div class="rvalue">'+d.stats.total_ops+'</div></div>'+
-            '<div class="relatorio-card"><div class="rlabel">✅ WINS GLOBAIS</div><div class="rvalue">'+d.stats.total_wins+'</div></div>'+
-            '<div class="relatorio-card"><div class="rlabel">🎯 TAXA GLOBAL</div><div class="rvalue">'+d.stats.taxa_global+'%</div></div></div></div>'+
-            '<p style="color:#ffd700;font-size:16px;font-weight:bold;text-align:center;margin-bottom:15px">🏆 TOP 10 TRADERS</p>'+
-            '<div style="overflow-x:auto"><table class="historico-table">'+
-            '<thead><tr><th>#</th><th>EMAIL</th><th>LUCRO TOTAL</th><th>WINS</th><th>LOSS</th><th>TAXA</th><th>BANCA</th></tr></thead><tbody>';
-        for(var i=0;i<d.ranking.length && i<10;i++){
-            var u = d.ranking[i];
-            var medalha = i===0?'🥇':(i===1?'🥈':(i===2?'🥉':(i+1)));
-            h+='<tr><td style="font-weight:bold;font-size:16px">'+medalha+'</td>'+
-                '<td style="font-size:10px">'+(u.email||'---').substring(0,25)+'</td>'+
-                '<td style="color:'+(u.lucro_total>=0?'#00ff88':'#ff4444')+'">$'+u.lucro_total.toFixed(2)+'</td>'+
-                '<td style="color:#00ff88">'+u.total_wins+'</td>'+
-                '<td style="color:#ff4444">'+u.total_losses+'</td>'+
-                '<td style="color:#ffd700">'+u.taxa+'%</td>'+
-                '<td style="color:#00ff88">$'+u.banca_atual.toFixed(2)+'</td>'+
-                '</tr>';
-        }
-        h+='</tbody></table></div>';
-        document.getElementById('relatorioContent').innerHTML = h;
-    }).catch(function(){ showToast('Erro ao carregar ranking', 'error'); });
 }
 
 function atualizar() {
     fetch('/status').then(function(r) { return r.json(); }).then(function(d){
-        if(d.banca) { document.getElementById('banca').textContent = '$' + d.banca.toFixed(2); calcularMinimo(); }
-        if(d.lucro !== undefined){ var el=document.getElementById('lucro'); el.textContent='$'+d.lucro.toFixed(2); el.style.color=d.lucro>=0?'#00ff88':'#ff4444'; }
+        if(d.banca) document.getElementById('banca').textContent = '$' + d.banca.toFixed(2);
+        if(d.lucro !== undefined) document.getElementById('lucro').textContent = '$' + d.lucro.toFixed(2);
         if(d.ops !== undefined) document.getElementById('ops').textContent = d.ops;
         if(d.moedas !== undefined) document.getElementById('moedasSaldo').textContent = d.moedas;
         if(d.sinal) document.getElementById('sinal').textContent = d.sinal;
         if(d.estrategia_nome) document.getElementById('estrategiaAtiva').textContent = d.estrategia_nome;
-        if(d.bot_version) document.getElementById('botVersionDisplay').innerHTML = '⚡ TESLA 369 v' + d.bot_version;
-        if(d.analise){
-            document.getElementById('rsi').textContent = d.analise.rsi ? d.analise.rsi.toFixed(1) : '--';
-            document.getElementById('mm5').textContent = d.analise.mm5 ? d.analise.mm5.toFixed(5) : '--';
-            document.getElementById('mm10').textContent = d.analise.mm10 ? d.analise.mm10.toFixed(5) : '--';
-            document.getElementById('mm20').textContent = d.analise.mm20 ? d.analise.mm20.toFixed(5) : '--';
-            document.getElementById('stoch').textContent = d.analise.stoch ? d.analise.stoch.toFixed(1) : '--';
-            document.getElementById('fase').textContent = d.analise.fase || '--';
-            document.getElementById('preco').textContent = d.analise.preco ? d.analise.preco.toFixed(5) : '--';
-        }
-        if(d.logs){ var terminal = document.getElementById('terminal'); terminal.innerHTML = d.logs; terminal.scrollTop = terminal.scrollHeight;
-            var lastLog = d.logs;
-            if(lastLog.indexOf('🌟 WIN!') > -1 && window.lastWin !== lastLog) { window.lastWin = lastLog; showToast('✅ WIN! Lucro adicionado!', 'success', '🎯 WIN!'); }
-            if(lastLog.indexOf('💀 LOSS!') > -1 && window.lastLoss !== lastLog) { window.lastLoss = lastLog; showToast('❌ LOSS! Indo para GALE...', 'error', '💀 LOSS!'); }
-            if(lastLog.indexOf('➡️ Indo para GALE') > -1 && window.lastGale !== lastLog) { window.lastGale = lastLog; showToast('🔄 GALE ativado! Tentando recuperação...', 'warning', '⚡ GALE!'); }
-        }
-        if(d.rodando && !botAtivo){ botAtivo=true; document.getElementById('btnOperar').style.display='none'; document.getElementById('btnParar').style.display='inline-block'; document.getElementById('statusTexto').textContent='🤖 Operando'; document.getElementById('statusDot').className='status-dot active'; }
-        else if(!d.rodando && botAtivo){ botAtivo=false; if(conectadoIQ){ document.getElementById('btnOperar').style.display='inline-block'; document.getElementById('btnOperar').disabled=false; document.getElementById('btnOperar').textContent='🚀 COMEÇAR OPERAR'; document.getElementById('btnParar').style.display='none'; document.getElementById('statusTexto').textContent='🟢 Conectado'; } }
+        if(d.logs) document.getElementById('terminal').innerHTML = d.logs;
     });
 }
-
-function iniciarChat(){ if(emailLogado){ atualizarChat(); setInterval(atualizarChat,5000); } }
-function enviarChatMsg(){
-    var msg = document.getElementById('chatMsg').value.trim();
-    if(!msg) return;
-    if(!emailLogado){ showToast('Conecte-se primeiro!', 'warning'); return; }
-    var nome = emailLogado.split('@')[0];
-    fetch('/chat_enviar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:nome,msg:msg})}).then(function(){ document.getElementById('chatMsg').value=''; atualizarChat(); });
-}
-function atualizarChat(){
-    fetch('/chat_mensagens').then(function(r) { return r.json(); }).then(function(d){
-        var html='';
-        if(d.messages && d.messages.length>0){
-            for(var i=Math.max(0,d.messages.length-30); i<d.messages.length; i++){
-                var m = d.messages[i];
-                html+='<div class="chat-mensagem"><span class="chat-nome">'+(m.nome||'Anon')+'</span><span class="chat-hora">'+(m.hora||'')+'</span><br><div class="chat-msg">'+(m.msg||'')+'</div></div>';
-            }
-        } else { html='<p style="color:#888;text-align:center">💬 Nenhuma mensagem ainda. Seja o primeiro!</p>'; }
-        var chatDiv = document.getElementById('chatMensagens');
-        if(chatDiv){ chatDiv.innerHTML=html; chatDiv.scrollTop=chatDiv.scrollHeight; }
-        document.getElementById('chatOnline').textContent = '🟢 ' + (d.online || 1) + ' online';
-    });
-}
-
-window.onload = function() {
-    renderPlanos();
-    fetch('/status').then(function(r) { return r.json(); }).then(function(d){
-        if(d.conectado && d.email){
-            conectadoIQ = true; emailLogado = d.email; document.getElementById('email').value = d.email;
-            document.getElementById('btnConectar').style.display = 'none';
-            document.getElementById('btnDesconectar').style.display = 'inline-block';
-            if(d.rodando){ botAtivo = true; document.getElementById('btnOperar').style.display = 'none'; document.getElementById('btnParar').style.display = 'inline-block'; document.getElementById('statusTexto').textContent = '🤖 Operando'; }
-            else { document.getElementById('btnOperar').style.display = 'inline-block'; document.getElementById('statusTexto').textContent = '🟢 Conectado'; }
-            document.getElementById('statusDot').className = 'status-dot active';
-            document.getElementById('moedasSaldo').textContent = d.moedas || 0;
-            if(d.bot_version) document.getElementById('botVersionDisplay').innerHTML = '⚡ TESLA 369 v' + d.bot_version;
-            intervalo = setInterval(atualizar,2000); atualizar(); iniciarChat(); carregarSkinEffectsDoFirebase();
-        }
-    });
-    setInterval(atualizarChat,5000);
-};
 </script>
 </body>
-    </html>
+</html>
