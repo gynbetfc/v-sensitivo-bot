@@ -679,3 +679,407 @@ def analise_mercado_loop():
 
                     ultima_analise = {
                         'rsi': round(rsi_val, 1), 'mm5': round(mm5, 5) if mm5 else 0,
+                        'mm10': round(mm10, 5) if mm10 else 0, 'mm20': round(mm20, 5) if mm20 else 0,
+                        'stoch': round(estoc_val, 1), 'fase': fase, 'preco': round(preco_atual, 5) if preco_atual else 0
+                    }
+            except Exception as e:
+                pass
+        time.sleep(2)
+
+def sincronizar_html_local():
+    try:
+        os.makedirs("templates", exist_ok=True)
+        # Usa o HTML local se disponível, senão baixa
+        if os.path.exists("templates/index.html"):
+            print("✅ HTML local encontrado.")
+            return True
+        HTML_URL = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/tesla_369_bot/templates/index.html"
+        response = requests.get(HTML_URL, timeout=10)
+        if response.status_code == 200:
+            with open("templates/index.html", "w", encoding="utf-8") as f:
+                f.write(response.text)
+            print("✅ HTML sincronizado!")
+            return True
+    except Exception as e: print(f"❌ Erro HTML: {e}")
+    return False
+
+# Iniciar threads de manutenção
+threading.Thread(target=analise_mercado_loop, daemon=True).start()
+threading.Thread(target=keep_alive_thread, daemon=True).start()
+threading.Thread(target=monitor_conexao_thread, daemon=True).start()
+
+# ========== ROTAS FLASK ==========
+
+@app.route('/')
+def index():
+    skins = carregar_todas_skins_do_firebase()
+    skin = next((s for s in skins if s.get('id') == skin_atual_global), skins[0] if skins else list(get_skins_fallback().values())[0])
+    planos_json = ','.join([f'{{"id":{p["id"]},"moedas":{p["moedas"]},"preco":{p["preco"]},"nome":"{p["nome"]}","desc":"{p["desc"]}","tag":"{p.get("tag","")}","desconto":"{p.get("desconto","")}"}}' for p in PLANOS])
+    return render_template('index.html',
+        COR_FUNDO=skin.get('cor_fundo', '#0a0a1a'), COR_PANEL=skin.get('cor_panel', '#1a1a3e'),
+        COR_DESTAQUE=skin.get('cor_destaque', '#ffd700'), COR_TEXTO=skin.get('cor_texto', '#fff'),
+        COR_BOTAO=skin.get('cor_botao', 'linear-gradient(135deg,#cc8800,#ffd700)'), COR_TAB_ATIVA=skin.get('cor_tab_ativa', '#ffd700'),
+        COR_HEADER_BG=skin.get('cor_header_bg', 'linear-gradient(135deg,#1a0000,#331100,#553300,#331100,#1a0000)'),
+        COR_HEADER_BORDA=skin.get('cor_header_borda', '#ffd700'), CSS_EXTRA=skin.get('css_extra', ''),
+        HEADER_EXTRA=skin.get('header_extra', '<div class="lightning"></div>'), PLANOS_JSON=planos_json,
+        BOT_VERSION=BOT_VERSION
+    )
+
+@app.route('/sinal', methods=['POST'])
+def receber_sinal():
+    global sinal_pendente
+    if not bot_rodando: return jsonify({'ok': False, 'erro': 'Bot em repouso.'})
+    if not conectado_iq: return jsonify({'ok': False, 'erro': 'IQ Option offline.'})
+    direcao = request.get_json().get('direcao', '').lower()
+    if direcao not in ['call', 'put']: return jsonify({'ok': False, 'erro': 'Alvo invalido'})
+    with sinal_lock: sinal_pendente = direcao
+    add_log(f"📡 Sinal externo: {direcao.upper()}", 'sensitive')
+    return jsonify({'ok': True})
+
+@app.route('/status')
+def status():
+    u = carregar_usuario(email_usuario_atual) if email_usuario_atual else {}
+    skins = carregar_todas_skins_do_firebase()
+    skins_status = []
+    skins_compradas = u.get('skins_compradas', ['skin_padrao']) if u else ['skin_padrao']
+    skin_atual = u.get('skin_atual', 'skin_padrao') if u else 'skin_padrao'
+    for skin in skins:
+        skins_status.append({
+            'id': skin.get('id'), 'nome': skin.get('nome'), 'desc': skin.get('desc'),
+            'preco_moedas': skin.get('preco_moedas'), 'categoria': skin.get('categoria'),
+            'comprado': skin.get('id') in skins_compradas, 'ativo': skin.get('id') == skin_atual
+        })
+
+    estrategias_info = carregar_informacoes_estrategias()
+    estrategias_compradas = u.get('estrategias_compradas', ['v_sensitivo']) if u else ['v_sensitivo']
+    estrategia_atual = u.get('estrategia_atual', 'v_sensitivo') if u else 'v_sensitivo'
+    estrategia_nome = estrategias_info[estrategia_atual].get('nome', estrategia_atual) if estrategia_atual in estrategias_info else "Nenhuma"
+
+    return jsonify({
+        'conectado': conectado_iq, 'rodando': bot_rodando, 'email': email_usuario_atual,
+        'banca': API.get_balance() if API else 0, 'lucro': lucro, 'ops': NumDeOperacoes, 'sinal': ultimo_sinal,
+        'logs': get_logs_html(40), 'moedas': u.get('moedas', 0) if u else 0, 'skin_id': skin_atual, 'skins_status': skins_status,
+        'estrategia': estrategia_atual, 'estrategia_nome': estrategia_nome, 'estrategias_compradas': estrategias_compradas,
+        'estrategias_disponiveis': {k: {'nome': v['nome'], 'desc': v['desc'], 'preco_moedas': v['preco_moedas'], 'gratis': v['gratis']} for k, v in estrategias_info.items()},
+        'analise': ultima_analise, 'bot_version': BOT_VERSION
+    })
+
+@app.route('/set_percentual', methods=['POST'])
+def set_percentual():
+    global PERCENTUAL_BANCA
+    PERCENTUAL_BANCA = request.json.get('percentual', 15)
+    return jsonify({'ok': True})
+
+@app.route('/selecionar_estrategia', methods=['POST'])
+def selecionar_estrategia():
+    global estrategia_atual_global, estrategia_ja_injetada
+    est_id = request.json.get('estrategia', 'v_sensitivo')
+    if not email_usuario_atual: return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+    u = carregar_usuario(email_usuario_atual)
+    if not u: return jsonify({'ok': False, 'erro': 'Usuario nao encontrado'})
+    estrategias_info = carregar_informacoes_estrategias()
+    if est_id not in estrategias_info: return jsonify({'ok': False, 'erro': 'Estrategia invalida'})
+
+    estrategias_compradas = u.get('estrategias_compradas', ['v_sensitivo'])
+    if est_id not in estrategias_compradas:
+        if not estrategias_info[est_id].get('gratis', False): return jsonify({'ok': False, 'erro': f'Estrategia bloqueada! Compre na loja.'})
+        u['estrategias_compradas'].append(est_id)
+    u['estrategia_atual'] = est_id
+    salvar_usuario(email_usuario_atual, u)
+    estrategia_atual_global = est_id
+    estrategia_ja_injetada = False
+    add_log(f"🧠 Estrategia: {estrategias_info[est_id]['nome']}", 'indicator')
+    return jsonify({'ok': True})
+
+@app.route('/comprar_estrategia', methods=['POST'])
+def comprar_estrategia():
+    est_id = request.json.get('estrategia_id', '')
+    if not email_usuario_atual: return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+    estrategias_info = carregar_informacoes_estrategias()
+    u = carregar_usuario(email_usuario_atual)
+    if not u or est_id not in estrategias_info: return jsonify({'ok': False, 'erro': 'Parametros invalidos'})
+
+    if 'estrategias_compradas' not in u: u['estrategias_compradas'] = ['v_sensitivo']
+    if est_id in u['estrategias_compradas']:
+        u['estrategia_atual'] = est_id
+        salvar_usuario(email_usuario_atual, u)
+        return jsonify({'ok': True, 'moedas': u['moedas'], 'msg': 'Ja adquirida!'})
+
+    preco = estrategias_info[est_id].get('preco_moedas', 0)
+    if u.get('moedas', 0) < preco: return jsonify({'ok': False, 'erro': f'Precisa de {preco} ⚡'})
+    u['moedas'] -= preco
+    u['estrategias_compradas'].append(est_id)
+    u['estrategia_atual'] = est_id
+    salvar_usuario(email_usuario_atual, u)
+    global estrategia_atual_global
+    estrategia_atual_global = est_id
+    add_log(f"🛒 Estrategia: {estrategias_info[est_id]['nome']}", 'win')
+    return jsonify({'ok': True, 'moedas': u['moedas'], 'msg': 'Sucesso!'})
+
+@app.route('/conectar', methods=['POST'])
+def conectar():
+    global API, email_usuario_atual, conectado_iq, skin_atual_global, estrategia_atual_global, tentativas_reconexao
+    try:
+        d = request.get_json()
+        email, senha, tipo = d.get('email', '').strip(), d.get('senha', '').strip(), d.get('tipo', 'PRACTICE')
+        if not email or not senha: return jsonify({'ok': False, 'erro': 'Credenciais em branco'})
+        email_usuario_atual = email
+        API = IQ_Option(email, senha)
+        status_conn, reason = API.connect()
+        if not status_conn: return jsonify({'ok': False, 'erro': str(reason)[:100]})
+        API.change_balance(tipo)
+        conectado_iq = True
+        tentativas_reconexao = 0
+        usuario = carregar_usuario(email) or criar_usuario(email)
+        hoje = str(datetime.now())[:10]
+        if usuario.get('moedas_ganhas_hoje') != hoje:
+            usuario['moedas'] = usuario.get('moedas', 0) + 1
+            usuario['moedas_ganhas_hoje'] = hoje
+            salvar_usuario(email, usuario)
+        skin_atual_global = usuario.get('skin_atual', 'skin_padrao')
+        estrategia_atual_global = usuario.get('estrategia_atual', 'v_sensitivo')
+        add_log('🔌 Conectado!', 'info')
+        add_log(f'✅ ${API.get_balance():.2f} | ⚡ {usuario.get("moedas", 0)} VOLTS', 'win')
+        return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0), 'refresh': True})
+    except Exception as e: return jsonify({'ok': False, 'erro': str(e)[:100]})
+
+@app.route('/comecar_operar', methods=['POST'])
+def comecar_operar():
+    global bot_rodando, bot_thread, estrategia_ja_injetada
+    try:
+        if not conectado_iq: return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+        
+        # Verifica conexão antes de iniciar
+        if not verificar_e_reconectar():
+            return jsonify({'ok': False, 'erro': 'Falha na conexão! Tente reconectar.'})
+        
+        estrategias_info = carregar_informacoes_estrategias()
+        if not estrategias_info or estrategia_atual_global not in estrategias_info:
+            return jsonify({'ok': False, 'erro': f'❌ Estrategia "{estrategia_atual_global}" invalida!'})
+
+        usuario = carregar_usuario(email_usuario_atual)
+        if not usuario: return jsonify({'ok': False, 'erro': 'Usuario nao encontrado!'})
+        if usuario.get('moedas', 0) < 1: return jsonify({'ok': False, 'erro': 'Sem VOLTS! Compre na loja.'})
+
+        with bot_lock:
+            if bot_rodando and bot_thread and bot_thread.is_alive(): return jsonify({'ok': False, 'erro': 'Bot ja rodando!'})
+            estrategia_ja_injetada = False
+            bot_rodando = True
+            bot_thread = threading.Thread(target=bot_loop, daemon=True)
+            bot_thread.start()
+        return jsonify({'ok': True, 'moedas': usuario['moedas']})
+    except Exception as e: return jsonify({'ok': False, 'erro': str(e)[:100]})
+
+@app.route('/parar', methods=['POST'])
+def parar():
+    global bot_rodando, conectado_iq, volt_ja_consumido
+    data = request.json or {}
+    add_log("🛑 Parando o bot...", 'info')
+    bot_rodando = False
+    volt_ja_consumido = False
+    if data.get('desconectar'):
+        conectado_iq = False
+        add_log("🔌 Desconectado e finalizando servidor...", 'info')
+        def shutdown_server():
+            time.sleep(1)
+            os.kill(os.getpid(), signal.SIGTERM)
+        threading.Thread(target=shutdown_server, daemon=True).start()
+        return jsonify({'ok': True, 'shutdown': True})
+    else:
+        add_log("✅ Bot parado!", 'win')
+        return jsonify({'ok': True, 'shutdown': False})
+
+@app.route('/comprar_skin', methods=['POST'])
+def comprar_skin():
+    global skin_atual_global
+    skin_id = request.get_json().get('skin_id', '')
+    if not email_usuario_atual: return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+    skin = carregar_skin_do_firebase(skin_id) or next((s for s in carregar_todas_skins_do_firebase() if s.get('id') == skin_id), None)
+    if not skin: return jsonify({'ok': False, 'erro': 'Skin nao encontrada'})
+    usuario = carregar_usuario(email_usuario_atual)
+    if not usuario: return jsonify({'ok': False, 'erro': 'Usuario invalido'})
+
+    if skin.get('preco_moedas', 0) == 0:
+        if skin_id not in usuario.setdefault('skins_compradas', ['skin_padrao']): usuario['skins_compradas'].append(skin_id)
+        usuario['skin_atual'] = skin_id
+        salvar_usuario(email_usuario_atual, usuario)
+        skin_atual_global = skin_id
+        return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0), 'msg': 'Skin gratis ativada!', 'refresh': True})
+
+    if skin_id in usuario.setdefault('skins_compradas', ['skin_padrao']):
+        usuario['skin_atual'] = skin_id
+        salvar_usuario(email_usuario_atual, usuario)
+        skin_atual_global = skin_id
+        return jsonify({'ok': True, 'moedas': usuario['moedas'], 'msg': 'Ativada!', 'refresh': True})
+
+    if usuario.get('moedas', 0) < skin.get('preco_moedas', 0): return jsonify({'ok': False, 'erro': f'Precisa de {skin["preco_moedas"]} ⚡'})
+    usuario['moedas'] -= skin['preco_moedas']
+    usuario['skins_compradas'].append(skin_id)
+    usuario['skin_atual'] = skin_id
+    salvar_usuario(email_usuario_atual, usuario)
+    skin_atual_global = skin_id
+    return jsonify({'ok': True, 'moedas': usuario['moedas'], 'msg': 'Skin adquirida!', 'refresh': True})
+
+@app.route('/ativar_skin', methods=['POST'])
+def ativar_skin():
+    skin_id = request.get_json().get('skin_id', '')
+    if not email_usuario_atual: return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+    usuario = carregar_usuario(email_usuario_atual)
+    if not usuario: return jsonify({'ok': False, 'erro': 'Usuario nao encontrado'})
+    if skin_id not in usuario.setdefault('skins_compradas', ['skin_padrao']):
+        skin = carregar_skin_do_firebase(skin_id)
+        if skin and skin.get('preco_moedas', 0) > 0: return jsonify({'ok': False, 'erro': 'Compre primeiro!'})
+        usuario['skins_compradas'].append(skin_id)
+    usuario['skin_atual'] = skin_id
+    salvar_usuario(email_usuario_atual, usuario)
+    global skin_atual_global
+    skin_atual_global = skin_id
+    return jsonify({'ok': True, 'refresh': True})
+
+# ========== PIX ==========
+
+@app.route('/criar_pix', methods=['POST'])
+def criar_pix():
+    d = request.get_json()
+    plano = next((p for p in PLANOS if p['id'] == int(d.get('plano_id') or 1)), None)
+    if MODO_SIMULACAO:
+        pix_id = str(uuid.uuid4())[:8]
+        pagamentos_pendentes[pix_id] = {'email': d.get('email'), 'plano_id': plano['id'], 'moedas': plano['moedas'], 'valor': plano['preco'], 'pago': False, 'criado_em': str(datetime.now())[:19]}
+        return jsonify({'sucesso': True, 'simulacao': True, 'pix_id': pix_id, 'qr_code': f"00020126360014BR.GOV.BCB.PIX0136{d.get('email')}5204000053039865404{plano['preco']:.2f}5802BR5909Tesla3696009Sao Paulo62070503***6304E3F9", 'qr_code_base64': '', 'valor': plano['preco'], 'moedas': plano['moedas']})
+    try:
+        url = "https://api.mercadopago.com/v1/payments"
+        headers = {"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}", "Content-Type": "application/json", "X-Idempotency-Key": str(uuid.uuid4())}
+        payment_data = {"transaction_amount": float(plano['preco']), "description": f"TESLA369 - {plano['moedas']} VOLTS", "payment_method_id": "pix", "payer": {"email": d.get('email'), "first_name": "Traders", "last_name": "Tesla", "identification": {"type": "CPF", "number": "00000000000"}}}
+        res = requests.post(url, json=payment_data, headers=headers, timeout=30).json()
+        if 'id' in res:
+            pix_id = str(res['id'])
+            pagamentos_pendentes[pix_id] = {'email': d.get('email'), 'plano_id': plano['id'], 'moedas': plano['moedas'], 'valor': plano['preco'], 'pago': False, 'criado_em': str(datetime.now())[:19]}
+            return jsonify({'sucesso': True, 'simulacao': False, 'pix_id': pix_id, 'qr_code': res['point_of_interaction']['transaction_data']['qr_code'], 'qr_code_base64': res['point_of_interaction']['transaction_data']['qr_code_base64'], 'valor': plano['preco'], 'moedas': plano['moedas']})
+        return jsonify({'sucesso': False, 'erro': res.get('message', 'Erro ao gerar PIX')})
+    except Exception as e: return jsonify({'sucesso': False, 'erro': str(e)[:50]})
+
+@app.route('/verificar_pix', methods=['POST'])
+def verificar_pix():
+    pix_id = request.get_json().get('pix_id', '')
+    if MODO_SIMULACAO:
+        pago = pagamentos_pendentes.get(pix_id, {}).get('pago', False)
+        if pago and pix_id in pagamentos_pendentes and not pagamentos_pendentes[pix_id]['pago']:
+            pagamentos_pendentes[pix_id]['pago'] = True
+            u = carregar_usuario(pagamentos_pendentes[pix_id]['email'])
+            if u: u['moedas'] += pagamentos_pendentes[pix_id]['moedas']; salvar_usuario(pagamentos_pendentes[pix_id]['email'], u)
+            return jsonify({'pago': True, 'moedas': pagamentos_pendentes[pix_id]['moedas'], 'saldo': u.get('moedas', 0) if u else 0})
+        return jsonify({'pago': pago})
+    try:
+        url = f"https://api.mercadopago.com/v1/payments/{pix_id}"
+        headers = {"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"}
+        res = requests.get(url, headers=headers, timeout=10).json()
+        if res.get('status') == 'approved':
+            if pix_id in pagamentos_pendentes and not pagamentos_pendentes[pix_id]['pago']:
+                pagamentos_pendentes[pix_id]['pago'] = True
+                u = carregar_usuario(pagamentos_pendentes[pix_id]['email'])
+                if u: u['moedas'] += pagamentos_pendentes[pix_id]['moedas']; salvar_usuario(pagamentos_pendentes[pix_id]['email'], u)
+                return jsonify({'pago': True, 'moedas': pagamentos_pendentes[pix_id]['moedas'], 'saldo': u.get('moedas', 0) if u else 0})
+            return jsonify({'pago': True})
+        return jsonify({'pago': False})
+    except: return jsonify({'pago': False})
+
+def verificador_automatico_pix():
+    while True:
+        time.sleep(10)
+        try:
+            for pix_id, dados in list(pagamentos_pendentes.items()):
+                if dados.get('pago', False): continue
+                if MODO_SIMULACAO:
+                    pago = dados.get('pago', False)
+                else:
+                    try:
+                        res = requests.get(f"https://api.mercadopago.com/v1/payments/{pix_id}", headers={"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"}, timeout=10).json()
+                        pago = res.get('status') == 'approved'
+                    except: continue
+                if pago:
+                    pagamentos_pendentes[pix_id]['pago'] = True
+                    u = carregar_usuario(dados['email']) or criar_usuario(dados['email'])
+                    u['moedas'] = u.get('moedas', 0) + dados['moedas']
+                    salvar_usuario(dados['email'], u)
+                    add_log(f"💰 PIX Confirmado! +{dados['moedas']} VOLTS para {dados['email']}", "win")
+        except: pass
+
+threading.Thread(target=verificador_automatico_pix, daemon=True).start()
+
+@app.route('/chat_enviar', methods=['POST'])
+def chat_enviar():
+    try:
+        data = request.json
+        requests.post(f'{FB_URL}/tesla_369/chat.json', json={
+            'nome': data.get('nome', 'Anonimo')[:15], 'msg': data.get('msg', '')[:200],
+            'hora': datetime.now().strftime('%H:%M')
+        }, timeout=5)
+    except: pass
+    return jsonify({'ok': True})
+
+@app.route('/chat_mensagens')
+def chat_mensagens_route():
+    try:
+        r = requests.get(f'{FB_URL}/tesla_369/chat.json?orderBy="$key"&limitToLast=50', timeout=5)
+        return jsonify({'messages': list(r.json().values()) if r.status_code == 200 and r.json() else [], 'online': 1})
+    except: return jsonify({'messages': [], 'online': 1})
+
+@app.route('/ranking')
+def ranking():
+    ranking_list = []
+    try:
+        usuarios = requests.get(f'{FB_URL}/tesla_369/usuarios.json').json() or {}
+        for k, ud in usuarios.items():
+            if ud:
+                ranking_list.append({
+                    'email': ud.get('email', 'N/A'), 'lucro_total': round(ud.get('lucro_total', 0), 2),
+                    'total_wins': ud.get('total_wins', 0), 'total_losses': ud.get('total_losses', 0),
+                    'total_ciclos': ud.get('total_ciclos', 0),
+                    'taxa': round((ud.get('total_wins', 0) / max(ud.get('total_ciclos', 1), 1)) * 100, 1),
+                    'banca_atual': round(ud.get('banca_atual', 0), 2)
+                })
+    except: pass
+    ranking_list.sort(key=lambda x: x['lucro_total'], reverse=True)
+    tc = sum(x['total_ciclos'] for x in ranking_list)
+    tw = sum(x['total_wins'] for x in ranking_list)
+    return jsonify({'ranking': ranking_list, 'stats': {'total_usuarios': len(ranking_list), 'total_ops': tc, 'total_wins': tw, 'taxa_global': round((tw/max(tc,1))*100,1)}})
+
+@app.route('/relatorio')
+def relatorio():
+    return jsonify(carregar_usuario(request.args.get('email', '')) or {'erro': 'Nao encontrado'})
+
+@app.route('/resetar', methods=['POST'])
+def resetar():
+    u = carregar_usuario(request.json.get('email', ''))
+    if not u: return jsonify({'ok': False, 'msg': 'Nao encontrado'})
+    u.update({'total_ciclos':0,'total_wins':0,'total_losses':0,'total_gasto':0.0,'total_ganho':0.0,'lucro_total':0.0,'historico_operacoes':[],'dias_ativos':0,'banca_atual':0.0,'moedas_ganhas_hoje':str(datetime.now())[:10]})
+    salvar_usuario(request.json.get('email', ''), u)
+    return jsonify({'ok': True, 'msg': 'Resetado!'})
+
+@app.route('/shutdown')
+def shutdown():
+    os.kill(os.getpid(), signal.SIGTERM)
+    return jsonify({'ok': True})
+
+if __name__ == '__main__':
+    print("=" * 70)
+    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - CONEXÃO ESTÁVEL ⚡")
+    print("✅ Firebase: SKINS e ESTRATEGIAS carregadas da nuvem")
+    print("✅ RECONEXÃO AUTOMÁTICA ativada")
+    print("✅ TOASTS corrigidos (auto-destruição)")
+    print("✅ NOTIFICAÇÕES: WIN e GALE apenas")
+    print("=" * 70)
+
+    print("\n🔍 Carregando skins do Firebase...")
+    skins_test = carregar_todas_skins_do_firebase()
+    print(f"📦 {len(skins_test)} skins disponiveis")
+
+    print("\n🔍 Carregando estrategias do Firebase...")
+    estrategias_test = carregar_informacoes_estrategias()
+    print(f"📊 {len(estrategias_test)} estrategias disponiveis")
+
+    sincronizar_html_local()
+
+    port = int(os.environ.get('PORT', 5000))
+    print(f"\n🚀 Servidor rodando em http://localhost:{port}")
+    app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
