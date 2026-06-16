@@ -68,7 +68,7 @@ conectado_iq = False
 ultimo_sinal, ultima_analise = "Aguardando...", {}
 logs_web, MAX_LOGS_WEB = [], 200
 email_usuario_atual = ""
-senha_usuario_atual = ""  # Armazenada estritamente para reconexão em background nas trocas de rede
+senha_usuario_atual = ""  
 skin_atual_global = 'skin_padrao'
 estrategia_atual_global = 'v_sensitivo'
 pagamentos_pendentes = {}
@@ -151,7 +151,6 @@ def calcular_media_movel(velas, periodo):
 # ============= LOGICA DE RECONEXÃO ROBUSTA INTERNA =============
 
 def forcar_reconexao_silenciosa():
-    """Tenta recuperar a API sem derrubar o bot_rodando ou interromper o loop financeiro"""
     global API, conectado_iq, reconectando
     if reconectando: return False
     reconectando = True
@@ -163,7 +162,6 @@ def forcar_reconexao_silenciosa():
             API = IQ_Option(email_usuario_atual, senha_usuario_atual)
             status, reason = API.connect()
             if status:
-                # Recupera o tipo de balance atual antes do drop de sinal
                 try:
                     tipo_ativo = request.json.get('tipo', 'PRACTICE')
                     API.change_balance(tipo_ativo)
@@ -189,7 +187,6 @@ def check_link_operacional():
         forcar_reconexao_silenciosa()
 
 def get_balance_resiliente():
-    """Tenta puxar o saldo sem estourar exceções de timeout de socket vazias"""
     while True:
         check_link_operacional()
         try:
@@ -222,8 +219,7 @@ def carregar_skin_do_firebase(skin_id):
             skin_data = r.json()
             skin_data['id'] = skin_id
             return skin_data
-    except Exception as e:
-        print(f"⚠️ Erro ao carregar skin {skin_id}: {e}")
+    except: pass
     return None
 
 def carregar_todas_skins_do_firebase():
@@ -241,10 +237,8 @@ def carregar_todas_skins_do_firebase():
                 skins_list.append(skin_data)
             cache_skins["data"] = skins_list
             cache_skins["timestamp"] = agora
-            print(f"✅ {len(skins_list)} skins carregadas do Firebase!")
             return skins_list
-    except Exception as e:
-        print(f"⚠️ Erro ao carregar skins: {e}")
+    except: pass
 
     fallback_skins = list(get_skins_fallback().values())
     cache_skins["data"] = fallback_skins
@@ -274,10 +268,8 @@ def carregar_informacoes_estrategias():
                 }
             cache_estrategias_info["data"] = estrategias_info
             cache_estrategias_info["timestamp"] = agora
-            print(f"✅ {len(estrategias_info)} estrategias carregadas do Firebase!")
             return estrategias_info
-    except Exception as e:
-        print(f"⚠️ Erro ao carregar estrategias: {e}")
+    except: pass
     return {}
 
 def carregar_estrategia_do_firebase(nome_estrategia):
@@ -287,8 +279,7 @@ def carregar_estrategia_do_firebase(nome_estrategia):
         if r.status_code == 200 and r.json():
             dados = r.json()
             return {'codigo': dados.get('codigo', ''), 'info': dados.get('info', {})}
-    except Exception as e:
-        print(f"⚠️ Erro ao carregar estrategia {nome_estrategia}: {e}")
+    except: pass
     return None
 
 def carregar_e_injetar_estrategia(nome_estrategia):
@@ -344,7 +335,7 @@ def criar_usuario(email):
     salvar_usuario(email, dados)
     return dados
 
-# ========== FUNCOES DO BOT (LOGICA DEFINITIVA ANTI-DESCONEXÃO) ==========
+# ========== FUNCOES DO BOT (LOGICA DEFINITIVA) ==========
 
 def Payout(p):
     try:
@@ -430,7 +421,6 @@ def executar_ciclo(direcao):
 
             add_log(f"🎯 {'ENTRADA' if i == 0 else f'GALE {i}'}: {direcao.upper()} ${valor:.2f}", 'info')
 
-            # Tenta disparar a ordem com retries automáticos caso a rede esteja transitando antena
             st, id_ordem = False, None
             for retry_envio in range(3):
                 check_link_operacional()
@@ -460,7 +450,6 @@ def executar_ciclo(direcao):
             saldo_depois = get_balance_resiliente()
             lucro_liquido = round(saldo_depois - saldo_antes, 2)
             
-            # Re-checagem em caso de latência extrema de retorno
             if lucro_liquido == 0.0:
                 time.sleep(2)
                 saldo_depois = get_balance_resiliente()
@@ -564,7 +553,7 @@ def bot_loop():
                         executar_ciclo(direcao)
                         break
                 time.sleep(0.3)
-            except Exception as e:
+            except:
                 time.sleep(3)
 
         bot_rodando = False
@@ -640,7 +629,7 @@ def sincronizar_html_local():
                 f.write(response.text)
             print("✅ HTML sincronizado!")
             return True
-    exceptException as e: print(f"❌ Erro HTML: {e}")
+    except: pass
     return False
 
 # ========== ROTAS FLASK ==========
@@ -866,7 +855,7 @@ def ativar_skin():
     skin_atual_global = skin_id
     return jsonify({'ok': True, 'refresh': True})
 
-# ========== SEÇÃO PIX INTEGRADA ORIGINAL ==========
+# ========== SEÇÃO PIX ORIGINAL ==========
 
 @app.route('/criar_pix', methods=['POST'])
 def criar_pix():
@@ -936,7 +925,7 @@ def verificador_automatico_pix():
 
 threading.Thread(target=verificador_automatico_pix, daemon=True).start()
 
-# ========== ROTAS DE CHAT E RANKING EXTRA ==========
+# ========== CHAT & RANKING ROUTING ==========
 
 @app.route('/chat_enviar', methods=['POST'])
 def chat_enviar():
