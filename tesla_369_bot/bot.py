@@ -24,7 +24,7 @@ warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
 # ============= VERSÃO DO BOT =============
-BOT_VERSION = "15.0.2"
+BOT_VERSION = "15.0.9"
 BOT_NAME = "TESLA-369"
 
 # ============= CONFIGURACOES =============
@@ -428,7 +428,7 @@ def executar_ciclo(direcao):
                     add_log("⚠️ Falha ao aguardar inicio da vela para a entrada principal.", 'error')
                     break
             else:
-                time.sleep(0.5)
+                time.sleep(0.1)
                 add_log(f"   🔄 Executando GALE {i} imediatamente...", 'info')
 
             saldo_antes = API.get_balance()
@@ -502,7 +502,7 @@ def executar_ciclo(direcao):
                 tempo_verificacao += 1
 
                 # Log a cada 5 segundos para acompanhamento
-                if tempo_verificacao % 5 == 0:
+                if tempo_verificacao % 0.1 == 0:
                     add_log(f"   ⏳ Verificando... ({tempo_verificacao}s / 25s) Saldo: ${saldo_depois:.2f}", 'info')
 
             # Se saiu do loop sem WIN (tempo esgotou ou conexão perdida)
