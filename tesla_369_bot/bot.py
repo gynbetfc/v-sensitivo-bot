@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v15.0.2 - LOGICA DE VERIFICAÇÃO DINÂMICA ⚡
+# ⚡ TESLA 369 BOT v15.0.3 - LOGICA PURA BASEADA NO RELOGIO ⚡
 # Firebase: SKINS e ESTRATEGIAS carregadas da nuvem
 # ENTRADA: guarda ID da ordem (referencia)
-# RESULTADO: verificação em loop após 45 segundos
+# RESULTADO: verificação baseada no relógio (sem cronômetros)
 # GALES: executados imediatamente (sem aguardar inicio de vela)
-# 🔧 v15.0.2 - NOVA LOGICA: 45s espera + verificação loop 25s
+# 🔧 v15.0.3 - SEM CRONOMETROS, SÓ RELOGIO
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
-from datetime import datetime
+from datetime import datetime, timedelta
 import threading
 import time
 import os
@@ -24,7 +24,7 @@ warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
 # ============= VERSÃO DO BOT =============
-BOT_VERSION = "15.0.9"
+BOT_VERSION = "15.0.3"
 BOT_NAME = "TESLA-369"
 
 # ============= CONFIGURACOES =============
@@ -149,7 +149,6 @@ def calcular_media_movel(velas, periodo):
 # ============= SKINS NO FIREBASE =============
 
 def get_skins_fallback():
-    # SKIN PADRAO AGORA E THUNDER!
     return {
         'skin_padrao': {
             'id': 'skin_padrao', 'nome': '⚡ TESLA THUNDER', 'desc': 'Raios eletricos na tela - Skin Padrao',
@@ -292,7 +291,7 @@ def criar_usuario(email):
     salvar_usuario(email, dados)
     return dados
 
-# ========== FUNCOES DO BOT (LOGICA DEFINITIVA) ==========
+# ========== FUNCOES DO BOT ==========
 
 def Payout(p):
     try:
@@ -380,12 +379,11 @@ def processar_resultado(resultado, lucro_liquido, valor, saldo_final):
 
 def executar_ciclo(direcao):
     """
-    LOGICA DE VERIFICACAO DINAMICA:
-    1. Aguarda 45 segundos iniciais
-    2. Após 45s, começa a verificar em loop se o saldo mudou
-    3. Verifica a cada 1 segundo por até 25 segundos
-    4. Se mudar -> WIN
-    5. Se não mudar em 25 segundos -> LOSS e PARA O BOT
+    LOGICA PURA BASEADA NO RELOGIO - SEM CRONOMETROS:
+    1. Aguarda o início da vela (quando os segundos viram para 0)
+    2. Marca o início da vela
+    3. Verifica se já passaram 45 segundos (comparando com o relógio)
+    4. Inicia verificação em loop até 10 segundos após o próximo minuto
     """
     global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, timeframe_atual, ordem_id_atual
 
@@ -398,7 +396,6 @@ def executar_ciclo(direcao):
             bot_rodando = False
             return
 
-        # Verifica conexão
         if not API or not conectado_iq:
             add_log("❌ Conexão perdida! Parando operação.", 'error')
             bot_rodando = False
@@ -414,7 +411,6 @@ def executar_ciclo(direcao):
             if not bot_rodando:
                 break
 
-            # Verifica conexão
             if not API or not conectado_iq:
                 add_log("❌ Conexão perdida durante execução!", 'error')
                 bot_rodando = False
@@ -422,14 +418,13 @@ def executar_ciclo(direcao):
 
             valor = entradas[i]
 
-            # Aguarda início da vela APENAS na primeira entrada
             if i == 0:
                 if not aguardar_inicio_vela():
-                    add_log("⚠️ Falha ao aguardar inicio da vela para a entrada principal.", 'error')
+                    add_log("⚠️ Falha ao aguardar inicio da vela.", 'error')
                     break
             else:
                 time.sleep(0.5)
-                add_log(f"   🔄 Executando GALE {i} imediatamente...", 'info')
+                add_log(f"   🔄 Executando GALE {i}...", 'info')
 
             saldo_antes = API.get_balance()
             if saldo_antes < valor:
@@ -451,64 +446,66 @@ def executar_ciclo(direcao):
 
             if i == 0:
                 ordem_id_atual = id_ordem
-                add_log(f"   📝 Ordem #{id_ordem} (Entrada Principal)", 'info')
+                add_log(f"   📝 Ordem #{id_ordem}", 'info')
             else:
                 add_log(f"   📝 Ordem #{id_ordem} (GALE {i})", 'info')
 
-            # 🔥 NOVA LOGICA: Aguarda 45 segundos iniciais 🔥
-            #add_log(f"   ⏳ Aguardando 45 segundos para começar a verificar...", 'info')
-            #for s in range(45):
-                #if not bot_rodando:
-                    #return
-                #time.sleep(1)
-
-            # Verifica conexão após espera inicial
-            if not API or not conectado_iq:
-                add_log("❌ Conexão perdida durante espera!", 'error')
-                bot_rodando = False
-                break
-
-            # 🔥 INICIA VERIFICAÇÃO EM LOOP POR ATÉ 25 SEGUNDOS 🔥
-            add_log(f"   🔍 Iniciando verificação de saldo em loop (até 65s)...", 'info')
-            lucro_liquido = 0
-            tempo_verificacao = 0
+            # 🔥 LOGICA PURA: SEM CRONOMETROS, SÓ RELOGIO 🔥
+            # Marca o início da vela
+            vela_inicio = datetime.now()
+            add_log(f"   ⏰ Vela iniciou: {vela_inicio.strftime('%H:%M:%S')}", 'info')
+            
+            # Próximo minuto + 10 segundos = limite
+            proximo_minuto = vela_inicio.replace(second=0, microsecond=0) + timedelta(minutes=1)
+            momento_limite = proximo_minuto + timedelta(seconds=10)
+            add_log(f"   ⏰ Limite: {momento_limite.strftime('%H:%M:%S')}", 'info')
+            
             verificacao_win = False
+            inicio_verificacao = False
 
-            while tempo_verificacao < 65:
+            while True:
                 if not bot_rodando:
                     return
 
-                # Verifica conexão
                 if not API or not conectado_iq:
-                    add_log("❌ Conexão perdida durante verificação!", 'error')
+                    add_log("❌ Conexão perdida!", 'error')
                     bot_rodando = False
                     break
 
+                agora = datetime.now()
+                
+                # Verifica se passou do limite
+                if agora >= momento_limite:
+                    add_log(f"   ⏰ Limite atingido!", 'info')
+                    break
+
+                # Só começa a verificar após 45 segundos
+                if not inicio_verificacao:
+                    if (agora - vela_inicio).total_seconds() >= 45:
+                        inicio_verificacao = True
+                        add_log(f"   🔍 Iniciando verificação de saldo...", 'info')
+                    else:
+                        time.sleep(0.5)
+                        continue
+
+                # Verifica saldo
                 saldo_depois = API.get_balance()
                 lucro_liquido = round(saldo_depois - saldo_antes, 2)
 
                 if lucro_liquido > 0:
-                    # WIN! Processa o sucesso
-                    add_log(f"🌟 WIN! +${lucro_liquido:.2f} (detectado após {45 + tempo_verificacao}s)", 'win')
+                    add_log(f"🌟 WIN! +${lucro_liquido:.2f} às {agora.strftime('%H:%M:%S')}", 'win')
                     verificacao_win = True
                     lucro += lucro_liquido
                     processar_resultado('WIN', lucro_liquido, valor, saldo_depois)
                     STOP_GAIN_ATINGIDO = True
-                    add_log("🎯 STOP GAIN! Vitoria alcancada!", 'win')
+                    add_log("🎯 STOP GAIN!", 'win')
                     break
 
-                # Aguarda 1 segundo antes da próxima verificação
                 time.sleep(1)
-                tempo_verificacao += 1
 
-                # Log a cada 5 segundos para acompanhamento
-                if tempo_verificacao % 0.1 == 0:
-                    add_log(f"   ⏳ Verificando... ({tempo_verificacao}s / 25s) Saldo: ${saldo_depois:.2f}", 'info')
-
-            # Se saiu do loop sem WIN (tempo esgotou ou conexão perdida)
+            # Se saiu do loop sem WIN
             if not verificacao_win and bot_rodando:
-                # LOSS confirmado - o bot para para proteger o capital
-                add_log(f"💀 LOSS confirmado! Após {45 + tempo_verificacao}s sem mudança no saldo.", 'loss')
+                add_log(f"💀 LOSS! Sem mudança no saldo.", 'loss')
                 saldo_final = API.get_balance() if API else saldo_antes
                 lucro_liquido = round(saldo_final - saldo_antes, 2)
                 lucro += lucro_liquido
@@ -518,7 +515,6 @@ def executar_ciclo(direcao):
                     add_log(f"   ➡️ Indo para GALE {i + 1}...", 'loss')
                 else:
                     add_log("   💀 CICLO ESGOTADO! Todas as entradas perdidas.", 'loss')
-                    # PARA O BOT para proteger o capital
                     bot_rodando = False
                     add_log("🛑 BOT PARADO PARA PROTEGER O CAPITAL!", 'error')
                     break
@@ -539,7 +535,7 @@ def executar_ciclo(direcao):
             add_log("⏹️ Ciclo finalizado!", 'info')
 
 def bot_loop():
-    """Loop principal do bot - SEM TIMEOUT"""
+    """Loop principal do bot"""
     global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, sinal_pendente, ultimo_sinal, timeframe_atual, volt_ja_consumido, estrategia_ja_injetada
 
     with bot_lock:
@@ -574,9 +570,7 @@ def bot_loop():
         ultimo_sinal = "Aguardando..."
         add_log(f"📌 {par} | Timeframe: {timeframe_atual}s | 💰 ${BANCA_INICIAL_DO_BOT:.2f}")
 
-        # LOOP PRINCIPAL - SEM TIMEOUT
         while bot_rodando and not STOP_GAIN_ATINGIDO:
-            # 🔧 VERIFICA CONEXÃO ANTES DE CADA CICLO
             if not API or not conectado_iq:
                 add_log("❌ Conexão perdida no loop principal!", 'error')
                 bot_rodando = False
@@ -599,16 +593,15 @@ def bot_loop():
 
         bot_rodando = False
 
-# 🔧 FUNÇÕES NOVAS PARA ESTABILIDADE
+# 🔧 FUNÇÕES PARA ESTABILIDADE
 
 def keep_alive_thread():
     """Thread que mantém a conexão ativa com ping constante"""
     global conectado_iq, API, ultimo_keep_alive
     while True:
-        time.sleep(20)  # Ping a cada 20 segundos
+        time.sleep(20)
         if conectado_iq and API:
             try:
-                # Comando simples para manter conexão ativa
                 API.get_server_timestamp()
                 ultimo_keep_alive = time.time()
             except Exception as e:
@@ -622,7 +615,6 @@ def monitor_conexao_thread():
         time.sleep(10)
         if API and conectado_iq:
             try:
-                # Teste real de conexão
                 test = API.get_server_timestamp()
                 if not test:
                     print("[MONITOR] Conexão parece morta")
@@ -639,12 +631,9 @@ def monitor_conexao_thread():
 
 def analise_mercado_loop():
     global ultima_analise, conectado_iq, API
-    ultimo_candle_time = 0
-
     while True:
         if conectado_iq and API:
             try:
-                # 🔧 COM TIMEOUT SEGURO
                 velas = API.get_candles(par, 60, 30, time.time())
                 if velas and len(velas) >= 20:
                     rsi_val = calcular_rsi(velas, 14)
@@ -668,7 +657,6 @@ def analise_mercado_loop():
                         'stoch': round(estoc_val, 1), 'fase': fase, 'preco': round(preco_atual, 5) if preco_atual else 0
                     }
             except Exception as e:
-                # Não imprime erro constante para não poluir log
                 pass
         time.sleep(2)
 
@@ -1039,14 +1027,14 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 70)
-    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - LOGICA DE VERIFICAÇÃO DINÂMICA ⚡")
+    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - LOGICA PURA BASEADA NO RELOGIO ⚡")
     print("✅ Firebase: SKINS e ESTRATEGIAS carregadas da nuvem")
     print("✅ ENTRADA: guarda ID da ordem (referencia)")
-    print("✅ RESULTADO: 45s espera + verificação em loop por 25s")
+    print("✅ RESULTADO: verificação baseada no relógio (sem cronômetros)")
     print("✅ GALES: nova ordem, novo saldo, nova verificacao")
     print("✅ SKIN PADRAO: TESLA THUNDER (raios)")
-    print("✅ PROTEÇÃO DE CAPITAL: para o bot se não houver win em 70s")
-    print("✅ 🔧 CORREÇÕES DE ESTABILIDADE ATIVAS (keep-alive + reconexão)")
+    print("✅ PROTEÇÃO DE CAPITAL: para o bot se não houver win em 10s após o minuto")
+    print("✅ SEM CRONOMETROS - SÓ RELOGIO")
     print("=" * 70)
 
     print("\n🔍 Carregando skins do Firebase...")
