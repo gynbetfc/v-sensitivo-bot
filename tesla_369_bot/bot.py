@@ -456,11 +456,11 @@ def executar_ciclo(direcao):
                 add_log(f"   📝 Ordem #{id_ordem} (GALE {i})", 'info')
 
             # 🔥 NOVA LOGICA: Aguarda 45 segundos iniciais 🔥
-            add_log(f"   ⏳ Aguardando 45 segundos para começar a verificar...", 'info')
-            for s in range(45):
-                if not bot_rodando:
-                    return
-                time.sleep(1)
+            #add_log(f"   ⏳ Aguardando 45 segundos para começar a verificar...", 'info')
+            #for s in range(45):
+                #if not bot_rodando:
+                    #return
+                #time.sleep(1)
 
             # Verifica conexão após espera inicial
             if not API or not conectado_iq:
@@ -469,12 +469,12 @@ def executar_ciclo(direcao):
                 break
 
             # 🔥 INICIA VERIFICAÇÃO EM LOOP POR ATÉ 25 SEGUNDOS 🔥
-            add_log(f"   🔍 Iniciando verificação de saldo em loop (até 25s)...", 'info')
+            add_log(f"   🔍 Iniciando verificação de saldo em loop (até 65s)...", 'info')
             lucro_liquido = 0
             tempo_verificacao = 0
             verificacao_win = False
 
-            while tempo_verificacao < 25:
+            while tempo_verificacao < 65:
                 if not bot_rodando:
                     return
 
