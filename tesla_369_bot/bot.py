@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v15.0.2 - EDIÇÃO BLINDADA (ANTI-QUEDA DE REDE) ⚡
+# ⚡ TESLA 369 BOT v15.0.4 - INTEGRAÇÃO BLINDADA COMPLETA ⚡
 # Firebase: SKINS e ESTRATEGIAS carregadas da nuvem
 # ENTRADA: guarda ID da ordem (referencia)
-# RESULTADO: comparacao de saldo APOS 60 segundos com retry de conexão
-# GALES: executados imediatamente (com tratamento de timeout e auto-reconexão)
+# RESULTADO: comparacao de saldo APOS 60 segundos
+# GALES: executados imediatamente (sem aguardar inicio de vela)
 # SEM TIMESTAMP - SEM CRONOMETROS DESNECESSARIOS
-# 🔧 v15.0.2 - Blindagem total contra transição Wi-Fi -> 4G / Oscilações de Rede
+# 🔧 v15.0.4 - Recuperação total de rotas + Lógica anti-queda sem perda de dados
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -25,7 +25,7 @@ warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
 # ============= VERSÃO DO BOT =============
-BOT_VERSION = "15.0.2"
+BOT_VERSION = "15.0.4"
 BOT_NAME = "TESLA-369"
 
 # ============= CONFIGURACOES =============
@@ -68,7 +68,7 @@ conectado_iq = False
 ultimo_sinal, ultima_analise = "Aguardando...", {}
 logs_web, MAX_LOGS_WEB = [], 200
 email_usuario_atual = ""
-senha_usuario_atual = ""  # Guardado para auto-reconexão silenciosa
+senha_usuario_atual = ""  # Armazenada estritamente para reconexão em background nas trocas de rede
 skin_atual_global = 'skin_padrao'
 estrategia_atual_global = 'v_sensitivo'
 pagamentos_pendentes = {}
@@ -79,9 +79,10 @@ volt_ja_consumido = False
 estrategia_ja_injetada = False
 ordem_id_atual = None
 
-# Var de controle de estabilidade
-reconectando_lock = threading.Lock()
-is_reconectando = False
+# Mecanismo Resiliente Anti-Lock de Threads
+ultimo_keep_alive = time.time()
+reconectando = False
+ultimo_balance = 0
 
 # ============= FUNCOES AUXILIARES =============
 
@@ -147,66 +148,54 @@ def calcular_media_movel(velas, periodo):
     if len(velas) < periodo: return get_close(velas[-1]) if velas else 0
     return sum(get_close(v) for v in velas[-periodo:]) / periodo
 
-# ============= FUNÇÃO CRÍTICA: AUTO RECONEXÃO BLINDADA =============
+# ============= LOGICA DE RECONEXÃO ROBUSTA INTERNA =============
 
-def tentar_reconexao_silenciosa():
-    """Tenta restabelecer a comunicação com a IQ Option sem desregar as variaveis de execucao do bot"""
-    global API, conectado_iq, is_reconectando
-    
-    with reconectando_lock:
-        if is_reconectando:
-            return False
-        is_reconectando = True
-        
+def forcar_reconexao_silenciosa():
+    """Tenta recuperar a API sem derrubar o bot_rodando ou interromper o loop financeiro"""
+    global API, conectado_iq, reconectando
+    if reconectando: return False
+    reconectando = True
     conectado_iq = False
-    add_log("📡 Conexão instável detectada (Mudança de Wi-Fi/4G). Iniciando auto-reconexão...", "warning")
+    add_log("📡 Sinal oscilou. Restabelecendo canal de comunicação com IQ Option...", "warning")
     
-    tentativas = 0
-    while bot_rodando or conectado_iq == False:
+    while not conectado_iq and bot_rodando:
         try:
-            tentativas += 1
-            if tentativas % 5 == 0:
-                add_log(f"🔄 Tentativa de reconexão nº {tentativas}...", "warning")
-                
-            # Força reinstanciação da API caso o socket antigo trave a thread
             API = IQ_Option(email_usuario_atual, senha_usuario_atual)
-            status_conn, reason = API.connect()
-            
-            if status_conn:
-                # Restaura o tipo de banca ativo antes da queda
-                tipo_banca = request.json.get('tipo', 'PRACTICE') if request and request.json else 'PRACTICE'
-                API.change_balance(tipo_banca)
+            status, reason = API.connect()
+            if status:
+                # Recupera o tipo de balance atual antes do drop de sinal
+                try:
+                    tipo_ativo = request.json.get('tipo', 'PRACTICE')
+                    API.change_balance(tipo_ativo)
+                except: pass
                 conectado_iq = True
-                add_log("🔌 Link restabelecido com sucesso! Retomando de onde parou.", "win")
-                with reconectando_lock: is_reconectando = False
+                reconectando = False
+                add_log("🔌 Link restabelecido com sucesso! Retomando processo.", "win")
                 return True
-        except:
-            pass
-        time.sleep(3)
-        
-    with reconectando_lock: is_reconectando = False
+        except: pass
+        time.sleep(4)
+    reconectando = False
     return False
 
-def garantir_conexao_ativa():
-    """Garante que a API está online antes de executar qualquer bloco financeiro do bot"""
+def check_link_operacional():
     global conectado_iq
     if not conectado_iq or not API:
-        tentar_reconexao_silenciosa()
+        forcar_reconexao_silenciosa()
     try:
-        test = API.get_server_timestamp()
-        if not test:
-            tentar_reconexao_silenciosa()
+        t = API.get_server_timestamp()
+        if not t:
+            forcar_reconexao_silenciosa()
     except:
-        tentar_reconexao_silenciosa()
+        forcar_reconexao_silenciosa()
 
-def seguro_get_balance():
-    """Puxa o saldo tratando erros de timeout de rede de forma limpa"""
+def get_balance_resiliente():
+    """Tenta puxar o saldo sem estourar exceções de timeout de socket vazias"""
     while True:
-        garantir_conexao_ativa()
+        check_link_operacional()
         try:
-            saldo = API.get_balance()
-            if saldo is not None and saldo >= 0:
-                return saldo
+            b = API.get_balance()
+            if b is not None and b >= 0:
+                return b
         except:
             time.sleep(2)
 
@@ -252,9 +241,10 @@ def carregar_todas_skins_do_firebase():
                 skins_list.append(skin_data)
             cache_skins["data"] = skins_list
             cache_skins["timestamp"] = agora
+            print(f"✅ {len(skins_list)} skins carregadas do Firebase!")
             return skins_list
-    except:
-        pass
+    except Exception as e:
+        print(f"⚠️ Erro ao carregar skins: {e}")
 
     fallback_skins = list(get_skins_fallback().values())
     cache_skins["data"] = fallback_skins
@@ -284,9 +274,11 @@ def carregar_informacoes_estrategias():
                 }
             cache_estrategias_info["data"] = estrategias_info
             cache_estrategias_info["timestamp"] = agora
+            print(f"✅ {len(estrategias_info)} estrategias carregadas do Firebase!")
             return estrategias_info
-    except:
-        pass
+    except Exception as e:
+        print(f"⚠️ Erro ao carregar estrategias: {e}")
+    return {}
 
 def carregar_estrategia_do_firebase(nome_estrategia):
     try:
@@ -295,7 +287,8 @@ def carregar_estrategia_do_firebase(nome_estrategia):
         if r.status_code == 200 and r.json():
             dados = r.json()
             return {'codigo': dados.get('codigo', ''), 'info': dados.get('info', {})}
-    except: pass
+    except Exception as e:
+        print(f"⚠️ Erro ao carregar estrategia {nome_estrategia}: {e}")
     return None
 
 def carregar_e_injetar_estrategia(nome_estrategia):
@@ -351,13 +344,13 @@ def criar_usuario(email):
     salvar_usuario(email, dados)
     return dados
 
-# ========== FUNCOES DO BOT (LOGICA BLINDADA DEFINITIVA) ==========
+# ========== FUNCOES DO BOT (LOGICA DEFINITIVA ANTI-DESCONEXÃO) ==========
 
 def Payout(p):
     try:
-        garantir_conexao_ativa()
+        check_link_operacional()
         API.subscribe_strike_list(p, 1)
-        for _ in range(10):
+        for _ in range(20):
             d = API.get_digital_current_profit(p, 1)
             if d != False:
                 API.unsubscribe_strike_list(p, 1)
@@ -411,7 +404,7 @@ def executar_ciclo(direcao):
             bot_rodando = False
             return
 
-        bi = seguro_get_balance()
+        bi = get_balance_resiliente()
         payout = Payout(par)
         entradas = calcular_entradas(bi, payout, MARTINGALE)
         add_log(f"💰 Banca: ${bi:.2f} | Payout: {payout*100:.0f}%", 'info')
@@ -430,30 +423,27 @@ def executar_ciclo(direcao):
                 time.sleep(0.5)
                 add_log(f"   🔄 Executando GALE {i} imediatamente...", 'info')
 
-            # Valida saldo real pré-operação com resiliência de conexão
-            saldo_antes = seguro_get_balance()
+            saldo_antes = get_balance_resiliente()
             if saldo_antes < valor:
                 add_log("❌ Saldo insuficiente!", 'error')
                 break
 
             add_log(f"🎯 {'ENTRADA' if i == 0 else f'GALE {i}'}: {direcao.upper()} ${valor:.2f}", 'info')
 
-            # Loop de envio da ordem caso mude de antena (Wi-Fi -> 4G) no milisegundo exato da clique
+            # Tenta disparar a ordem com retries automáticos caso a rede esteja transitando antena
             st, id_ordem = False, None
-            for tentativa_envio in range(3):
-                garantir_conexao_ativa()
+            for retry_envio in range(3):
+                check_link_operacional()
                 try:
                     st, id_ordem = API.buy(valor, par, direcao, 1)
                     if not st or not id_ordem:
                         st, id_ordem = API.buy_digital_spot(par, valor, direcao, 1)
-                    if st and id_ordem:
-                        break
+                    if st and id_ordem: break
                 except:
                     time.sleep(1)
-            
+
             if not st or not id_ordem:
-                add_log("❌ Falha crítica ao processar ordem na IQ! Passando para checagem ativa.", 'error')
-                # Em caso de erro na rede, não quebra o loop. Espera 60s para bater o balanço.
+                add_log("❌ Falha na ordem por timeout de Socket! Aguardando expiração por checagem de saldo...", 'error')
 
             if i == 0:
                 ordem_id_atual = id_ordem
@@ -461,23 +451,21 @@ def executar_ciclo(direcao):
             else:
                 add_log(f"   📝 Ordem #{id_ordem} (GALE {i})", 'info')
 
-            # ⏳ AGUARDA 60 SEGUNDOS COM RESILIÊNCIA DE REDE COMPLETA
-            add_log(f"   ⏳ Aguardando 60 segundos de expiração...", 'info')
+            add_log(f"   ⏳ Aguardando 60 segundos...", 'info')
             for s in range(60):
                 if not bot_rodando:
                     return False
                 time.sleep(1)
 
-            # Verifica resultado comparando saldo de forma segura pós-operação
-            saldo_depois = seguro_get_balance()
+            saldo_depois = get_balance_resiliente()
             lucro_liquido = round(saldo_depois - saldo_antes, 2)
             
-            # Se a internet oscilou e o saldo deu zerado por falha no retorno, reavalia
+            # Re-checagem em caso de latência extrema de retorno
             if lucro_liquido == 0.0:
                 time.sleep(2)
-                saldo_depois = seguro_get_balance()
+                saldo_depois = get_balance_resiliente()
                 lucro_liquido = round(saldo_depois - saldo_antes, 2)
-
+                
             lucro += lucro_liquido
 
             if lucro_liquido > 0:
@@ -519,20 +507,19 @@ def executar_ciclo(direcao):
                     add_log("   💀 CICLO ESGOTADO! Todas as entradas perdidas.", 'loss')
 
         if bot_rodando:
-            bf = seguro_get_balance()
+            bf = get_balance_resiliente()
             add_log("=" * 50, 'info')
             add_log(f"{'🌟 LUCRO' if bf > bi else '💀 PERDA'}: ${abs(bf - bi):.2f} | Banca: ${bf:.2f}", 'info')
             add_log("=" * 50, 'info')
 
     except Exception as e:
-        add_log(f"Erro no ciclo: {e}", 'error')
+        add_log(f"Erro: {e}", 'error')
     finally:
         bot_rodando = False
         ordem_id_atual = None
         add_log("⏹️ Ciclo finalizado!", 'info')
 
 def bot_loop():
-    """Loop principal do bot - PROTEGIDO CONTRA DESCONEXÃO"""
     global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, sinal_pendente, ultimo_sinal, timeframe_atual, volt_ja_consumido, estrategia_ja_injetada
 
     with bot_lock:
@@ -547,10 +534,9 @@ def bot_loop():
             return
 
         estrategia_info = estrategias_info[estrategia_atual_global]
-        timeframe_estrategia = estrategia_info.get('timeframe', 60)
-        timeframe_atual = timeframe_estrategia
+        timeframe_atual = estrategia_info.get('timeframe', 60)
         add_log(f"📊 Estrategia: {estrategia_info.get('nome')}", 'indicator')
-        add_log(f"⏱️ Timeframe: {timeframe_estrategia}s", 'info')
+        add_log(f"⏱️ Timeframe: {timeframe_atual}s", 'info')
 
         if not estrategia_ja_injetada or cache_estrategia_carregada["nome"] != estrategia_atual_global:
             add_log(f"🔧 Carregando estrategia '{estrategia_atual_global}' do Firebase...", "info")
@@ -558,19 +544,16 @@ def bot_loop():
                 bot_rodando = False
                 return
 
-        BANCA_INICIAL_DO_BOT = seguro_get_balance()
+        BANCA_INICIAL_DO_BOT = get_balance_resiliente()
         STOP_GAIN_ATINGIDO = False
-        lucro = 0.0
-        NumDeOperacoes = 0
+        lucro, NumDeOperacoes = 0.0, 0
         volt_ja_consumido = False
         sinal_pendente = None
         ultimo_sinal = "Aguardando..."
         add_log(f"📌 {par} | Timeframe: {timeframe_atual}s | 💰 ${BANCA_INICIAL_DO_BOT:.2f}")
 
         while bot_rodando and not STOP_GAIN_ATINGIDO:
-            # Em vez de dar break ao cair o sinal, o bot segura o while e aguarda re-estabilização ativa da antena
-            garantir_conexao_ativa()
-            
+            check_link_operacional()
             try:
                 resultado = estrategia_atual_executar(API, par, add_log)
                 if resultado and bot_rodando:
@@ -578,41 +561,40 @@ def bot_loop():
                     if direcao in ['call', 'put']:
                         ultimo_sinal = f"GATILHO: {direcao.upper()}"
                         add_log(f"🎯 SINAL: {direcao.upper()}!", 'sensitive')
-                        add_log(f"🎯 EXECUTANDO CICLO: {direcao.upper()}", 'sensitive')
                         executar_ciclo(direcao)
                         break
-                time.sleep(0.5)
+                time.sleep(0.3)
             except Exception as e:
-                time.sleep(2)
+                time.sleep(3)
 
         bot_rodando = False
 
-# 🔧 BACKGROUND THREADS AJUSTADAS PARA MONITORAMENTO RESILIENTE
+# ============= SESSÃO DE SUPORTE E MANUTENÇÃO DE SINAL =============
 
 def keep_alive_thread():
-    global conectado_iq, API
+    global conectado_iq, API, ultimo_keep_alive
     while True:
         time.sleep(20)
         if conectado_iq and API:
             try:
                 API.get_server_timestamp()
+                ultimo_keep_alive = time.time()
             except:
                 conectado_iq = False
 
 def monitor_conexao_thread():
-    """Monitor ativo: Se cair a internet, puxa a reconexao em background em vez de matar o script"""
-    global conectado_iq, API
+    global conectado_iq, API, bot_rodando
     while True:
-        time.sleep(8)
+        time.sleep(10)
         if API:
             try:
                 test = API.get_server_timestamp()
                 if not test:
                     conectado_iq = False
-                    tentar_reconexao_silenciosa()
+                    forcar_reconexao_silenciosa()
             except:
                 conectado_iq = False
-                tentar_reconexao_silenciosa()
+                forcar_reconexao_silenciosa()
 
 def analise_mercado_loop():
     global ultima_analise, conectado_iq, API
@@ -642,7 +624,7 @@ def analise_mercado_loop():
                         'stoch': round(estoc_val, 1), 'fase': fase, 'preco': round(preco_atual, 5) if preco_atual else 0
                     }
             except: pass
-        time.sleep(3)
+        time.sleep(2)
 
 threading.Thread(target=analise_mercado_loop, daemon=True).start()
 threading.Thread(target=keep_alive_thread, daemon=True).start()
@@ -658,7 +640,7 @@ def sincronizar_html_local():
                 f.write(response.text)
             print("✅ HTML sincronizado!")
             return True
-    except: pass
+    exceptException as e: print(f"❌ Erro HTML: {e}")
     return False
 
 # ========== ROTAS FLASK ==========
@@ -667,7 +649,7 @@ def sincronizar_html_local():
 def index():
     skins = carregar_todas_skins_do_firebase()
     skin = next((s for s in skins if s.get('id') == skin_atual_global), skins[0] if skins else list(get_skins_fallback().values())[0])
-    planos_json = ','.join([f'{{"id":{p["id"]},"moedas":{p["moedas"]},"preco":{p["preco"]},"nome":"{p["nome"]}","desc":"{p["desc"]}","tag":"{p.get("tag","")}","desconto":"{p.get("desconto","")}"}}' for p in PLANOS])
+    planos_json = ','.join([f'{{"id":{p["id"]},"moedas":{p["moedas"]},"preco":{p["preco"]},"nome":"{p["nome"]}","desc":"{p["desc"]}","tag":"{p.get("tag","")}","bonus":"{p.get("bonus","")}"}}' for p in PLANOS])
     return render_template('index.html',
         COR_FUNDO=skin.get('cor_fundo', '#0a0a1a'), COR_PANEL=skin.get('cor_panel', '#1a1a3e'),
         COR_DESTAQUE=skin.get('cor_destaque', '#ffd700'), COR_TEXTO=skin.get('cor_texto', '#fff'),
@@ -703,7 +685,7 @@ def status():
             'comprado': skin.get('id') in skins_compradas, 'ativo': skin.get('id') == skin_atual
         })
 
-    estrategias_info = carregar_informacoes_estrategias()
+    estrategias_info = carregar_informacoes_estrategias() or {}
     estrategias_compradas = u.get('estrategias_compradas', ['v_sensitivo']) if u else ['v_sensitivo']
     estrategia_atual = u.get('estrategia_atual', 'v_sensitivo') if u else 'v_sensitivo'
     estrategia_nome = estrategias_info[estrategia_atual].get('nome', estrategia_atual) if estrategia_atual in estrategias_info else "Nenhuma"
@@ -744,6 +726,31 @@ def selecionar_estrategia():
     add_log(f"🧠 Estrategia: {estrategias_info[est_id]['nome']}", 'indicator')
     return jsonify({'ok': True})
 
+@app.route('/comprar_estrategia', methods=['POST'])
+def comprar_estrategia():
+    global estrategia_atual_global
+    est_id = request.json.get('estrategia_id', '')
+    if not email_usuario_atual: return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+    estrategias_info = carregar_informacoes_estrategias()
+    u = carregar_usuario(email_usuario_atual)
+    if not u or est_id not in estrategias_info: return jsonify({'ok': False, 'erro': 'Parametros invalidos'})
+
+    if 'estrategias_compradas' not in u: u['estrategias_compradas'] = ['v_sensitivo']
+    if est_id in u['estrategias_compradas']:
+        u['estrategia_atual'] = est_id
+        salvar_usuario(email_usuario_atual, u)
+        return jsonify({'ok': True, 'moedas': u['moedas'], 'msg': 'Ja adquirida!'})
+
+    preco = estrategias_info[est_id].get('preco_moedas', 0)
+    if u.get('moedas', 0) < preco: return jsonify({'ok': False, 'erro': f'Precisa de {preco} ⚡'})
+    u['moedas'] -= preco
+    u['estrategias_compradas'].append(est_id)
+    u['estrategia_atual'] = est_id
+    salvar_usuario(email_usuario_atual, u)
+    estrategia_atual_global = est_id
+    add_log(f"🛒 Estrategia: {estrategias_info[est_id]['nome']}", 'win')
+    return jsonify({'ok': True, 'moedas': u['moedas'], 'msg': 'Sucesso!'})
+
 @app.route('/conectar', methods=['POST'])
 def conectar():
     global API, email_usuario_atual, senha_usuario_atual, conectado_iq, skin_atual_global, estrategia_atual_global
@@ -751,10 +758,8 @@ def conectar():
         d = request.get_json()
         email, senha, tipo = d.get('email', '').strip(), d.get('senha', '').strip(), d.get('tipo', 'PRACTICE')
         if not email or not senha: return jsonify({'ok': False, 'erro': 'Credenciais em branco'})
-        
         email_usuario_atual = email
-        senha_usuario_atual = senha  # Guarda em memoria para auto-reconexão limpa
-        
+        senha_usuario_atual = senha
         API = IQ_Option(email, senha)
         status_conn, reason = API.connect()
         if not status_conn: return jsonify({'ok': False, 'erro': str(reason)[:100]})
@@ -814,26 +819,133 @@ def parar():
         add_log("✅ Bot parado!", 'win')
         return jsonify({'ok': True, 'shutdown': False})
 
-# Rota fallback padrão mantidas sem alterações para index.html
+@app.route('/comprar_skin', methods=['POST'])
+def comprar_skin():
+    global skin_atual_global
+    skin_id = request.get_json().get('skin_id', '')
+    if not email_usuario_atual: return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+    skin = carregar_skin_do_firebase(skin_id) or next((s for s in carregar_todas_skins_do_firebase() if s.get('id') == skin_id), None)
+    if not skin: return jsonify({'ok': False, 'erro': 'Skin nao encontrada'})
+    usuario = carregar_usuario(email_usuario_atual)
+    if not usuario: return jsonify({'ok': False, 'erro': 'Usuario invalido'})
+
+    if skin.get('preco_moedas', 0) == 0:
+        if skin_id not in usuario.setdefault('skins_compradas', ['skin_padrao']): usuario['skins_compradas'].append(skin_id)
+        usuario['skin_atual'] = skin_id
+        salvar_usuario(email_usuario_atual, usuario)
+        skin_atual_global = skin_id
+        return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0), 'msg': 'Skin gratis ativada!', 'refresh': True})
+
+    if skin_id in usuario.setdefault('skins_compradas', ['skin_padrao']):
+        usuario['skin_atual'] = skin_id
+        salvar_usuario(email_usuario_atual, usuario)
+        skin_atual_global = skin_id
+        return jsonify({'ok': True, 'moedas': usuario['moedas'], 'msg': 'Ativada!', 'refresh': True})
+
+    if usuario.get('moedas', 0) < skin.get('preco_moedas', 0): return jsonify({'ok': False, 'erro': f'Precisa de {skin["preco_moedas"]} ⚡'})
+    usuario['moedas'] -= skin['preco_moedas']
+    usuario['skins_compradas'].append(skin_id)
+    usuario['skin_atual'] = skin_id
+    salvar_usuario(email_usuario_atual, usuario)
+    skin_atual_global = skin_id
+    return jsonify({'ok': True, 'moedas': usuario['moedas'], 'msg': 'Skin adquirida!', 'refresh': True})
+
+@app.route('/ativar_skin', methods=['POST'])
+def ativar_skin():
+    skin_id = request.get_json().get('skin_id', '')
+    if not email_usuario_atual: return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+    usuario = carregar_usuario(email_usuario_atual)
+    if not usuario: return jsonify({'ok': False, 'erro': 'Usuario nao encontrado'})
+    if skin_id not in usuario.setdefault('skins_compradas', ['skin_padrao']):
+        skin = carregar_skin_do_firebase(skin_id)
+        if skin and skin.get('preco_moedas', 0) > 0: return jsonify({'ok': False, 'erro': 'Compre primeiro!'})
+        usuario['skins_compradas'].append(skin_id)
+    usuario['skin_atual'] = skin_id
+    salvar_usuario(email_usuario_atual, usuario)
+    global skin_atual_global
+    skin_atual_global = skin_id
+    return jsonify({'ok': True, 'refresh': True})
+
+# ========== SEÇÃO PIX INTEGRADA ORIGINAL ==========
+
 @app.route('/criar_pix', methods=['POST'])
 def criar_pix():
     d = request.get_json()
     plano = next((p for p in PLANOS if p['id'] == int(d.get('plano_id') or 1)), None)
-    pix_id = str(uuid.uuid4())[:8]
-    pagamentos_pendentes[pix_id] = {'email': d.get('email'), 'plano_id': plano['id'], 'moedas': plano['moedas'], 'valor': plano['preco'], 'pago': False, 'criado_em': str(datetime.now())[:19]}
-    return jsonify({'sucesso': True, 'simulacao': True, 'pix_id': pix_id, 'qr_code': f"00020126360014BR.GOV.BCB.PIX0136{d.get('email')}5204000053039865404{plano['preco']:.2f}5802BR5909Tesla3696009Sao Paulo62070503***6304E3F9", 'qr_code_base64': '', 'valor': plano['preco'], 'moedas': plano['moedas']})
+    if MODO_SIMULACAO:
+        pix_id = str(uuid.uuid4())[:8]
+        pagamentos_pendentes[pix_id] = {'email': d.get('email'), 'plano_id': plano['id'], 'moedas': plano['moedas'], 'valor': plano['preco'], 'pago': False, 'criado_em': str(datetime.now())[:19]}
+        return jsonify({'sucesso': True, 'simulacao': True, 'pix_id': pix_id, 'qr_code': f"00020126360014BR.GOV.BCB.PIX0136{d.get('email')}5204000053039865404{plano['preco']:.2f}5802BR5909Tesla3696009Sao Paulo62070503***6304E3F9", 'qr_code_base64': '', 'valor': plano['preco'], 'moedas': plano['moedas']})
+    try:
+        url = "https://api.mercadopago.com/v1/payments"
+        headers = {"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}", "Content-Type": "application/json", "X-Idempotency-Key": str(uuid.uuid4())}
+        payment_data = {"transaction_amount": float(plano['preco']), "description": f"TESLA369 - {plano['moedas']} VOLTS", "payment_method_id": "pix", "payer": {"email": d.get('email'), "first_name": "Traders", "last_name": "Tesla", "identification": {"type": "CPF", "number": "00000000000"}}}
+        res = requests.post(url, json=payment_data, headers=headers, timeout=30).json()
+        if 'id' in res:
+            pix_id = str(res['id'])
+            pagamentos_pendentes[pix_id] = {'email': d.get('email'), 'plano_id': plano['id'], 'moedas': plano['moedas'], 'valor': plano['preco'], 'pago': False, 'criado_em': str(datetime.now())[:19]}
+            return jsonify({'sucesso': True, 'simulacao': False, 'pix_id': pix_id, 'qr_code': res['point_of_interaction']['transaction_data']['qr_code'], 'qr_code_base64': res['point_of_interaction']['transaction_data']['qr_code_base64'], 'valor': plano['preco'], 'moedas': plano['moedas']})
+        return jsonify({'sucesso': False, 'erro': res.get('message', 'Erro ao gerar PIX')})
+    except Exception as e: return jsonify({'sucesso': False, 'erro': str(e)[:50]})
 
 @app.route('/verificar_pix', methods=['POST'])
 def verificar_pix():
     pix_id = request.get_json().get('pix_id', '')
-    pago = pagamentos_pendentes.get(pix_id, {}).get('pago', False)
-    return jsonify({'pago': pago})
+    if MODO_SIMULACAO:
+        pago = pagamentos_pendentes.get(pix_id, {}).get('pago', False)
+        if pago and pix_id in pagamentos_pendentes and not pagamentos_pendentes[pix_id]['pago']:
+            pagamentos_pendentes[pix_id]['pago'] = True
+            u = carregar_usuario(pagamentos_pendentes[pix_id]['email'])
+            if u: u['moedas'] += pagamentos_pendentes[pix_id]['moedas']; salvar_usuario(pagamentos_pendentes[pix_id]['email'], u)
+            return jsonify({'pago': True, 'moedas': pagamentos_pendentes[pix_id]['moedas'], 'saldo': u.get('moedas', 0) if u else 0})
+        return jsonify({'pago': pago})
+    try:
+        url = f"https://api.mercadopago.com/v1/payments/{pix_id}"
+        headers = {"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"}
+        res = requests.get(url, headers=headers, timeout=10).json()
+        if res.get('status') == 'approved':
+            if pix_id in pagamentos_pendentes and not pagamentos_pendentes[pix_id]['pago']:
+                pagamentos_pendentes[pix_id]['pago'] = True
+                u = carregar_usuario(pagamentos_pendentes[pix_id]['email'])
+                if u: u['moedas'] += pagamentos_pendentes[pix_id]['moedas']; salvar_usuario(pagamentos_pendentes[pix_id]['email'], u)
+                return jsonify({'pago': True, 'moedas': pagamentos_pendentes[pix_id]['moedas'], 'saldo': u.get('moedas', 0) if u else 0})
+            return jsonify({'pago': True})
+        return jsonify({'pago': False})
+    except: return jsonify({'pago': False})
+
+def verificador_automatico_pix():
+    while True:
+        time.sleep(10)
+        try:
+            for pix_id, dados in list(pagamentos_pendentes.items()):
+                if dados.get('pago', False): continue
+                if MODO_SIMULACAO:
+                    pago = dados.get('pago', False)
+                else:
+                    try:
+                        res = requests.get(f"https://api.mercadopago.com/v1/payments/{pix_id}", headers={"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"}, timeout=10).json()
+                        pago = res.get('status') == 'approved'
+                    except: continue
+                if pago:
+                    pagamentos_pendentes[pix_id]['pago'] = True
+                    u = carregar_usuario(dados['email']) or criar_usuario(dados['email'])
+                    u['moedas'] = u.get('moedas', 0) + dados['moedas']
+                    salvar_usuario(dados['email'], u)
+                    add_log(f"💰 PIX Confirmado! +{dados['moedas']} VOLTS para {dados['email']}", "win")
+        except: pass
+
+threading.Thread(target=verificador_automatico_pix, daemon=True).start()
+
+# ========== ROTAS DE CHAT E RANKING EXTRA ==========
 
 @app.route('/chat_enviar', methods=['POST'])
 def chat_enviar():
     try:
         data = request.json
-        requests.post(f'{FB_URL}/tesla_369/chat.json', json={'nome': data.get('nome', 'Anonimo')[:15], 'msg': data.get('msg', '')[:200], 'hora': datetime.now().strftime('%H:%M')}, timeout=5)
+        requests.post(f'{FB_URL}/tesla_369/chat.json', json={
+            'nome': data.get('nome', 'Anonimo')[:15], 'msg': data.get('msg', '')[:200],
+            'hora': datetime.now().strftime('%H:%M')
+        }, timeout=5)
     except: pass
     return jsonify({'ok': True})
 
@@ -860,18 +972,28 @@ def ranking():
                 })
     except: pass
     ranking_list.sort(key=lambda x: x['lucro_total'], reverse=True)
-    return jsonify({'ranking': ranking_list, 'stats': {'total_usuarios': len(ranking_list), 'total_ops': 0, 'total_wins': 0, 'taxa_global': 0}})
+    tc = sum(x['total_ciclos'] for x in ranking_list)
+    tw = sum(x['total_wins'] for x in ranking_list)
+    return jsonify({'ranking': ranking_list, 'stats': {'total_usuarios': len(ranking_list), 'total_ops': tc, 'total_wins': tw, 'taxa_global': round((tw/max(tc,1))*100,1)}})
 
 @app.route('/relatorio')
 def relatorio():
     return jsonify(carregar_usuario(request.args.get('email', '')) or {'erro': 'Nao encontrado'})
 
-if __name__ == '__main__':
-    print("=" * 70)
-    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - BLINDAGEM DE REDE ATIVA ⚡")
-    print("✅ Protegido contra troca de Wi-Fi para 4G nas entregas")
-    print("=" * 70)
+@app.route('/resetar', methods=['POST'])
+def resetar():
+    u = carregar_usuario(request.json.get('email', ''))
+    if not u: return jsonify({'ok': False, 'msg': 'Nao encontrado'})
+    u.update({'total_ciclos':0,'total_wins':0,'total_losses':0,'total_gasto':0.0,'total_ganho':0.0,'lucro_total':0.0,'historico_operacoes':[],'dias_ativos':0,'banca_atual':0.0,'moedas_ganhas_hoje':str(datetime.now())[:10]})
+    salvar_usuario(request.json.get('email', ''), u)
+    return jsonify({'ok': True, 'msg': 'Resetado!'})
 
+@app.route('/shutdown')
+def shutdown():
+    os.kill(os.getpid(), signal.SIGTERM)
+    return jsonify({'ok': True})
+
+if __name__ == '__main__':
     sincronizar_html_local()
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
