@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v16.8.0 - ESPERA MINUTO VIRAR + 0.3s ⚡
+# ⚡ TESLA 369 BOT v16.9.0 - ESPERA MUDANÇA DE SALDO ⚡
 # Firebase: SKINS e ESTRATEGIAS carregadas da nuvem
 # ENTRADA: guarda ID da ordem (referencia)
-# RESULTADO: comparacao de saldo APOS minuto virar + 0.3s
+# RESULTADO: espera minuto virar + mudança de saldo
 # GALES: executados imediatamente (sem aguardar inicio de vela)
-# 🔧 v16.8.0 - ESPERA MINUTO VIRAR + PAUSA DE 0.3s
+# 🔧 v16.9.0 - ESPERA MINUTO VIRAR + MUDANÇA DE SALDO
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -24,7 +24,7 @@ warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
 # ============= VERSÃO DO BOT =============
-BOT_VERSION = "16.8.0"
+BOT_VERSION = "16.9.0"
 BOT_NAME = "TESLA-369"
 
 # ============= CONFIGURACOES =============
@@ -343,10 +343,10 @@ def consumir_volt():
 
 def executar_ciclo(direcao):
     """
-    LOGICA DEFINITIVA COM ESPERA MINUTO VIRAR + 0.3s:
+    LOGICA DEFINITIVA COM ESPERA DE MUDANÇA DE SALDO:
     1. ENTRADA: Aguarda inicio da vela, guarda o ID da ordem e o saldo antes.
     2. Aguarda o minuto virar (segundo == 0).
-    3. Pausa de 0.3s para atualização do saldo.
+    3. Espera o SALDO MUDAR (com timeout de 5 segundos).
     4. Verifica resultado por SALDO.
     5. Se WIN: para o bot (STOP GAIN).
     6. Se LOSS: executa GALE 1 (NOVA ORDEM, SEM aguardar inicio da vela).
@@ -419,28 +419,34 @@ def executar_ciclo(direcao):
             else:
                 add_log(f"   📝 Ordem #{id_ordem} (GALE {i})", 'info')
 
-            # 🔥 ESPERA O MINUTO VIRAR (BASEADO NO RELÓGIO) 🔥
+            # 🔥 ESPERA O MINUTO VIRAR
             add_log(f"   ⏳ Aguardando o minuto virar...", 'info')
-            
-            # Espera até o segundo 0
             while datetime.now().second != 0:
                 if not bot_rodando:
                     return False
                 time.sleep(0.1)
             
-            # 🔥 PAUSA DE 0.3s PARA GARANTIR QUE O SALDO FOI ATUALIZADO
-            add_log(f"   ⏳ Aguardando 0.3s para atualização do saldo...", 'info')
-            time.sleep(0.3)
+            add_log(f"   ✅ Minuto virou! Aguardando mudança de saldo...", 'info')
             
-            # 🔧 VERIFICA CONEXÃO
-            if not API or not conectado_iq:
-                add_log("❌ Conexão perdida!", 'error')
-                bot_rodando = False
-                break
-
-            # 🔥 Verifica resultado comparando saldo
-            add_log(f"   💰 Verificando resultado...", 'info')
-            saldo_depois = API.get_balance()
+            # 🔥 ESPERA O SALDO MUDAR (COM TIMEOUT DE 5 SEGUNDOS)
+            saldo_depois = None
+            for _ in range(50):  # 50 * 0.1s = 5 segundos
+                if not bot_rodando:
+                    return False
+                try:
+                    saldo_atual = API.get_balance()
+                    if saldo_atual is not None and saldo_atual != saldo_antes:
+                        saldo_depois = saldo_atual
+                        add_log(f"   ✅ Saldo mudou! ({saldo_antes:.2f} → {saldo_depois:.2f})", 'info')
+                        break
+                except:
+                    pass
+                time.sleep(0.1)
+            
+            # Se não detectou mudança, verifica saldo final (fallback)
+            if saldo_depois is None:
+                add_log(f"   ⏳ Saldo não detectado, verificando saldo final...", 'info')
+                saldo_depois = API.get_balance()
             
             lucro_liquido = round(saldo_depois - saldo_antes, 2)
             lucro += lucro_liquido
@@ -995,13 +1001,13 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 70)
-    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - ESPERA MINUTO VIRAR + 0.3s ⚡")
+    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - ESPERA MUDANÇA DE SALDO ⚡")
     print("✅ Firebase: SKINS e ESTRATEGIAS carregadas da nuvem")
     print("✅ ENTRADA: guarda ID da ordem (referencia)")
-    print("✅ RESULTADO: comparacao de saldo APOS minuto virar + 0.3s")
+    print("✅ RESULTADO: espera minuto virar + mudança de saldo")
     print("✅ GALES: nova ordem, novo saldo, nova verificacao")
     print("✅ SKIN PADRAO: TESLA THUNDER (raios)")
-    print("✅ 🔧 v16.8.0 - ESPERA MINUTO VIRAR + PAUSA DE 0.3s")
+    print("✅ 🔧 v16.9.0 - ESPERA MINUTO VIRAR + MUDANÇA DE SALDO")
     print("=" * 70)
 
     print("\n🔍 Carregando skins do Firebase...")
