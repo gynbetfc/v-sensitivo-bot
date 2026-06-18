@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v16.5.0 - SALDO PÓS-ABERTURA ⚡
-# 🔧 CORREÇÃO: Compara saldo pós-abertura, não saldo inicial
+# ⚡ TESLA 369 BOT v15.0.0 - LOGICA DEFINITIVA ⚡
+# Firebase: SKINS e ESTRATEGIAS carregadas da nuvem
+# ENTRADA: guarda ID da ordem (referencia)
+# RESULTADO: comparacao de saldo APOS 60 segundos
+# GALES: executados imediatamente (sem aguardar inicio de vela)
+# SEM TIMESTAMP - SEM CRONOMETROS DESNECESSARIOS
+# 🔧 v15.0.1 - CORREÇÕES DE ESTABILIDADE (keep-alive + reconexão)
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -20,7 +25,7 @@ warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
 # ============= VERSÃO DO BOT =============
-BOT_VERSION = "16.5.0"
+BOT_VERSION = "15.0.1"
 BOT_NAME = "TESLA-369"
 
 # ============= CONFIGURACOES =============
@@ -145,6 +150,7 @@ def calcular_media_movel(velas, periodo):
 # ============= SKINS NO FIREBASE =============
 
 def get_skins_fallback():
+    # SKIN PADRAO AGORA E THUNDER!
     return {
         'skin_padrao': {
             'id': 'skin_padrao', 'nome': '⚡ TESLA THUNDER', 'desc': 'Raios eletricos na tela - Skin Padrao',
@@ -221,7 +227,11 @@ def carregar_informacoes_estrategias():
             return estrategias_info
     except Exception as e:
         print(f"⚠️ Erro ao carregar estrategias: {e}")
-    return {}
+
+    #fallback = {'v_sensitivo': {'nome': 'V SENSITIVO', 'desc': 'Estrategia padrao do Tesla 369', 'preco_moedas': 0, 'timeframe': 60, 'gratis': True}}
+    #cache_estrategias_info["data"] = fallback
+    #cache_estrategias_info["timestamp"] = agora
+    #return fallback
 
 def carregar_estrategia_do_firebase(nome_estrategia):
     try:
@@ -339,12 +349,13 @@ def consumir_volt():
 
 def executar_ciclo(direcao):
     """
-    LOGICA DEFINITIVA COM SALDO PÓS-ABERTURA:
-    1. ENTRADA: Aguarda inicio da vela
-    2. Abre ordem e guarda saldo APÓS abrir
-    3. Aguarda 45 segundos
-    4. Monitora mudança de saldo a partir do saldo pós-abertura
-    5. Calcula lucro/loss corretamente
+    LOGICA DEFINITIVA:
+    1. ENTRADA: Aguarda inicio da vela, guarda o ID da ordem e o saldo antes.
+    2. Aguarda 60 segundos.
+    3. Verifica resultado por SALDO.
+    4. Se WIN: para o bot (STOP GAIN).
+    5. Se LOSS: executa GALE 1 (NOVA ORDEM, SEM aguardar inicio da vela).
+    6. Repete para GALE 2.
     """
     global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, timeframe_atual, ordem_id_atual
 
@@ -356,6 +367,7 @@ def executar_ciclo(direcao):
             bot_rodando = False
             return
 
+        # 🔧 VERIFICA CONEXÃO ANTES DE CADA CICLO
         if not API or not conectado_iq:
             add_log("❌ Conexão perdida! Parando operação.", 'error')
             bot_rodando = False
@@ -369,25 +381,30 @@ def executar_ciclo(direcao):
 
         for i in range(MARTINGALE + 1):
             if not bot_rodando: break
-
+            
+            # 🔧 VERIFICA CONEXÃO ANTES DE CADA TENTATIVA
             if not API or not conectado_iq:
                 add_log("❌ Conexão perdida durante execução!", 'error')
                 bot_rodando = False
                 break
-
+            
             valor = entradas[i]
 
+            # Aguarda o início da vela APENAS na primeira entrada (i == 0)
             if i == 0:
                 if not aguardar_inicio_vela():
                     add_log("⚠️ Falha ao aguardar inicio da vela para a entrada principal.", 'error')
                     break
             else:
+                # Pequena pausa para não sobrecarregar a API nos Gales
                 time.sleep(0.5)
                 add_log(f"   🔄 Executando GALE {i} imediatamente...", 'info')
 
-            # 🔥 SALVA O SALDO ANTES (SÓ PARA REFERÊNCIA)
             saldo_antes = API.get_balance()
-            
+            if saldo_antes < valor:
+                add_log("❌ Saldo insuficiente!", 'error')
+                break
+
             add_log(f"🎯 {'ENTRADA' if i == 0 else f'GALE {i}'}: {direcao.upper()} ${valor:.2f}", 'info')
 
             st, id_ordem = API.buy(valor, par, direcao, 1)
@@ -401,54 +418,28 @@ def executar_ciclo(direcao):
                 add_log("❌ Falha na ordem!", 'error')
                 break
 
-            # 🔥 SALVA O SALDO DEPOIS DA ORDEM (IMPORTANTE!)
-            saldo_apos_abertura = API.get_balance()
-            add_log(f"   💰 Saldo antes: ${saldo_antes:.2f} | Após ordem: ${saldo_apos_abertura:.2f}", 'info')
-
             if i == 0:
                 ordem_id_atual = id_ordem
                 add_log(f"   📝 Ordem #{id_ordem} (Entrada Principal)", 'info')
             else:
                 add_log(f"   📝 Ordem #{id_ordem} (GALE {i})", 'info')
 
-            # 🔥 ESPERA INTELIGENTE: 45s
-            add_log(f"   ⏳ Aguardando 45 segundos...", 'info')
-            for s in range(45):
+            # 🔥 SIMPLES: ESPERA 60 SEGUNDOS E COMPARA SALDO 🔥
+            add_log(f"   ⏳ Aguardando 60 segundos...", 'info')
+            for s in range(60):
                 if not bot_rodando:
                     return False
-                if s % 10 == 0 and s > 0:
-                    if not API or not conectado_iq:
-                        add_log("   ⚠️ Conexão instável durante espera...", 'warning')
                 time.sleep(1)
 
+            # 🔧 VERIFICA CONEXÃO NOVAMENTE APÓS ESPERA
             if not API or not conectado_iq:
                 add_log("❌ Conexão perdida durante espera!", 'error')
                 bot_rodando = False
                 break
 
-            # 🔥 MONITORA MUDANÇA DE SALDO A PARTIR DO SALDO PÓS-ABERTURA
-            add_log(f"   🔍 Monitorando mudança de saldo (base: ${saldo_apos_abertura:.2f})...", 'info')
-            saldo_depois = None
-            
-            for tentativa in range(300):  # 300 * 0.1s = 30 segundos
-                if not bot_rodando:
-                    return False
-                try:
-                    saldo_atual = API.get_balance()
-                    if saldo_atual is not None and saldo_atual != saldo_apos_abertura:
-                        saldo_depois = saldo_atual
-                        add_log(f"   ✅ Saldo mudou! ({saldo_apos_abertura:.2f} → {saldo_depois:.2f}) em {tentativa * 0.1:.1f}s", 'info')
-                        break
-                except:
-                    pass
-                time.sleep(0.1)
-
-            if saldo_depois is None:
-                add_log(f"   ⏳ Mudança de saldo não detectada, verificando saldo final...", 'info')
-                saldo_depois = API.get_balance()
-
-            # 🔥 COMPARA COM O SALDO PÓS-ABERTURA (NÃO COM O INICIAL!)
-            lucro_liquido = round(saldo_depois - saldo_apos_abertura, 2)
+            # Verifica resultado comparando saldo
+            saldo_depois = API.get_balance()
+            lucro_liquido = round(saldo_depois - saldo_antes, 2)
             lucro += lucro_liquido
 
             if lucro_liquido > 0:
@@ -540,12 +531,14 @@ def bot_loop():
         ultimo_sinal = "Aguardando..."
         add_log(f"📌 {par} | Timeframe: {timeframe_atual}s | 💰 ${BANCA_INICIAL_DO_BOT:.2f}")
 
+        # LOOP PRINCIPAL - SEM TIMEOUT
         while bot_rodando and not STOP_GAIN_ATINGIDO:
+            # 🔧 VERIFICA CONEXÃO ANTES DE CADA CICLO
             if not API or not conectado_iq:
                 add_log("❌ Conexão perdida no loop principal!", 'error')
                 bot_rodando = False
                 break
-
+            
             try:
                 resultado = estrategia_atual_executar(API, par, add_log)
                 if resultado and bot_rodando:
@@ -566,11 +559,13 @@ def bot_loop():
 # 🔧 FUNÇÕES NOVAS PARA ESTABILIDADE
 
 def keep_alive_thread():
+    """Thread que mantém a conexão ativa com ping constante"""
     global conectado_iq, API, ultimo_keep_alive
     while True:
-        time.sleep(20)
+        time.sleep(20)  # Ping a cada 20 segundos
         if conectado_iq and API:
             try:
+                # Comando simples para manter conexão ativa
                 API.get_server_timestamp()
                 ultimo_keep_alive = time.time()
             except Exception as e:
@@ -578,11 +573,13 @@ def keep_alive_thread():
                 conectado_iq = False
 
 def monitor_conexao_thread():
+    """Monitora a saúde da conexão e tenta manter ativa"""
     global conectado_iq, API, bot_rodando
     while True:
         time.sleep(10)
         if API and conectado_iq:
             try:
+                # Teste real de conexão
                 test = API.get_server_timestamp()
                 if not test:
                     print("[MONITOR] Conexão parece morta")
@@ -600,10 +597,11 @@ def monitor_conexao_thread():
 def analise_mercado_loop():
     global ultima_analise, conectado_iq, API
     ultimo_candle_time = 0
-
+    
     while True:
         if conectado_iq and API:
             try:
+                # 🔧 COM TIMEOUT SEGURO
                 velas = API.get_candles(par, 60, 30, time.time())
                 if velas and len(velas) >= 20:
                     rsi_val = calcular_rsi(velas, 14)
@@ -627,6 +625,7 @@ def analise_mercado_loop():
                         'stoch': round(estoc_val, 1), 'fase': fase, 'preco': round(preco_atual, 5) if preco_atual else 0
                     }
             except Exception as e:
+                # Não imprime erro constante para não poluir log
                 pass
         time.sleep(2)
 
@@ -997,13 +996,14 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 70)
-    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - SALDO PÓS-ABERTURA ⚡")
+    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - LOGICA DEFINITIVA ⚡")
     print("✅ Firebase: SKINS e ESTRATEGIAS carregadas da nuvem")
     print("✅ ENTRADA: guarda ID da ordem (referencia)")
-    print("✅ RESULTADO: comparacao saldo pós-abertura")
+    print("✅ RESULTADO: comparacao de saldo APOS 60 segundos")
     print("✅ GALES: nova ordem, novo saldo, nova verificacao")
     print("✅ SKIN PADRAO: TESLA THUNDER (raios)")
-    print("✅ 🔧 v16.5.0 - SALVA SALDO APÓS ABERTURA DA ORDEM")
+    print("✅ SEM TIMESTAMP - SEM CRONOMETROS DESNECESSARIOS")
+    print("✅ 🔧 CORREÇÕES DE ESTABILIDADE ATIVAS (keep-alive + reconexão)")
     print("=" * 70)
 
     print("\n🔍 Carregando skins do Firebase...")
