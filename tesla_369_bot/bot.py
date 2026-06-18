@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v16.6.0 - ESPERA POR FECHAMENTO DE VELA ⚡
+# ⚡ TESLA 369 BOT v16.8.0 - ESPERA MINUTO VIRAR + 0.3s ⚡
 # Firebase: SKINS e ESTRATEGIAS carregadas da nuvem
 # ENTRADA: guarda ID da ordem (referencia)
-# RESULTADO: comparacao de saldo APOS fechamento da vela (minuto virar)
+# RESULTADO: comparacao de saldo APOS minuto virar + 0.3s
 # GALES: executados imediatamente (sem aguardar inicio de vela)
-# 🔧 v16.6.0 - ESPERA BASEADA NO RELÓGIO (até o minuto virar)
+# 🔧 v16.8.0 - ESPERA MINUTO VIRAR + PAUSA DE 0.3s
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -24,7 +24,7 @@ warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
 # ============= VERSÃO DO BOT =============
-BOT_VERSION = "16.6.0"
+BOT_VERSION = "16.8.0"
 BOT_NAME = "TESLA-369"
 
 # ============= CONFIGURACOES =============
@@ -149,7 +149,6 @@ def calcular_media_movel(velas, periodo):
 # ============= SKINS NO FIREBASE =============
 
 def get_skins_fallback():
-    # SKIN PADRAO AGORA E THUNDER!
     return {
         'skin_padrao': {
             'id': 'skin_padrao', 'nome': '⚡ TESLA THUNDER', 'desc': 'Raios eletricos na tela - Skin Padrao',
@@ -226,11 +225,7 @@ def carregar_informacoes_estrategias():
             return estrategias_info
     except Exception as e:
         print(f"⚠️ Erro ao carregar estrategias: {e}")
-
-    #fallback = {'v_sensitivo': {'nome': 'V SENSITIVO', 'desc': 'Estrategia padrao do Tesla 369', 'preco_moedas': 0, 'timeframe': 60, 'gratis': True}}
-    #cache_estrategias_info["data"] = fallback
-    #cache_estrategias_info["timestamp"] = agora
-    #return fallback
+    return {}
 
 def carregar_estrategia_do_firebase(nome_estrategia):
     try:
@@ -348,13 +343,14 @@ def consumir_volt():
 
 def executar_ciclo(direcao):
     """
-    LOGICA DEFINITIVA COM ESPERA POR FECHAMENTO DE VELA:
+    LOGICA DEFINITIVA COM ESPERA MINUTO VIRAR + 0.3s:
     1. ENTRADA: Aguarda inicio da vela, guarda o ID da ordem e o saldo antes.
-    2. Aguarda até o próximo minuto virar (fechamento da vela).
-    3. Verifica resultado por SALDO.
-    4. Se WIN: para o bot (STOP GAIN).
-    5. Se LOSS: executa GALE 1 (NOVA ORDEM, SEM aguardar inicio da vela).
-    6. Repete para GALE 2.
+    2. Aguarda o minuto virar (segundo == 0).
+    3. Pausa de 0.3s para atualização do saldo.
+    4. Verifica resultado por SALDO.
+    5. Se WIN: para o bot (STOP GAIN).
+    6. Se LOSS: executa GALE 1 (NOVA ORDEM, SEM aguardar inicio da vela).
+    7. Repete para GALE 2.
     """
     global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, timeframe_atual, ordem_id_atual
 
@@ -423,45 +419,27 @@ def executar_ciclo(direcao):
             else:
                 add_log(f"   📝 Ordem #{id_ordem} (GALE {i})", 'info')
 
-            # 🔥 ESPERA ATÉ O PRÓXIMO MINUTO VIRAR (BASEADO NO RELÓGIO) 🔥
-            add_log(f"   ⏳ Aguardando o fechamento da vela (até o minuto virar)...", 'info')
-            # Pega o segundo atual
-            segundo_atual = datetime.now().second
-            # Calcula quantos segundos faltam para o próximo minuto (60 - segundo_atual)
-            # Adiciona 1 para garantir que passou do 00
-            tempo_espera = 60 - segundo_atual + 1
-            add_log(f"   ⏱️ Faltam {tempo_espera} segundos para o próximo minuto.", 'info')
+            # 🔥 ESPERA O MINUTO VIRAR (BASEADO NO RELÓGIO) 🔥
+            add_log(f"   ⏳ Aguardando o minuto virar...", 'info')
             
-            espera_ativa = True
-            while espera_ativa and bot_rodando:
-                # Verifica a cada 0.5 segundos se o minuto mudou
-                for _ in range(int(tempo_espera * 2)):  # Checa a cada 0.5s
-                    if not bot_rodando:
-                        return False
-                    # Verifica se o segundo atual é 0 (início do próximo minuto)
-                    if datetime.now().second == 0:
-                        espera_ativa = False
-                        add_log("   ✅ Minuto virou! Vela fechada.", 'info')
-                        break
-                    # Verifica conexão a cada 2 segundos
-                    if _ % 4 == 0 and _ > 0:
-                        if not API or not conectado_iq:
-                            add_log("   ⚠️ Conexão instável durante espera...", 'warning')
-                    time.sleep(0.5)
-                
-                # Se o loop terminou sem virar, espera o próximo segundo para checar novamente
-                if espera_ativa:
-                    add_log("   ⏳ Aguardando mais um ciclo...", 'info')
-                    time.sleep(1)
-
-            # 🔧 VERIFICA CONEXÃO APÓS ESPERA
+            # Espera até o segundo 0
+            while datetime.now().second != 0:
+                if not bot_rodando:
+                    return False
+                time.sleep(0.1)
+            
+            # 🔥 PAUSA DE 0.3s PARA GARANTIR QUE O SALDO FOI ATUALIZADO
+            add_log(f"   ⏳ Aguardando 0.3s para atualização do saldo...", 'info')
+            time.sleep(0.3)
+            
+            # 🔧 VERIFICA CONEXÃO
             if not API or not conectado_iq:
-                add_log("❌ Conexão perdida durante espera!", 'error')
+                add_log("❌ Conexão perdida!", 'error')
                 bot_rodando = False
                 break
 
-            # 🔥 Verifica resultado comparando saldo (agora a vela fechou)
-            add_log(f"   💰 Verificando resultado após fechamento da vela...", 'info')
+            # 🔥 Verifica resultado comparando saldo
+            add_log(f"   💰 Verificando resultado...", 'info')
             saldo_depois = API.get_balance()
             
             lucro_liquido = round(saldo_depois - saldo_antes, 2)
@@ -587,10 +565,9 @@ def keep_alive_thread():
     """Thread que mantém a conexão ativa com ping constante"""
     global conectado_iq, API, ultimo_keep_alive
     while True:
-        time.sleep(20)  # Ping a cada 20 segundos
+        time.sleep(20)
         if conectado_iq and API:
             try:
-                # Comando simples para manter conexão ativa
                 API.get_server_timestamp()
                 ultimo_keep_alive = time.time()
             except Exception as e:
@@ -604,7 +581,6 @@ def monitor_conexao_thread():
         time.sleep(10)
         if API and conectado_iq:
             try:
-                # Teste real de conexão
                 test = API.get_server_timestamp()
                 if not test:
                     print("[MONITOR] Conexão parece morta")
@@ -626,7 +602,6 @@ def analise_mercado_loop():
     while True:
         if conectado_iq and API:
             try:
-                # 🔧 COM TIMEOUT SEGURO
                 velas = API.get_candles(par, 60, 30, time.time())
                 if velas and len(velas) >= 20:
                     rsi_val = calcular_rsi(velas, 14)
@@ -650,7 +625,6 @@ def analise_mercado_loop():
                         'stoch': round(estoc_val, 1), 'fase': fase, 'preco': round(preco_atual, 5) if preco_atual else 0
                     }
             except Exception as e:
-                # Não imprime erro constante para não poluir log
                 pass
         time.sleep(2)
 
@@ -1021,13 +995,13 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 70)
-    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - ESPERA POR FECHAMENTO DE VELA ⚡")
+    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - ESPERA MINUTO VIRAR + 0.3s ⚡")
     print("✅ Firebase: SKINS e ESTRATEGIAS carregadas da nuvem")
     print("✅ ENTRADA: guarda ID da ordem (referencia)")
-    print("✅ RESULTADO: comparacao de saldo APOS fechamento da vela")
+    print("✅ RESULTADO: comparacao de saldo APOS minuto virar + 0.3s")
     print("✅ GALES: nova ordem, novo saldo, nova verificacao")
     print("✅ SKIN PADRAO: TESLA THUNDER (raios)")
-    print("✅ 🔧 v16.6.0 - ESPERA BASEADA NO RELÓGIO (até o minuto virar)")
+    print("✅ 🔧 v16.8.0 - ESPERA MINUTO VIRAR + PAUSA DE 0.3s")
     print("=" * 70)
 
     print("\n🔍 Carregando skins do Firebase...")
