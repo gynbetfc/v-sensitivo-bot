@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v16.4.0 - MONITORAMENTO DE SALDO ⚡
-# 🔧 CORREÇÃO: Monitora mudança de saldo em vez de get_winner
+# ⚡ TESLA 369 BOT v16.5.0 - SALDO PÓS-ABERTURA ⚡
+# 🔧 CORREÇÃO: Compara saldo pós-abertura, não saldo inicial
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -20,7 +20,7 @@ warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
 # ============= VERSÃO DO BOT =============
-BOT_VERSION = "16.4.0"
+BOT_VERSION = "16.5.0"
 BOT_NAME = "TESLA-369"
 
 # ============= CONFIGURACOES =============
@@ -339,14 +339,12 @@ def consumir_volt():
 
 def executar_ciclo(direcao):
     """
-    LOGICA DEFINITIVA COM MONITORAMENTO DE SALDO:
-    1. ENTRADA: Aguarda inicio da vela, guarda o ID da ordem e o saldo antes.
-    2. Aguarda 45 segundos.
-    3. Monitora mudança de saldo a cada 0.1s.
-    4. Quando saldo muda, calcula resultado.
-    5. Se WIN: para o bot (STOP GAIN).
-    6. Se LOSS: executa GALE 1 (NOVA ORDEM, SEM aguardar inicio da vela).
-    7. Repete para GALE 2.
+    LOGICA DEFINITIVA COM SALDO PÓS-ABERTURA:
+    1. ENTRADA: Aguarda inicio da vela
+    2. Abre ordem e guarda saldo APÓS abrir
+    3. Aguarda 45 segundos
+    4. Monitora mudança de saldo a partir do saldo pós-abertura
+    5. Calcula lucro/loss corretamente
     """
     global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, timeframe_atual, ordem_id_atual
 
@@ -387,11 +385,9 @@ def executar_ciclo(direcao):
                 time.sleep(0.5)
                 add_log(f"   🔄 Executando GALE {i} imediatamente...", 'info')
 
+            # 🔥 SALVA O SALDO ANTES (SÓ PARA REFERÊNCIA)
             saldo_antes = API.get_balance()
-            if saldo_antes < valor:
-                add_log("❌ Saldo insuficiente!", 'error')
-                break
-
+            
             add_log(f"🎯 {'ENTRADA' if i == 0 else f'GALE {i}'}: {direcao.upper()} ${valor:.2f}", 'info')
 
             st, id_ordem = API.buy(valor, par, direcao, 1)
@@ -405,13 +401,17 @@ def executar_ciclo(direcao):
                 add_log("❌ Falha na ordem!", 'error')
                 break
 
+            # 🔥 SALVA O SALDO DEPOIS DA ORDEM (IMPORTANTE!)
+            saldo_apos_abertura = API.get_balance()
+            add_log(f"   💰 Saldo antes: ${saldo_antes:.2f} | Após ordem: ${saldo_apos_abertura:.2f}", 'info')
+
             if i == 0:
                 ordem_id_atual = id_ordem
                 add_log(f"   📝 Ordem #{id_ordem} (Entrada Principal)", 'info')
             else:
                 add_log(f"   📝 Ordem #{id_ordem} (GALE {i})", 'info')
 
-            # 🔥 ESPERA INTELIGENTE: 45s + monitoramento de saldo 🔥
+            # 🔥 ESPERA INTELIGENTE: 45s
             add_log(f"   ⏳ Aguardando 45 segundos...", 'info')
             for s in range(45):
                 if not bot_rodando:
@@ -426,30 +426,29 @@ def executar_ciclo(direcao):
                 bot_rodando = False
                 break
 
-            # 🔥 MONITORA MUDANÇA DE SALDO (FRENÉTICO)
-            add_log(f"   🔍 Monitorando mudança de saldo...", 'info')
+            # 🔥 MONITORA MUDANÇA DE SALDO A PARTIR DO SALDO PÓS-ABERTURA
+            add_log(f"   🔍 Monitorando mudança de saldo (base: ${saldo_apos_abertura:.2f})...", 'info')
             saldo_depois = None
             
-            # Verifica a cada 0.1s por até 30 segundos
             for tentativa in range(300):  # 300 * 0.1s = 30 segundos
                 if not bot_rodando:
                     return False
                 try:
                     saldo_atual = API.get_balance()
-                    if saldo_atual is not None and saldo_atual != saldo_antes:
+                    if saldo_atual is not None and saldo_atual != saldo_apos_abertura:
                         saldo_depois = saldo_atual
-                        add_log(f"   ✅ Saldo mudou! Detecção em {tentativa * 0.1:.1f}s", 'info')
+                        add_log(f"   ✅ Saldo mudou! ({saldo_apos_abertura:.2f} → {saldo_depois:.2f}) em {tentativa * 0.1:.1f}s", 'info')
                         break
                 except:
                     pass
                 time.sleep(0.1)
 
-            # Se não detectou mudança, verifica saldo final (fallback)
             if saldo_depois is None:
                 add_log(f"   ⏳ Mudança de saldo não detectada, verificando saldo final...", 'info')
                 saldo_depois = API.get_balance()
-            
-            lucro_liquido = round(saldo_depois - saldo_antes, 2)
+
+            # 🔥 COMPARA COM O SALDO PÓS-ABERTURA (NÃO COM O INICIAL!)
+            lucro_liquido = round(saldo_depois - saldo_apos_abertura, 2)
             lucro += lucro_liquido
 
             if lucro_liquido > 0:
@@ -567,7 +566,6 @@ def bot_loop():
 # 🔧 FUNÇÕES NOVAS PARA ESTABILIDADE
 
 def keep_alive_thread():
-    """Thread que mantém a conexão ativa com ping constante"""
     global conectado_iq, API, ultimo_keep_alive
     while True:
         time.sleep(20)
@@ -580,7 +578,6 @@ def keep_alive_thread():
                 conectado_iq = False
 
 def monitor_conexao_thread():
-    """Monitora a saúde da conexão e tenta manter ativa"""
     global conectado_iq, API, bot_rodando
     while True:
         time.sleep(10)
@@ -1000,13 +997,13 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 70)
-    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - MONITORAMENTO DE SALDO ⚡")
+    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - SALDO PÓS-ABERTURA ⚡")
     print("✅ Firebase: SKINS e ESTRATEGIAS carregadas da nuvem")
     print("✅ ENTRADA: guarda ID da ordem (referencia)")
-    print("✅ RESULTADO: monitoramento de mudança de saldo APOS 45 segundos")
+    print("✅ RESULTADO: comparacao saldo pós-abertura")
     print("✅ GALES: nova ordem, novo saldo, nova verificacao")
     print("✅ SKIN PADRAO: TESLA THUNDER (raios)")
-    print("✅ 🔧 v16.4.0 - Monitora mudança de saldo a cada 0.1s")
+    print("✅ 🔧 v16.5.0 - SALVA SALDO APÓS ABERTURA DA ORDEM")
     print("=" * 70)
 
     print("\n🔍 Carregando skins do Firebase...")
