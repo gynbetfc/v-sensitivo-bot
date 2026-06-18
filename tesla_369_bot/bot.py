@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v15.0.0 - LOGICA DEFINITIVA ⚡
+# ⚡ TESLA 369 BOT v16.0.0 - ESPERA INTELIGENTE ⚡
 # Firebase: SKINS e ESTRATEGIAS carregadas da nuvem
 # ENTRADA: guarda ID da ordem (referencia)
-# RESULTADO: comparacao de saldo APOS 60 segundos
+# RESULTADO: verificacao frenetica APOS 45 segundos
 # GALES: executados imediatamente (sem aguardar inicio de vela)
-# SEM TIMESTAMP - SEM CRONOMETROS DESNECESSARIOS
-# 🔧 v15.0.1 - CORREÇÕES DE ESTABILIDADE (keep-alive + reconexão)
+# 🔧 v16.0.0 - ESPERA INTELIGENTE (45s + verificacao a cada 50ms)
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -25,7 +24,7 @@ warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
 # ============= VERSÃO DO BOT =============
-BOT_VERSION = "15.0.1"
+BOT_VERSION = "16.0.0"
 BOT_NAME = "TESLA-369"
 
 # ============= CONFIGURACOES =============
@@ -349,10 +348,10 @@ def consumir_volt():
 
 def executar_ciclo(direcao):
     """
-    LOGICA DEFINITIVA:
+    LOGICA DEFINITIVA COM ESPERA INTELIGENTE:
     1. ENTRADA: Aguarda inicio da vela, guarda o ID da ordem e o saldo antes.
-    2. Aguarda 60 segundos.
-    3. Verifica resultado por SALDO.
+    2. Aguarda 45 segundos.
+    3. Verifica resultado freneticamente (a cada 50ms) por 15 segundos.
     4. Se WIN: para o bot (STOP GAIN).
     5. Se LOSS: executa GALE 1 (NOVA ORDEM, SEM aguardar inicio da vela).
     6. Repete para GALE 2.
@@ -381,13 +380,13 @@ def executar_ciclo(direcao):
 
         for i in range(MARTINGALE + 1):
             if not bot_rodando: break
-            
+
             # 🔧 VERIFICA CONEXÃO ANTES DE CADA TENTATIVA
             if not API or not conectado_iq:
                 add_log("❌ Conexão perdida durante execução!", 'error')
                 bot_rodando = False
                 break
-            
+
             valor = entradas[i]
 
             # Aguarda o início da vela APENAS na primeira entrada (i == 0)
@@ -424,21 +423,42 @@ def executar_ciclo(direcao):
             else:
                 add_log(f"   📝 Ordem #{id_ordem} (GALE {i})", 'info')
 
-            # 🔥 SIMPLES: ESPERA 60 SEGUNDOS E COMPARA SALDO 🔥
-            add_log(f"   ⏳ Aguardando 60 segundos...", 'info')
-            for s in range(60):
+            # 🔥 ESPERA INTELIGENTE: 45s + verificação frenética 🔥
+            add_log(f"   ⏳ Aguardando 45 segundos...", 'info')
+            for s in range(45):
                 if not bot_rodando:
                     return False
+                # Verificar conexão a cada 10 segundos
+                if s % 10 == 0 and s > 0:
+                    if not API or not conectado_iq:
+                        add_log("   ⚠️ Conexão instável durante espera...", 'warning')
                 time.sleep(1)
 
-            # 🔧 VERIFICA CONEXÃO NOVAMENTE APÓS ESPERA
+            # 🔧 VERIFICA CONEXÃO APÓS ESPERA
             if not API or not conectado_iq:
                 add_log("❌ Conexão perdida durante espera!", 'error')
                 bot_rodando = False
                 break
 
-            # Verifica resultado comparando saldo
-            saldo_depois = API.get_balance()
+            # 🔥 VERIFICAÇÃO FRENÉTICA (15 segundos, checando a cada 0.05s)
+            add_log(f"   🔍 Verificando resultado freneticamente...", 'info')
+            saldo_depois = None
+            for _ in range(300):  # 300 tentativas * 0.05s = 15 segundos
+                if not bot_rodando:
+                    return False
+                try:
+                    saldo_depois = API.get_balance()
+                    if saldo_depois is not None and saldo_depois != saldo_antes:
+                        break  # Saldo mudou! Resultado encontrado
+                except:
+                    pass
+                time.sleep(0.05)  # 50ms de intervalo
+
+            # Se não encontrou resultado, faz a verificação final
+            if saldo_depois is None or saldo_depois == saldo_antes:
+                add_log(f"   ⏳ Resultado não detectado, verificando saldo final...", 'info')
+                saldo_depois = API.get_balance()
+
             lucro_liquido = round(saldo_depois - saldo_antes, 2)
             lucro += lucro_liquido
 
@@ -538,7 +558,7 @@ def bot_loop():
                 add_log("❌ Conexão perdida no loop principal!", 'error')
                 bot_rodando = False
                 break
-            
+
             try:
                 resultado = estrategia_atual_executar(API, par, add_log)
                 if resultado and bot_rodando:
@@ -597,7 +617,7 @@ def monitor_conexao_thread():
 def analise_mercado_loop():
     global ultima_analise, conectado_iq, API
     ultimo_candle_time = 0
-    
+
     while True:
         if conectado_iq and API:
             try:
@@ -999,11 +1019,10 @@ if __name__ == '__main__':
     print(f"⚡ {BOT_NAME} v{BOT_VERSION} - LOGICA DEFINITIVA ⚡")
     print("✅ Firebase: SKINS e ESTRATEGIAS carregadas da nuvem")
     print("✅ ENTRADA: guarda ID da ordem (referencia)")
-    print("✅ RESULTADO: comparacao de saldo APOS 60 segundos")
+    print("✅ RESULTADO: verificacao frenetica APOS 45 segundos")
     print("✅ GALES: nova ordem, novo saldo, nova verificacao")
     print("✅ SKIN PADRAO: TESLA THUNDER (raios)")
-    print("✅ SEM TIMESTAMP - SEM CRONOMETROS DESNECESSARIOS")
-    print("✅ 🔧 CORREÇÕES DE ESTABILIDADE ATIVAS (keep-alive + reconexão)")
+    print("✅ 🔧 v16.0.0 - ESPERA INTELIGENTE (45s + verificacao a cada 50ms)")
     print("=" * 70)
 
     print("\n🔍 Carregando skins do Firebase...")
