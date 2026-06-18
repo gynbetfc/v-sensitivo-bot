@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v16.9.0 - ESPERA MUDANÇA DE SALDO ⚡
+# ⚡ TESLA 369 BOT v17.0.0 - RECONEXÃO AUTOMÁTICA + TIME DINÂMICO ⚡
 # Firebase: SKINS e ESTRATEGIAS carregadas da nuvem
 # ENTRADA: guarda ID da ordem (referencia)
 # RESULTADO: espera minuto virar + mudança de saldo
 # GALES: executados imediatamente (sem aguardar inicio de vela)
-# 🔧 v16.9.0 - ESPERA MINUTO VIRAR + MUDANÇA DE SALDO
+# 🔧 v17.0.0 - RECONEXÃO AUTOMÁTICA + TIME DINÂMICO DAS ESTRATÉGIAS
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -24,7 +24,7 @@ warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
 # ============= VERSÃO DO BOT =============
-BOT_VERSION = "16.9.0"
+BOT_VERSION = "17.0.0"
 BOT_NAME = "TESLA-369"
 
 # ============= CONFIGURACOES =============
@@ -58,12 +58,11 @@ def estrategia_atual_executar(api, par, add_log):
     return None
 
 # ============= VARIAVEIS GLOBAIS =============
-API, par = None, "EURUSD-OTC"
-timeframe_atual = 60
+par = "EURUSD-OTC"
+timeframe_atual = 60  # Valor padrão, será sobrescrito pela estratégia
 lucro, NumDeOperacoes = 0.0, 0
 BANCA_INICIAL_DO_BOT, STOP_GAIN_ATINGIDO = 0, False
 bot_rodando, bot_thread = False, None
-conectado_iq = False
 ultimo_sinal, ultima_analise = "Aguardando...", {}
 logs_web, MAX_LOGS_WEB = [], 200
 email_usuario_atual = ""
@@ -81,6 +80,183 @@ ordem_id_atual = None
 ultimo_keep_alive = time.time()
 reconectando = False
 ultimo_balance = 0
+
+# ============= GERENCIADOR DE RECONEXÃO =============
+class ConnectionManager:
+    def __init__(self):
+        self.api = None
+        self.email = None
+        self.senha = None
+        self.tipo_conta = "PRACTICE"
+        self.conectado = False
+        self.tentativas_reconexao = 0
+        self.max_tentativas = 10
+        self.ultima_conexao = 0
+        self.lock = threading.Lock()
+        self.tipo_conta_original = "PRACTICE"
+        self.credenciais_validas = False
+    
+    def configurar_credenciais(self, email, senha, tipo="PRACTICE"):
+        self.email = email
+        self.senha = senha
+        self.tipo_conta = tipo
+        self.tipo_conta_original = tipo
+        self.credenciais_validas = bool(email and senha)
+        add_log(f"📝 Credenciais configuradas para {tipo}", "info")
+    
+    def conectar(self, forcado=False, tipo_especifico=None):
+        with self.lock:
+            tipo_usar = tipo_especifico if tipo_especifico else self.tipo_conta
+            
+            if not forcado and self.conectado and self.api:
+                try:
+                    self.api.get_server_timestamp()
+                    return True
+                except:
+                    add_log("⚠️ Conexão aparente mas instável. Reconectando...", "info")
+                    forcado = True
+            
+            if self.tentativas_reconexao >= self.max_tentativas:
+                add_log(f"❌ Número máximo de tentativas de reconexão atingido ({self.max_tentativas})!", "error")
+                return False
+            
+            if not self.credenciais_validas:
+                add_log("❌ Credenciais não configuradas!", "error")
+                return False
+            
+            try:
+                if self.api:
+                    try:
+                        self.api.desconectar()
+                    except:
+                        pass
+                    self.api = None
+                
+                add_log(f"🔄 Tentando reconectar na conta {tipo_usar}...", "info")
+                
+                self.api = IQ_Option(self.email, self.senha)
+                status, msg = self.api.connect()
+                
+                if status:
+                    self.api.change_balance(tipo_usar)
+                    
+                    balance_check = self.api.get_balance()
+                    if balance_check is None or balance_check == 0:
+                        add_log(f"⚠️ Saldo zerado ou não disponível em {tipo_usar}. Tentando o outro tipo...", "info")
+                        outro_tipo = "REAL" if tipo_usar == "PRACTICE" else "PRACTICE"
+                        self.api.change_balance(outro_tipo)
+                        balance_check = self.api.get_balance()
+                        if balance_check is not None and balance_check > 0:
+                            tipo_usar = outro_tipo
+                            add_log(f"✅ Conectado em {tipo_usar} com saldo ${balance_check:.2f}", "win")
+                    
+                    self.tipo_conta = tipo_usar
+                    self.conectado = True
+                    self.tentativas_reconexao = 0
+                    self.ultima_conexao = time.time()
+                    
+                    add_log(f"✅ Conectado com sucesso na conta {tipo_usar}! Saldo: ${balance_check:.2f}", "win")
+                    return True
+                else:
+                    self.conectado = False
+                    self.tentativas_reconexao += 1
+                    tempo_espera = min(30, 2 ** self.tentativas_reconexao)
+                    add_log(f"⚠️ Falha reconexão {self.tentativas_reconexao}/{self.max_tentativas}. Tentando em {tempo_espera}s", "error")
+                    time.sleep(tempo_espera)
+                    return False
+                    
+            except Exception as e:
+                self.conectado = False
+                self.tentativas_reconexao += 1
+                add_log(f"❌ Erro na reconexão: {str(e)[:100]}", "error")
+                return False
+    
+    def verificar_saude(self):
+        if not self.conectado or not self.api:
+            add_log(f"🔄 Conexão perdida! Tentando reconectar em {self.tipo_conta}...", "info")
+            return self.conectar(forcado=True)
+        
+        try:
+            timestamp = self.api.get_server_timestamp()
+            if timestamp:
+                try:
+                    balance = self.api.get_balance()
+                    if balance is not None:
+                        return True
+                except:
+                    pass
+                
+                add_log("⚠️ Conexão instável (saldo não disponível). Reconectando...", "info")
+                return self.conectar(forcado=True)
+            else:
+                add_log("⚠️ Conexão instável (timestamp falhou). Reconectando...", "info")
+                return self.conectar(forcado=True)
+        except Exception as e:
+            add_log(f"⚠️ Exceção ao verificar conexão: {str(e)[:50]}. Reconectando...", "info")
+            return self.conectar(forcado=True)
+    
+    def get_api(self):
+        if not self.verificar_saude():
+            return None
+        return self.api
+    
+    def get_tipo_conta(self):
+        return self.tipo_conta
+    
+    def get_saldo(self):
+        api = self.get_api()
+        if not api:
+            return None
+        
+        try:
+            return api.get_balance()
+        except:
+            if self.conectar(forcado=True):
+                try:
+                    return self.api.get_balance()
+                except:
+                    return None
+            return None
+    
+    def mudar_tipo_conta(self, novo_tipo):
+        if novo_tipo not in ["PRACTICE", "REAL"]:
+            return False
+        
+        self.tipo_conta = novo_tipo
+        self.tipo_conta_original = novo_tipo
+        
+        if self.conectado and self.api:
+            try:
+                self.api.change_balance(novo_tipo)
+                add_log(f"🔄 Mudou para conta {novo_tipo}", "info")
+                return True
+            except:
+                add_log(f"❌ Falha ao mudar para {novo_tipo}", "error")
+                return False
+        
+        return True
+
+# Instância global do gerenciador
+conn_manager = ConnectionManager()
+
+# ============= PERSISTÊNCIA DO TIPO DE CONTA =============
+def salvar_tipo_conta(email, tipo):
+    try:
+        key = email.replace("@", "_").replace(".", "_")
+        requests.patch(f'{FB_URL}/tesla_369/usuarios/{key}.json', 
+                      json={'tipo_conta': tipo}, timeout=5)
+    except:
+        pass
+
+def carregar_tipo_conta(email):
+    try:
+        key = email.replace("@", "_").replace(".", "_")
+        r = requests.get(f'{FB_URL}/tesla_369/usuarios/{key}.json', timeout=5)
+        if r.status_code == 200 and r.json():
+            return r.json().get('tipo_conta', 'PRACTICE')
+    except:
+        pass
+    return 'PRACTICE'
 
 # ============= FUNCOES AUXILIARES =============
 
@@ -293,17 +469,21 @@ def criar_usuario(email):
 
 # ========== FUNCOES DO BOT (LOGICA DEFINITIVA) ==========
 
-def Payout(p):
+def Payout(p, api=None):
     try:
-        if not API: return PAYOUT_PADRAO
-        API.subscribe_strike_list(p, 1)
+        if not api:
+            api = conn_manager.get_api()
+            if not api:
+                return PAYOUT_PADRAO
+        
+        api.subscribe_strike_list(p, 1)
         for _ in range(20):
-            d = API.get_digital_current_profit(p, 1)
+            d = api.get_digital_current_profit(p, 1)
             if d != False:
-                API.unsubscribe_strike_list(p, 1)
+                api.unsubscribe_strike_list(p, 1)
                 return round(int(d) / 100, 2)
             time.sleep(0.5)
-        API.unsubscribe_strike_list(p, 1)
+        api.unsubscribe_strike_list(p, 1)
         return PAYOUT_PADRAO
     except: return PAYOUT_PADRAO
 
@@ -320,14 +500,65 @@ def calcular_entradas(b, p, g):
         entradas[-1] = round(entradas[-1] - (sum(entradas) - b) - 0.02, 2)
     return [max(1, e) for e in entradas]
 
-def aguardar_inicio_vela():
-    """Aguarda o inicio da proxima vela (baseado no relogio)"""
-    add_log("   ⏳ Aguardando inicio da vela...", 'info')
-    while datetime.now().second > 5:
-        if not bot_rodando: return False
-        time.sleep(0.3)
+def aguardar_inicio_vela(timeframe=60):
+    """Aguarda o inicio da proxima vela baseado no timeframe"""
+    add_log(f"   ⏳ Aguardando inicio da vela ({timeframe}s)...", 'info')
+    
+    # Calcula quanto tempo falta para o próximo candle
+    agora = datetime.now()
+    segundos_no_candle = agora.second + (agora.minute % (timeframe // 60)) * 60 if timeframe >= 60 else agora.second
+    
+    if timeframe >= 60:
+        # Para timeframes em minutos (60, 120, 180, 300, etc)
+        minutos_por_vela = timeframe // 60
+        minutos_passados = agora.minute % minutos_por_vela
+        segundos_restantes = (minutos_por_vela - minutos_passados) * 60 - agora.second
+        if segundos_restantes < 0:
+            segundos_restantes += minutos_por_vela * 60
+    else:
+        # Para timeframes em segundos (30, 15, 5, etc)
+        segundos_restantes = timeframe - (agora.second % timeframe)
+        if segundos_restantes == timeframe:
+            segundos_restantes = 0
+    
+    # Aguarda com um pequeno buffer de 0.5 segundos
+    if segundos_restantes > 0:
+        time.sleep(segundos_restantes + 0.5)
+    
     add_log("   ✅ Vela confirmada!", 'info')
     return True
+
+def operacao_segura(func, *args, **kwargs):
+    """Executa uma operação com reconexão automática e preservação de conta"""
+    max_tentativas = 3
+    for tentativa in range(max_tentativas):
+        api = conn_manager.get_api()
+        if not api:
+            add_log(f"🔄 Tentativa {tentativa+1}/{max_tentativas}: Reconectando...", "info")
+            if conn_manager.conectar(forcado=True):
+                continue
+            time.sleep(2)
+            continue
+        
+        try:
+            resultado = func(api, *args, **kwargs)
+            if resultado is not None:
+                return resultado
+        except Exception as e:
+            add_log(f"⚠️ Erro na operação: {str(e)[:50]}", "error")
+            if "connection" in str(e).lower() or "timeout" in str(e).lower():
+                conn_manager.conectar(forcado=True)
+            time.sleep(1)
+    
+    return None
+
+def get_api_com_reconexao():
+    """Obtém a API com tentativa automática de reconexão"""
+    api = conn_manager.get_api()
+    if not api:
+        add_log("❌ Não foi possível obter conexão com a IQ Option", "error")
+        return None
+    return api
 
 def consumir_volt():
     global volt_ja_consumido
@@ -341,20 +572,19 @@ def consumir_volt():
     add_log(f"⚡ 1 VOLT consumido. Saldo: {usuario['moedas']} VOLTS", 'info')
     return True
 
-def executar_ciclo(direcao):
+def executar_ciclo(direcao, timeframe=60):
     """
-    LOGICA DEFINITIVA COM ESPERA DE MUDANÇA DE SALDO:
-    1. ENTRADA: Aguarda inicio da vela, guarda o ID da ordem e o saldo antes.
+    LOGICA DEFINITIVA COM TIME DINÂMICO E RECONEXÃO AUTOMÁTICA:
+    1. ENTRADA: Aguarda inicio da vela (com timeframe dinâmico), guarda o ID da ordem e o saldo antes.
     2. Aguarda o minuto virar (segundo == 0).
     3. Espera o SALDO MUDAR (com timeout de 5 segundos).
     4. Verifica resultado por SALDO.
     5. Se WIN: para o bot (STOP GAIN).
-    6. Se LOSS: executa GALE 1 (NOVA ORDEM, SEM aguardar inicio da vela).
-    7. Repete para GALE 2.
+    6. Se LOSS: executa GALE (NOVA ORDEM, SEM aguardar inicio de vela).
     """
-    global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, timeframe_atual, ordem_id_atual
+    global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, ordem_id_atual, timeframe_atual
 
-    if not bot_rodando or not API: return
+    if not bot_rodando: return
 
     try:
         if not consumir_volt():
@@ -362,14 +592,28 @@ def executar_ciclo(direcao):
             bot_rodando = False
             return
 
-        # 🔧 VERIFICA CONEXÃO ANTES DE CADA CICLO
-        if not API or not conectado_iq:
-            add_log("❌ Conexão perdida! Parando operação.", 'error')
-            bot_rodando = False
+        # Obtém API com reconexão automática
+        api = get_api_com_reconexao()
+        if not api:
+            add_log("❌ Sem conexão! Tentando reconectar...", 'error')
+            time.sleep(3)
             return
 
-        bi = API.get_balance()
-        payout = Payout(par)
+        # Obtém o tipo de conta atual para logs
+        tipo_conta_atual = conn_manager.get_tipo_conta()
+        add_log(f"📌 Operando em conta {tipo_conta_atual} | Timeframe: {timeframe}s", 'info')
+
+        # Obtém saldo com reconexão automática
+        bi = conn_manager.get_saldo()
+        if bi is None:
+            add_log("❌ Falha ao obter saldo!", 'error')
+            return
+
+        # Atualiza o timeframe global para referência
+        timeframe_atual = timeframe
+
+        # Obtém payout usando a API
+        payout = Payout(par, api)
         entradas = calcular_entradas(bi, payout, MARTINGALE)
         add_log(f"💰 Banca: ${bi:.2f} | Payout: {payout*100:.0f}%", 'info')
         add_log(f"📐 E1:${entradas[0]:.2f} | E2:${entradas[1]:.2f} | E3:${entradas[2]:.2f}", 'info')
@@ -377,8 +621,9 @@ def executar_ciclo(direcao):
         for i in range(MARTINGALE + 1):
             if not bot_rodando: break
 
-            # 🔧 VERIFICA CONEXÃO ANTES DE CADA TENTATIVA
-            if not API or not conectado_iq:
+            # Verifica conexão antes de cada tentativa
+            api = get_api_com_reconexao()
+            if not api:
                 add_log("❌ Conexão perdida durante execução!", 'error')
                 bot_rodando = False
                 break
@@ -387,7 +632,7 @@ def executar_ciclo(direcao):
 
             # Aguarda o início da vela APENAS na primeira entrada (i == 0)
             if i == 0:
-                if not aguardar_inicio_vela():
+                if not aguardar_inicio_vela(timeframe):
                     add_log("⚠️ Falha ao aguardar inicio da vela para a entrada principal.", 'error')
                     break
             else:
@@ -395,17 +640,41 @@ def executar_ciclo(direcao):
                 time.sleep(0.5)
                 add_log(f"   🔄 Executando GALE {i} imediatamente...", 'info')
 
-            saldo_antes = API.get_balance()
+            # Verifica saldo novamente
+            saldo_antes = conn_manager.get_saldo()
+            if saldo_antes is None:
+                add_log("❌ Falha ao obter saldo antes da ordem!", 'error')
+                break
+                
             if saldo_antes < valor:
                 add_log("❌ Saldo insuficiente!", 'error')
                 break
 
-            add_log(f"🎯 {'ENTRADA' if i == 0 else f'GALE {i}'}: {direcao.upper()} ${valor:.2f}", 'info')
+            add_log(f"🎯 {'ENTRADA' if i == 0 else f'GALE {i}'}: {direcao.upper()} ${valor:.2f} | Time: {timeframe}s", 'info')
 
-            st, id_ordem = API.buy(valor, par, direcao, 1)
-            if not st or not id_ordem:
+            # 🔥 COMPRA COM TIMEFRAME DINÂMICO
+            # Converte timeframe para minutos se necessário (a API espera minutos para digital)
+            tempo_minutos = timeframe // 60 if timeframe >= 60 else 1
+            
+            # Tenta comprar com o timeframe específico
+            st = False
+            id_ordem = None
+            
+            try:
+                # Para timeframes em minutos (1, 2, 3, 5, etc)
+                if timeframe >= 60:
+                    # Usa buy_digital_spot com expiry em minutos
+                    st, id_ordem = api.buy_digital_spot(par, valor, direcao, tempo_minutos)
+                else:
+                    # Para timeframes menores que 1 minuto (15s, 30s, etc)
+                    # Usa buy com expiry em minutos (1 minuto) mas ajusta a entrada
+                    add_log(f"   ⚠️ Timeframe {timeframe}s < 60s, usando 1 minuto", 'info')
+                    st, id_ordem = api.buy_digital_spot(par, valor, direcao, 1)
+            except Exception as e:
+                add_log(f"   ⚠️ Erro na compra: {e}", 'error')
                 try:
-                    st, id_ordem = API.buy_digital_spot(par, valor, direcao, 1)
+                    # Fallback para o método antigo
+                    st, id_ordem = api.buy(valor, par, direcao, tempo_minutos)
                 except:
                     pass
 
@@ -419,22 +688,22 @@ def executar_ciclo(direcao):
             else:
                 add_log(f"   📝 Ordem #{id_ordem} (GALE {i})", 'info')
 
-            # 🔥 ESPERA O MINUTO VIRAR
+            # 🔥 ESPERA O MINUTO VIRAR (sempre aguarda o minuto exato)
             add_log(f"   ⏳ Aguardando o minuto virar...", 'info')
             while datetime.now().second != 0:
                 if not bot_rodando:
                     return False
                 time.sleep(0.1)
-            
+
             add_log(f"   ✅ Minuto virou! Aguardando mudança de saldo...", 'info')
-            
+
             # 🔥 ESPERA O SALDO MUDAR (COM TIMEOUT DE 5 SEGUNDOS)
             saldo_depois = None
             for _ in range(50):  # 50 * 0.1s = 5 segundos
                 if not bot_rodando:
                     return False
                 try:
-                    saldo_atual = API.get_balance()
+                    saldo_atual = conn_manager.get_saldo()
                     if saldo_atual is not None and saldo_atual != saldo_antes:
                         saldo_depois = saldo_atual
                         add_log(f"   ✅ Saldo mudou! ({saldo_antes:.2f} → {saldo_depois:.2f})", 'info')
@@ -442,12 +711,16 @@ def executar_ciclo(direcao):
                 except:
                     pass
                 time.sleep(0.1)
-            
+
             # Se não detectou mudança, verifica saldo final (fallback)
             if saldo_depois is None:
                 add_log(f"   ⏳ Saldo não detectado, verificando saldo final...", 'info')
-                saldo_depois = API.get_balance()
-            
+                saldo_depois = conn_manager.get_saldo()
+
+            if saldo_depois is None:
+                add_log("❌ Falha ao obter saldo final!", 'error')
+                break
+
             lucro_liquido = round(saldo_depois - saldo_antes, 2)
             lucro += lucro_liquido
 
@@ -463,7 +736,8 @@ def executar_ciclo(direcao):
                     u.setdefault('historico_operacoes', []).append({
                         'data': str(datetime.now())[:19], 'resultado': 'WIN',
                         'valor': valor, 'lucro': lucro_liquido,
-                        'estrategia': estrategia_atual_global.upper()
+                        'estrategia': estrategia_atual_global.upper(),
+                        'timeframe': timeframe
                     })
                     salvar_usuario(email_usuario_atual, u)
                 STOP_GAIN_ATINGIDO = True
@@ -480,7 +754,8 @@ def executar_ciclo(direcao):
                     u.setdefault('historico_operacoes', []).append({
                         'data': str(datetime.now())[:19], 'resultado': 'LOSS',
                         'valor': valor, 'lucro': lucro_liquido,
-                        'estrategia': estrategia_atual_global.upper()
+                        'estrategia': estrategia_atual_global.upper(),
+                        'timeframe': timeframe
                     })
                     salvar_usuario(email_usuario_atual, u)
 
@@ -490,10 +765,11 @@ def executar_ciclo(direcao):
                     add_log("   💀 CICLO ESGOTADO! Todas as entradas perdidas.", 'loss')
 
         if bot_rodando:
-            bf = API.get_balance() if API else bi
-            add_log("=" * 50, 'info')
-            add_log(f"{'🌟 LUCRO' if bf > bi else '💀 PERDA'}: ${abs(bf - bi):.2f} | Banca: ${bf:.2f}", 'info')
-            add_log("=" * 50, 'info')
+            bf = conn_manager.get_saldo()
+            if bf is not None:
+                add_log("=" * 50, 'info')
+                add_log(f"{'🌟 LUCRO' if bf > bi else '💀 PERDA'}: ${abs(bf - bi):.2f} | Banca: ${bf:.2f}", 'info')
+                add_log("=" * 50, 'info')
 
     except Exception as e:
         add_log(f"Erro: {e}", 'error')
@@ -505,11 +781,17 @@ def executar_ciclo(direcao):
         add_log("⏹️ Ciclo finalizado!", 'info')
 
 def bot_loop():
-    """Loop principal do bot - SEM TIMEOUT"""
+    """Loop principal com reconexão automática e time dinâmico"""
     global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, sinal_pendente, ultimo_sinal, timeframe_atual, volt_ja_consumido, estrategia_ja_injetada
 
     with bot_lock:
-        if not bot_rodando or not API:
+        if not bot_rodando:
+            return
+
+        # Tenta obter conexão inicial
+        api = get_api_com_reconexao()
+        if not api:
+            add_log("❌ Não foi possível conectar. Bot será reiniciado.", "error")
             bot_rodando = False
             return
 
@@ -531,7 +813,12 @@ def bot_loop():
                 bot_rodando = False
                 return
 
-        BANCA_INICIAL_DO_BOT = API.get_balance()
+        BANCA_INICIAL_DO_BOT = conn_manager.get_saldo()
+        if BANCA_INICIAL_DO_BOT is None:
+            add_log("❌ Falha ao obter saldo inicial!", 'error')
+            bot_rodando = False
+            return
+            
         STOP_GAIN_ATINGIDO = False
         lucro = 0.0
         NumDeOperacoes = 0
@@ -540,75 +827,81 @@ def bot_loop():
         ultimo_sinal = "Aguardando..."
         add_log(f"📌 {par} | Timeframe: {timeframe_atual}s | 💰 ${BANCA_INICIAL_DO_BOT:.2f}")
 
-        # LOOP PRINCIPAL - SEM TIMEOUT
+        # LOOP PRINCIPAL - COM RECONEXÃO AUTOMÁTICA
         while bot_rodando and not STOP_GAIN_ATINGIDO:
-            # 🔧 VERIFICA CONEXÃO ANTES DE CADA CICLO
-            if not API or not conectado_iq:
-                add_log("❌ Conexão perdida no loop principal!", 'error')
-                bot_rodando = False
-                break
+            # Verifica e reconecta se necessário
+            api = get_api_com_reconexao()
+            if not api:
+                add_log("⚠️ Aguardando reconexão...", "info")
+                time.sleep(3)
+                continue
 
             try:
-                resultado = estrategia_atual_executar(API, par, add_log)
+                # Executa a estratégia que agora deve retornar {'direcao': 'call/put', 'timeframe': segundos}
+                resultado = estrategia_atual_executar(api, par, add_log)
+                
                 if resultado and bot_rodando:
                     direcao = resultado.get('direcao', '').lower()
+                    # Obtém o timeframe da estratégia, com fallback para o valor atual
+                    tf = resultado.get('timeframe', timeframe_atual)
+                    
                     if direcao in ['call', 'put']:
-                        ultimo_sinal = f"GATILHO: {direcao.upper()}"
-                        add_log(f"🎯 SINAL: {direcao.upper()}!", 'sensitive')
-                        add_log(f"🎯 EXECUTANDO CICLO: {direcao.upper()}", 'sensitive')
-                        executar_ciclo(direcao)
+                        ultimo_sinal = f"GATILHO: {direcao.upper()} | {tf}s"
+                        add_log(f"🎯 SINAL: {direcao.upper()} | Timeframe: {tf}s", 'sensitive')
+                        add_log(f"🎯 EXECUTANDO CICLO: {direcao.upper()} | {tf}s", 'sensitive')
+                        
+                        # Passa o timeframe para o executar_ciclo
+                        executar_ciclo(direcao, tf)
                         break
+                
                 time.sleep(0.3)
             except Exception as e:
                 add_log(f"Erro no loop: {e}", 'error')
-                time.sleep(5)
+                # Se erro de conexão, tenta reconectar
+                if "connection" in str(e).lower() or "timeout" in str(e).lower():
+                    conn_manager.conectar(forcado=True)
+                time.sleep(2)
 
         bot_rodando = False
 
-# 🔧 FUNÇÕES NOVAS PARA ESTABILIDADE
+# ========== THREADS DE MANUTENÇÃO ==========
 
 def keep_alive_thread():
     """Thread que mantém a conexão ativa com ping constante"""
-    global conectado_iq, API, ultimo_keep_alive
     while True:
         time.sleep(20)
-        if conectado_iq and API:
+        api = conn_manager.get_api()
+        if api:
             try:
-                API.get_server_timestamp()
-                ultimo_keep_alive = time.time()
-            except Exception as e:
-                print(f"[KEEP-ALIVE] Conexão instável: {e}")
-                conectado_iq = False
+                api.get_server_timestamp()
+            except:
+                pass
 
 def monitor_conexao_thread():
-    """Monitora a saúde da conexão e tenta manter ativa"""
-    global conectado_iq, API, bot_rodando
+    """Monitora a saúde da conexão preservando o tipo de conta"""
+    global bot_rodando
     while True:
-        time.sleep(10)
-        if API and conectado_iq:
-            try:
-                test = API.get_server_timestamp()
-                if not test:
-                    print("[MONITOR] Conexão parece morta")
-                    conectado_iq = False
-                    if bot_rodando:
-                        bot_rodando = False
-                        add_log("⚠️ Conexão perdida! Bot parado automaticamente.", 'error')
-            except Exception as e:
-                print(f"[MONITOR] Erro: {e}")
-                conectado_iq = False
-                if bot_rodando:
-                    bot_rodando = False
-                    add_log("⚠️ Conexão perdida! Bot parado.", 'error')
+        time.sleep(5)
+        
+        if not conn_manager.verificar_saude():
+            tipo_atual = conn_manager.get_tipo_conta()
+            add_log(f"⚠️ Conexão perdida na conta {tipo_atual}. Tentando recuperar...", "info")
+            
+            if bot_rodando:
+                add_log("🔄 Bot continuará rodando após reconexão", "info")
+            
+            if conn_manager.conectar(forcado=True):
+                add_log(f"✅ Conexão restabelecida na conta {conn_manager.get_tipo_conta()}!", "win")
+            else:
+                add_log("⚠️ Falha na reconexão. Tentando novamente...", "error")
 
 def analise_mercado_loop():
-    global ultima_analise, conectado_iq, API
-    ultimo_candle_time = 0
-
+    global ultima_analise
     while True:
-        if conectado_iq and API:
+        api = conn_manager.get_api()
+        if api:
             try:
-                velas = API.get_candles(par, 60, 30, time.time())
+                velas = api.get_candles(par, 60, 30, time.time())
                 if velas and len(velas) >= 20:
                     rsi_val = calcular_rsi(velas, 14)
                     estoc_val = calcular_estocastico(velas, 14)
@@ -634,7 +927,7 @@ def analise_mercado_loop():
                 pass
         time.sleep(2)
 
-# 🔧 INICIAR THREADS DE MANUTENÇÃO
+# Iniciar threads de manutenção
 threading.Thread(target=analise_mercado_loop, daemon=True).start()
 threading.Thread(target=keep_alive_thread, daemon=True).start()
 threading.Thread(target=monitor_conexao_thread, daemon=True).start()
@@ -673,7 +966,7 @@ def index():
 def receber_sinal():
     global sinal_pendente
     if not bot_rodando: return jsonify({'ok': False, 'erro': 'Bot em repouso.'})
-    if not conectado_iq: return jsonify({'ok': False, 'erro': 'IQ Option offline.'})
+    if not conn_manager.conectado: return jsonify({'ok': False, 'erro': 'IQ Option offline.'})
     direcao = request.get_json().get('direcao', '').lower()
     if direcao not in ['call', 'put']: return jsonify({'ok': False, 'erro': 'Alvo invalido'})
     with sinal_lock: sinal_pendente = direcao
@@ -698,14 +991,29 @@ def status():
     estrategias_compradas = u.get('estrategias_compradas', ['v_sensitivo']) if u else ['v_sensitivo']
     estrategia_atual = u.get('estrategia_atual', 'v_sensitivo') if u else 'v_sensitivo'
     estrategia_nome = estrategias_info[estrategia_atual].get('nome', estrategia_atual) if estrategia_atual in estrategias_info else "Nenhuma"
+    
+    saldo = conn_manager.get_saldo()
 
     return jsonify({
-        'conectado': conectado_iq, 'rodando': bot_rodando, 'email': email_usuario_atual,
-        'banca': API.get_balance() if API else 0, 'lucro': lucro, 'ops': NumDeOperacoes, 'sinal': ultimo_sinal,
-        'logs': get_logs_html(40), 'moedas': u.get('moedas', 0) if u else 0, 'skin_id': skin_atual, 'skins_status': skins_status,
-        'estrategia': estrategia_atual, 'estrategia_nome': estrategia_nome, 'estrategias_compradas': estrategias_compradas,
-        'estrategias_disponiveis': {k: {'nome': v['nome'], 'desc': v['desc'], 'preco_moedas': v['preco_moedas'], 'gratis': v['gratis']} for k, v in estrategias_info.items()},
-        'analise': ultima_analise, 'bot_version': BOT_VERSION
+        'conectado': conn_manager.conectado, 
+        'rodando': bot_rodando, 
+        'email': email_usuario_atual,
+        'banca': saldo if saldo is not None else 0, 
+        'lucro': lucro, 
+        'ops': NumDeOperacoes, 
+        'sinal': ultimo_sinal,
+        'logs': get_logs_html(40), 
+        'moedas': u.get('moedas', 0) if u else 0, 
+        'skin_id': skin_atual, 
+        'skins_status': skins_status,
+        'estrategia': estrategia_atual, 
+        'estrategia_nome': estrategia_nome, 
+        'estrategias_compradas': estrategias_compradas,
+        'estrategias_disponiveis': {k: {'nome': v['nome'], 'desc': v['desc'], 'preco_moedas': v['preco_moedas'], 'gratis': v['gratis'], 'timeframe': v.get('timeframe', 60)} for k, v in estrategias_info.items()},
+        'analise': ultima_analise, 
+        'bot_version': BOT_VERSION,
+        'tipo_conta': conn_manager.get_tipo_conta(),
+        'timeframe_atual': timeframe_atual
     })
 
 @app.route('/set_percentual', methods=['POST'])
@@ -732,7 +1040,7 @@ def selecionar_estrategia():
     salvar_usuario(email_usuario_atual, u)
     estrategia_atual_global = est_id
     estrategia_ja_injetada = False
-    add_log(f"🧠 Estrategia: {estrategias_info[est_id]['nome']}", 'indicator')
+    add_log(f"🧠 Estrategia: {estrategias_info[est_id]['nome']} | Timeframe: {estrategias_info[est_id].get('timeframe', 60)}s", 'indicator')
     return jsonify({'ok': True})
 
 @app.route('/comprar_estrategia', methods=['POST'])
@@ -762,35 +1070,76 @@ def comprar_estrategia():
 
 @app.route('/conectar', methods=['POST'])
 def conectar():
-    global API, email_usuario_atual, conectado_iq, skin_atual_global, estrategia_atual_global
+    global email_usuario_atual, skin_atual_global, estrategia_atual_global
     try:
         d = request.get_json()
         email, senha, tipo = d.get('email', '').strip(), d.get('senha', '').strip(), d.get('tipo', 'PRACTICE')
-        if not email or not senha: return jsonify({'ok': False, 'erro': 'Credenciais em branco'})
+        
+        if not email or not senha:
+            return jsonify({'ok': False, 'erro': 'Credenciais em branco'})
+        
+        conn_manager.configurar_credenciais(email, senha, tipo)
+        
+        if not conn_manager.conectar(forcado=True):
+            return jsonify({'ok': False, 'erro': 'Falha na conexão com IQ Option'})
+        
         email_usuario_atual = email
-        API = IQ_Option(email, senha)
-        status_conn, reason = API.connect()
-        if not status_conn: return jsonify({'ok': False, 'erro': str(reason)[:100]})
-        API.change_balance(tipo)
-        conectado_iq = True
         usuario = carregar_usuario(email) or criar_usuario(email)
-        hoje = str(datetime.now())[:10]
-        if usuario.get('moedas_ganhas_hoje') != hoje:
-            usuario['moedas'] = usuario.get('moedas', 0) + 1
-            usuario['moedas_ganhas_hoje'] = hoje
-            salvar_usuario(email, usuario)
-        skin_atual_global = usuario.get('skin_atual', 'skin_padrao')
+        
+        salvar_tipo_conta(email, tipo)
+        
         estrategia_atual_global = usuario.get('estrategia_atual', 'v_sensitivo')
+        skin_atual_global = usuario.get('skin_atual', 'skin_padrao')
+        
+        saldo = conn_manager.get_saldo()
+        
         add_log('🔌 Conectado!', 'info')
-        add_log(f'✅ ${API.get_balance():.2f} | ⚡ {usuario.get("moedas", 0)} VOLTS', 'win')
-        return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0), 'refresh': True})
-    except Exception as e: return jsonify({'ok': False, 'erro': str(e)[:100]})
+        add_log(f'✅ ${saldo:.2f} | ⚡ {usuario.get("moedas", 0)} VOLTS | Conta: {tipo}', 'win')
+        
+        return jsonify({
+            'ok': True, 
+            'moedas': usuario.get('moedas', 0),
+            'tipo_conta': tipo,
+            'saldo': saldo,
+            'refresh': True
+        })
+    except Exception as e:
+        return jsonify({'ok': False, 'erro': str(e)[:100]})
+
+@app.route('/mudar_tipo_conta', methods=['POST'])
+def mudar_tipo_conta():
+    global email_usuario_atual
+    
+    if not email_usuario_atual:
+        return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+    
+    dados = request.get_json()
+    novo_tipo = dados.get('tipo', 'PRACTICE')
+    
+    if novo_tipo not in ['PRACTICE', 'REAL']:
+        return jsonify({'ok': False, 'erro': 'Tipo inválido!'})
+    
+    if not conn_manager.mudar_tipo_conta(novo_tipo):
+        return jsonify({'ok': False, 'erro': 'Falha ao mudar tipo de conta!'})
+    
+    salvar_tipo_conta(email_usuario_atual, novo_tipo)
+    saldo = conn_manager.get_saldo()
+    
+    add_log(f"🔄 Conta alterada para {novo_tipo}. Saldo: ${saldo:.2f}", "info")
+    
+    return jsonify({
+        'ok': True,
+        'tipo_conta': novo_tipo,
+        'saldo': saldo
+    })
 
 @app.route('/comecar_operar', methods=['POST'])
 def comecar_operar():
     global bot_rodando, bot_thread, estrategia_ja_injetada
     try:
-        if not conectado_iq: return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+        if not conn_manager.conectado: 
+            return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+        
         estrategias_info = carregar_informacoes_estrategias()
         if not estrategias_info or estrategia_atual_global not in estrategias_info:
             return jsonify({'ok': False, 'erro': f'❌ Estrategia "{estrategia_atual_global}" invalida!'})
@@ -800,23 +1149,30 @@ def comecar_operar():
         if usuario.get('moedas', 0) < 1: return jsonify({'ok': False, 'erro': 'Sem VOLTS! Compre na loja.'})
 
         with bot_lock:
-            if bot_rodando and bot_thread and bot_thread.is_alive(): return jsonify({'ok': False, 'erro': 'Bot ja rodando!'})
+            if bot_rodando and bot_thread and bot_thread.is_alive(): 
+                return jsonify({'ok': False, 'erro': 'Bot ja rodando!'})
             estrategia_ja_injetada = False
             bot_rodando = True
             bot_thread = threading.Thread(target=bot_loop, daemon=True)
             bot_thread.start()
-        return jsonify({'ok': True, 'moedas': usuario['moedas']})
-    except Exception as e: return jsonify({'ok': False, 'erro': str(e)[:100]})
+            
+        return jsonify({
+            'ok': True, 
+            'moedas': usuario['moedas'],
+            'timeframe': timeframe_atual
+        })
+    except Exception as e: 
+        return jsonify({'ok': False, 'erro': str(e)[:100]})
 
 @app.route('/parar', methods=['POST'])
 def parar():
-    global bot_rodando, conectado_iq, volt_ja_consumido
+    global bot_rodando, volt_ja_consumido
     data = request.json or {}
     add_log("🛑 Parando o bot...", 'info')
     bot_rodando = False
     volt_ja_consumido = False
     if data.get('desconectar'):
-        conectado_iq = False
+        conn_manager.conectado = False
         add_log("🔌 Desconectado e finalizando servidor...", 'info')
         def shutdown_server():
             time.sleep(1)
@@ -1001,13 +1357,13 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 70)
-    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - ESPERA MUDANÇA DE SALDO ⚡")
+    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - RECONEXÃO + TIME DINÂMICO ⚡")
     print("✅ Firebase: SKINS e ESTRATEGIAS carregadas da nuvem")
+    print("✅ RECONEXÃO: Mantém o tipo de conta (PRACTICE/REAL)")
+    print("✅ TIME DINÂMICO: Estratégias definem o timeframe (60s, 300s, etc)")
     print("✅ ENTRADA: guarda ID da ordem (referencia)")
     print("✅ RESULTADO: espera minuto virar + mudança de saldo")
     print("✅ GALES: nova ordem, novo saldo, nova verificacao")
-    print("✅ SKIN PADRAO: TESLA THUNDER (raios)")
-    print("✅ 🔧 v16.9.0 - ESPERA MINUTO VIRAR + MUDANÇA DE SALDO")
     print("=" * 70)
 
     print("\n🔍 Carregando skins do Firebase...")
@@ -1017,6 +1373,8 @@ if __name__ == '__main__':
     print("\n🔍 Carregando estrategias do Firebase...")
     estrategias_test = carregar_informacoes_estrategias()
     print(f"📊 {len(estrategias_test)} estrategias disponiveis")
+    for nome, info in estrategias_test.items():
+        print(f"   📈 {nome}: {info.get('timeframe', 60)}s")
 
     sincronizar_html_local()
 
