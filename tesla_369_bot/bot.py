@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v16.1.0 - VERIFICAÇÃO DE ORDEM FECHADA ⚡
+# ⚡ TESLA 369 BOT v16.2.0 - VERIFICAÇÃO HÍBRIDA ⚡
 # Firebase: SKINS e ESTRATEGIAS carregadas da nuvem
 # ENTRADA: guarda ID da ordem (referencia)
-# RESULTADO: verificacao se ordem fechou APOS 45 segundos
+# RESULTADO: verificacao hibrida (get_winner + saldo) APOS 45 segundos
 # GALES: executados imediatamente (sem aguardar inicio de vela)
-# 🔧 v16.1.0 - VERIFICA SE ORDEM FECHOU antes de comparar saldo
+# 🔧 v16.2.0 - VERIFICA get_winner + saldo a cada 0.1s
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -24,7 +24,7 @@ warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
 # ============= VERSÃO DO BOT =============
-BOT_VERSION = "16.1.0"
+BOT_VERSION = "16.2.0"
 BOT_NAME = "TESLA-369"
 
 # ============= CONFIGURACOES =============
@@ -348,14 +348,13 @@ def consumir_volt():
 
 def executar_ciclo(direcao):
     """
-    LOGICA DEFINITIVA COM VERIFICAÇÃO DE ORDEM FECHADA:
+    LOGICA DEFINITIVA COM VERIFICAÇÃO HÍBRIDA:
     1. ENTRADA: Aguarda inicio da vela, guarda o ID da ordem e o saldo antes.
     2. Aguarda 45 segundos.
-    3. Verifica se a ordem JÁ FECHOU (usando get_winner).
-    4. Só compara saldo depois que a ordem fechou.
-    5. Se WIN: para o bot (STOP GAIN).
-    6. Se LOSS: executa GALE 1 (NOVA ORDEM, SEM aguardar inicio da vela).
-    7. Repete para GALE 2.
+    3. Verifica resultado usando get_winner + saldo (0.1s).
+    4. Se WIN: para o bot (STOP GAIN).
+    5. Se LOSS: executa GALE 1 (NOVA ORDEM, SEM aguardar inicio da vela).
+    6. Repete para GALE 2.
     """
     global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, timeframe_atual, ordem_id_atual
 
@@ -424,12 +423,11 @@ def executar_ciclo(direcao):
             else:
                 add_log(f"   📝 Ordem #{id_ordem} (GALE {i})", 'info')
 
-            # 🔥 ESPERA INTELIGENTE: 45s + verificação do status da ordem 🔥
+            # 🔥 ESPERA INTELIGENTE: 45s + verificação híbrida 🔥
             add_log(f"   ⏳ Aguardando 45 segundos...", 'info')
             for s in range(45):
                 if not bot_rodando:
                     return False
-                # Verificar conexão a cada 10 segundos
                 if s % 10 == 0 and s > 0:
                     if not API or not conectado_iq:
                         add_log("   ⚠️ Conexão instável durante espera...", 'warning')
@@ -441,29 +439,42 @@ def executar_ciclo(direcao):
                 bot_rodando = False
                 break
 
-            # 🔥 VERIFICA SE A ORDEM JÁ FECHOU (FRENÉTICO)
-            add_log(f"   🔍 Verificando se a ordem #{id_ordem} já fechou...", 'info')
+            # 🔥 VERIFICAÇÃO HÍBRIDA: get_winner + saldo (0.1s)
+            add_log(f"   🔍 Verificando resultado freneticamente...", 'info')
+            saldo_depois = None
             ordem_fechada = False
-            for _ in range(60):  # 60 tentativas * 0.5s = 30 segundos
+            
+            for tentativa in range(150):  # 150 * 0.1s = 15 segundos
                 if not bot_rodando:
                     return False
+                
                 try:
-                    # Verifica se a ordem já foi concluída
+                    # Tentativa 1: Verificar status da ordem
                     status = API.get_winner(id_ordem)
                     if status is not None:
                         ordem_fechada = True
                         add_log(f"   ✅ Ordem #{id_ordem} fechada! Resultado: {'WIN' if status else 'LOSS'}", 'info')
+                        saldo_depois = API.get_balance()
                         break
                 except:
                     pass
-                time.sleep(0.5)
+                
+                # Tentativa 2: Verificar saldo (fallback)
+                try:
+                    saldo_atual = API.get_balance()
+                    if saldo_atual is not None and saldo_atual != saldo_antes:
+                        saldo_depois = saldo_atual
+                        ordem_fechada = True
+                        add_log(f"   ✅ Saldo mudou! Resultado detectado.", 'info')
+                        break
+                except:
+                    pass
+                
+                time.sleep(0.1)  # 100ms entre tentativas
 
-            # Se a ordem não fechou até agora, verifica saldo (fallback)
-            if not ordem_fechada:
-                add_log(f"   ⏳ Ordem não detectada como fechada, verificando saldo...", 'warning')
-                saldo_depois = API.get_balance()
-            else:
-                # Ordem fechou, compara saldo
+            # Fallback final: verifica saldo uma última vez
+            if saldo_depois is None or not ordem_fechada:
+                add_log(f"   ⏳ Verificando saldo final...", 'info')
                 saldo_depois = API.get_balance()
 
             lucro_liquido = round(saldo_depois - saldo_antes, 2)
@@ -1023,13 +1034,13 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 70)
-    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - VERIFICAÇÃO DE ORDEM FECHADA ⚡")
+    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - VERIFICAÇÃO HÍBRIDA ⚡")
     print("✅ Firebase: SKINS e ESTRATEGIAS carregadas da nuvem")
     print("✅ ENTRADA: guarda ID da ordem (referencia)")
-    print("✅ RESULTADO: verificacao se ordem fechou APOS 45 segundos")
+    print("✅ RESULTADO: verificacao hibrida (get_winner + saldo) APOS 45 segundos")
     print("✅ GALES: nova ordem, novo saldo, nova verificacao")
     print("✅ SKIN PADRAO: TESLA THUNDER (raios)")
-    print("✅ 🔧 v16.1.0 - VERIFICA SE ORDEM FECHOU antes de comparar saldo")
+    print("✅ 🔧 v16.2.0 - VERIFICA get_winner + saldo a cada 0.1s")
     print("=" * 70)
 
     print("\n🔍 Carregando skins do Firebase...")
