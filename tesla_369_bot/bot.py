@@ -24,7 +24,7 @@ warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
 # ============= VERSÃO DO BOT =============
-BOT_VERSION = "16.0.0"
+BOT_VERSION = "16.0.1"
 BOT_NAME = "TESLA-369"
 
 # ============= CONFIGURACOES =============
@@ -346,89 +346,7 @@ def consumir_volt():
     add_log(f"⚡ 1 VOLT consumido. Saldo: {usuario['moedas']} VOLTS", 'info')
     return True
 
-def executar_ciclo(direcao):
-    """
-    LOGICA DEFINITIVA COM ESPERA INTELIGENTE:
-    1. ENTRADA: Aguarda inicio da vela, guarda o ID da ordem e o saldo antes.
-    2. Aguarda 45 segundos.
-    3. Verifica resultado freneticamente (a cada 50ms) por 15 segundos.
-    4. Se WIN: para o bot (STOP GAIN).
-    5. Se LOSS: executa GALE 1 (NOVA ORDEM, SEM aguardar inicio da vela).
-    6. Repete para GALE 2.
-    """
-    global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, timeframe_atual, ordem_id_atual
-
-    if not bot_rodando or not API: return
-
-    try:
-        if not consumir_volt():
-            add_log("❌ Sem VOLTS!", 'error')
-            bot_rodando = False
-            return
-
-        # 🔧 VERIFICA CONEXÃO ANTES DE CADA CICLO
-        if not API or not conectado_iq:
-            add_log("❌ Conexão perdida! Parando operação.", 'error')
-            bot_rodando = False
-            return
-
-        bi = API.get_balance()
-        payout = Payout(par)
-        entradas = calcular_entradas(bi, payout, MARTINGALE)
-        add_log(f"💰 Banca: ${bi:.2f} | Payout: {payout*100:.0f}%", 'info')
-        add_log(f"📐 E1:${entradas[0]:.2f} | E2:${entradas[1]:.2f} | E3:${entradas[2]:.2f}", 'info')
-
-        for i in range(MARTINGALE + 1):
-            if not bot_rodando: break
-
-            # 🔧 VERIFICA CONEXÃO ANTES DE CADA TENTATIVA
-            if not API or not conectado_iq:
-                add_log("❌ Conexão perdida durante execução!", 'error')
-                bot_rodando = False
-                break
-
-            valor = entradas[i]
-
-            # Aguarda o início da vela APENAS na primeira entrada (i == 0)
-            if i == 0:
-                if not aguardar_inicio_vela():
-                    add_log("⚠️ Falha ao aguardar inicio da vela para a entrada principal.", 'error')
-                    break
-            else:
-                # Pequena pausa para não sobrecarregar a API nos Gales
-                time.sleep(0.5)
-                add_log(f"   🔄 Executando GALE {i} imediatamente...", 'info')
-
-            saldo_antes = API.get_balance()
-            if saldo_antes < valor:
-                add_log("❌ Saldo insuficiente!", 'error')
-                break
-
-            add_log(f"🎯 {'ENTRADA' if i == 0 else f'GALE {i}'}: {direcao.upper()} ${valor:.2f}", 'info')
-
-            st, id_ordem = API.buy(valor, par, direcao, 1)
-            if not st or not id_ordem:
-                try:
-                    st, id_ordem = API.buy_digital_spot(par, valor, direcao, 1)
-                except:
-                    pass
-
-            if not st or not id_ordem:
-                add_log("❌ Falha na ordem!", 'error')
-                break
-
-            if i == 0:
-                ordem_id_atual = id_ordem
-                add_log(f"   📝 Ordem #{id_ordem} (Entrada Principal)", 'info')
-            else:
-                add_log(f"   📝 Ordem #{id_ordem} (GALE {i})", 'info')
-
-            # 🔥 ESPERA INTELIGENTE: 45s + verificação frenética 🔥
-            add_log(f"   ⏳ Aguardando 45 segundos...", 'info')
-            for s in range(45):
-                if not bot_rodando:
-                    return False
-                # Verificar conexão a cada 10 segundos
+Verificar conexão a cada 10 segundos
                 if s % 10 == 0 and s > 0:
                     if not API or not conectado_iq:
                         add_log("   ⚠️ Conexão instável durante espera...", 'warning')
@@ -506,6 +424,177 @@ def executar_ciclo(direcao):
             add_log(f"{'🌟 LUCRO' if bf > bi else '💀 PERDA'}: ${abs(bf - bi):.2f} | Banca: ${bf:.2f}", 'info')
             add_log("=" * 50, 'info')
 
+
+
+
+
+
+def executar_ciclo(direcao):
+    """
+    LOGICA DEFINITIVA COM VERIFICAÇÃO DE ORDEM FECHADA:
+    1. ENTRADA: Aguarda inicio da vela, guarda o ID da ordem e o saldo antes.
+    2. Aguarda 45 segundos.
+    3. Verifica se a ordem JÁ FECHOU (usando get_winner).
+    4. Só compara saldo depois que a ordem fechou.
+    5. Se WIN: para o bot (STOP GAIN).
+    6. Se LOSS: executa GALE 1 (NOVA ORDEM, SEM aguardar inicio da vela).
+    7. Repete para GALE 2.
+    """
+    global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, timeframe_atual, ordem_id_atual
+
+    if not bot_rodando or not API: return
+
+    try:
+        if not consumir_volt():
+            add_log("❌ Sem VOLTS!", 'error')
+            bot_rodando = False
+            return
+
+        # 🔧 VERIFICA CONEXÃO ANTES DE CADA CICLO
+        if not API or not conectado_iq:
+            add_log("❌ Conexão perdida! Parando operação.", 'error')
+            bot_rodando = False
+            return
+
+        bi = API.get_balance()
+        payout = Payout(par)
+        entradas = calcular_entradas(bi, payout, MARTINGALE)
+        add_log(f"💰 Banca: ${bi:.2f} | Payout: {payout*100:.0f}%", 'info')
+        add_log(f"📐 E1:${entradas[0]:.2f} | E2:${entradas[1]:.2f} | E3:${entradas[2]:.2f}", 'info')
+
+        for i in range(MARTINGALE + 1):
+            if not bot_rodando: break
+
+            # 🔧 VERIFICA CONEXÃO ANTES DE CADA TENTATIVA
+            if not API or not conectado_iq:
+                add_log("❌ Conexão perdida durante execução!", 'error')
+                bot_rodando = False
+                break
+
+            valor = entradas[i]
+
+            # Aguarda o início da vela APENAS na primeira entrada (i == 0)
+            if i == 0:
+                if not aguardar_inicio_vela():
+                    add_log("⚠️ Falha ao aguardar inicio da vela para a entrada principal.", 'error')
+                    break
+            else:
+                # Pequena pausa para não sobrecarregar a API nos Gales
+                time.sleep(0.5)
+                add_log(f"   🔄 Executando GALE {i} imediatamente...", 'info')
+
+            saldo_antes = API.get_balance()
+            if saldo_antes < valor:
+                add_log("❌ Saldo insuficiente!", 'error')
+                break
+
+            add_log(f"🎯 {'ENTRADA' if i == 0 else f'GALE {i}'}: {direcao.upper()} ${valor:.2f}", 'info')
+
+            st, id_ordem = API.buy(valor, par, direcao, 1)
+            if not st or not id_ordem:
+                try:
+                    st, id_ordem = API.buy_digital_spot(par, valor, direcao, 1)
+                except:
+                    pass
+
+            if not st or not id_ordem:
+                add_log("❌ Falha na ordem!", 'error')
+                break
+
+            if i == 0:
+                ordem_id_atual = id_ordem
+                add_log(f"   📝 Ordem #{id_ordem} (Entrada Principal)", 'info')
+            else:
+                add_log(f"   📝 Ordem #{id_ordem} (GALE {i})", 'info')
+
+            # 🔥 ESPERA INTELIGENTE: 45s + verificação do status da ordem 🔥
+            add_log(f"   ⏳ Aguardando 45 segundos...", 'info')
+            for s in range(45):
+                if not bot_rodando:
+                    return False
+                if s % 10 == 0 and s > 0:
+                    if not API or not conectado_iq:
+                        add_log("   ⚠️ Conexão instável durante espera...", 'warning')
+                time.sleep(1)
+
+            # 🔧 VERIFICA CONEXÃO APÓS ESPERA
+            if not API or not conectado_iq:
+                add_log("❌ Conexão perdida durante espera!", 'error')
+                bot_rodando = False
+                break
+
+            # 🔥 VERIFICA SE A ORDEM JÁ FECHOU (FRENÉTICO)
+            add_log(f"   🔍 Verificando se a ordem #{id_ordem} já fechou...", 'info')
+            ordem_fechada = False
+            for _ in range(60):  # 60 tentativas * 0.5s = 30 segundos
+                if not bot_rodando:
+                    return False
+                try:
+                    # Verifica se a ordem já foi concluída
+                    status = API.get_winner(id_ordem)
+                    if status is not None:
+                        ordem_fechada = True
+                        add_log(f"   ✅ Ordem #{id_ordem} fechada! Resultado: {'WIN' if status else 'LOSS'}", 'info')
+                        break
+                except:
+                    pass
+                time.sleep(0.5)
+
+            # Se a ordem não fechou até agora, verifica saldo (fallback)
+            if not ordem_fechada:
+                add_log(f"   ⏳ Ordem não detectada como fechada, verificando saldo...", 'warning')
+                saldo_depois = API.get_balance()
+            else:
+                # Ordem fechou, compara saldo
+                saldo_depois = API.get_balance()
+
+            lucro_liquido = round(saldo_depois - saldo_antes, 2)
+            lucro += lucro_liquido
+
+            if lucro_liquido > 0:
+                add_log(f"🌟 WIN! +${lucro_liquido:.2f}", 'win')
+                NumDeOperacoes += 1
+                u = carregar_usuario(email_usuario_atual)
+                if u:
+                    u['total_wins'] = u.get('total_wins', 0) + 1
+                    u['total_ganho'] = u.get('total_ganho', 0) + abs(lucro_liquido)
+                    u['lucro_total'] = u['total_ganho'] - u.get('total_gasto', 0)
+                    u['banca_atual'] = round(saldo_depois, 2)
+                    u.setdefault('historico_operacoes', []).append({
+                        'data': str(datetime.now())[:19], 'resultado': 'WIN',
+                        'valor': valor, 'lucro': lucro_liquido,
+                        'estrategia': estrategia_atual_global.upper()
+                    })
+                    salvar_usuario(email_usuario_atual, u)
+                STOP_GAIN_ATINGIDO = True
+                add_log("🎯 STOP GAIN! Vitoria alcancada!", 'win')
+                break
+            else:
+                add_log(f"💀 LOSS! {lucro_liquido:.2f}", 'loss')
+                u = carregar_usuario(email_usuario_atual)
+                if u:
+                    u['total_losses'] = u.get('total_losses', 0) + 1
+                    u['total_gasto'] = u.get('total_gasto', 0) + valor
+                    u['lucro_total'] = u['total_ganho'] - u['total_gasto']
+                    u['banca_atual'] = round(saldo_depois, 2)
+                    u.setdefault('historico_operacoes', []).append({
+                        'data': str(datetime.now())[:19], 'resultado': 'LOSS',
+                        'valor': valor, 'lucro': lucro_liquido,
+                        'estrategia': estrategia_atual_global.upper()
+                    })
+                    salvar_usuario(email_usuario_atual, u)
+
+                if i < MARTINGALE and bot_rodando:
+                    add_log(f"   ➡️ Indo para GALE {i + 1}...", 'loss')
+                else:
+                    add_log("   💀 CICLO ESGOTADO! Todas as entradas perdidas.", 'loss')
+
+        if bot_rodando:
+            bf = API.get_balance() if API else bi
+            add_log("=" * 50, 'info')
+            add_log(f"{'🌟 LUCRO' if bf > bi else '💀 PERDA'}: ${abs(bf - bi):.2f} | Banca: ${bf:.2f}", 'info')
+            add_log("=" * 50, 'info')
+
     except Exception as e:
         add_log(f"Erro: {e}", 'error')
         import traceback
@@ -514,6 +603,15 @@ def executar_ciclo(direcao):
         bot_rodando = False
         ordem_id_atual = None
         add_log("⏹️ Ciclo finalizado!", 'info')
+
+
+
+
+
+
+
+
+
 
 def bot_loop():
     """Loop principal do bot - SEM TIMEOUT"""
