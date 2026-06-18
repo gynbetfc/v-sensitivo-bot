@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v15.0.0 - LOGICA DEFINITIVA ⚡
+# ⚡ TESLA 369 BOT v16.6.0 - ESPERA POR FECHAMENTO DE VELA ⚡
 # Firebase: SKINS e ESTRATEGIAS carregadas da nuvem
 # ENTRADA: guarda ID da ordem (referencia)
-# RESULTADO: comparacao de saldo APOS 60 segundos
+# RESULTADO: comparacao de saldo APOS fechamento da vela (minuto virar)
 # GALES: executados imediatamente (sem aguardar inicio de vela)
-# SEM TIMESTAMP - SEM CRONOMETROS DESNECESSARIOS
-# 🔧 v15.0.1 - CORREÇÕES DE ESTABILIDADE (keep-alive + reconexão)
+# 🔧 v16.6.0 - ESPERA BASEADA NO RELÓGIO (até o minuto virar)
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -25,7 +24,7 @@ warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
 # ============= VERSÃO DO BOT =============
-BOT_VERSION = "15.0.1"
+BOT_VERSION = "16.6.0"
 BOT_NAME = "TESLA-369"
 
 # ============= CONFIGURACOES =============
@@ -349,9 +348,9 @@ def consumir_volt():
 
 def executar_ciclo(direcao):
     """
-    LOGICA DEFINITIVA:
+    LOGICA DEFINITIVA COM ESPERA POR FECHAMENTO DE VELA:
     1. ENTRADA: Aguarda inicio da vela, guarda o ID da ordem e o saldo antes.
-    2. Aguarda 60 segundos.
+    2. Aguarda até o próximo minuto virar (fechamento da vela).
     3. Verifica resultado por SALDO.
     4. Se WIN: para o bot (STOP GAIN).
     5. Se LOSS: executa GALE 1 (NOVA ORDEM, SEM aguardar inicio da vela).
@@ -381,13 +380,13 @@ def executar_ciclo(direcao):
 
         for i in range(MARTINGALE + 1):
             if not bot_rodando: break
-            
+
             # 🔧 VERIFICA CONEXÃO ANTES DE CADA TENTATIVA
             if not API or not conectado_iq:
                 add_log("❌ Conexão perdida durante execução!", 'error')
                 bot_rodando = False
                 break
-            
+
             valor = entradas[i]
 
             # Aguarda o início da vela APENAS na primeira entrada (i == 0)
@@ -424,21 +423,47 @@ def executar_ciclo(direcao):
             else:
                 add_log(f"   📝 Ordem #{id_ordem} (GALE {i})", 'info')
 
-            # 🔥 SIMPLES: ESPERA 60 SEGUNDOS E COMPARA SALDO 🔥
-            add_log(f"   ⏳ Aguardando 60 segundos...", 'info')
-            for s in range(60):
-                if not bot_rodando:
-                    return False
-                time.sleep(1)
+            # 🔥 ESPERA ATÉ O PRÓXIMO MINUTO VIRAR (BASEADO NO RELÓGIO) 🔥
+            add_log(f"   ⏳ Aguardando o fechamento da vela (até o minuto virar)...", 'info')
+            # Pega o segundo atual
+            segundo_atual = datetime.now().second
+            # Calcula quantos segundos faltam para o próximo minuto (60 - segundo_atual)
+            # Adiciona 1 para garantir que passou do 00
+            tempo_espera = 60 - segundo_atual + 1
+            add_log(f"   ⏱️ Faltam {tempo_espera} segundos para o próximo minuto.", 'info')
+            
+            espera_ativa = True
+            while espera_ativa and bot_rodando:
+                # Verifica a cada 0.5 segundos se o minuto mudou
+                for _ in range(int(tempo_espera * 2)):  # Checa a cada 0.5s
+                    if not bot_rodando:
+                        return False
+                    # Verifica se o segundo atual é 0 (início do próximo minuto)
+                    if datetime.now().second == 0:
+                        espera_ativa = False
+                        add_log("   ✅ Minuto virou! Vela fechada.", 'info')
+                        break
+                    # Verifica conexão a cada 2 segundos
+                    if _ % 4 == 0 and _ > 0:
+                        if not API or not conectado_iq:
+                            add_log("   ⚠️ Conexão instável durante espera...", 'warning')
+                    time.sleep(0.5)
+                
+                # Se o loop terminou sem virar, espera o próximo segundo para checar novamente
+                if espera_ativa:
+                    add_log("   ⏳ Aguardando mais um ciclo...", 'info')
+                    time.sleep(1)
 
-            # 🔧 VERIFICA CONEXÃO NOVAMENTE APÓS ESPERA
+            # 🔧 VERIFICA CONEXÃO APÓS ESPERA
             if not API or not conectado_iq:
                 add_log("❌ Conexão perdida durante espera!", 'error')
                 bot_rodando = False
                 break
 
-            # Verifica resultado comparando saldo
+            # 🔥 Verifica resultado comparando saldo (agora a vela fechou)
+            add_log(f"   💰 Verificando resultado após fechamento da vela...", 'info')
             saldo_depois = API.get_balance()
+            
             lucro_liquido = round(saldo_depois - saldo_antes, 2)
             lucro += lucro_liquido
 
@@ -538,7 +563,7 @@ def bot_loop():
                 add_log("❌ Conexão perdida no loop principal!", 'error')
                 bot_rodando = False
                 break
-            
+
             try:
                 resultado = estrategia_atual_executar(API, par, add_log)
                 if resultado and bot_rodando:
@@ -597,7 +622,7 @@ def monitor_conexao_thread():
 def analise_mercado_loop():
     global ultima_analise, conectado_iq, API
     ultimo_candle_time = 0
-    
+
     while True:
         if conectado_iq and API:
             try:
@@ -996,14 +1021,13 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 70)
-    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - LOGICA DEFINITIVA ⚡")
+    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - ESPERA POR FECHAMENTO DE VELA ⚡")
     print("✅ Firebase: SKINS e ESTRATEGIAS carregadas da nuvem")
     print("✅ ENTRADA: guarda ID da ordem (referencia)")
-    print("✅ RESULTADO: comparacao de saldo APOS 60 segundos")
+    print("✅ RESULTADO: comparacao de saldo APOS fechamento da vela")
     print("✅ GALES: nova ordem, novo saldo, nova verificacao")
     print("✅ SKIN PADRAO: TESLA THUNDER (raios)")
-    print("✅ SEM TIMESTAMP - SEM CRONOMETROS DESNECESSARIOS")
-    print("✅ 🔧 CORREÇÕES DE ESTABILIDADE ATIVAS (keep-alive + reconexão)")
+    print("✅ 🔧 v16.6.0 - ESPERA BASEADA NO RELÓGIO (até o minuto virar)")
     print("=" * 70)
 
     print("\n🔍 Carregando skins do Firebase...")
