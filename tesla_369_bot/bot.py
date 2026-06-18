@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v16.0.0 - ESPERA INTELIGENTE ⚡
+# ⚡ TESLA 369 BOT v16.1.0 - VERIFICAÇÃO DE ORDEM FECHADA ⚡
 # Firebase: SKINS e ESTRATEGIAS carregadas da nuvem
 # ENTRADA: guarda ID da ordem (referencia)
-# RESULTADO: verificacao frenetica APOS 45 segundos
+# RESULTADO: verificacao se ordem fechou APOS 45 segundos
 # GALES: executados imediatamente (sem aguardar inicio de vela)
-# 🔧 v16.0.0 - ESPERA INTELIGENTE (45s + verificacao a cada 50ms)
+# 🔧 v16.1.0 - VERIFICA SE ORDEM FECHOU antes de comparar saldo
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -24,7 +24,7 @@ warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
 # ============= VERSÃO DO BOT =============
-BOT_VERSION = "16.0.1"
+BOT_VERSION = "16.1.0"
 BOT_NAME = "TESLA-369"
 
 # ============= CONFIGURACOES =============
@@ -346,89 +346,6 @@ def consumir_volt():
     add_log(f"⚡ 1 VOLT consumido. Saldo: {usuario['moedas']} VOLTS", 'info')
     return True
 
-Verificar conexão a cada 10 segundos
-                if s % 10 == 0 and s > 0:
-                    if not API or not conectado_iq:
-                        add_log("   ⚠️ Conexão instável durante espera...", 'warning')
-                time.sleep(1)
-
-            # 🔧 VERIFICA CONEXÃO APÓS ESPERA
-            if not API or not conectado_iq:
-                add_log("❌ Conexão perdida durante espera!", 'error')
-                bot_rodando = False
-                break
-
-            # 🔥 VERIFICAÇÃO FRENÉTICA (15 segundos, checando a cada 0.05s)
-            add_log(f"   🔍 Verificando resultado freneticamente...", 'info')
-            saldo_depois = None
-            for _ in range(300):  # 300 tentativas * 0.05s = 15 segundos
-                if not bot_rodando:
-                    return False
-                try:
-                    saldo_depois = API.get_balance()
-                    if saldo_depois is not None and saldo_depois != saldo_antes:
-                        break  # Saldo mudou! Resultado encontrado
-                except:
-                    pass
-                time.sleep(0.05)  # 50ms de intervalo
-
-            # Se não encontrou resultado, faz a verificação final
-            if saldo_depois is None or saldo_depois == saldo_antes:
-                add_log(f"   ⏳ Resultado não detectado, verificando saldo final...", 'info')
-                saldo_depois = API.get_balance()
-
-            lucro_liquido = round(saldo_depois - saldo_antes, 2)
-            lucro += lucro_liquido
-
-            if lucro_liquido > 0:
-                add_log(f"🌟 WIN! +${lucro_liquido:.2f}", 'win')
-                NumDeOperacoes += 1
-                u = carregar_usuario(email_usuario_atual)
-                if u:
-                    u['total_wins'] = u.get('total_wins', 0) + 1
-                    u['total_ganho'] = u.get('total_ganho', 0) + abs(lucro_liquido)
-                    u['lucro_total'] = u['total_ganho'] - u.get('total_gasto', 0)
-                    u['banca_atual'] = round(saldo_depois, 2)
-                    u.setdefault('historico_operacoes', []).append({
-                        'data': str(datetime.now())[:19], 'resultado': 'WIN',
-                        'valor': valor, 'lucro': lucro_liquido,
-                        'estrategia': estrategia_atual_global.upper()
-                    })
-                    salvar_usuario(email_usuario_atual, u)
-                STOP_GAIN_ATINGIDO = True
-                add_log("🎯 STOP GAIN! Vitoria alcancada!", 'win')
-                break
-            else:
-                add_log(f"💀 LOSS! {lucro_liquido:.2f}", 'loss')
-                u = carregar_usuario(email_usuario_atual)
-                if u:
-                    u['total_losses'] = u.get('total_losses', 0) + 1
-                    u['total_gasto'] = u.get('total_gasto', 0) + valor
-                    u['lucro_total'] = u['total_ganho'] - u['total_gasto']
-                    u['banca_atual'] = round(saldo_depois, 2)
-                    u.setdefault('historico_operacoes', []).append({
-                        'data': str(datetime.now())[:19], 'resultado': 'LOSS',
-                        'valor': valor, 'lucro': lucro_liquido,
-                        'estrategia': estrategia_atual_global.upper()
-                    })
-                    salvar_usuario(email_usuario_atual, u)
-
-                if i < MARTINGALE and bot_rodando:
-                    add_log(f"   ➡️ Indo para GALE {i + 1}...", 'loss')
-                else:
-                    add_log("   💀 CICLO ESGOTADO! Todas as entradas perdidas.", 'loss')
-
-        if bot_rodando:
-            bf = API.get_balance() if API else bi
-            add_log("=" * 50, 'info')
-            add_log(f"{'🌟 LUCRO' if bf > bi else '💀 PERDA'}: ${abs(bf - bi):.2f} | Banca: ${bf:.2f}", 'info')
-            add_log("=" * 50, 'info')
-
-
-
-
-
-
 def executar_ciclo(direcao):
     """
     LOGICA DEFINITIVA COM VERIFICAÇÃO DE ORDEM FECHADA:
@@ -512,6 +429,7 @@ def executar_ciclo(direcao):
             for s in range(45):
                 if not bot_rodando:
                     return False
+                # Verificar conexão a cada 10 segundos
                 if s % 10 == 0 and s > 0:
                     if not API or not conectado_iq:
                         add_log("   ⚠️ Conexão instável durante espera...", 'warning')
@@ -603,15 +521,6 @@ def executar_ciclo(direcao):
         bot_rodando = False
         ordem_id_atual = None
         add_log("⏹️ Ciclo finalizado!", 'info')
-
-
-
-
-
-
-
-
-
 
 def bot_loop():
     """Loop principal do bot - SEM TIMEOUT"""
@@ -1114,13 +1023,13 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 70)
-    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - LOGICA DEFINITIVA ⚡")
+    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - VERIFICAÇÃO DE ORDEM FECHADA ⚡")
     print("✅ Firebase: SKINS e ESTRATEGIAS carregadas da nuvem")
     print("✅ ENTRADA: guarda ID da ordem (referencia)")
-    print("✅ RESULTADO: verificacao frenetica APOS 45 segundos")
+    print("✅ RESULTADO: verificacao se ordem fechou APOS 45 segundos")
     print("✅ GALES: nova ordem, novo saldo, nova verificacao")
     print("✅ SKIN PADRAO: TESLA THUNDER (raios)")
-    print("✅ 🔧 v16.0.0 - ESPERA INTELIGENTE (45s + verificacao a cada 50ms)")
+    print("✅ 🔧 v16.1.0 - VERIFICA SE ORDEM FECHOU antes de comparar saldo")
     print("=" * 70)
 
     print("\n🔍 Carregando skins do Firebase...")
