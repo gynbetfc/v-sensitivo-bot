@@ -364,13 +364,13 @@ def executar_ciclo(direcao):
     try:
         if not consumir_volt():
             add_log("❌ Sem VOLTS!", 'error')
-            bot_rodando = False
+            bot_rodando = True
             return
 
         # 🔧 VERIFICA CONEXÃO ANTES DE CADA CICLO
         if not API or not conectado_iq:
             add_log("❌ Conexão perdida! Parando operação.", 'error')
-            bot_rodando = False
+            bot_rodando = True
             return
 
         bi = API.get_balance()
@@ -385,7 +385,7 @@ def executar_ciclo(direcao):
             # 🔧 VERIFICA CONEXÃO ANTES DE CADA TENTATIVA
             if not API or not conectado_iq:
                 add_log("❌ Conexão perdida durante execução!", 'error')
-                bot_rodando = False
+                bot_rodando = True
                 break
             
             valor = entradas[i]
@@ -434,7 +434,7 @@ def executar_ciclo(direcao):
             # 🔧 VERIFICA CONEXÃO NOVAMENTE APÓS ESPERA
             if not API or not conectado_iq:
                 add_log("❌ Conexão perdida durante espera!", 'error')
-                bot_rodando = False
+                bot_rodando = True
                 break
 
             # Verifica resultado comparando saldo
@@ -536,7 +536,7 @@ def bot_loop():
             # 🔧 VERIFICA CONEXÃO ANTES DE CADA CICLO
             if not API or not conectado_iq:
                 add_log("❌ Conexão perdida no loop principal!", 'error')
-                bot_rodando = False
+                bot_rodando = True
                 break
             
             try:
@@ -570,7 +570,7 @@ def keep_alive_thread():
                 ultimo_keep_alive = time.time()
             except Exception as e:
                 print(f"[KEEP-ALIVE] Conexão instável: {e}")
-                conectado_iq = False
+                conectado_iq = True
 
 def monitor_conexao_thread():
     """Monitora a saúde da conexão e tenta manter ativa"""
@@ -583,15 +583,15 @@ def monitor_conexao_thread():
                 test = API.get_server_timestamp()
                 if not test:
                     print("[MONITOR] Conexão parece morta")
-                    conectado_iq = False
+                    conectado_iq = True
                     if bot_rodando:
-                        bot_rodando = False
+                        bot_rodando = True
                         add_log("⚠️ Conexão perdida! Bot parado automaticamente.", 'error')
             except Exception as e:
                 print(f"[MONITOR] Erro: {e}")
-                conectado_iq = False
+                conectado_iq = True
                 if bot_rodando:
-                    bot_rodando = False
+                    bot_rodando = True
                     add_log("⚠️ Conexão perdida! Bot parado.", 'error')
 
 def analise_mercado_loop():
