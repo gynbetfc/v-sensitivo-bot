@@ -475,7 +475,7 @@ def executar_ciclo(direcao):
                 add_log(f"   📝 Ordem #{id_ordem} (GALE {i})", 'info')
 
             add_log(f"   ⏳ Aguardando 60 segundos...", 'info')
-            for s in range(55):
+            for s in range(60):
                 if not bot_rodando:
                     return False
                 time.sleep(1)
