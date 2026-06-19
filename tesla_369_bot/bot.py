@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v16.9.0 - ESTÁVEL COM RECONEXÃO LEVE ⚡
+# ⚡ TESLA 369 BOT v15.0.2 - TIME DINÂMICO + LOGICA DEFINITIVA ⚡
 # Firebase: SKINS e ESTRATEGIAS carregadas da nuvem
 # ENTRADA: guarda ID da ordem (referencia)
-# RESULTADO: espera minuto virar + mudança de saldo
+# RESULTADO: comparacao de saldo APOS o timeframe definido
 # GALES: executados imediatamente (sem aguardar inicio de vela)
-# 🔧 v16.9.0 - ESTÁVEL + RECONEXÃO LEVE
+# 🔧 v15.0.2 - RECEBE TIMEFRAME E DIRECAO NO EXECUTAR_CICLO
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -24,7 +24,7 @@ warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
 # ============= VERSÃO DO BOT =============
-BOT_VERSION = "16.9.0"
+BOT_VERSION = "15.0.2"
 BOT_NAME = "TESLA-369"
 
 # ============= CONFIGURACOES =============
@@ -76,6 +76,11 @@ sinal_lock = threading.Lock()
 volt_ja_consumido = False
 estrategia_ja_injetada = False
 ordem_id_atual = None
+
+# 🔧 NOVAS VARIAVEIS PARA ESTABILIDADE
+ultimo_keep_alive = time.time()
+reconectando = False
+ultimo_balance = 0
 
 # ============= FUNCOES AUXILIARES =============
 
@@ -318,9 +323,9 @@ def calcular_entradas(b, p, g):
 def aguardar_inicio_vela(timeframe=60):
     """Aguarda o inicio da proxima vela baseado no timeframe"""
     add_log(f"   ⏳ Aguardando inicio da vela ({timeframe}s)...", 'info')
-
+    
     agora = datetime.now()
-
+    
     if timeframe >= 60:
         minutos_por_vela = timeframe // 60
         minutos_passados = agora.minute % minutos_por_vela
@@ -331,10 +336,10 @@ def aguardar_inicio_vela(timeframe=60):
         segundos_restantes = timeframe - (agora.second % timeframe)
         if segundos_restantes == timeframe:
             segundos_restantes = 0
-
+    
     if segundos_restantes > 0:
         time.sleep(segundos_restantes + 0.5)
-
+    
     add_log("   ✅ Vela confirmada!", 'info')
     return True
 
@@ -352,11 +357,21 @@ def consumir_volt():
 
 def executar_ciclo(direcao, timeframe=60):
     """
-    LOGICA DEFINITIVA COM TIME DINÂMICO
+    LOGICA DEFINITIVA COM TIME DINÂMICO:
+    1. ENTRADA: Aguarda inicio da vela com o timeframe definido
+    2. Guarda ID da ordem e saldo antes
+    3. Aguarda o TEMPO DEFINIDO PELO TIMEFRAME
+    4. Verifica resultado por SALDO
+    5. Se WIN: para o bot (STOP GAIN)
+    6. Se LOSS: executa GALE (NOVA ORDEM, SEM aguardar inicio de vela)
+    
+    PARÂMETROS:
+    - direcao: 'call' ou 'put'
+    - timeframe: tempo em segundos (60, 180, 300, etc)
     """
-    global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, timeframe_atual, ordem_id_atual, API
+    global lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, bot_rodando, volt_ja_consumido, timeframe_atual, ordem_id_atual
 
-    if not bot_rodando: return
+    if not bot_rodando or not API: return
 
     try:
         if not consumir_volt():
@@ -364,9 +379,10 @@ def executar_ciclo(direcao, timeframe=60):
             bot_rodando = False
             return
 
+        # 🔧 VERIFICA CONEXÃO ANTES DE CADA CICLO
         if not API or not conectado_iq:
-            add_log("❌ Sem conexão! Tentando reconectar...", 'error')
-            time.sleep(2)
+            add_log("❌ Conexão perdida! Parando operação.", 'error')
+            bot_rodando = False
             return
 
         bi = API.get_balance()
@@ -374,22 +390,26 @@ def executar_ciclo(direcao, timeframe=60):
         entradas = calcular_entradas(bi, payout, MARTINGALE)
         add_log(f"💰 Banca: ${bi:.2f} | Payout: {payout*100:.0f}%", 'info')
         add_log(f"📐 E1:${entradas[0]:.2f} | E2:${entradas[1]:.2f} | E3:${entradas[2]:.2f}", 'info')
+        add_log(f"⏱️ Timeframe: {timeframe}s", 'info')
 
         for i in range(MARTINGALE + 1):
             if not bot_rodando: break
-
+            
+            # 🔧 VERIFICA CONEXÃO ANTES DE CADA TENTATIVA
             if not API or not conectado_iq:
                 add_log("❌ Conexão perdida durante execução!", 'error')
-                time.sleep(2)
-                continue
-
+                bot_rodando = False
+                break
+            
             valor = entradas[i]
 
+            # Aguarda o início da vela APENAS na primeira entrada (i == 0)
             if i == 0:
                 if not aguardar_inicio_vela(timeframe):
-                    add_log("⚠️ Falha ao aguardar inicio da vela.", 'error')
+                    add_log("⚠️ Falha ao aguardar inicio da vela para a entrada principal.", 'error')
                     break
             else:
+                # Pequena pausa para não sobrecarregar a API nos Gales
                 time.sleep(0.5)
                 add_log(f"   🔄 Executando GALE {i} imediatamente...", 'info')
 
@@ -400,14 +420,16 @@ def executar_ciclo(direcao, timeframe=60):
 
             add_log(f"🎯 {'ENTRADA' if i == 0 else f'GALE {i}'}: {direcao.upper()} ${valor:.2f} | Time: {timeframe}s", 'info')
 
-            # COMPRA COM TIMEFRAME DINÂMICO
+            # 🔥 COMPRA COM TIMEFRAME DINÂMICO
             tempo_minutos = timeframe // 60 if timeframe >= 60 else 1
             st, id_ordem = False, None
-
+            
             try:
+                # Tenta comprar com o timeframe específico
                 if timeframe >= 60:
                     st, id_ordem = API.buy_digital_spot(par, valor, direcao, tempo_minutos)
                 else:
+                    add_log(f"   ⚠️ Timeframe {timeframe}s < 60s, usando 1 minuto", 'info')
                     st, id_ordem = API.buy_digital_spot(par, valor, direcao, 1)
             except Exception as e:
                 add_log(f"   ⚠️ Erro na compra: {e}", 'error')
@@ -426,38 +448,23 @@ def executar_ciclo(direcao, timeframe=60):
             else:
                 add_log(f"   📝 Ordem #{id_ordem} (GALE {i})", 'info')
 
-            # ESPERA O MINUTO VIRAR
-            add_log(f"   ⏳ Aguardando o minuto virar...", 'info')
-            while datetime.now().second != 0:
+            # 🔥 ESPERA O TIMEFRAME DEFINIDO 🔥
+            add_log(f"   ⏳ Aguardando {timeframe} segundos...", 'info')
+            
+            # Divide a espera em pequenos intervalos para verificar se o bot continua rodando
+            for s in range(timeframe):
                 if not bot_rodando:
                     return False
-                time.sleep(0.1)
+                time.sleep(1)
 
-            add_log(f"   ✅ Minuto virou! Aguardando mudança de saldo...", 'info')
-
-            # ESPERA O SALDO MUDAR
-            saldo_depois = None
-            for _ in range(50):
-                if not bot_rodando:
-                    return False
-                try:
-                    saldo_atual = API.get_balance()
-                    if saldo_atual is not None and saldo_atual != saldo_antes:
-                        saldo_depois = saldo_atual
-                        add_log(f"   ✅ Saldo mudou! ({saldo_antes:.2f} → {saldo_depois:.2f})", 'info')
-                        break
-                except:
-                    pass
-                time.sleep(0.1)
-
-            if saldo_depois is None:
-                add_log(f"   ⏳ Saldo não detectado, verificando saldo final...", 'info')
-                saldo_depois = API.get_balance()
-
-            if saldo_depois is None:
-                add_log("❌ Falha ao obter saldo final!", 'error')
+            # 🔧 VERIFICA CONEXÃO NOVAMENTE APÓS ESPERA
+            if not API or not conectado_iq:
+                add_log("❌ Conexão perdida durante espera!", 'error')
+                bot_rodando = False
                 break
 
+            # Verifica resultado comparando saldo
+            saldo_depois = API.get_balance()
             lucro_liquido = round(saldo_depois - saldo_antes, 2)
             lucro += lucro_liquido
 
@@ -471,8 +478,10 @@ def executar_ciclo(direcao, timeframe=60):
                     u['lucro_total'] = u['total_ganho'] - u.get('total_gasto', 0)
                     u['banca_atual'] = round(saldo_depois, 2)
                     u.setdefault('historico_operacoes', []).append({
-                        'data': str(datetime.now())[:19], 'resultado': 'WIN',
-                        'valor': valor, 'lucro': lucro_liquido,
+                        'data': str(datetime.now())[:19], 
+                        'resultado': 'WIN',
+                        'valor': valor, 
+                        'lucro': lucro_liquido,
                         'estrategia': estrategia_atual_global.upper(),
                         'timeframe': timeframe
                     })
@@ -489,8 +498,10 @@ def executar_ciclo(direcao, timeframe=60):
                     u['lucro_total'] = u['total_ganho'] - u['total_gasto']
                     u['banca_atual'] = round(saldo_depois, 2)
                     u.setdefault('historico_operacoes', []).append({
-                        'data': str(datetime.now())[:19], 'resultado': 'LOSS',
-                        'valor': valor, 'lucro': lucro_liquido,
+                        'data': str(datetime.now())[:19], 
+                        'resultado': 'LOSS',
+                        'valor': valor, 
+                        'lucro': lucro_liquido,
                         'estrategia': estrategia_atual_global.upper(),
                         'timeframe': timeframe
                     })
@@ -517,8 +528,8 @@ def executar_ciclo(direcao, timeframe=60):
         add_log("⏹️ Ciclo finalizado!", 'info')
 
 def bot_loop():
-    """Loop principal do bot"""
-    global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, sinal_pendente, ultimo_sinal, timeframe_atual, volt_ja_consumido, estrategia_ja_injetada, API
+    """Loop principal do bot - SEM TIMEOUT"""
+    global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, sinal_pendente, ultimo_sinal, timeframe_atual, volt_ja_consumido, estrategia_ja_injetada
 
     with bot_lock:
         if not bot_rodando or not API:
@@ -552,19 +563,21 @@ def bot_loop():
         ultimo_sinal = "Aguardando..."
         add_log(f"📌 {par} | Timeframe: {timeframe_atual}s | 💰 ${BANCA_INICIAL_DO_BOT:.2f}")
 
-        # LOOP PRINCIPAL
+        # LOOP PRINCIPAL - SEM TIMEOUT
         while bot_rodando and not STOP_GAIN_ATINGIDO:
+            # 🔧 VERIFICA CONEXÃO ANTES DE CADA CICLO
             if not API or not conectado_iq:
-                add_log("⚠️ Aguardando reconexão...", "info")
-                time.sleep(2)
-                continue
-
+                add_log("❌ Conexão perdida no loop principal!", 'error')
+                bot_rodando = False
+                break
+            
             try:
                 resultado = estrategia_atual_executar(API, par, add_log)
                 if resultado and bot_rodando:
                     direcao = resultado.get('direcao', '').lower()
+                    # Pega o timeframe do resultado ou usa o da estratégia
                     tf = resultado.get('timeframe', timeframe_atual)
-
+                    
                     if direcao in ['call', 'put']:
                         ultimo_sinal = f"GATILHO: {direcao.upper()} | {tf}s"
                         add_log(f"🎯 SINAL: {direcao.upper()} | Timeframe: {tf}s", 'sensitive')
@@ -578,61 +591,48 @@ def bot_loop():
 
         bot_rodando = False
 
-# ========== THREADS DE MANUTENÇÃO ==========
+# 🔧 FUNÇÕES NOVAS PARA ESTABILIDADE
 
-def monitor_conexao():
-    """Thread simples que mantém a conexão viva"""
-    global API, conectado_iq, bot_rodando, email_usuario_atual
-    
-    # Espera as credenciais serem configuradas
-    while not email_usuario_atual:
-        time.sleep(5)
-    
+def keep_alive_thread():
+    """Thread que mantém a conexão ativa com ping constante"""
+    global conectado_iq, API, ultimo_keep_alive
     while True:
-        time.sleep(30)  # Verifica a cada 30 segundos
-        
+        time.sleep(20)
+        if conectado_iq and API:
+            try:
+                API.get_server_timestamp()
+                ultimo_keep_alive = time.time()
+            except Exception as e:
+                print(f"[KEEP-ALIVE] Conexão instável: {e}")
+                conectado_iq = False
+
+def monitor_conexao_thread():
+    """Monitora a saúde da conexão e tenta manter ativa"""
+    global conectado_iq, API, bot_rodando
+    while True:
+        time.sleep(10)
         if API and conectado_iq:
             try:
-                # Teste simples de conexão
-                ping = API.get_server_timestamp()
-                if not ping:
-                    print("[MONITOR] Conexão parece morta, tentando reconectar...")
+                test = API.get_server_timestamp()
+                if not test:
+                    print("[MONITOR] Conexão parece morta")
                     conectado_iq = False
-                    
-                    # Tenta reconectar
-                    try:
-                        API.connect()
-                        time.sleep(2)
-                        ping = API.get_server_timestamp()
-                        if ping:
-                            conectado_iq = True
-                            print("[MONITOR] Reconectado com sucesso!")
-                            add_log("✅ Conexão restabelecida!", "win")
-                        else:
-                            print("[MONITOR] Falha na reconexão")
-                    except Exception as e:
-                        print(f"[MONITOR] Erro na reconexão: {e}")
+                    if bot_rodando:
+                        bot_rodando = False
+                        add_log("⚠️ Conexão perdida! Bot parado automaticamente.", 'error')
             except Exception as e:
                 print(f"[MONITOR] Erro: {e}")
                 conectado_iq = False
-        elif email_usuario_atual:
-            print("[MONITOR] Conexão perdida, tentando reconectar...")
-            try:
-                if API:
-                    API.connect()
-                    time.sleep(2)
-                    ping = API.get_server_timestamp()
-                    if ping:
-                        conectado_iq = True
-                        print("[MONITOR] Conexão restabelecida!")
-                        add_log("✅ Conexão restabelecida!", "win")
-            except Exception as e:
-                print(f"[MONITOR] Erro na reconexão: {e}")
+                if bot_rodando:
+                    bot_rodando = False
+                    add_log("⚠️ Conexão perdida! Bot parado.", 'error')
 
 def analise_mercado_loop():
-    global ultima_analise
+    global ultima_analise, conectado_iq, API
+    ultimo_candle_time = 0
+    
     while True:
-        if API and conectado_iq:
+        if conectado_iq and API:
             try:
                 velas = API.get_candles(par, 60, 30, time.time())
                 if velas and len(velas) >= 20:
@@ -660,9 +660,10 @@ def analise_mercado_loop():
                 pass
         time.sleep(2)
 
-# Iniciar threads
+# 🔧 INICIAR THREADS DE MANUTENÇÃO
 threading.Thread(target=analise_mercado_loop, daemon=True).start()
-threading.Thread(target=monitor_conexao, daemon=True).start()
+threading.Thread(target=keep_alive_thread, daemon=True).start()
+threading.Thread(target=monitor_conexao_thread, daemon=True).start()
 
 def sincronizar_html_local():
     try:
@@ -725,23 +726,12 @@ def status():
     estrategia_nome = estrategias_info[estrategia_atual].get('nome', estrategia_atual) if estrategia_atual in estrategias_info else "Nenhuma"
 
     return jsonify({
-        'conectado': conectado_iq, 
-        'rodando': bot_rodando, 
-        'email': email_usuario_atual,
-        'banca': API.get_balance() if API else 0, 
-        'lucro': lucro, 
-        'ops': NumDeOperacoes, 
-        'sinal': ultimo_sinal,
-        'logs': get_logs_html(40), 
-        'moedas': u.get('moedas', 0) if u else 0, 
-        'skin_id': skin_atual, 
-        'skins_status': skins_status,
-        'estrategia': estrategia_atual, 
-        'estrategia_nome': estrategia_nome, 
-        'estrategias_compradas': estrategias_compradas,
+        'conectado': conectado_iq, 'rodando': bot_rodando, 'email': email_usuario_atual,
+        'banca': API.get_balance() if API else 0, 'lucro': lucro, 'ops': NumDeOperacoes, 'sinal': ultimo_sinal,
+        'logs': get_logs_html(40), 'moedas': u.get('moedas', 0) if u else 0, 'skin_id': skin_atual, 'skins_status': skins_status,
+        'estrategia': estrategia_atual, 'estrategia_nome': estrategia_nome, 'estrategias_compradas': estrategias_compradas,
         'estrategias_disponiveis': {k: {'nome': v['nome'], 'desc': v['desc'], 'preco_moedas': v['preco_moedas'], 'gratis': v['gratis'], 'timeframe': v.get('timeframe', 60)} for k, v in estrategias_info.items()},
-        'analise': ultima_analise, 
-        'bot_version': BOT_VERSION
+        'analise': ultima_analise, 'bot_version': BOT_VERSION, 'timeframe_atual': timeframe_atual
     })
 
 @app.route('/set_percentual', methods=['POST'])
@@ -1037,13 +1027,13 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 70)
-    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - ESTÁVEL + RECONEXÃO LEVE ⚡")
+    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - TIME DINÂMICO + LOGICA DEFINITIVA ⚡")
     print("✅ Firebase: SKINS e ESTRATEGIAS carregadas da nuvem")
-    print("✅ RECONEXÃO LEVE: Tenta reconectar se cair, sem loops complexos")
-    print("✅ TIME DINÂMICO: Estratégias definem o timeframe (60s, 180s, 300s)")
     print("✅ ENTRADA: guarda ID da ordem (referencia)")
-    print("✅ RESULTADO: espera minuto virar + mudança de saldo")
-    print("✅ GALES: executados imediatamente (sem aguardar inicio de vela)")
+    print("✅ RESULTADO: comparacao de saldo APOS o timeframe definido")
+    print("✅ TIMEFRAME DINÂMICO: Cada estratégia define seu próprio tempo")
+    print("✅ GALES: nova ordem, novo saldo, nova verificacao")
+    print("✅ SKIN PADRAO: TESLA THUNDER (raios)")
     print("=" * 70)
 
     print("\n🔍 Carregando skins do Firebase...")
