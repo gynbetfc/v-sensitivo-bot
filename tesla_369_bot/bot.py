@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ⚡ TESLA 369 BOT v15.0.0 - LOGICA DEFINITIVA ⚡
+# ⚡ TESLA 369 BOT v15.0.4 - RECONEXÃO ROBUSTA ⚡
 # Firebase: SKINS e ESTRATEGIAS carregadas da nuvem
 # ENTRADA: guarda ID da ordem (referencia)
 # RESULTADO: comparacao de saldo APOS 60 segundos
 # GALES: executados imediatamente (sem aguardar inicio de vela)
-# SEM TIMESTAMP - SEM CRONOMETROS DESNECESSARIOS
-# 🔧 v15.0.1 - CORREÇÕES DE ESTABILIDADE (keep-alive + reconexão)
+# 🔧 v15.0.4 - RECONEXÃO INTELIGENTE (backoff + múltiplos endpoints)
 
 from flask import Flask, render_template, jsonify, request
 from iqoptionapi.stable_api import IQ_Option
@@ -25,7 +24,7 @@ warnings.filterwarnings("ignore")
 app = Flask(__name__)
 
 # ============= VERSÃO DO BOT =============
-BOT_VERSION = "15.0.3"
+BOT_VERSION = "15.0.4"
 BOT_NAME = "TESLA-369"
 
 # ============= CONFIGURACOES =============
@@ -77,11 +76,13 @@ sinal_lock = threading.Lock()
 volt_ja_consumido = False
 estrategia_ja_injetada = False
 ordem_id_atual = None
+tipo_conta_atual = "PRACTICE"
 
-# 🔧 NOVAS VARIAVEIS PARA ESTABILIDADE
-ultimo_keep_alive = time.time()
-reconectando = False
-ultimo_balance = 0
+# 🔧 VARIAVEIS DE RECONEXÃO (estilo M4 VELOZ)
+ERROS_CONSECUTIVOS_API = 0
+MAX_ERROS_ANTES_RECONECTAR = 10
+ULTIMO_PING_SUCESSO = time.time()
+RECONECTANDO = False
 
 # ============= FUNCOES AUXILIARES =============
 
@@ -150,7 +151,6 @@ def calcular_media_movel(velas, periodo):
 # ============= SKINS NO FIREBASE =============
 
 def get_skins_fallback():
-    # SKIN PADRAO AGORA E THUNDER!
     return {
         'skin_padrao': {
             'id': 'skin_padrao', 'nome': '⚡ TESLA THUNDER', 'desc': 'Raios eletricos na tela - Skin Padrao',
@@ -227,11 +227,7 @@ def carregar_informacoes_estrategias():
             return estrategias_info
     except Exception as e:
         print(f"⚠️ Erro ao carregar estrategias: {e}")
-
-    #fallback = {'v_sensitivo': {'nome': 'V SENSITIVO', 'desc': 'Estrategia padrao do Tesla 369', 'preco_moedas': 0, 'timeframe': 60, 'gratis': True}}
-    #cache_estrategias_info["data"] = fallback
-    #cache_estrategias_info["timestamp"] = agora
-    #return fallback
+    return {}
 
 def carregar_estrategia_do_firebase(nome_estrategia):
     try:
@@ -297,7 +293,7 @@ def criar_usuario(email):
     salvar_usuario(email, dados)
     return dados
 
-# ========== FUNCOES DO BOT (LOGICA DEFINITIVA) ==========
+# ========== FUNCOES DO BOT ==========
 
 def Payout(p):
     try:
@@ -347,6 +343,116 @@ def consumir_volt():
     add_log(f"⚡ 1 VOLT consumido. Saldo: {usuario['moedas']} VOLTS", 'info')
     return True
 
+# ========== 🔥 RECONEXÃO ROBUSTA (estilo M4 VELOZ) ==========
+
+def conectar_iq():
+    """Tenta conectar/reconectar com backoff exponencial"""
+    global API, conectado_iq, ERROS_CONSECUTIVOS_API, RECONECTANDO, email_usuario_atual, tipo_conta_atual
+    
+    if not email_usuario_atual:
+        add_log("❌ Sem credenciais para reconectar!", 'error')
+        return False
+    
+    if RECONECTANDO:
+        return False
+    
+    RECONECTANDO = True
+    tentativas = 0
+    max_tentativas = 5
+    
+    try:
+        while tentativas < max_tentativas:
+            try:
+                if API and API.check_connect():
+                    conectado_iq = True
+                    ERROS_CONSECUTIVOS_API = 0
+                    RECONECTANDO = False
+                    add_log("✅ Reconectado com sucesso!", 'win')
+                    return True
+            except:
+                pass
+            
+            tentativas += 1
+            tempo_espera = min(30, 2 ** tentativas)
+            add_log(f"🔄 Tentativa {tentativas}/{max_tentativas} de reconexão em {tempo_espera}s...", 'info')
+            time.sleep(tempo_espera)
+            
+            try:
+                if API:
+                    API.connect()
+                    time.sleep(2)
+                    # Tenta trocar para o tipo de conta correto
+                    if tipo_conta_atual:
+                        API.change_balance(tipo_conta_atual)
+            except:
+                pass
+    
+    except Exception as e:
+        add_log(f"❌ Erro durante reconexão: {e}", 'error')
+    finally:
+        RECONECTANDO = False
+    
+    conectado_iq = False
+    add_log(f"❌ Falha na reconexão após {max_tentativas} tentativas!", 'error')
+    return False
+
+def verificar_saude_api():
+    """Verifica saúde da API com múltiplos endpoints (estilo M4 VELOZ)"""
+    global API, conectado_iq, ERROS_CONSECUTIVOS_API, ULTIMO_PING_SUCESSO, bot_rodando
+    
+    if not API or not email_usuario_atual:
+        return False
+    
+    if RECONECTANDO:
+        return False
+    
+    try:
+        # Testa múltiplos endpoints
+        testes = [
+            lambda: API.get_profile(),
+            lambda: API.get_balance(),
+            lambda: API.get_server_timestamp(),
+            lambda: API.get_all_open_time()
+        ]
+        
+        for teste in testes:
+            try:
+                resultado = teste()
+                if resultado:
+                    ULTIMO_PING_SUCESSO = time.time()
+                    ERROS_CONSECUTIVOS_API = 0
+                    if not conectado_iq:
+                        conectado_iq = True
+                        add_log("✅ Conexão restabelecida!", 'win')
+                    return True
+            except:
+                continue
+        
+        # Se chegou aqui, todos os endpoints falharam
+        ERROS_CONSECUTIVOS_API += 1
+        
+        # Log a cada 5 erros
+        if ERROS_CONSECUTIVOS_API % 5 == 0:
+            add_log(f"⚠️ Falha na API ({ERROS_CONSECUTIVOS_API}/{MAX_ERROS_ANTES_RECONECTAR})", 'error')
+        
+        # Reconecta após muitos erros consecutivos
+        if ERROS_CONSECUTIVOS_API >= MAX_ERROS_ANTES_RECONECTAR:
+            add_log(f"🔄 API instável! ({ERROS_CONSECUTIVOS_API} erros). Iniciando reconexão...", 'error')
+            conectado_iq = False
+            return conectar_iq()
+        
+        return False
+        
+    except Exception as e:
+        ERROS_CONSECUTIVOS_API += 1
+        if ERROS_CONSECUTIVOS_API >= MAX_ERROS_ANTES_RECONECTAR:
+            add_log(f"❌ Erro crítico: {e}. Reconectando...", 'error')
+            conectado_iq = False
+            return conectar_iq()
+        return False
+
+# ========== FUNCOES DO BOT (LOGICA DEFINITIVA) ==========
+
 def executar_ciclo(direcao):
     """
     LOGICA DEFINITIVA:
@@ -364,14 +470,18 @@ def executar_ciclo(direcao):
     try:
         if not consumir_volt():
             add_log("❌ Sem VOLTS!", 'error')
-            bot_rodando = True
+            bot_rodando = False
             return
 
         # 🔧 VERIFICA CONEXÃO ANTES DE CADA CICLO
-        if not API or not conectado_iq:
-            add_log("❌ Conexão perdida! Parando operação.", 'error')
-            bot_rodando = True
-            return
+        if not verificar_saude_api():
+            add_log("❌ Conexão perdida! Tentando reconectar...", 'error')
+            if conectar_iq():
+                add_log("✅ Reconectado com sucesso!", 'win')
+            else:
+                add_log("❌ Falha na reconexão. Parando operação.", 'error')
+                bot_rodando = False
+                return
 
         bi = API.get_balance()
         payout = Payout(par)
@@ -381,13 +491,17 @@ def executar_ciclo(direcao):
 
         for i in range(MARTINGALE + 1):
             if not bot_rodando: break
-            
+
             # 🔧 VERIFICA CONEXÃO ANTES DE CADA TENTATIVA
-            if not API or not conectado_iq:
-                add_log("❌ Conexão perdida durante execução!", 'error')
-                bot_rodando = True
-                break
-            
+            if not verificar_saude_api():
+                add_log("⚠️ Conexão instável! Tentando reconectar...", 'error')
+                if conectar_iq():
+                    add_log("✅ Reconectado com sucesso!", 'win')
+                else:
+                    add_log("❌ Falha na reconexão. Parando operação.", 'error')
+                    bot_rodando = False
+                    break
+
             valor = entradas[i]
 
             # Aguarda o início da vela APENAS na primeira entrada (i == 0)
@@ -396,7 +510,6 @@ def executar_ciclo(direcao):
                     add_log("⚠️ Falha ao aguardar inicio da vela para a entrada principal.", 'error')
                     break
             else:
-                # Pequena pausa para não sobrecarregar a API nos Gales
                 time.sleep(0.5)
                 add_log(f"   🔄 Executando GALE {i} imediatamente...", 'info')
 
@@ -424,7 +537,6 @@ def executar_ciclo(direcao):
             else:
                 add_log(f"   📝 Ordem #{id_ordem} (GALE {i})", 'info')
 
-            # 🔥 SIMPLES: ESPERA 60 SEGUNDOS E COMPARA SALDO 🔥
             add_log(f"   ⏳ Aguardando 60 segundos...", 'info')
             for s in range(60):
                 if not bot_rodando:
@@ -432,12 +544,15 @@ def executar_ciclo(direcao):
                 time.sleep(1)
 
             # 🔧 VERIFICA CONEXÃO NOVAMENTE APÓS ESPERA
-            if not API or not conectado_iq:
-                add_log("❌ Conexão perdida durante espera!", 'error')
-                bot_rodando = True
-                break
+            if not verificar_saude_api():
+                add_log("⚠️ Conexão perdida durante espera! Tentando reconectar...", 'error')
+                if conectar_iq():
+                    add_log("✅ Reconectado com sucesso!", 'win')
+                else:
+                    add_log("❌ Falha na reconexão. Parando operação.", 'error')
+                    bot_rodando = False
+                    break
 
-            # Verifica resultado comparando saldo
             saldo_depois = API.get_balance()
             lucro_liquido = round(saldo_depois - saldo_antes, 2)
             lucro += lucro_liquido
@@ -496,13 +611,23 @@ def executar_ciclo(direcao):
         add_log("⏹️ Ciclo finalizado!", 'info')
 
 def bot_loop():
-    """Loop principal do bot - SEM TIMEOUT"""
+    """Loop principal do bot - COM RECONEXÃO INTELIGENTE"""
     global bot_rodando, BANCA_INICIAL_DO_BOT, lucro, NumDeOperacoes, STOP_GAIN_ATINGIDO, sinal_pendente, ultimo_sinal, timeframe_atual, volt_ja_consumido, estrategia_ja_injetada
 
     with bot_lock:
         if not bot_rodando or not API:
             bot_rodando = False
             return
+
+        # 🔧 VERIFICA CONEXÃO INICIAL
+        if not verificar_saude_api():
+            add_log("⚠️ Sem conexão! Tentando reconectar...", 'error')
+            if conectar_iq():
+                add_log("✅ Reconectado com sucesso!", 'win')
+            else:
+                add_log("❌ Falha na reconexão. Bot parado.", 'error')
+                bot_rodando = False
+                return
 
         estrategias_info = carregar_informacoes_estrategias()
         if not estrategias_info or estrategia_atual_global not in estrategias_info:
@@ -531,14 +656,18 @@ def bot_loop():
         ultimo_sinal = "Aguardando..."
         add_log(f"📌 {par} | Timeframe: {timeframe_atual}s | 💰 ${BANCA_INICIAL_DO_BOT:.2f}")
 
-        # LOOP PRINCIPAL - SEM TIMEOUT
+        # LOOP PRINCIPAL - COM VERIFICAÇÃO CONTÍNUA
         while bot_rodando and not STOP_GAIN_ATINGIDO:
-            # 🔧 VERIFICA CONEXÃO ANTES DE CADA CICLO
-            if not API or not conectado_iq:
-                add_log("❌ Conexão perdida no loop principal!", 'error')
-                bot_rodando = True
-                break
-            
+            # 🔧 VERIFICA CONEXÃO A CADA CICLO
+            if not verificar_saude_api():
+                add_log("⚠️ Conexão instável no loop! Tentando reconectar...", 'error')
+                if conectar_iq():
+                    add_log("✅ Reconectado com sucesso!", 'win')
+                else:
+                    add_log("❌ Falha na reconexão. Bot parado.", 'error')
+                    bot_rodando = False
+                    break
+
             try:
                 resultado = estrategia_atual_executar(API, par, add_log)
                 if resultado and bot_rodando:
@@ -556,52 +685,36 @@ def bot_loop():
 
         bot_rodando = False
 
-# 🔧 FUNÇÕES NOVAS PARA ESTABILIDADE
+# ========== THREADS DE MANUTENÇÃO ==========
 
 def keep_alive_thread():
-    """Thread que mantém a conexão ativa com ping constante"""
-    global conectado_iq, API, ultimo_keep_alive
+    """Thread que mantém a conexão ativa com ping leve"""
     while True:
-        time.sleep(20)  # Ping a cada 20 segundos
-        if conectado_iq and API:
+        time.sleep(20)
+        if conectado_iq and API and email_usuario_atual:
             try:
-                # Comando simples para manter conexão ativa
                 API.get_server_timestamp()
-                ultimo_keep_alive = time.time()
-            except Exception as e:
-                print(f"[KEEP-ALIVE] Conexão instável: {e}")
-                conectado_iq = True
+            except:
+                pass
 
 def monitor_conexao_thread():
-    """Monitora a saúde da conexão e tenta manter ativa"""
-    global conectado_iq, API, bot_rodando
+    """Thread que monitora a saúde da conexão (estilo M4 VELOZ)"""
+    global bot_rodando
     while True:
         time.sleep(10)
-        if API and conectado_iq:
-            try:
-                # Teste real de conexão
-                test = API.get_server_timestamp()
-                if not test:
-                    print("[MONITOR] Conexão parece morta")
-                    conectado_iq = True
-                    if bot_rodando:
-                        bot_rodando = True
-                        add_log("⚠️ Conexão perdida! Bot parado automaticamente.", 'error')
-            except Exception as e:
-                print(f"[MONITOR] Erro: {e}")
-                conectado_iq = True
-                if bot_rodando:
-                    bot_rodando = True
-                    add_log("⚠️ Conexão perdida! Bot parado.", 'error')
+        if email_usuario_atual:
+            if not verificar_saude_api():
+                add_log("⚠️ Monitor detectou falha. Tentando reconectar...", 'error')
+                if conectar_iq():
+                    add_log("✅ Reconexão pelo monitor bem-sucedida!", 'win')
+                else:
+                    add_log("❌ Falha na reconexão pelo monitor.", 'error')
 
 def analise_mercado_loop():
-    global ultima_analise, conectado_iq, API
-    ultimo_candle_time = 0
-    
+    global ultima_analise
     while True:
         if conectado_iq and API:
             try:
-                # 🔧 COM TIMEOUT SEGURO
                 velas = API.get_candles(par, 60, 30, time.time())
                 if velas and len(velas) >= 20:
                     rsi_val = calcular_rsi(velas, 14)
@@ -625,7 +738,6 @@ def analise_mercado_loop():
                         'stoch': round(estoc_val, 1), 'fase': fase, 'preco': round(preco_atual, 5) if preco_atual else 0
                     }
             except Exception as e:
-                # Não imprime erro constante para não poluir log
                 pass
         time.sleep(2)
 
@@ -757,12 +869,13 @@ def comprar_estrategia():
 
 @app.route('/conectar', methods=['POST'])
 def conectar():
-    global API, email_usuario_atual, conectado_iq, skin_atual_global, estrategia_atual_global
+    global API, email_usuario_atual, conectado_iq, skin_atual_global, estrategia_atual_global, tipo_conta_atual
     try:
         d = request.get_json()
         email, senha, tipo = d.get('email', '').strip(), d.get('senha', '').strip(), d.get('tipo', 'PRACTICE')
         if not email or not senha: return jsonify({'ok': False, 'erro': 'Credenciais em branco'})
         email_usuario_atual = email
+        tipo_conta_atual = tipo
         API = IQ_Option(email, senha)
         status_conn, reason = API.connect()
         if not status_conn: return jsonify({'ok': False, 'erro': str(reason)[:100]})
@@ -777,7 +890,7 @@ def conectar():
         skin_atual_global = usuario.get('skin_atual', 'skin_padrao')
         estrategia_atual_global = usuario.get('estrategia_atual', 'v_sensitivo')
         add_log('🔌 Conectado!', 'info')
-        add_log(f'✅ ${API.get_balance():.2f} | ⚡ {usuario.get("moedas", 0)} VOLTS', 'win')
+        add_log(f'✅ ${API.get_balance():.2f} | ⚡ {usuario.get("moedas", 0)} VOLTS | Conta: {tipo}', 'win')
         return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0), 'refresh': True})
     except Exception as e: return jsonify({'ok': False, 'erro': str(e)[:100]})
 
@@ -996,14 +1109,13 @@ def shutdown():
 
 if __name__ == '__main__':
     print("=" * 70)
-    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - LOGICA DEFINITIVA ⚡")
+    print(f"⚡ {BOT_NAME} v{BOT_VERSION} - RECONEXÃO ROBUSTA ⚡")
     print("✅ Firebase: SKINS e ESTRATEGIAS carregadas da nuvem")
     print("✅ ENTRADA: guarda ID da ordem (referencia)")
     print("✅ RESULTADO: comparacao de saldo APOS 60 segundos")
     print("✅ GALES: nova ordem, novo saldo, nova verificacao")
     print("✅ SKIN PADRAO: TESLA THUNDER (raios)")
-    print("✅ SEM TIMESTAMP - SEM CRONOMETROS DESNECESSARIOS")
-    print("✅ 🔧 CORREÇÕES DE ESTABILIDADE ATIVAS (keep-alive + reconexão)")
+    print("✅ 🔧 RECONEXÃO INTELIGENTE (backoff + múltiplos endpoints)")
     print("=" * 70)
 
     print("\n🔍 Carregando skins do Firebase...")
