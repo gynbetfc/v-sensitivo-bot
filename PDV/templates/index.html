@@ -5,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PDV Inteligente</title>
     <style>
-        /* ============================================================
-           CSS COMPLETO
-           ============================================================ */
+        /* ===== CSS COMPLETO ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
         
         /* ===== LOGIN ===== */
@@ -48,12 +46,12 @@
         .login-box .msg { text-align: center; margin-top: 16px; padding: 8px; border-radius: 10px; font-size: 13px; display: none; }
         .login-box .msg.success { display: block; background: #dcfce7; color: #16a34a; }
         .login-box .msg.error { display: block; background: #fee2e2; color: #dc2626; }
-        
-        /* ===== PDV ===== */
+
+        /* ===== PDV APP ===== */
         .pdv-app { display: none; min-height: 100vh; background: #f0f2f5; }
         .pdv-app.active { display: block; }
-        
-        /* Header */
+
+        /* ===== HEADER ===== */
         .header {
             background: #2E7D32; color: white; padding: 12px 24px;
             display: flex; justify-content: space-between; align-items: center;
@@ -61,7 +59,7 @@
         }
         .header .logo { font-size: 20px; font-weight: 700; }
         .header .logo span { color: #a5d6a7; }
-        .header .user { display: flex; align-items: center; gap: 10px; }
+        .header .user { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .header .user .cargo { font-size: 12px; opacity: 0.7; }
         .header .status-caixa {
             padding: 4px 16px; border-radius: 20px; font-size: 13px;
@@ -73,11 +71,11 @@
             padding: 8px 16px; border-radius: 8px; cursor: pointer;
         }
         .header .btn-sair:hover { background: rgba(255,255,255,0.25); }
-        
-        /* Navegação */
+
+        /* ===== NAVEGAÇÃO ===== */
         .nav {
             background: white; padding: 8px 24px; display: flex; gap: 4px;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid #e5e7eb; flex-wrap: wrap;
         }
         .nav button {
             padding: 10px 24px; border: none; background: transparent;
@@ -87,13 +85,13 @@
         }
         .nav button:hover { background: #f3f4f6; }
         .nav button.active { background: #2E7D32; color: white; }
-        
-        /* Conteúdo */
+
+        /* ===== CONTEÚDO ===== */
         .content { padding: 24px; max-width: 1400px; margin: 0 auto; }
         .panel { display: none; }
         .panel.active { display: block; }
-        
-        /* ===== PDV Panel ===== */
+
+        /* ===== PDV GRID ===== */
         .pdv-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 24px; }
         .pdv-grid .card {
             background: white; border-radius: 16px; padding: 24px;
@@ -132,8 +130,8 @@
         .pdv-grid .btn-finalizar:disabled {
             background: #9ca3af; cursor: not-allowed; transform: none;
         }
-        
-        /* Carrinho */
+
+        /* ===== CARRINHO ===== */
         .cart-table { width: 100%; border-collapse: collapse; font-size: 13px; }
         .cart-table th {
             text-align: left; padding: 8px 6px; border-bottom: 2px solid #e5e7eb;
@@ -152,7 +150,7 @@
         }
         .cart-table .btn-remove:hover { background: #fee2e2; border-radius: 4px; }
         .empty-cart { text-align: center; color: #6b7280; padding: 30px 0; }
-        
+
         .cart-summary {
             margin-top: 16px; padding-top: 16px; border-top: 2px solid #e5e7eb;
         }
@@ -167,8 +165,8 @@
             width: 80px; padding: 4px 8px; border: 2px solid #e5e7eb;
             border-radius: 6px; font-size: 14px; text-align: right;
         }
-        
-        /* ===== Dashboard ===== */
+
+        /* ===== DASHBOARD ===== */
         .stats-grid {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 16px; margin-bottom: 24px;
@@ -183,27 +181,27 @@
         .stat-card .blue { color: #3b82f6; }
         .stat-card .purple { color: #8b5cf6; }
         .stat-card .orange { color: #f59e0b; }
-        
+
         .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .chart-box {
             background: white; border-radius: 12px; padding: 20px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.07);
         }
         .chart-box h4 { font-size: 14px; color: #6b7280; margin-bottom: 12px; }
-        
+
         .method-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
         .method-bar .label { width: 100px; font-size: 13px; text-align: right; }
         .method-bar .track { flex: 1; height: 24px; background: #f3f4f6; border-radius: 12px; overflow: hidden; }
         .method-bar .fill { height: 100%; border-radius: 12px; transition: width 0.5s; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; font-size: 11px; color: white; font-weight: 600; min-width: 30px; }
-        
+
         .vendas-list { max-height: 300px; overflow-y: auto; }
         .venda-item {
             display: flex; justify-content: space-between; padding: 8px 0;
             border-bottom: 1px solid #f3f4f6; font-size: 13px;
         }
         .venda-item .valor { font-weight: 600; color: #2E7D32; }
-        
-        /* ===== Caixa Panel ===== */
+
+        /* ===== CAIXA ===== */
         .caixa-center { text-align: center; padding: 40px 20px; }
         .caixa-center .icon { font-size: 60px; margin-bottom: 10px; }
         .caixa-center .status-text { font-size: 24px; font-weight: 700; }
@@ -228,16 +226,32 @@
         .caixa-card .btn-group .btn-fechar { background: #ef4444; color: white; }
         .caixa-card .btn-group .btn-fechar:hover { background: #dc2626; }
         .caixa-card .btn-group .btn-fechar:disabled { background: #9ca3af; cursor: not-allowed; }
-        
-        /* ===== Config ===== */
+
+        /* ===== CONFIG ===== */
         .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
         .config-grid .card {
             background: white; border-radius: 16px; padding: 24px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.07);
         }
         .config-grid .card h3 { font-size: 16px; margin-bottom: 16px; }
-        
-        /* ===== Responsivo ===== */
+
+        /* ===== LOJA ===== */
+        .loja-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .plano-card {
+            background: white; border-radius: 16px; padding: 24px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.07); text-align: center;
+        }
+        .plano-card .preco { font-size: 32px; font-weight: 700; color: #2E7D32; }
+        .plano-card .nome { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+        .plano-card .desc { color: #6b7280; font-size: 14px; }
+        .plano-card .btn-assinar {
+            padding: 12px 32px; background: #2E7D32; color: white;
+            border: none; border-radius: 10px; font-size: 16px; font-weight: 600;
+            cursor: pointer; transition: all 0.3s; margin-top: 16px;
+        }
+        .plano-card .btn-assinar:hover { background: #1B5E20; transform: translateY(-2px); }
+
+        /* ===== RESPONSIVO ===== */
         @media (max-width: 1024px) {
             .pdv-grid { grid-template-columns: 1fr; }
             .chart-row { grid-template-columns: 1fr; }
@@ -245,8 +259,8 @@
         }
         @media (max-width: 768px) {
             .header { flex-direction: column; text-align: center; }
-            .nav { overflow-x: auto; }
-            .nav button { padding: 8px 16px; font-size: 13px; }
+            .nav { overflow-x: auto; flex-wrap: nowrap; }
+            .nav button { padding: 8px 16px; font-size: 13px; white-space: nowrap; }
             .content { padding: 16px; }
             .login-box { padding: 30px 20px; }
             .stats-grid { grid-template-columns: 1fr 1fr; }
@@ -287,7 +301,7 @@
     ============================================================ -->
     <div class="pdv-app" id="pdvApp">
 
-        <!-- Header -->
+        <!-- HEADER -->
         <div class="header">
             <div class="logo">🏪 <span>PDV</span> Inteligente</div>
             <div class="user">
@@ -298,21 +312,22 @@
             </div>
         </div>
 
-        <!-- Navegação -->
+        <!-- NAVEGAÇÃO -->
         <div class="nav">
             <button class="active" data-tab="vendas" onclick="trocarTab('vendas')">🛒 Vendas</button>
             <button data-tab="caixa" onclick="trocarTab('caixa')">💰 Caixa</button>
             <button data-tab="dashboard" onclick="trocarTab('dashboard')">📊 Dashboard</button>
+            <button data-tab="estoque" onclick="trocarTab('estoque')">📦 Estoque</button>
+            <button data-tab="loja" onclick="trocarTab('loja')">🛍️ Loja</button>
             <button data-tab="config" onclick="trocarTab('config')">⚙️ Config</button>
         </div>
 
-        <!-- Conteúdo -->
+        <!-- CONTEÚDO -->
         <div class="content">
 
             <!-- ===== PANEL: VENDAS ===== -->
             <div class="panel active" id="panelVendas">
                 <div class="pdv-grid">
-                    <!-- Esquerda -->
                     <div class="card">
                         <h3>🛒 Ponto de Venda</h3>
                         <div class="input-group">
@@ -333,39 +348,26 @@
                             💰 FINALIZAR VENDA
                         </button>
                     </div>
-
-                    <!-- Direita -->
                     <div class="card">
                         <h3>🛍️ Carrinho de Compras</h3>
                         <div style="max-height: 350px; overflow-y: auto;">
                             <table class="cart-table">
-                                <thead>
-                                    <tr>
-                                        <th>Produto</th>
-                                        <th style="text-align:center;">Qtd</th>
-                                        <th style="text-align:right;">Unit.</th>
-                                        <th style="text-align:right;">Total</th>
-                                        <th style="text-align:center;">Ação</th>
-                                    </tr>
-                                </thead>
+                                <thead><tr>
+                                    <th>Produto</th>
+                                    <th style="text-align:center;">Qtd</th>
+                                    <th style="text-align:right;">Unit.</th>
+                                    <th style="text-align:right;">Total</th>
+                                    <th style="text-align:center;">Ação</th>
+                                </tr></thead>
                                 <tbody id="cartBody">
                                     <tr><td colspan="5" class="empty-cart">🛒 Carrinho vazio</td></tr>
                                 </tbody>
                             </table>
                         </div>
                         <div class="cart-summary">
-                            <div class="row">
-                                <span>Subtotal:</span>
-                                <span id="subtotalLabel">R$ 0,00</span>
-                            </div>
-                            <div class="row">
-                                <span>Desconto (R$):</span>
-                                <input id="descontoInput" value="0,00" oninput="calcularTotal()">
-                            </div>
-                            <div class="row total">
-                                <span>TOTAL:</span>
-                                <span id="totalLabel">R$ 0,00</span>
-                            </div>
+                            <div class="row"><span>Subtotal:</span><span id="subtotalLabel">R$ 0,00</span></div>
+                            <div class="row"><span>Desconto (R$):</span><input id="descontoInput" value="0,00" oninput="calcularTotal()"></div>
+                            <div class="row total"><span>TOTAL:</span><span id="totalLabel">R$ 0,00</span></div>
                         </div>
                     </div>
                 </div>
@@ -404,14 +406,12 @@
                         <button onclick="sincronizarDashboard()" style="padding: 8px 16px; border: none; background: #2E7D32; color: white; border-radius: 8px; cursor: pointer;">🔄 Sincronizar</button>
                     </div>
                 </div>
-
                 <div class="stats-grid" id="statsGrid">
                     <div class="stat-card"><div class="value green" id="totalGeral">R$ 0,00</div><div class="label">Total Geral</div></div>
                     <div class="stat-card"><div class="value blue" id="totalVendas">0</div><div class="label">Total de Vendas</div></div>
                     <div class="stat-card"><div class="value purple" id="mediaVenda">R$ 0,00</div><div class="label">Média por Venda</div></div>
                     <div class="stat-card"><div class="value orange" id="totalItens">0</div><div class="label">Itens Vendidos</div></div>
                 </div>
-
                 <div class="chart-row">
                     <div class="chart-box">
                         <h4>💳 Métodos de Pagamento</h4>
@@ -421,6 +421,64 @@
                         <h4>📋 Últimas Vendas</h4>
                         <div class="vendas-list" id="vendasList"><p style="color:#6b7280;">Carregando...</p></div>
                     </div>
+                </div>
+            </div>
+
+            <!-- ===== PANEL: ESTOQUE ===== -->
+            <div class="panel" id="panelEstoque">
+                <div class="config-grid">
+                    <div class="card">
+                        <h3>📦 Gerenciar Produto</h3>
+                        <div class="input-group">
+                            <label>Código</label>
+                            <input type="text" id="prodCodigo" placeholder="Código de barras">
+                        </div>
+                        <div class="input-group">
+                            <label>Nome</label>
+                            <input type="text" id="prodNome" placeholder="Nome do produto">
+                        </div>
+                        <div class="input-group">
+                            <label>Preço (R$)</label>
+                            <input type="text" id="prodPreco" placeholder="0,00">
+                        </div>
+                        <div class="input-group">
+                            <label>Estoque</label>
+                            <input type="number" id="prodEstoque" value="0">
+                        </div>
+                        <button class="btn" onclick="salvarProduto()" style="width:100%;padding:12px;background:#2E7D32;color:white;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;">💾 Salvar Produto</button>
+                        <button onclick="limparCamposProduto()" style="width:100%;padding:10px;margin-top:8px;background:#6b7280;color:white;border:none;border-radius:10px;cursor:pointer;">🔄 Limpar Campos</button>
+                    </div>
+                    <div class="card">
+                        <h3>📋 Lista de Produtos</h3>
+                        <div class="input-group">
+                            <label>🔍 Buscar</label>
+                            <input type="text" id="buscaEstoque" placeholder="Digite o nome ou código" oninput="carregarProdutos()">
+                        </div>
+                        <div style="max-height: 400px; overflow-y: auto;">
+                            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                                <thead>
+                                    <tr style="background:#2E7D32;color:white;">
+                                        <th style="padding:8px;text-align:left;">Código</th>
+                                        <th style="padding:8px;text-align:left;">Nome</th>
+                                        <th style="padding:8px;text-align:right;">Preço</th>
+                                        <th style="padding:8px;text-align:center;">Estoque</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelaEstoque"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== PANEL: LOJA ===== -->
+            <div class="panel" id="panelLoja">
+                <h2 style="margin-bottom:20px;">🛍️ Planos de Assinatura</h2>
+                <div class="loja-grid" id="planosGrid">
+                    <!-- Planos carregados via JavaScript -->
+                </div>
+                <div id="statusLoja" style="margin-top:20px;padding:20px;background:white;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
+                    <p style="color:#6b7280;">Carregando status da loja...</p>
                 </div>
             </div>
 
@@ -444,27 +502,15 @@
                                 <option value="Gerente">Gerente</option>
                             </select>
                         </div>
-                        <button class="btn" onclick="cadastrarUsuario()" style="font-size:14px;">➕ Cadastrar</button>
+                        <button class="btn" onclick="cadastrarUsuario()" style="width:100%;padding:12px;background:#2E7D32;color:white;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;">➕ Cadastrar</button>
                     </div>
                     <div class="card">
-                        <h3>📦 Produtos</h3>
-                        <div class="input-group">
-                            <label>Código</label>
-                            <input type="text" id="prodCodigo" placeholder="Código de barras">
-                        </div>
-                        <div class="input-group">
-                            <label>Nome</label>
-                            <input type="text" id="prodNome" placeholder="Nome do produto">
-                        </div>
-                        <div class="input-group">
-                            <label>Preço (R$)</label>
-                            <input type="text" id="prodPreco" placeholder="0,00">
-                        </div>
-                        <div class="input-group">
-                            <label>Estoque</label>
-                            <input type="number" id="prodEstoque" value="0">
-                        </div>
-                        <button class="btn" onclick="salvarProduto()" style="font-size:14px;">💾 Salvar Produto</button>
+                        <h3>⚙️ Sistema</h3>
+                        <p style="color:#6b7280;margin-bottom:16px;">Versão: <strong id="versaoSistema">2.0.0</strong></p>
+                        <p style="color:#6b7280;margin-bottom:16px;">Loja: <strong id="lojaNome">Carregando...</strong></p>
+                        <p style="color:#6b7280;margin-bottom:16px;">Usuários ativos: <strong id="totalUsuarios">0</strong></p>
+                        <p style="color:#6b7280;margin-bottom:16px;">Plano: <strong id="planoAtual">Carregando...</strong></p>
+                        <button onclick="sincronizarAgora()" style="width:100%;padding:12px;background:#1565C0;color:white;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;">🔄 Sincronizar com Firebase</button>
                     </div>
                 </div>
             </div>
@@ -534,6 +580,9 @@
                     carregarProdutos();
                     verificarStatusCaixa();
                     carregarDashboard('hoje');
+                    carregarPlanos();
+                    carregarStatusLoja();
+                    carregarListaUsuarios();
                 } else {
                     msg.className = 'msg error';
                     msg.textContent = '❌ ' + (data.error || 'Usuário ou senha inválidos!');
@@ -557,7 +606,6 @@
             document.getElementById('loginPass').value = 'admin';
         }
 
-        // Enter para login
         document.getElementById('loginPass').addEventListener('keydown', function(e) {
             if (e.key === 'Enter') fazerLogin();
         });
@@ -574,11 +622,16 @@
                 'vendas': 'panelVendas',
                 'caixa': 'panelCaixa',
                 'dashboard': 'panelDashboard',
+                'estoque': 'panelEstoque',
+                'loja': 'panelLoja',
                 'config': 'panelConfig'
             };
             document.getElementById(panels[tab]).classList.add('active');
 
             if (tab === 'dashboard') carregarDashboard(state.periodo);
+            if (tab === 'loja') { carregarPlanos(); carregarStatusLoja(); }
+            if (tab === 'estoque') carregarProdutos();
+            if (tab === 'config') carregarListaUsuarios();
         }
 
         // ============================================================
@@ -586,14 +639,93 @@
         // ============================================================
         async function carregarProdutos() {
             try {
+                const busca = document.getElementById('buscaEstoque')?.value || '';
                 const response = await fetch('/api/produtos');
                 const data = await response.json();
                 if (data.success) {
                     state.produtos = data.produtos;
+                    const filtrados = state.produtos.filter(p => 
+                        p.nome.toLowerCase().includes(busca.toLowerCase()) ||
+                        p.codigo.includes(busca)
+                    );
+                    renderizarTabelaEstoque(filtrados);
                 }
             } catch (e) {
                 console.error('Erro ao carregar produtos:', e);
             }
+        }
+
+        function renderizarTabelaEstoque(produtos) {
+            const tbody = document.getElementById('tabelaEstoque');
+            if (!tbody) return;
+            
+            if (produtos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;color:#6b7280;">Nenhum produto encontrado</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = produtos.map(p => `
+                <tr style="border-bottom:1px solid #e5e7eb;cursor:pointer;" onclick="selecionarProduto('${p.codigo}')">
+                    <td style="padding:8px;">${p.codigo}</td>
+                    <td style="padding:8px;">${p.nome}</td>
+                    <td style="padding:8px;text-align:right;">R$ ${p.preco.toFixed(2)}</td>
+                    <td style="padding:8px;text-align:center;color:${p.estoque <= 0 ? '#ef4444' : p.estoque < 10 ? '#f59e0b' : '#22c55e'}">${p.estoque}</td>
+                </tr>
+            `).join('');
+        }
+
+        function selecionarProduto(codigo) {
+            const p = state.produtos.find(prod => prod.codigo === codigo);
+            if (p) {
+                document.getElementById('prodCodigo').value = p.codigo;
+                document.getElementById('prodNome').value = p.nome;
+                document.getElementById('prodPreco').value = p.preco.toFixed(2).replace('.', ',');
+                document.getElementById('prodEstoque').value = p.estoque;
+            }
+        }
+
+        async function salvarProduto() {
+            const codigo = document.getElementById('prodCodigo').value.trim();
+            const nome = document.getElementById('prodNome').value.trim();
+            const precoStr = document.getElementById('prodPreco').value.replace(',', '.');
+            const estoque = parseInt(document.getElementById('prodEstoque').value) || 0;
+
+            if (!codigo || !nome) {
+                alert('Código e nome são obrigatórios!');
+                return;
+            }
+
+            const preco = parseFloat(precoStr);
+            if (isNaN(preco) || preco <= 0) {
+                alert('Preço inválido!');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/produtos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ codigo, nome, preco, estoque })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('✅ Produto salvo!');
+                    limparCamposProduto();
+                    carregarProdutos();
+                } else {
+                    alert('❌ Erro: ' + data.error);
+                }
+            } catch (error) {
+                alert('❌ Erro ao salvar!');
+            }
+        }
+
+        function limparCamposProduto() {
+            document.getElementById('prodCodigo').value = '';
+            document.getElementById('prodNome').value = '';
+            document.getElementById('prodPreco').value = '';
+            document.getElementById('prodEstoque').value = '0';
         }
 
         function buscarProduto(event) {
@@ -980,7 +1112,6 @@
                     });
                     document.getElementById('totalItens').textContent = totalItens;
 
-                    // Métodos
                     const metodos = stats.metodos;
                     const total = Object.values(metodos).reduce((a, b) => a + b, 0) || 1;
                     const cores = {
@@ -1012,7 +1143,6 @@
                     }
                     container.innerHTML = html || '<p style="color:#6b7280;">Nenhuma venda neste período</p>';
 
-                    // Últimas vendas
                     const vendasList = document.getElementById('vendasList');
                     const vendas = stats.vendas || [];
                     if (vendas.length === 0) {
@@ -1037,6 +1167,105 @@
         function sincronizarDashboard() {
             carregarDashboard(state.periodo);
             alert('🔄 Dados atualizados!');
+        }
+
+        // ============================================================
+        // LOJA - PLANOS E ASSINATURA
+        // ============================================================
+        async function carregarPlanos() {
+            try {
+                const response = await fetch('/api/planos');
+                const data = await response.json();
+                if (data.success) {
+                    const grid = document.getElementById('planosGrid');
+                    grid.innerHTML = data.planos.map(p => `
+                        <div class="plano-card">
+                            <div class="nome">${p.nome}</div>
+                            <div class="preco">R$ ${p.preco.toFixed(2)}</div>
+                            <div class="desc">${p.desc}</div>
+                            <div class="desc" style="font-size:12px;color:#6b7280;">${p.tag}</div>
+                            ${p.desconto ? `<div style="color:#ef4444;font-size:12px;font-weight:bold;">${p.desconto}</div>` : ''}
+                            <button class="btn-assinar" onclick="assinarPlano(${p.id})">📲 Assinar</button>
+                        </div>
+                    `).join('');
+                }
+            } catch (e) {
+                console.error('Erro ao carregar planos:', e);
+            }
+        }
+
+        async function assinarPlano(planoId) {
+            if (!state.usuario) {
+                alert('Faça login primeiro!');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/criar_pix', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ plano_id: planoId, loja_id: state.loja_id })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('✅ PIX gerado!\nValor: R$ ' + data.valor.toFixed(2) + '\n\nID: ' + data.pix_id + '\n\nQR Code: ' + data.qr_code);
+                    
+                    // Verificar pagamento após 5 segundos
+                    setTimeout(() => {
+                        verificarPagamento(data.pix_id);
+                    }, 5000);
+                } else {
+                    alert('❌ Erro: ' + data.error);
+                }
+            } catch (e) {
+                alert('❌ Erro ao gerar PIX!');
+            }
+        }
+
+        async function verificarPagamento(pixId) {
+            try {
+                const response = await fetch('/api/verificar_pix', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pix_id: pixId })
+                });
+                const data = await response.json();
+
+                if (data.pago) {
+                    alert('✅ Pagamento confirmado! Plano ativado.');
+                    carregarStatusLoja();
+                } else {
+                    alert('⏳ Pagamento ainda não confirmado. Tente novamente mais tarde.');
+                }
+            } catch (e) {
+                console.error('Erro ao verificar pagamento:', e);
+            }
+        }
+
+        async function carregarStatusLoja() {
+            try {
+                const response = await fetch('/api/loja/status');
+                const data = await response.json();
+                if (data.success) {
+                    const loja = data.loja;
+                    document.getElementById('lojaNome').textContent = loja.nome;
+                    document.getElementById('totalUsuarios').textContent = loja.usuarios_ativos + '/' + loja.max_usuarios;
+                    document.getElementById('planoAtual').textContent = loja.plano;
+
+                    const statusDiv = document.getElementById('statusLoja');
+                    statusDiv.innerHTML = `
+                        <h3>📊 Status da Loja</h3>
+                        <p><strong>Nome:</strong> ${loja.nome}</p>
+                        <p><strong>Plano:</strong> ${loja.plano}</p>
+                        <p><strong>Usuários:</strong> ${loja.usuarios_ativos}/${loja.max_usuarios}</p>
+                        <p><strong>Expira em:</strong> ${loja.expira_em ? new Date(loja.expira_em).toLocaleDateString() : 'N/A'}</p>
+                        <p><strong>Status:</strong> ${loja.expirado ? '⚠️ Expirado' : loja.ativa ? '✅ Ativo' : '❌ Inativo'}</p>
+                    `;
+                }
+            } catch (e) {
+                console.error('Erro ao carregar status:', e);
+            }
         }
 
         // ============================================================
@@ -1069,6 +1298,7 @@
                     alert('✅ Usuário ' + login + ' cadastrado!');
                     document.getElementById('novoUser').value = '';
                     document.getElementById('novaSenha').value = '';
+                    carregarListaUsuarios();
                 } else {
                     alert('❌ Erro: ' + data.error);
                 }
@@ -1077,46 +1307,21 @@
             }
         }
 
-        // ============================================================
-        // CONFIG - PRODUTOS
-        // ============================================================
-        async function salvarProduto() {
-            const codigo = document.getElementById('prodCodigo').value.trim();
-            const nome = document.getElementById('prodNome').value.trim();
-            const precoStr = document.getElementById('prodPreco').value.replace(',', '.');
-            const estoque = parseInt(document.getElementById('prodEstoque').value) || 0;
-
-            if (!codigo || !nome) {
-                alert('Código e nome são obrigatórios!');
-                return;
-            }
-
-            const preco = parseFloat(precoStr);
-            if (isNaN(preco) || preco <= 0) {
-                alert('Preço inválido!');
-                return;
-            }
-
+        async function carregarListaUsuarios() {
             try {
-                const response = await fetch('/api/produtos', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ codigo, nome, preco, estoque })
-                });
+                const response = await fetch('/api/usuarios');
                 const data = await response.json();
-
                 if (data.success) {
-                    alert('✅ Produto salvo!');
-                    document.getElementById('prodCodigo').value = '';
-                    document.getElementById('prodNome').value = '';
-                    document.getElementById('prodPreco').value = '';
-                    document.getElementById('prodEstoque').value = '0';
-                    carregarProdutos();
-                } else {
-                    alert('❌ Erro: ' + data.error);
+                    // Atualizar lista de usuários se houver elemento
+                    const lista = document.getElementById('listaUsuarios');
+                    if (lista) {
+                        lista.innerHTML = data.usuarios.map(u => 
+                            `<li>${u.login} - ${u.cargo}</li>`
+                        ).join('');
+                    }
                 }
-            } catch (error) {
-                alert('❌ Erro ao salvar!');
+            } catch (e) {
+                console.error('Erro ao carregar usuários:', e);
             }
         }
 
@@ -1145,7 +1350,16 @@
             }
         }, 30000);
 
+        // ============================================================
+        // CARREGAR DADOS INICIAIS
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', function() {
+            carregarPlanos();
+            carregarStatusLoja();
+            document.getElementById('versaoSistema').textContent = '2.0.0';
+        });
+
         console.log('🏪 PDV Inteligente carregado com sucesso!');
     </script>
 </body>
-</html>
+    </html>
