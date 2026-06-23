@@ -1573,10 +1573,10 @@
                     <div class="card" style="position:relative;">
                         <h3><i class="fas fa-cart-plus" style="color:var(--green);"></i> Ponto de Venda</h3>
                         
-                        <!-- Código de Barras -->
+                        <!-- Código de Barras - SEM autofocus para não roubar foco -->
                         <div class="input-group">
                             <label>Código de Barras</label>
-                            <input type="text" id="codigoInput" placeholder="Digite ou leia o código" autofocus>
+                            <input type="text" id="codigoInput" placeholder="Digite ou leia o código">
                         </div>
                         
                         <!-- Busca por Nome com resultados -->
@@ -2170,9 +2170,17 @@
         const buscaInput = document.getElementById('buscaProdutoInput');
         const searchResults = document.getElementById('searchResults');
 
-        buscaInput.addEventListener('input', function() {
-            const termo = this.value.toLowerCase().trim();
-            if (!termo) {
+        // IMPORTANTE: O campo de busca agora captura o foco quando clicado
+        buscaInput.addEventListener('focus', function() {
+            // Se já tem texto, mostrar resultados
+            if (this.value.trim()) {
+                triggerSearch(this.value);
+            }
+        });
+
+        function triggerSearch(termo) {
+            const termoLower = termo.toLowerCase().trim();
+            if (!termoLower) {
                 searchResults.classList.remove('active');
                 state.searchIndex = -1;
                 state._resultados = [];
@@ -2180,8 +2188,8 @@
             }
 
             const resultados = state.produtos.filter(p =>
-                p.nome.toLowerCase().includes(termo) ||
-                p.codigo.toLowerCase().includes(termo)
+                p.nome.toLowerCase().includes(termoLower) ||
+                p.codigo.toLowerCase().includes(termoLower)
             ).slice(0, 15);
 
             state._resultados = resultados;
@@ -2206,6 +2214,10 @@
             searchResults.classList.add('active');
             state.searchIndex = 0;
             highlightResult(0);
+        }
+
+        buscaInput.addEventListener('input', function() {
+            triggerSearch(this.value);
         });
 
         function highlightResult(index) {
@@ -2239,6 +2251,7 @@
                     searchResults.classList.remove('active');
                     buscaInput.value = '';
                     state._resultados = [];
+                    // Foca no código de barras após selecionar
                     codigoInput.focus();
                 }
             } else if (e.key === 'Escape') {
@@ -2267,22 +2280,12 @@
 
         codigoInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
-                e.preventDefault();
+                e.preventDefault(); // Impede comportamento padrão de submit
                 const codigo = this.value.trim();
                 if (codigo) {
                     adicionarPorCodigo(codigo);
                     this.value = '';
                     this.focus(); // Mantém o foco no campo de código
-                }
-            }
-        });
-
-        // Mantém o foco no campo de código após qualquer ação
-        document.addEventListener('click', function(e) {
-            if (e.target.closest('.pdv-grid')) {
-                // Se clicou em qualquer lugar do PDV, foca no código
-                if (!e.target.closest('.search-results') && !e.target.closest('.payment-modal')) {
-                    setTimeout(() => codigoInput.focus(), 100);
                 }
             }
         });
@@ -2301,6 +2304,8 @@
 
                 // Adiciona automaticamente ao carrinho
                 adicionarAoCarrinho(produto);
+                // Foca no código para continuar lendo
+                codigoInput.focus();
             } else {
                 document.getElementById('statusMsg').textContent = '✗ Produto não encontrado!';
                 document.getElementById('statusMsg').className = 'status-msg error';
@@ -3104,6 +3109,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('versaoSistema').textContent = '5.0.0';
             verificarSessao();
+            // Foco inicial no campo de código
+            setTimeout(() => codigoInput.focus(), 500);
         });
 
         console.log('🏪 PDV Inteligente v5.0 - Profissional');
