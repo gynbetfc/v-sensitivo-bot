@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>PDV Inteligente v5.0</title>
+    <title>PDV Inteligente v5.2</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* ============================================================
-           CSS COMPLETO - PDV PROFISSIONAL
+           CSS COMPLETO - PDV PROFISSIONAL v5.2
            ============================================================ */
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -81,24 +81,14 @@
         .toast-content { flex: 1; min-width: 0; }
         .toast-title { font-weight: 600; font-size: 13px; color: #fff; margin-bottom: 2px; }
         .toast-message { font-size: 12px; color: var(--text-secondary); }
-        .toast-close {
-            cursor: pointer;
-            color: var(--text-muted);
-            font-size: 16px;
-            padding: 0 4px;
-            background: none;
-            border: none;
-            transition: var(--transition);
-        }
+        .toast-close { cursor: pointer; color: var(--text-muted); font-size: 16px; padding: 0 4px; background: none; border: none; transition: var(--transition); }
         .toast-close:hover { color: #fff; }
         @keyframes slideInRight {
             from { transform: translateX(120%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
 
-        /* ============================================================
-           AUTH - LOGIN / REGISTER
-           ============================================================ */
+        /* ===== AUTH ===== */
         .auth-page {
             display: flex;
             justify-content: center;
@@ -196,9 +186,7 @@
         .auth-box .msg.success { display: block; background: rgba(34, 197, 94, 0.15); color: var(--green); }
         .auth-box .msg.error { display: block; background: rgba(239, 68, 68, 0.15); color: var(--red); }
 
-        /* ============================================================
-           APP PRINCIPAL
-           ============================================================ */
+        /* ===== APP ===== */
         .app {
             display: none;
             width: 100%;
@@ -225,8 +213,25 @@
             top: 0;
             z-index: 100;
         }
-        .header .logo { font-size: 18px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
+        .header .logo {
+            font-size: 18px;
+            font-weight: 700;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
         .header .logo span { color: var(--green); }
+        .header .status-online {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-left: 8px;
+        }
+        .header .status-online.online { background: var(--green); }
+        .header .status-online.offline { background: var(--red); animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
         .header .user {
             display: flex;
             align-items: center;
@@ -316,7 +321,14 @@
             color: #fff;
             background: rgba(34, 197, 94, 0.15);
         }
-        .nav button .badge { background: var(--red); color: #fff; font-size: 9px; padding: 1px 8px; border-radius: 10px; font-weight: 700; }
+        .nav button .badge {
+            background: var(--red);
+            color: #fff;
+            font-size: 9px;
+            padding: 1px 8px;
+            border-radius: 10px;
+            font-weight: 700;
+        }
 
         /* ===== CONTENT ===== */
         .content { padding: 16px; }
@@ -331,11 +343,16 @@
             transition: var(--transition);
         }
         .card:hover { border-color: rgba(34, 197, 94, 0.2); }
-        .card h3 { font-size: 16px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; color: #fff; }
+        .card h3 {
+            font-size: 16px;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #fff;
+        }
 
-        /* ============================================================
-           PDV - VENDAS (PROFISSIONAL)
-           ============================================================ */
+        /* ===== PDV ===== */
         .pdv-grid {
             display: grid;
             grid-template-columns: 1fr 1.5fr;
@@ -410,7 +427,6 @@
         .pdv-grid .btn-finalizar:hover { background: var(--green-dark); }
         .pdv-grid .btn-finalizar:disabled { opacity: 0.4; cursor: not-allowed; }
 
-        /* ===== RESULTADOS DA BUSCA ===== */
         .search-results {
             position: absolute;
             top: 100%;
@@ -441,15 +457,8 @@
             background: rgba(34, 197, 94, 0.1);
         }
         .search-results .result-item .name { font-size: 13px; }
-        .search-results .result-item .price { 
-            font-size: 13px; 
-            font-weight: 600;
-            color: var(--green);
-        }
-        .search-results .result-item .stock {
-            font-size: 11px;
-            color: var(--text-muted);
-        }
+        .search-results .result-item .price { font-size: 13px; font-weight: 600; color: var(--green); }
+        .search-results .result-item .stock { font-size: 11px; color: var(--text-muted); }
 
         /* ===== CARRINHO ===== */
         .cart-table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -519,9 +528,7 @@
         }
         .cart-summary .row input:focus { outline: none; border-color: var(--green); }
 
-        /* ============================================================
-           PAGAMENTO PROFISSIONAL
-           ============================================================ */
+        /* ===== PAYMENT MODAL ===== */
         .payment-modal {
             display: none;
             position: fixed;
@@ -570,7 +577,6 @@
             transition: var(--transition);
         }
         .payment-modal .modal-header .close:hover { color: #fff; }
-
         .payment-modal .total-display {
             text-align: center;
             padding: 16px;
@@ -588,7 +594,6 @@
             font-weight: 700;
             color: var(--green);
         }
-
         .payment-modal .payment-methods {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -616,7 +621,6 @@
             background: rgba(34, 197, 94, 0.15);
             color: var(--green);
         }
-
         .payment-modal .payment-input {
             display: flex;
             align-items: center;
@@ -652,7 +656,6 @@
             font-size: 12px;
             color: var(--text-muted);
         }
-
         .payment-modal .payment-actions {
             display: flex;
             gap: 10px;
@@ -679,10 +682,7 @@
             border: 1px solid var(--border-color);
         }
         .payment-modal .payment-actions .btn-cancel:hover { background: rgba(255,255,255,0.05); }
-
-        .payment-modal .cliente-input {
-            margin-bottom: 16px;
-        }
+        .payment-modal .cliente-input { margin-bottom: 16px; }
         .payment-modal .cliente-input input {
             width: 100%;
             padding: 10px 12px;
@@ -698,7 +698,8 @@
         }
 
         /* ============================================================
-           CLIENTES
+           CLIENTES, ESTOQUE, CAIXA, DASHBOARD
+           Estilos abreviados para caber...
            ============================================================ */
         .clientes-actions {
             display: flex;
@@ -762,9 +763,6 @@
         }
         .clientes-table .btn-delete:hover { background: rgba(239, 68, 68, 0.1); border-radius: 4px; }
 
-        /* ============================================================
-           CAIXA
-           ============================================================ */
         .caixa-center { text-align: center; padding: 20px 10px; }
         .caixa-center .icon { font-size: 48px; margin-bottom: 6px; }
         .caixa-center .status-text { font-size: 20px; font-weight: 700; }
@@ -828,7 +826,6 @@
             border: 1px solid rgba(59, 130, 246, 0.2);
         }
         .caixa-card .btn-group .btn-relatorio:hover { background: rgba(59, 130, 246, 0.25); }
-
         .caixa-resumo {
             margin-top: 14px;
             padding: 14px;
@@ -851,455 +848,48 @@
             color: var(--green);
         }
 
-        /* ============================================================
-           ESTOQUE
-           ============================================================ */
-        .estoque-grid {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 16px;
-        }
-        .estoque-grid .input-group { margin-bottom: 10px; }
-        .estoque-grid .input-group label {
-            display: block;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin-bottom: 3px;
-            text-transform: uppercase;
-        }
-        .estoque-grid .input-group input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            font-size: 13px;
-            background: var(--bg-primary);
-            color: #fff;
-        }
-        .estoque-grid .input-group input:focus { outline: none; border-color: var(--green); }
-        .estoque-grid .btn-salvar {
-            width: 100%;
-            padding: 10px;
-            background: var(--green);
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-        .estoque-grid .btn-salvar:hover { background: var(--green-dark); }
-        .estoque-grid .btn-limpar {
-            width: 100%;
-            padding: 8px;
-            background: transparent;
-            color: var(--text-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: var(--transition);
-            margin-top: 6px;
-        }
-        .estoque-grid .btn-limpar:hover { background: rgba(255,255,255,0.05); }
-
-        .estoque-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        .estoque-table th {
-            text-align: left;
-            padding: 6px 4px;
-            border-bottom: 1px solid var(--border-color);
-            font-weight: 600;
-            color: var(--text-secondary);
-            font-size: 10px;
-            text-transform: uppercase;
-            position: sticky;
-            top: 0;
-            background: var(--bg-card);
-        }
-        .estoque-table td { padding: 6px 4px; border-bottom: 1px solid rgba(255,255,255,0.03); cursor: pointer; }
-        .estoque-table tr:hover { background: rgba(255,255,255,0.02); }
-        .estoque-table .estoque-baixo { color: var(--red); font-weight: 600; }
-        .estoque-table .estoque-medio { color: var(--orange); }
-        .estoque-table .estoque-alto { color: var(--green); }
-        .estoque-wrapper { max-height: 400px; overflow-y: auto; }
-
-        /* ============================================================
-           DASHBOARD
-           ============================================================ */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-        .stat-card {
-            background: var(--bg-card);
-            border-radius: var(--radius);
-            padding: 16px;
-            border: 1px solid var(--border-color);
-            text-align: center;
-            transition: var(--transition);
-        }
-        .stat-card:hover { border-color: rgba(34, 197, 94, 0.2); }
-        .stat-card .value { font-size: 24px; font-weight: 700; }
-        .stat-card .label { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
-        .stat-card .green { color: var(--green); }
-        .stat-card .blue { color: var(--blue); }
-        .stat-card .purple { color: var(--purple); }
-        .stat-card .orange { color: var(--orange); }
-
-        .chart-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-bottom: 16px;
-        }
-        .chart-box {
-            background: var(--bg-card);
-            border-radius: var(--radius);
-            padding: 16px;
-            border: 1px solid var(--border-color);
-        }
-        .chart-box h4 { font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; }
-
-        .method-bar {
+        /* ===== SYNC BUTTON ===== */
+        .sync-section {
             display: flex;
-            align-items: center;
             gap: 10px;
-            margin-bottom: 6px;
-        }
-        .method-bar .label {
-            width: 80px;
-            font-size: 12px;
-            text-align: right;
-            color: var(--text-secondary);
-            flex-shrink: 0;
-        }
-        .method-bar .track {
-            flex: 1;
-            height: 20px;
-            background: var(--bg-primary);
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        .method-bar .fill {
-            height: 100%;
-            border-radius: 10px;
-            transition: width 0.8s ease;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            padding-right: 6px;
-            font-size: 10px;
-            font-weight: 600;
-            color: #fff;
-            min-width: 20px;
-        }
-
-        .vendas-list { max-height: 250px; overflow-y: auto; }
-        .venda-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 6px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.03);
-            font-size: 12px;
-            align-items: center;
-        }
-        .venda-item .valor { font-weight: 600; color: var(--green); }
-        .venda-item .metodo {
-            padding: 1px 10px;
-            border-radius: 10px;
-            font-size: 10px;
-            font-weight: 600;
-        }
-        .venda-item .metodo.dinheiro { background: rgba(34, 197, 94, 0.15); color: var(--green); }
-        .venda-item .metodo.pix { background: rgba(59, 130, 246, 0.15); color: var(--blue); }
-        .venda-item .metodo.cartao { background: rgba(139, 92, 246, 0.15); color: var(--purple); }
-        .venda-item .metodo.fiado { background: rgba(239, 68, 68, 0.15); color: var(--red); }
-
-        /* ============================================================
-           LOJA / PLANOS
-           ============================================================ */
-        .planos-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 20px;
-        }
-        .plano-card {
-            background: var(--bg-card);
-            border-radius: var(--radius);
-            padding: 20px;
-            border: 1px solid var(--border-color);
-            text-align: center;
-            transition: var(--transition);
-            cursor: pointer;
-        }
-        .plano-card:hover { border-color: var(--green); transform: translateY(-2px); }
-        .plano-card .preco {
-            font-size: 32px;
-            font-weight: 700;
-            color: #fff;
-        }
-        .plano-card .preco small {
-            font-size: 14px;
-            font-weight: 400;
-            color: var(--text-secondary);
-        }
-        .plano-card .nome { font-size: 16px; font-weight: 600; margin: 6px 0; }
-        .plano-card .desc { color: var(--text-secondary); font-size: 13px; }
-        .plano-card .detalhes {
+            flex-wrap: wrap;
             margin: 10px 0;
-            padding: 8px 0;
-            border-top: 1px solid var(--border-color);
-            border-bottom: 1px solid var(--border-color);
-            font-size: 12px;
-            color: var(--text-secondary);
         }
-        .plano-card .btn-assinar {
-            width: 100%;
-            padding: 10px;
+        .sync-section .btn-sync {
+            padding: 8px 20px;
             border: none;
             border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
             transition: var(--transition);
-            background: var(--green);
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sync-section .btn-sync-local {
+            background: var(--blue);
             color: #fff;
         }
-        .plano-card .btn-assinar:hover { background: var(--green-dark); }
-        .plano-card .btn-assinar.ativo {
-            background: rgba(34, 197, 94, 0.15);
-            color: var(--green);
-            cursor: default;
-        }
-        .plano-card .badge-top {
-            display: inline-block;
-            background: var(--green);
+        .sync-section .btn-sync-local:hover { background: #2563eb; }
+        .sync-section .btn-sync-firebase {
+            background: var(--orange);
             color: #fff;
-            font-size: 9px;
+        }
+        .sync-section .btn-sync-firebase:hover { background: #d97706; }
+        .sync-section .pendentes-badge {
+            background: var(--red);
+            color: #fff;
             padding: 2px 12px;
             border-radius: 20px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-
-        .loja-status {
-            background: var(--bg-card);
-            border-radius: var(--radius);
-            padding: 20px;
-            border: 1px solid var(--border-color);
-        }
-        .loja-status .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 10px;
-        }
-        .loja-status .info-item { font-size: 13px; }
-        .loja-status .info-item .label { color: var(--text-secondary); }
-        .loja-status .info-item .value { font-weight: 600; }
-        .loja-status .info-item .value.expirado { color: var(--red); }
-        .loja-status .info-item .value.ativo { color: var(--green); }
-
-        /* ============================================================
-           MODAL PIX
-           ============================================================ */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(8px);
-            z-index: 9999;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        .modal-overlay.active { display: flex; }
-        .modal {
-            background: var(--bg-card);
-            border-radius: var(--radius);
-            padding: 32px;
-            max-width: 420px;
-            width: 100%;
-            border: 1px solid var(--border-color);
-            animation: fadeUp 0.4s ease;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        .modal .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-        .modal .modal-header h3 { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-        .modal .modal-header .close {
-            background: none;
-            border: none;
-            font-size: 22px;
-            cursor: pointer;
-            color: var(--text-secondary);
-            transition: var(--transition);
-        }
-        .modal .modal-header .close:hover { color: #fff; }
-        .modal .pix-info { text-align: center; }
-        .modal .pix-info .valor { font-size: 32px; font-weight: 700; color: var(--green); }
-        .modal .pix-info .chave {
-            background: var(--bg-primary);
-            padding: 10px;
-            border-radius: 8px;
-            font-family: monospace;
-            font-size: 13px;
-            word-break: break-all;
-            margin: 12px 0;
-            cursor: pointer;
-            border: 1px solid var(--border-color);
-            color: var(--text-secondary);
-        }
-        .modal .pix-info .chave:hover { border-color: var(--green); }
-        .modal .btn-verificar {
-            width: 100%;
-            padding: 12px;
-            background: var(--green);
-            color: #fff;
-            border: none;
-            border-radius: 8px;
+            font-size: 12px;
             font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
         }
-        .modal .btn-verificar:hover { background: var(--green-dark); }
-        .modal .btn-cancelar {
-            width: 100%;
-            padding: 10px;
-            background: transparent;
-            color: var(--text-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: var(--transition);
-            margin-top: 8px;
-        }
-        .modal .btn-cancelar:hover { background: rgba(255,255,255,0.05); }
 
-        /* ============================================================
-           CONFIG
-           ============================================================ */
-        .config-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-        }
-        .config-grid .input-group { margin-bottom: 10px; }
-        .config-grid .input-group label {
-            display: block;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin-bottom: 3px;
-            text-transform: uppercase;
-        }
-        .config-grid .input-group input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            font-size: 13px;
-            background: var(--bg-primary);
-            color: #fff;
-        }
-        .config-grid .input-group input:focus { outline: none; border-color: var(--green); }
-        .config-grid .btn {
-            width: 100%;
-            padding: 10px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-            color: #fff;
-        }
-        .config-grid .btn-primary { background: var(--green); }
-        .config-grid .btn-primary:hover { background: var(--green-dark); }
-        .config-grid .btn-danger { background: var(--red); }
-        .config-grid .btn-danger:hover { background: #dc2626; }
-
-        .usuarios-lista { max-height: 250px; overflow-y: auto; }
-        .usuario-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 6px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.03);
-        }
-        .usuario-item .info { font-size: 13px; }
-        .usuario-item .info .cargo {
-            font-size: 11px;
-            color: var(--text-secondary);
-            background: var(--bg-primary);
-            padding: 1px 10px;
-            border-radius: 10px;
-        }
-        .usuario-item .acoes button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            transition: var(--transition);
-        }
-        .usuario-item .acoes .btn-delete { color: var(--red); }
-        .usuario-item .acoes .btn-delete:hover { background: rgba(239, 68, 68, 0.1); }
-
-        /* ============================================================
-           MODAL CLIENTE
-           ============================================================ */
-        .modal-cliente .form-group { margin-bottom: 10px; }
-        .modal-cliente .form-group label {
-            display: block;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin-bottom: 3px;
-            text-transform: uppercase;
-        }
-        .modal-cliente .form-group input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            font-size: 13px;
-            background: var(--bg-primary);
-            color: #fff;
-        }
-        .modal-cliente .form-group input:focus { outline: none; border-color: var(--green); }
-        .modal-cliente .btn-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 12px;
-        }
-        .modal-cliente .btn-group button { flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
-        .modal-cliente .btn-group .btn-save { background: var(--green); color: #fff; }
-        .modal-cliente .btn-group .btn-save:hover { background: var(--green-dark); }
-        .modal-cliente .btn-group .btn-cancel { background: transparent; color: var(--text-secondary); border: 1px solid var(--border-color); }
-        .modal-cliente .btn-group .btn-cancel:hover { background: rgba(255,255,255,0.05); }
-
-        /* ============================================================
-           RESPONSIVO
-           ============================================================ */
+        /* ===== RESPONSIVE ===== */
         @media (max-width: 1024px) {
             .pdv-grid { grid-template-columns: 1fr; }
-            .chart-row { grid-template-columns: 1fr; }
-            .config-grid { grid-template-columns: 1fr; }
-            .estoque-grid { grid-template-columns: 1fr; }
-            .payment-modal .payment-methods { grid-template-columns: 1fr 1fr; }
         }
-
         @media (max-width: 768px) {
             body { padding: 8px; }
             .auth-box { padding: 24px; }
@@ -1316,33 +906,14 @@
             .nav button { padding: 10px 14px; width: 100%; justify-content: center; border-radius: 8px; }
             .content { padding: 10px; }
             .card { padding: 14px; }
-            .stats-grid { grid-template-columns: 1fr 1fr; }
-            .planos-grid { grid-template-columns: 1fr; }
-            .caixa-card { padding: 16px; }
-            .modal { padding: 20px; margin: 10px; }
-            .clientes-actions { flex-direction: column; }
-            .clientes-actions input { width: 100%; }
-            .clientes-table { font-size: 12px; }
-            .clientes-table th, .clientes-table td { padding: 4px; }
             .payment-modal .modal { padding: 20px; margin: 10px; }
             .payment-modal .payment-methods { grid-template-columns: 1fr 1fr; }
-            .payment-modal .total-display .value { font-size: 28px; }
+            .sync-section { flex-direction: column; }
+            .sync-section .btn-sync { justify-content: center; }
         }
-
         @media (max-width: 480px) {
-            .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
-            .stat-card .value { font-size: 20px; }
-            .stat-card { padding: 12px; }
-            .auth-box { padding: 16px; }
-            .auth-box h1 { font-size: 20px; }
-            .pdv-grid .input-group input { font-size: 13px; padding: 8px 10px; }
-            .cart-table { font-size: 11px; }
-            .cart-table th, .cart-table td { padding: 3px; }
-            .caixa-card .btn-group button { min-width: 80px; padding: 8px 14px; font-size: 12px; }
-            .planos-grid { grid-template-columns: 1fr; }
             .payment-modal .payment-methods { grid-template-columns: 1fr; }
-            .payment-modal .payment-input { flex-wrap: wrap; }
-            .payment-modal .payment-input .label { min-width: 100%; }
+            .payment-modal .total-display .value { font-size: 28px; }
         }
 
         .text-center { text-align: center; }
@@ -1374,14 +945,14 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <!-- ===== MODAL PIX ===== -->
-    <div class="modal-overlay" id="modalPix">
-        <div class="modal">
-            <div class="modal-header">
-                <h3>💳 Pagamento PIX</h3>
-                <button class="close" onclick="fecharModalPix()">×</button>
+    <div class="modal-overlay" id="modalPix" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:9999;justify-content:center;align-items:center;padding:20px;">
+        <div class="modal" style="background:var(--bg-card);border-radius:var(--radius);padding:32px;max-width:420px;width:100%;border:1px solid var(--border-color);animation:fadeUp 0.4s ease;max-height:90vh;overflow-y:auto;">
+            <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h3 style="font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px;">💳 Pagamento PIX</h3>
+                <button class="close" onclick="fecharModalPix()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-secondary);transition:var(--transition);">×</button>
             </div>
             <div id="pixContent">
-                <div class="pix-info">
+                <div class="pix-info" style="text-align:center;">
                     <div class="loading-spinner"></div>
                     <p style="margin-top:12px;color:var(--text-secondary);">Gerando pagamento...</p>
                 </div>
@@ -1390,28 +961,28 @@
     </div>
 
     <!-- ===== MODAL CLIENTE ===== -->
-    <div class="modal-overlay" id="modalCliente">
-        <div class="modal modal-cliente">
-            <div class="modal-header">
-                <h3 id="modalClienteTitle">👤 Novo Cliente</h3>
-                <button class="close" onclick="fecharModalCliente()">×</button>
+    <div class="modal-overlay" id="modalCliente" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:9999;justify-content:center;align-items:center;padding:20px;">
+        <div class="modal" style="background:var(--bg-card);border-radius:var(--radius);padding:32px;max-width:420px;width:100%;border:1px solid var(--border-color);animation:fadeUp 0.4s ease;">
+            <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h3 id="modalClienteTitle" style="font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px;">👤 Novo Cliente</h3>
+                <button class="close" onclick="fecharModalCliente()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-secondary);transition:var(--transition);">×</button>
             </div>
-            <div class="form-group">
-                <label>Nome</label>
-                <input type="text" id="clienteNome" placeholder="Nome do cliente">
+            <div class="form-group" style="margin-bottom:10px;">
+                <label style="display:block;font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:3px;text-transform:uppercase;">Nome</label>
+                <input type="text" id="clienteNome" placeholder="Nome do cliente" style="width:100%;padding:8px 12px;border:1px solid var(--border-color);border-radius:8px;font-size:13px;background:var(--bg-primary);color:#fff;">
             </div>
-            <div class="form-group">
-                <label>Telefone</label>
-                <input type="text" id="clienteTelefone" placeholder="(00) 00000-0000">
+            <div class="form-group" style="margin-bottom:10px;">
+                <label style="display:block;font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:3px;text-transform:uppercase;">Telefone</label>
+                <input type="text" id="clienteTelefone" placeholder="(00) 00000-0000" style="width:100%;padding:8px 12px;border:1px solid var(--border-color);border-radius:8px;font-size:13px;background:var(--bg-primary);color:#fff;">
             </div>
-            <div class="form-group">
-                <label>Email</label>
-                <input type="email" id="clienteEmail" placeholder="email@exemplo.com">
+            <div class="form-group" style="margin-bottom:10px;">
+                <label style="display:block;font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:3px;text-transform:uppercase;">Email</label>
+                <input type="email" id="clienteEmail" placeholder="email@exemplo.com" style="width:100%;padding:8px 12px;border:1px solid var(--border-color);border-radius:8px;font-size:13px;background:var(--bg-primary);color:#fff;">
             </div>
             <input type="hidden" id="clienteId">
-            <div class="btn-group">
-                <button class="btn-save" onclick="salvarCliente()">💾 Salvar</button>
-                <button class="btn-cancel" onclick="fecharModalCliente()">Cancelar</button>
+            <div class="btn-group" style="display:flex;gap:10px;margin-top:12px;">
+                <button class="btn-save" onclick="salvarCliente()" style="flex:1;padding:10px;border:none;border-radius:8px;font-weight:600;cursor:pointer;background:var(--green);color:#fff;">💾 Salvar</button>
+                <button class="btn-cancel" onclick="fecharModalCliente()" style="flex:1;padding:10px;border:none;border-radius:8px;font-weight:600;cursor:pointer;background:transparent;color:var(--text-secondary);border:1px solid var(--border-color);">Cancelar</button>
             </div>
         </div>
     </div>
@@ -1423,49 +994,30 @@
                 <h3>💳 Finalizar Venda</h3>
                 <button class="close" onclick="fecharPagamento()">×</button>
             </div>
-
             <div class="total-display">
                 <div class="label">TOTAL DA VENDA</div>
                 <div class="value" id="paymentTotal">R$ 0,00</div>
             </div>
-
             <div class="cliente-input">
                 <input type="text" id="clientePagamento" placeholder="Nome do cliente (opcional)">
             </div>
-
             <div class="payment-methods" id="paymentMethods">
-                <button class="active" data-metodo="Dinheiro" onclick="selecionarMetodo('Dinheiro')">
-                    <i class="fas fa-money-bill-wave"></i> Dinheiro
-                </button>
-                <button data-metodo="PIX" onclick="selecionarMetodo('PIX')">
-                    <i class="fas fa-qrcode"></i> PIX
-                </button>
-                <button data-metodo="Debito" onclick="selecionarMetodo('Debito')">
-                    <i class="fas fa-credit-card"></i> Débito
-                </button>
-                <button data-metodo="Credito" onclick="selecionarMetodo('Credito')">
-                    <i class="fas fa-credit-card"></i> Crédito
-                </button>
-                <button data-metodo="Fiado" onclick="selecionarMetodo('Fiado')">
-                    <i class="fas fa-handshake"></i> Fiado
-                </button>
+                <button class="active" data-metodo="Dinheiro" onclick="selecionarMetodo('Dinheiro')"><i class="fas fa-money-bill-wave"></i> Dinheiro</button>
+                <button data-metodo="PIX" onclick="selecionarMetodo('PIX')"><i class="fas fa-qrcode"></i> PIX</button>
+                <button data-metodo="Debito" onclick="selecionarMetodo('Debito')"><i class="fas fa-credit-card"></i> Débito</button>
+                <button data-metodo="Credito" onclick="selecionarMetodo('Credito')"><i class="fas fa-credit-card"></i> Crédito</button>
+                <button data-metodo="Fiado" onclick="selecionarMetodo('Fiado')"><i class="fas fa-handshake"></i> Fiado</button>
             </div>
-
-            <div id="paymentInputs">
-                <!-- Dinâmico -->
-            </div>
-
+            <div id="paymentInputs"></div>
             <div class="payment-actions">
                 <button class="btn-cancel" onclick="fecharPagamento()">Cancelar</button>
-                <button class="btn-confirm" onclick="confirmarPagamento()">
-                    <i class="fas fa-check"></i> Confirmar Venda
-                </button>
+                <button class="btn-confirm" onclick="confirmarPagamento()"><i class="fas fa-check"></i> Confirmar Venda</button>
             </div>
         </div>
     </div>
 
     <!-- ============================================================
-    AUTH - LOGIN / REGISTER
+    AUTH
     ============================================================ -->
     <div class="auth-page" id="authPage">
         <div class="auth-box" id="authBox">
@@ -1506,6 +1058,10 @@
                     <input type="password" id="registerSenha" placeholder="••••••••">
                 </div>
                 <div class="form-group">
+                    <label>Nome da Loja</label>
+                    <input type="text" id="registerLoja" placeholder="Minha Loja">
+                </div>
+                <div class="form-group">
                     <label>ID do Banco (opcional)</label>
                     <input type="text" id="registerDbId" placeholder="Deixe em branco para criar novo">
                     <div class="hint">🔑 Use um ID existente para sincronizar dados</div>
@@ -1517,13 +1073,16 @@
     </div>
 
     <!-- ============================================================
-    APP PRINCIPAL
+    APP
     ============================================================ -->
     <div class="app" id="app">
 
         <!-- HEADER -->
         <header class="header">
-            <div class="logo">🏪 <span>PDV</span> Inteligente</div>
+            <div class="logo">
+                🏪 <span>PDV</span> Inteligente
+                <span class="status-online online" id="statusOnline" title="Status da conexão"></span>
+            </div>
             <button class="menu-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
             <div class="user">
                 <div class="avatar" id="userAvatar">A</div>
@@ -1537,56 +1096,32 @@
 
         <!-- NAV -->
         <nav class="nav" id="nav">
-            <button class="active" data-tab="vendas" onclick="trocarTab('vendas')">
-                <i class="fas fa-shopping-cart"></i> Vendas
-            </button>
-            <button data-tab="clientes" onclick="trocarTab('clientes')">
-                <i class="fas fa-users"></i> Clientes
-                <span class="badge" id="fiadosBadge">0</span>
-            </button>
-            <button data-tab="caixa" onclick="trocarTab('caixa')">
-                <i class="fas fa-cash-register"></i> Caixa
-            </button>
-            <button data-tab="dashboard" onclick="trocarTab('dashboard')">
-                <i class="fas fa-chart-pie"></i> Dashboard
-            </button>
-            <button data-tab="estoque" onclick="trocarTab('estoque')">
-                <i class="fas fa-boxes"></i> Estoque
-            </button>
-            <button data-tab="loja" onclick="trocarTab('loja')">
-                <i class="fas fa-store"></i> Loja
-            </button>
-            <button data-tab="config" onclick="trocarTab('config')">
-                <i class="fas fa-cog"></i> Config
-            </button>
+            <button class="active" data-tab="vendas" onclick="trocarTab('vendas')"><i class="fas fa-shopping-cart"></i> Vendas</button>
+            <button data-tab="clientes" onclick="trocarTab('clientes')"><i class="fas fa-users"></i> Clientes <span class="badge" id="fiadosBadge">0</span></button>
+            <button data-tab="caixa" onclick="trocarTab('caixa')"><i class="fas fa-cash-register"></i> Caixa</button>
+            <button data-tab="dashboard" onclick="trocarTab('dashboard')"><i class="fas fa-chart-pie"></i> Dashboard</button>
+            <button data-tab="estoque" onclick="trocarTab('estoque')"><i class="fas fa-boxes"></i> Estoque</button>
+            <button data-tab="loja" onclick="trocarTab('loja')"><i class="fas fa-store"></i> Loja</button>
+            <button data-tab="config" onclick="trocarTab('config')"><i class="fas fa-cog"></i> Config</button>
         </nav>
 
         <!-- CONTENT -->
         <div class="content">
 
-            <!-- ============================================================
-            PANEL: VENDAS
-            ============================================================ -->
+            <!-- PANEL VENDAS -->
             <div class="panel active" id="panelVendas">
                 <div class="pdv-grid">
-                    <!-- Esquerda -->
                     <div class="card" style="position:relative;">
                         <h3><i class="fas fa-cart-plus" style="color:var(--green);"></i> Ponto de Venda</h3>
-                        
-                        <!-- Código de Barras -->
                         <div class="input-group">
                             <label>Código de Barras</label>
                             <input type="text" id="codigoInput" placeholder="Digite ou leia o código">
                         </div>
-                        
-                        <!-- Busca por Nome com resultados -->
                         <div class="input-group" style="position:relative;">
                             <label>Buscar Produto</label>
                             <input type="text" id="buscaProdutoInput" placeholder="Digite o nome do produto">
                             <div class="search-results" id="searchResults"></div>
                         </div>
-                        
-                        <!-- Produto Selecionado (somente leitura) -->
                         <div class="input-group">
                             <label>Produto Selecionado</label>
                             <input type="text" id="nomeProduto" readonly placeholder="Selecione um produto">
@@ -1595,27 +1130,17 @@
                             <label>Preço Unitário (R$)</label>
                             <input type="text" id="precoProduto" readonly placeholder="0,00">
                         </div>
-                        
                         <div class="status-msg" id="statusMsg">Aguardando produto...</div>
-                        
                         <button class="btn-finalizar" id="btnFinalizar" onclick="abrirPagamento()" disabled>
                             <i class="fas fa-check-circle"></i> FINALIZAR VENDA
                         </button>
                     </div>
-
-                    <!-- Direita - Carrinho -->
                     <div class="card">
                         <h3><i class="fas fa-shopping-bag" style="color:var(--blue);"></i> Carrinho</h3>
                         <div style="max-height:350px;overflow-y:auto;">
                             <table class="cart-table">
                                 <thead>
-                                    <tr>
-                                        <th>Produto</th>
-                                        <th style="text-align:center;">Qtd</th>
-                                        <th style="text-align:right;">Unit.</th>
-                                        <th style="text-align:right;">Total</th>
-                                        <th style="text-align:center;">Ação</th>
-                                    </tr>
+                                    <tr><th>Produto</th><th style="text-align:center;">Qtd</th><th style="text-align:right;">Unit.</th><th style="text-align:right;">Total</th><th style="text-align:center;">Ação</th></tr>
                                 </thead>
                                 <tbody id="cartBody">
                                     <tr><td colspan="5" class="empty-cart">🛒 Carrinho vazio</td></tr>
@@ -1631,9 +1156,7 @@
                 </div>
             </div>
 
-            <!-- ============================================================
-            PANEL: CLIENTES
-            ============================================================ -->
+            <!-- PANEL CLIENTES -->
             <div class="panel" id="panelClientes">
                 <div class="card">
                     <div class="clientes-actions">
@@ -1642,29 +1165,19 @@
                     </div>
                     <div style="max-height:450px;overflow-y:auto;">
                         <table class="clientes-table">
-                            <thead>
-                                <tr>
-                                    <th>Nome</th>
-                                    <th>Telefone</th>
-                                    <th style="text-align:right;">Dívida</th>
-                                    <th style="text-align:center;">Ações</th>
-                                </tr>
-                            </thead>
+                            <thead><tr><th>Nome</th><th>Telefone</th><th style="text-align:right;">Dívida</th><th style="text-align:center;">Ações</th></tr></thead>
                             <tbody id="tabelaClientes"></tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- ============================================================
-            PANEL: CAIXA
-            ============================================================ -->
+            <!-- PANEL CAIXA -->
             <div class="panel" id="panelCaixa">
                 <div class="caixa-center">
                     <div class="icon" id="caixaIcon">🔒</div>
                     <div class="status-text fechado" id="caixaStatusText">CAIXA FECHADO</div>
                     <div class="sub-info" id="caixaSubInfo">Nenhum caixa aberto</div>
-
                     <div class="caixa-card">
                         <div class="input-group">
                             <label>Valor de Abertura (R$)</label>
@@ -1674,12 +1187,14 @@
                             <button class="btn-abrir" onclick="abrirCaixa()"><i class="fas fa-unlock"></i> Abrir</button>
                             <button class="btn-fechar" id="btnFecharCaixa" onclick="fecharCaixa()" disabled><i class="fas fa-lock"></i> Fechar</button>
                         </div>
-                        <div class="btn-group" style="margin-top:10px;">
-                            <button class="btn-relatorio" onclick="gerarRelatorio()"><i class="fas fa-file-alt"></i> Relatório</button>
-                            <button class="btn-relatorio" onclick="sincronizarAgora()" style="border-color:var(--text-muted);color:var(--text-muted);"><i class="fas fa-sync"></i> Sincronizar</button>
+                        <div class="sync-section" style="justify-content:center;margin-top:10px;">
+                            <button class="btn-sync btn-sync-local" onclick="syncLocalToFirebase()"><i class="fas fa-cloud-upload-alt"></i> Local → Firebase</button>
+                            <button class="btn-sync btn-sync-firebase" onclick="syncFirebaseToLocal()"><i class="fas fa-cloud-download-alt"></i> Firebase → Local</button>
+                        </div>
+                        <div style="margin-top:8px;text-align:center;">
+                            <span id="pendentesBadge" class="pendentes-badge" style="display:none;">0 pendentes</span>
                         </div>
                     </div>
-
                     <div class="caixa-card" style="margin-top:16px;max-width:420px;">
                         <h4 style="font-size:14px;margin-bottom:10px;text-align:left;">📊 Resumo do Dia</h4>
                         <div class="caixa-resumo" id="caixaResumo">
@@ -1689,9 +1204,7 @@
                 </div>
             </div>
 
-            <!-- ============================================================
-            PANEL: DASHBOARD
-            ============================================================ -->
+            <!-- PANEL DASHBOARD -->
             <div class="panel" id="panelDashboard">
                 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
                     <h2 style="font-size:18px;"><i class="fas fa-chart-pie" style="color:var(--green);"></i> Dashboard</h2>
@@ -1701,31 +1214,27 @@
                         <button onclick="carregarDashboard('mes')" class="btn-periodo" style="padding:6px 14px;border:1px solid var(--border-color);background:transparent;color:var(--text-secondary);border-radius:6px;cursor:pointer;font-size:12px;">Mês</button>
                     </div>
                 </div>
-
-                <div class="stats-grid" id="statsGrid">
-                    <div class="stat-card"><div class="value green" id="totalGeral">R$ 0,00</div><div class="label">Total Geral</div></div>
-                    <div class="stat-card"><div class="value blue" id="totalVendas">0</div><div class="label">Vendas</div></div>
-                    <div class="stat-card"><div class="value purple" id="mediaVenda">R$ 0,00</div><div class="label">Ticket Médio</div></div>
-                    <div class="stat-card"><div class="value orange" id="totalItens">0</div><div class="label">Itens</div></div>
+                <div class="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px;" id="statsGrid">
+                    <div class="stat-card" style="background:var(--bg-card);border-radius:var(--radius);padding:16px;border:1px solid var(--border-color);text-align:center;"><div class="value green" style="font-size:24px;font-weight:700;color:var(--green);" id="totalGeral">R$ 0,00</div><div class="label" style="font-size:11px;color:var(--text-secondary);margin-top:2px;">Total Geral</div></div>
+                    <div class="stat-card"><div class="value blue" style="font-size:24px;font-weight:700;color:var(--blue);" id="totalVendas">0</div><div class="label">Vendas</div></div>
+                    <div class="stat-card"><div class="value purple" style="font-size:24px;font-weight:700;color:var(--purple);" id="mediaVenda">R$ 0,00</div><div class="label">Ticket Médio</div></div>
+                    <div class="stat-card"><div class="value orange" style="font-size:24px;font-weight:700;color:var(--orange);" id="totalItens">0</div><div class="label">Itens</div></div>
                 </div>
-
-                <div class="chart-row">
-                    <div class="chart-box">
-                        <h4><i class="fas fa-credit-card"></i> Métodos</h4>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+                    <div class="chart-box" style="background:var(--bg-card);border-radius:var(--radius);padding:16px;border:1px solid var(--border-color);">
+                        <h4 style="font-size:13px;color:var(--text-secondary);margin-bottom:10px;"><i class="fas fa-credit-card"></i> Métodos</h4>
                         <div id="metodosContainer"><p style="color:var(--text-secondary);font-size:13px;">Carregando...</p></div>
                     </div>
-                    <div class="chart-box">
-                        <h4><i class="fas fa-clock"></i> Últimas Vendas</h4>
-                        <div class="vendas-list" id="vendasList"><p style="color:var(--text-secondary);font-size:13px;">Carregando...</p></div>
+                    <div class="chart-box" style="background:var(--bg-card);border-radius:var(--radius);padding:16px;border:1px solid var(--border-color);">
+                        <h4 style="font-size:13px;color:var(--text-secondary);margin-bottom:10px;"><i class="fas fa-clock"></i> Últimas Vendas</h4>
+                        <div class="vendas-list" style="max-height:250px;overflow-y:auto;" id="vendasList"><p style="color:var(--text-secondary);font-size:13px;">Carregando...</p></div>
                     </div>
                 </div>
             </div>
 
-            <!-- ============================================================
-            PANEL: ESTOQUE
-            ============================================================ -->
+            <!-- PANEL ESTOQUE -->
             <div class="panel" id="panelEstoque">
-                <div class="estoque-grid">
+                <div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;">
                     <div class="card">
                         <h3><i class="fas fa-plus-circle" style="color:var(--green);"></i> Produto</h3>
                         <div class="input-group"><label>Código</label><input type="text" id="prodCodigo" placeholder="Código"></div>
@@ -1733,15 +1242,15 @@
                         <div class="input-group"><label>Preço (R$)</label><input type="text" id="prodPreco" placeholder="0,00"></div>
                         <div class="input-group"><label>Estoque</label><input type="number" id="prodEstoque" value="0"></div>
                         <div class="input-group"><label>Categoria</label><input type="text" id="prodCategoria" placeholder="Geral"></div>
-                        <button class="btn-salvar" onclick="salvarProduto()"><i class="fas fa-save"></i> Salvar</button>
-                        <button class="btn-limpar" onclick="limparCamposProduto()">Limpar</button>
+                        <button class="btn-salvar" onclick="salvarProduto()" style="width:100%;padding:10px;background:var(--green);color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;transition:var(--transition);"><i class="fas fa-save"></i> Salvar</button>
+                        <button class="btn-limpar" onclick="limparCamposProduto()" style="width:100%;padding:8px;background:transparent;color:var(--text-secondary);border:1px solid var(--border-color);border-radius:8px;cursor:pointer;transition:var(--transition);margin-top:6px;">Limpar</button>
                     </div>
                     <div class="card">
                         <h3><i class="fas fa-list"></i> Lista</h3>
                         <div class="input-group"><label>Buscar</label><input type="text" id="buscaEstoque" placeholder="Nome ou código..." oninput="carregarProdutos()"></div>
-                        <div class="estoque-wrapper">
-                            <table class="estoque-table">
-                                <thead><tr><th>Código</th><th>Nome</th><th style="text-align:right;">Preço</th><th style="text-align:center;">Estoque</th></tr></thead>
+                        <div style="max-height:400px;overflow-y:auto;">
+                            <table class="estoque-table" style="width:100%;border-collapse:collapse;font-size:12px;">
+                                <thead><tr><th style="text-align:left;padding:6px 4px;border-bottom:1px solid var(--border-color);font-weight:600;color:var(--text-secondary);font-size:10px;text-transform:uppercase;position:sticky;top:0;background:var(--bg-card);">Código</th><th style="text-align:left;padding:6px 4px;border-bottom:1px solid var(--border-color);font-weight:600;color:var(--text-secondary);font-size:10px;text-transform:uppercase;">Nome</th><th style="text-align:right;padding:6px 4px;border-bottom:1px solid var(--border-color);font-weight:600;color:var(--text-secondary);font-size:10px;text-transform:uppercase;">Preço</th><th style="text-align:center;padding:6px 4px;border-bottom:1px solid var(--border-color);font-weight:600;color:var(--text-secondary);font-size:10px;text-transform:uppercase;">Estoque</th></tr></thead>
                                 <tbody id="tabelaEstoque"></tbody>
                             </table>
                         </div>
@@ -1749,26 +1258,22 @@
                 </div>
             </div>
 
-            <!-- ============================================================
-            PANEL: LOJA
-            ============================================================ -->
+            <!-- PANEL LOJA -->
             <div class="panel" id="panelLoja">
                 <div style="text-align:center;margin-bottom:20px;">
                     <h2 style="font-size:22px;"><i class="fas fa-store" style="color:var(--green);"></i> Planos</h2>
                     <p style="color:var(--text-secondary);font-size:13px;">Escolha o plano ideal para sua empresa</p>
                 </div>
-                <div class="planos-grid" id="planosGrid"></div>
-                <div class="loja-status" id="statusLoja">
+                <div class="planos-grid" id="planosGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:20px;"></div>
+                <div class="loja-status" id="statusLoja" style="background:var(--bg-card);border-radius:var(--radius);padding:20px;border:1px solid var(--border-color);">
                     <h4 style="font-size:14px;margin-bottom:10px;"><i class="fas fa-info-circle"></i> Status</h4>
                     <p style="color:var(--text-secondary);">Carregando...</p>
                 </div>
             </div>
 
-            <!-- ============================================================
-            PANEL: CONFIG
-            ============================================================ -->
+            <!-- PANEL CONFIG -->
             <div class="panel" id="panelConfig">
-                <div class="config-grid">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
                     <div class="card">
                         <h3><i class="fas fa-user-cog" style="color:var(--blue);"></i> Usuários</h3>
                         <div class="input-group"><label>Nome</label><input type="text" id="novoUserNome" placeholder="Nome"></div>
@@ -1780,21 +1285,21 @@
                                 <option value="Gerente">Gerente</option>
                             </select>
                         </div>
-                        <button class="btn btn-primary" onclick="cadastrarUsuario()"><i class="fas fa-user-plus"></i> Cadastrar</button>
+                        <button class="btn btn-primary" onclick="cadastrarUsuario()" style="width:100%;padding:10px;border:none;border-radius:8px;font-weight:600;cursor:pointer;transition:var(--transition);color:#fff;background:var(--green);"><i class="fas fa-user-plus"></i> Cadastrar</button>
                         <div style="margin-top:12px;">
                             <h4 style="font-size:13px;color:var(--text-secondary);margin-bottom:6px;">Usuários</h4>
-                            <div class="usuarios-lista" id="listaUsuarios"></div>
+                            <div class="usuarios-lista" style="max-height:250px;overflow-y:auto;" id="listaUsuarios"></div>
                         </div>
                     </div>
                     <div class="card">
                         <h3><i class="fas fa-store-alt" style="color:var(--orange);"></i> Loja</h3>
-                        <div class="input-group"><label>Nome</label><input type="text" id="lojaNome" placeholder="Nome da loja"></div>
+                        <div class="input-group"><label>Nome da Loja</label><input type="text" id="lojaNome" placeholder="Nome da loja"></div>
                         <div class="input-group"><label>Plano</label><span id="planoAtualConfig" style="color:var(--green);font-weight:600;">Carregando...</span></div>
                         <div class="input-group"><label>Expira em</label><span id="expiraEmConfig" style="color:var(--text-secondary);">Carregando...</span></div>
+                        <button class="btn btn-primary" onclick="salvarLojaNome()" style="width:100%;padding:10px;border:none;border-radius:8px;font-weight:600;cursor:pointer;transition:var(--transition);color:#fff;background:var(--green);"><i class="fas fa-save"></i> Salvar Nome da Loja</button>
                         <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-color);">
-                            <p style="font-size:12px;color:var(--text-secondary);"><strong>Versão:</strong> <span id="versaoSistema">5.0.0</span></p>
+                            <p style="font-size:12px;color:var(--text-secondary);"><strong>Versão:</strong> <span id="versaoSistema">5.2.0</span></p>
                             <p style="font-size:12px;color:var(--text-secondary);"><strong>ID do Banco:</strong> <span id="dbIdConfig" style="font-family:monospace;cursor:pointer;" onclick="copiarId()">---</span></p>
-                            <button class="btn btn-primary" onclick="sincronizarAgora()" style="margin-top:10px;background:var(--blue);"><i class="fas fa-sync"></i> Sincronizar</button>
                         </div>
                     </div>
                 </div>
@@ -1804,17 +1309,18 @@
     </div>
 
     <!-- ============================================================
-    JAVASCRIPT COMPLETO - CORRIGIDO
+    JAVASCRIPT COMPLETO
     ============================================================ -->
     <script>
         // ============================================================
-        // ESTADO
+        // ESTADO GLOBAL
         // ============================================================
         const state = {
             usuario_id: null,
             nome: '',
             cargo: '',
             db_id: null,
+            loja_nome: 'Minha Loja',
             caixa_aberto: false,
             itens: [],
             subtotal: 0,
@@ -1823,7 +1329,8 @@
             clientes: [],
             periodo: 'hoje',
             searchIndex: -1,
-            _resultados: []
+            _resultados: [],
+            online: navigator.onLine
         };
 
         // ============================================================
@@ -1848,6 +1355,30 @@
                 }
             }, 5000);
         }
+
+        // ============================================================
+        // STATUS ONLINE
+        // ============================================================
+        function atualizarStatusOnline() {
+            const el = document.getElementById('statusOnline');
+            state.online = navigator.onLine;
+            el.className = `status-online ${state.online ? 'online' : 'offline'}`;
+            el.title = state.online ? '🟢 Online' : '🔴 Offline';
+            if (state.online) {
+                verificarPendencias();
+            }
+        }
+
+        window.addEventListener('online', () => {
+            atualizarStatusOnline();
+            showToast('🟢 Conexão restabelecida!', 'success');
+            verificarPendencias();
+        });
+
+        window.addEventListener('offline', () => {
+            atualizarStatusOnline();
+            showToast('🔴 Você está offline. Os dados serão salvos localmente.', 'warning');
+        });
 
         // ============================================================
         // COPIAR ID
@@ -1890,6 +1421,7 @@
             const nome = document.getElementById('registerNome').value.trim();
             const email = document.getElementById('registerEmail').value.trim();
             const senha = document.getElementById('registerSenha').value.trim();
+            const loja_nome = document.getElementById('registerLoja').value.trim() || 'Minha Loja';
             const db_id = document.getElementById('registerDbId').value.trim();
             const msg = document.getElementById('authMsg');
 
@@ -1912,7 +1444,7 @@
                 const res = await fetch('/api/auth/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nome, email, senha, db_id })
+                    body: JSON.stringify({ nome, email, senha, loja_nome, db_id })
                 });
                 const data = await res.json();
 
@@ -1964,6 +1496,7 @@
                     state.nome = data.nome;
                     state.cargo = data.cargo;
                     state.db_id = data.db_id;
+                    state.loja_nome = data.loja_nome || 'Minha Loja';
 
                     document.getElementById('authPage').classList.add('hidden');
                     document.getElementById('app').classList.add('active');
@@ -1971,6 +1504,7 @@
                     document.getElementById('userCargo').textContent = data.cargo;
                     document.getElementById('userAvatar').textContent = data.nome.charAt(0).toUpperCase();
                     document.getElementById('dbIdDisplay').textContent = `📋 ID: ${data.db_id}`;
+                    document.getElementById('lojaNome').value = state.loja_nome;
 
                     await Promise.all([
                         carregarProdutos(),
@@ -1980,9 +1514,11 @@
                         carregarUsuarios(),
                         verificarStatusCaixa(),
                         carregarResumoCaixa(),
-                        carregarDashboard('hoje')
+                        carregarDashboard('hoje'),
+                        verificarPendencias()
                     ]);
 
+                    atualizarStatusOnline();
                     showToast(`✅ Bem-vindo, ${data.nome}!`, 'success');
                 } else {
                     msg.className = 'msg error';
@@ -2052,45 +1588,13 @@
         }
 
         // ============================================================
-        // VERIFICAR SESSÃO
-        // ============================================================
-        async function verificarSessao() {
-            try {
-                const res = await fetch('/api/auth/status');
-                const data = await res.json();
-                if (data.logged_in) {
-                    state.usuario_id = data.usuario_id;
-                    state.nome = data.nome;
-                    state.cargo = data.cargo;
-                    state.db_id = data.db_id;
-
-                    document.getElementById('authPage').classList.add('hidden');
-                    document.getElementById('app').classList.add('active');
-                    document.getElementById('userName').textContent = data.nome;
-                    document.getElementById('userCargo').textContent = data.cargo;
-                    document.getElementById('userAvatar').textContent = data.nome.charAt(0).toUpperCase();
-                    document.getElementById('dbIdDisplay').textContent = `📋 ID: ${data.db_id}`;
-
-                    await Promise.all([
-                        carregarProdutos(),
-                        carregarClientes(),
-                        carregarPlanos(),
-                        carregarStatusLoja(),
-                        carregarUsuarios(),
-                        verificarStatusCaixa(),
-                        carregarResumoCaixa(),
-                        carregarDashboard('hoje')
-                    ]);
-                }
-            } catch (e) { console.error('Erro ao verificar sessão:', e); }
-        }
-
-        // ============================================================
         // PRODUTOS
         // ============================================================
         async function carregarProdutos() {
             try {
-                const res = await fetch('/api/produtos');
+                const busca = document.getElementById('buscaEstoque')?.value || '';
+                const url = busca ? `/api/produtos?busca=${encodeURIComponent(busca)}` : '/api/produtos';
+                const res = await fetch(url);
                 const data = await res.json();
                 if (data.success) {
                     state.produtos = data.produtos || [];
@@ -2109,7 +1613,7 @@
             }
             tbody.innerHTML = produtos.map(p => {
                 const cls = p.estoque <= 0 ? 'estoque-baixo' : p.estoque < 5 ? 'estoque-medio' : 'estoque-alto';
-                return `<tr onclick="selecionarProdutoEstoque('${p.codigo}')">
+                return `<tr onclick="selecionarProdutoEstoque('${p.codigo}')" style="cursor:pointer;">
                     <td style="font-size:11px;">${p.codigo}</td>
                     <td>${p.nome}</td>
                     <td style="text-align:right;">R$ ${p.preco.toFixed(2)}</td>
@@ -2153,6 +1657,7 @@
                     showToast('✅ Produto salvo!', 'success');
                     limparCamposProduto();
                     carregarProdutos();
+                    verificarPendencias();
                 } else {
                     showToast('❌ Erro: ' + data.error, 'error');
                 }
@@ -2165,33 +1670,23 @@
         }
 
         // ============================================================
-        // CÓDIGO DE BARRAS - CORRIGIDO: Enter NÃO muda o foco
+        // BUSCA PDV
         // ============================================================
         const codigoInput = document.getElementById('codigoInput');
-
         codigoInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
-                e.preventDefault(); // IMPEDE O TAB
+                e.preventDefault();
                 const codigo = this.value.trim();
                 if (codigo) {
                     adicionarPorCodigo(codigo);
                     this.value = '';
-                    this.focus(); // Mantém o foco
+                    this.focus();
                 }
             }
         });
 
-        // ============================================================
-        // BUSCA PROFISSIONAL - CORRIGIDA
-        // ============================================================
         const buscaInput = document.getElementById('buscaProdutoInput');
         const searchResults = document.getElementById('searchResults');
-
-        buscaInput.addEventListener('focus', function() {
-            if (this.value.trim()) {
-                triggerSearch(this.value);
-            }
-        });
 
         function triggerSearch(termo) {
             const termoLower = termo.toLowerCase().trim();
@@ -2210,7 +1705,8 @@
             state._resultados = resultados;
 
             if (resultados.length === 0) {
-                searchResults.innerHTML = `<div class="result-item" style="color:var(--text-muted);cursor:default;">Nenhum produto encontrado</div>`;
+                searchResults.innerHTML =
+                    `<div class="result-item" style="color:var(--text-muted);cursor:default;">Nenhum produto encontrado</div>`;
                 searchResults.classList.add('active');
                 state.searchIndex = -1;
                 return;
@@ -2231,24 +1727,17 @@
             highlightResult(0);
         }
 
-        buscaInput.addEventListener('input', function() {
-            triggerSearch(this.value);
-        });
+        buscaInput.addEventListener('input', function() { triggerSearch(this.value); });
+        buscaInput.addEventListener('focus', function() { if (this.value.trim()) triggerSearch(this.value); });
 
         function highlightResult(index) {
             const items = searchResults.querySelectorAll('.result-item');
-            items.forEach((item, i) => {
-                item.classList.toggle('active', i === index);
-            });
-            if (index >= 0 && items[index]) {
-                items[index].scrollIntoView({ block: 'nearest' });
-            }
+            items.forEach((item, i) => { item.classList.toggle('active', i === index); });
         }
 
         buscaInput.addEventListener('keydown', function(e) {
             const items = searchResults.querySelectorAll('.result-item');
             if (items.length === 0) return;
-
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
                 state.searchIndex = Math.min(state.searchIndex + 1, items.length - 1);
@@ -2285,16 +1774,12 @@
             }
         });
 
-        // ============================================================
-        // ADICIONAR POR CÓDIGO - LIMPA TUDO E FOCA NO CÓDIGO
-        // ============================================================
         function adicionarPorCodigo(codigo) {
             const produto = state.produtos.find(p => p.codigo === codigo);
             if (produto) {
                 adicionarAoCarrinho(produto);
                 document.getElementById('statusMsg').textContent = `✓ ${produto.nome} adicionado`;
                 document.getElementById('statusMsg').className = 'status-msg success';
-                // LIMPA TODOS OS CAMPOS
                 document.getElementById('nomeProduto').value = '';
                 document.getElementById('precoProduto').value = '';
                 document.getElementById('buscaProdutoInput').value = '';
@@ -2309,19 +1794,13 @@
             }
         }
 
-        // ============================================================
-        // SELECIONAR PRODUTO POR CÓDIGO (da busca) - LIMPA TUDO
-        // ============================================================
         function selecionarProdutoPorCodigo(codigo) {
             const produto = state.produtos.find(p => p.codigo === codigo);
             if (produto) {
                 state.selectedProduct = produto;
                 document.getElementById('statusMsg').textContent = `✓ ${produto.nome} selecionado`;
                 document.getElementById('statusMsg').className = 'status-msg success';
-
                 adicionarAoCarrinho(produto);
-
-                // LIMPA TODOS OS CAMPOS
                 document.getElementById('nomeProduto').value = '';
                 document.getElementById('precoProduto').value = '';
                 document.getElementById('buscaProdutoInput').value = '';
@@ -2340,29 +1819,37 @@
         // CARRINHO
         // ============================================================
         function adicionarAoCarrinho(produto) {
+            if (produto.estoque <= 0) {
+                showToast(`⚠️ ${produto.nome} sem estoque!`, 'warning');
+                return;
+            }
             const existente = state.itens.find(i => i.codigo === produto.codigo);
             if (existente) {
+                if (existente.quantidade >= produto.estoque) {
+                    showToast(`⚠️ Estoque máximo de ${produto.nome} atingido!`, 'warning');
+                    return;
+                }
                 existente.quantidade += 1;
             } else {
-                state.itens.push({
-                    codigo: produto.codigo,
-                    nome: produto.nome,
-                    preco: produto.preco,
-                    quantidade: 1
-                });
+                state.itens.push({ codigo: produto.codigo, nome: produto.nome, preco: produto.preco, quantidade: 1 });
             }
             atualizarCarrinho();
         }
 
-        function removerItem(index) {
-            state.itens.splice(index, 1);
-            atualizarCarrinho();
-        }
+        function removerItem(index) { state.itens.splice(index, 1);
+            atualizarCarrinho(); }
 
         function alterarQtd(index, delta) {
             const item = state.itens[index];
             if (!item) return;
-            item.quantidade = Math.max(1, item.quantidade + delta);
+            const produto = state.produtos.find(p => p.codigo === item.codigo);
+            const maxEstoque = produto ? produto.estoque : 999;
+            const novaQtd = Math.max(1, item.quantidade + delta);
+            if (novaQtd > maxEstoque) {
+                showToast(`⚠️ Estoque máximo: ${maxEstoque}`, 'warning');
+                return;
+            }
+            item.quantidade = novaQtd;
             atualizarCarrinho();
         }
 
@@ -2382,7 +1869,6 @@
             state.itens.forEach((item, index) => {
                 const totalItem = item.preco * item.quantidade;
                 state.subtotal += totalItem;
-
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${item.nome}</td>
@@ -2462,21 +1948,17 @@
             document.getElementById('clienteNome').value = '';
             document.getElementById('clienteTelefone').value = '';
             document.getElementById('clienteEmail').value = '';
-            document.getElementById('modalCliente').classList.add('active');
+            document.getElementById('modalCliente').style.display = 'flex';
         }
 
-        function fecharModalCliente() {
-            document.getElementById('modalCliente').classList.remove('active');
-        }
+        function fecharModalCliente() { document.getElementById('modalCliente').style.display = 'none'; }
 
         async function salvarCliente() {
             const id = document.getElementById('clienteId').value;
             const nome = document.getElementById('clienteNome').value.trim();
             const telefone = document.getElementById('clienteTelefone').value.trim();
             const email = document.getElementById('clienteEmail').value.trim();
-
             if (!nome) { showToast('⚠️ Nome é obrigatório!', 'warning'); return; }
-
             try {
                 const res = await fetch('/api/clientes', {
                     method: 'POST',
@@ -2488,6 +1970,7 @@
                     showToast('✅ Cliente salvo!', 'success');
                     fecharModalCliente();
                     carregarClientes();
+                    verificarPendencias();
                 } else {
                     showToast('❌ Erro: ' + data.error, 'error');
                 }
@@ -2499,7 +1982,6 @@
             if (!valor) return;
             const v = parseFloat(valor.replace(',', '.'));
             if (isNaN(v) || v <= 0) { showToast('⚠️ Valor inválido!', 'warning'); return; }
-
             try {
                 const res = await fetch(`/api/clientes/${id}/pagar`, {
                     method: 'POST',
@@ -2549,7 +2031,6 @@
             const icon = document.getElementById('caixaIcon');
             const text = document.getElementById('caixaStatusText');
             const btnFechar = document.getElementById('btnFecharCaixa');
-
             if (state.caixa_aberto) {
                 el.className = 'status-caixa aberto';
                 el.textContent = '🔓 Aberto';
@@ -2572,7 +2053,6 @@
             if (state.caixa_aberto) { showToast('⚠️ Caixa já aberto!', 'warning'); return; }
             const valor = parseFloat(document.getElementById('valorAbertura').value.replace(',', '.'));
             if (isNaN(valor) || valor < 0) { showToast('⚠️ Valor inválido!', 'warning'); return; }
-
             try {
                 const res = await fetch('/api/caixa/abrir', {
                     method: 'POST',
@@ -2596,7 +2076,6 @@
             if (!state.caixa_aberto) { showToast('⚠️ Caixa já fechado!', 'warning'); return; }
             if (state.itens.length > 0) { showToast('⚠️ Esvazie o carrinho primeiro!', 'warning'); return; }
             if (!confirm('Fechar o caixa?')) return;
-
             try {
                 const res = await fetch('/api/caixa/fechar', { method: 'POST' });
                 const data = await res.json();
@@ -2622,22 +2101,17 @@
                     const container = document.getElementById('caixaResumo');
                     if (data.total_vendas === 0) {
                         container.innerHTML =
-                        `<p style="color:var(--text-secondary);text-align:center;">Nenhuma venda hoje</p>`;
+                            `<p style="color:var(--text-secondary);text-align:center;">Nenhuma venda hoje</p>`;
                         return;
                     }
-                    let html =
-                        `<div class="row"><span>Total Vendas:</span><span>${data.total_vendas}</span></div>
-                        <div class="row"><span>Total Geral:</span><span style="color:var(--green);font-weight:600;">R$ ${data.total_geral.toFixed(2)}</span></div>`;
-                    data.metodos.forEach(m => {
-                        html +=
-                            `<div class="row" style="font-size:12px;color:var(--text-secondary);"><span>${m.metodo}:</span><span>R$ ${m.total.toFixed(2)} (${m.quantidade})</span></div>`;
-                    });
-                    container.innerHTML = html;
+                    container.innerHTML = `
+                        <div class="row"><span>Total Vendas:</span><span>${data.total_vendas}</span></div>
+                        <div class="row"><span>Total Geral:</span><span style="color:var(--green);font-weight:600;">R$ ${data.total_geral.toFixed(2)}</span></div>
+                        <div class="row"><span>Total Itens:</span><span>${data.total_itens || 0}</span></div>
+                    `;
                 }
             } catch (e) { console.error('Erro ao carregar resumo:', e); }
         }
-
-        function gerarRelatorio() { showToast('📄 Relatório gerado!', 'success'); }
 
         // ============================================================
         // DASHBOARD
@@ -2650,7 +2124,6 @@
                 btn.style.color = isActive ? '#fff' : 'var(--text-secondary)';
                 btn.style.borderColor = isActive ? 'var(--green)' : 'var(--border-color)';
             });
-
             try {
                 const res = await fetch(`/api/estatisticas?periodo=${periodo}`);
                 const data = await res.json();
@@ -2669,8 +2142,13 @@
                     for (const [m, v] of Object.entries(metodos)) {
                         if (v > 0) {
                             const pct = (v / total) * 100;
-                            html +=
-                                `<div class="method-bar"><span class="label">${m}</span><div class="track"><div class="fill" style="width:${pct}%;background:${cores[m]||'#6b7280'};">${pct > 10 ? `R$ ${v.toFixed(0)}` : ''}</div></div><span style="font-size:12px;width:40px;text-align:right;">${pct.toFixed(1)}%</span></div>`;
+                            html += `<div class="method-bar" style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                                <span class="label" style="width:80px;font-size:12px;text-align:right;color:var(--text-secondary);flex-shrink:0;">${m}</span>
+                                <div class="track" style="flex:1;height:20px;background:var(--bg-primary);border-radius:10px;overflow:hidden;">
+                                    <div class="fill" style="width:${pct}%;height:100%;border-radius:10px;transition:width 0.8s ease;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:10px;font-weight:600;color:#fff;min-width:20px;background:${cores[m]||'#6b7280'};">${pct > 10 ? `R$ ${v.toFixed(0)}` : ''}</div>
+                                </div>
+                                <span style="font-size:12px;width:40px;text-align:right;">${pct.toFixed(1)}%</span>
+                            </div>`;
                         }
                     }
                     container.innerHTML = html || '<p style="color:var(--text-secondary);">Nenhuma venda</p>';
@@ -2682,12 +2160,12 @@
                     } else {
                         const cls = { 'Dinheiro': 'dinheiro', 'PIX': 'pix', 'Cartão': 'cartao', 'Fiado': 'fiado' };
                         vendasList.innerHTML = vendas.slice(0, 15).map(v =>
-                            `<div class="venda-item">
-                            <span>${v.data_hora ? new Date(v.data_hora).toLocaleTimeString() : '--:--'}</span>
-                            <span class="metodo ${cls[v.metodo] || ''}">${v.metodo}</span>
-                            <span>${v.cliente || 'Consumidor'}</span>
-                            <span class="valor">R$ ${v.total.toFixed(2)}</span>
-                        </div>`
+                            `<div class="venda-item" style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.03);font-size:12px;align-items:center;">
+                                <span>${v.data_hora ? new Date(v.data_hora).toLocaleTimeString() : '--:--'}</span>
+                                <span class="metodo ${cls[v.metodo] || ''}" style="padding:1px 10px;border-radius:10px;font-size:10px;font-weight:600;background:${cls[v.metodo] === 'dinheiro' ? 'rgba(34,197,94,0.15)' : cls[v.metodo] === 'pix' ? 'rgba(59,130,246,0.15)' : cls[v.metodo] === 'cartao' ? 'rgba(139,92,246,0.15)' : 'rgba(239,68,68,0.15)'};color:${cls[v.metodo] === 'dinheiro' ? 'var(--green)' : cls[v.metodo] === 'pix' ? 'var(--blue)' : cls[v.metodo] === 'cartao' ? 'var(--purple)' : 'var(--red)'};">${v.metodo}</span>
+                                <span>${v.cliente || 'Consumidor'}</span>
+                                <span class="valor" style="font-weight:600;color:var(--green);">R$ ${v.total.toFixed(2)}</span>
+                            </div>`
                         ).join('');
                     }
                 }
@@ -2704,12 +2182,12 @@
                     if (data.success) {
                         const grid = document.getElementById('planosGrid');
                         grid.innerHTML = data.planos.map(p => `
-                            <div class="plano-card">
-                                <div class="preco">R$ ${p.preco.toFixed(2)} <small>/${p.nome.toLowerCase()}</small></div>
-                                <div class="nome" style="color:${p.cor};">${p.nome}</div>
-                                <div class="desc">${p.usuarios} usuário${p.usuarios > 1 ? 's' : ''}</div>
-                                <div class="detalhes">${p.dias} dias de acesso</div>
-                                <button class="btn-assinar" onclick="assinarPlano(${p.id})">
+                            <div class="plano-card" style="background:var(--bg-card);border-radius:var(--radius);padding:20px;border:1px solid var(--border-color);text-align:center;transition:var(--transition);cursor:pointer;">
+                                <div class="preco" style="font-size:32px;font-weight:700;color:#fff;">R$ ${p.preco.toFixed(2)} <small style="font-size:14px;font-weight:400;color:var(--text-secondary);">/${p.nome.toLowerCase()}</small></div>
+                                <div class="nome" style="font-size:16px;font-weight:600;margin:6px 0;color:${p.cor};">${p.nome}</div>
+                                <div class="desc" style="color:var(--text-secondary);font-size:13px;">${p.usuarios} usuário${p.usuarios > 1 ? 's' : ''}</div>
+                                <div class="detalhes" style="margin:10px 0;padding:8px 0;border-top:1px solid var(--border-color);border-bottom:1px solid var(--border-color);font-size:12px;color:var(--text-secondary);">${p.dias} dias de acesso</div>
+                                <button class="btn-assinar" onclick="assinarPlano(${p.id})" style="width:100%;padding:10px;border:none;border-radius:8px;font-weight:600;cursor:pointer;transition:var(--transition);background:var(--green);color:#fff;">
                                     <i class="fas fa-crown"></i> Assinar
                                 </button>
                             </div>
@@ -2729,28 +2207,26 @@
                 const data = await res.json();
                 if (data.success) {
                     document.getElementById('pixContent').innerHTML = `
-                        <div class="pix-info">
-                            <div class="valor">R$ ${data.valor.toFixed(2)}</div>
+                        <div class="pix-info" style="text-align:center;">
+                            <div class="valor" style="font-size:32px;font-weight:700;color:var(--green);">R$ ${data.valor.toFixed(2)}</div>
                             <p style="color:var(--text-secondary);margin:6px 0;">${data.plano.nome} - ${data.plano.dias} dias</p>
-                            <div class="chave" onclick="copiarChave('${data.chave_pix}')">
+                            <div class="chave" onclick="copiarChave('${data.chave_pix}')" style="background:var(--bg-primary);padding:10px;border-radius:8px;font-family:monospace;font-size:13px;word-break:break-all;margin:12px 0;cursor:pointer;border:1px solid var(--border-color);color:var(--text-secondary);">
                                 📋 Chave PIX: ${data.chave_pix}
                             </div>
-                            <button class="btn-verificar" onclick="verificarPagamento('${data.pix_id}')">
+                            <button class="btn-verificar" onclick="verificarPagamento('${data.pix_id}')" style="width:100%;padding:12px;background:var(--green);color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;transition:var(--transition);">
                                 <i class="fas fa-check"></i> Verificar Pagamento
                             </button>
-                            <button class="btn-cancelar" onclick="fecharModalPix()">Cancelar</button>
+                            <button class="btn-cancelar" onclick="fecharModalPix()" style="width:100%;padding:10px;background:transparent;color:var(--text-secondary);border:1px solid var(--border-color);border-radius:8px;cursor:pointer;transition:var(--transition);margin-top:8px;">Cancelar</button>
                         </div>
                     `;
-                    document.getElementById('modalPix').classList.add('active');
+                    document.getElementById('modalPix').style.display = 'flex';
                 } else {
                     showToast('❌ Erro: ' + data.error, 'error');
                 }
             } catch (e) { showToast('❌ Erro ao gerar PIX!', 'error'); }
         }
 
-        function fecharModalPix() {
-            document.getElementById('modalPix').classList.remove('active');
-        }
+        function fecharModalPix() { document.getElementById('modalPix').style.display = 'none'; }
 
         function copiarChave(chave) {
             navigator.clipboard.writeText(chave).then(() => showToast('📋 Chave copiada!', 'success')).catch(() => showToast(
@@ -2784,15 +2260,14 @@
                     document.getElementById('planoAtualConfig').textContent = data.plano ? data.plano.nome : 'Nenhum';
                     document.getElementById('expiraEmConfig').textContent = data.expira_em ? new Date(data.expira_em)
                         .toLocaleDateString() : 'N/A';
-                    document.getElementById('totalUsuariosConfig').textContent = 'Carregando...';
 
                     const statusDiv = document.getElementById('statusLoja');
                     statusDiv.innerHTML = `
                         <h4 style="font-size:14px;margin-bottom:10px;"><i class="fas fa-info-circle"></i> Status</h4>
-                        <div class="info-grid">
-                            <div class="info-item"><div class="label">Plano</div><div class="value">${data.plano ? data.plano.nome : 'Nenhum'}</div></div>
-                            <div class="info-item"><div class="label">Expira em</div><div class="value ${data.expirado ? 'expirado' : 'ativo'}">${data.expira_em ? new Date(data.expira_em).toLocaleDateString() : 'N/A'} ${data.dias_restantes > 0 ? `(${data.dias_restantes} dias)` : ''}</div></div>
-                            <div class="info-item"><div class="label">Status</div><div class="value ${data.expirado ? 'expirado' : 'ativo'}">${data.expirado ? '⚠️ Expirado' : '✅ Ativo'}</div></div>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;">
+                            <div style="font-size:13px;"><div style="color:var(--text-secondary);">Plano</div><div style="font-weight:600;">${data.plano ? data.plano.nome : 'Nenhum'}</div></div>
+                            <div style="font-size:13px;"><div style="color:var(--text-secondary);">Expira em</div><div style="font-weight:600;color:${data.expirado ? 'var(--red)' : 'var(--green)'};">${data.expira_em ? new Date(data.expira_em).toLocaleDateString() : 'N/A'} ${data.dias_restantes > 0 ? `(${data.dias_restantes} dias)` : ''}</div></div>
+                            <div style="font-size:13px;"><div style="color:var(--text-secondary);">Status</div><div style="font-weight:600;color:${data.expirado ? 'var(--red)' : 'var(--green)'};">${data.expirado ? '⚠️ Expirado' : '✅ Ativo'}</div></div>
                         </div>
                     `;
                 }
@@ -2807,18 +2282,16 @@
                 const res = await fetch('/api/usuarios');
                 const data = await res.json();
                 if (data.success) {
-                    document.getElementById('totalUsuariosConfig').textContent = data.usuarios.length;
                     const container = document.getElementById('listaUsuarios');
                     if (data.usuarios.length === 0) {
-                        container.innerHTML =
-                        '<p style="color:var(--text-muted);font-size:13px;">Nenhum usuário</p>';
+                        container.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Nenhum usuário</p>';
                         return;
                     }
                     container.innerHTML = data.usuarios.map(u =>
-                        `<div class="usuario-item">
-                            <div class="info">${u.nome} <span class="cargo">${u.cargo}</span></div>
+                        `<div class="usuario-item" style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.03);">
+                            <div class="info" style="font-size:13px;">${u.nome} <span class="cargo" style="font-size:11px;color:var(--text-secondary);background:var(--bg-primary);padding:1px 10px;border-radius:10px;">${u.cargo}</span></div>
                             <div class="acoes">
-                                ${u.id !== state.usuario_id ? `<button class="btn-delete" onclick="excluirUsuario('${u.id}')">🗑️</button>` : ''}
+                                ${u.id !== state.usuario_id ? `<button class="btn-delete" onclick="excluirUsuario('${u.id}')" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px;transition:var(--transition);color:var(--red);">🗑️</button>` : ''}
                             </div>
                         </div>`
                     ).join('');
@@ -2831,10 +2304,8 @@
             const email = document.getElementById('novoUserEmail').value.trim();
             const senha = document.getElementById('novoUserSenha').value.trim();
             const cargo = document.getElementById('novoUserCargo').value;
-
             if (!nome || !email || !senha) { showToast('⚠️ Preencha todos os campos!', 'warning'); return; }
             if (senha.length < 4) { showToast('⚠️ Senha deve ter 4+ caracteres!', 'warning'); return; }
-
             try {
                 const res = await fetch('/api/usuarios', {
                     method: 'POST',
@@ -2866,22 +2337,104 @@
             } catch (e) { showToast('❌ Erro ao excluir!', 'error'); }
         }
 
+        async function salvarLojaNome() {
+            const loja_nome = document.getElementById('lojaNome').value.trim();
+            if (!loja_nome) { showToast('⚠️ Digite o nome da loja!', 'warning'); return; }
+            try {
+                const res = await fetch('/api/loja/nome', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ loja_nome })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    state.loja_nome = loja_nome;
+                    showToast('✅ Nome da loja atualizado!', 'success');
+                } else {
+                    showToast('❌ Erro: ' + data.error, 'error');
+                }
+            } catch (e) { showToast('❌ Erro ao salvar!', 'error'); }
+        }
+
         // ============================================================
-        // PAGAMENTO PROFISSIONAL
+        // SINCRONIZAÇÃO
+        // ============================================================
+        async function verificarPendencias() {
+            try {
+                const res = await fetch('/api/sync/status');
+                const data = await res.json();
+                if (data.success) {
+                    const badge = document.getElementById('pendentesBadge');
+                    if (data.pendentes > 0) {
+                        badge.textContent = `${data.pendentes} pendentes`;
+                        badge.style.display = 'inline';
+                        if (state.online) {
+                            // Tenta processar automaticamente
+                            syncLocalToFirebase();
+                        }
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            } catch (e) { console.error('Erro ao verificar pendências:', e); }
+        }
+
+        async function syncLocalToFirebase() {
+            if (!state.online) {
+                showToast('🔴 Você está offline. Conecte-se para sincronizar.', 'warning');
+                return;
+            }
+            if (!confirm('Enviar dados locais para o Firebase?\n(Conflitos serão sobrescritos)')) return;
+
+            showToast('🔄 Sincronizando local → Firebase...', 'info');
+            try {
+                const res = await fetch('/api/sync/local-to-firebase', { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`✅ ${data.message}\nProdutos: ${data.produtos}, Clientes: ${data.clientes}, Vendas: ${data.vendas}`, 'success');
+                    verificarPendencias();
+                    carregarProdutos();
+                    carregarClientes();
+                } else {
+                    showToast('❌ Erro: ' + data.error, 'error');
+                }
+            } catch (e) { showToast('❌ Erro ao sincronizar!', 'error'); }
+        }
+
+        async function syncFirebaseToLocal() {
+            if (!state.online) {
+                showToast('🔴 Você está offline. Conecte-se para sincronizar.', 'warning');
+                return;
+            }
+            if (!confirm('Importar dados do Firebase para o local?\n(Os dados locais serão substituídos)')) return;
+
+            showToast('🔄 Sincronizando Firebase → local...', 'info');
+            try {
+                const res = await fetch('/api/sync/firebase-to-local', { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('✅ ' + data.message, 'success');
+                    carregarProdutos();
+                    carregarClientes();
+                    carregarDashboard(state.periodo);
+                    carregarStatusLoja();
+                    carregarUsuarios();
+                    carregarResumoCaixa();
+                } else {
+                    showToast('❌ Erro: ' + data.error, 'error');
+                }
+            } catch (e) { showToast('❌ Erro ao sincronizar!', 'error'); }
+        }
+
+        // ============================================================
+        // PAGAMENTO
         // ============================================================
         let metodoAtivo = 'Dinheiro';
         let valoresPagos = {};
 
         function abrirPagamento() {
-            if (state.itens.length === 0) {
-                showToast('🛒 Carrinho vazio!', 'warning');
-                return;
-            }
-            if (!state.caixa_aberto) {
-                showToast('🔒 Caixa fechado!', 'warning');
-                return;
-            }
-
+            if (state.itens.length === 0) { showToast('🛒 Carrinho vazio!', 'warning'); return; }
+            if (!state.caixa_aberto) { showToast('🔒 Caixa fechado!', 'warning'); return; }
             document.getElementById('paymentTotal').textContent = `R$ ${state.total.toFixed(2)}`;
             document.getElementById('paymentModal').classList.add('active');
             document.getElementById('clientePagamento').value = '';
@@ -2900,7 +2453,6 @@
             document.querySelectorAll('#paymentMethods button').forEach(b => {
                 b.classList.toggle('active', b.dataset.metodo === metodo);
             });
-
             const container = document.getElementById('paymentInputs');
 
             if (metodo === 'Fiado') {
@@ -2932,21 +2484,15 @@
                     const val = parseFloat(this.value.replace(',', '.')) || 0;
                     const resto = state.total - val;
                     const label = this.parentElement.querySelector('.remaining');
-                    if (resto > 0) {
-                        label.textContent = `Falta: R$ ${resto.toFixed(2)}`;
-                        label.style.color = 'var(--orange)';
-                    } else if (resto < 0) {
-                        label.textContent = `Troco: R$ ${Math.abs(resto).toFixed(2)}`;
-                        label.style.color = 'var(--green)';
-                    } else {
-                        label.textContent = `✅ Valor exato!`;
-                        label.style.color = 'var(--green)';
-                    }
+                    if (resto > 0) { label.textContent = `Falta: R$ ${resto.toFixed(2)}`;
+                        label.style.color = 'var(--orange)'; } else if (resto < 0) { label.textContent =
+                            `Troco: R$ ${Math.abs(resto).toFixed(2)}`;
+                        label.style.color = 'var(--green)'; } else { label.textContent = `✅ Valor exato!`;
+                        label.style.color = 'var(--green)'; }
                 });
                 return;
             }
 
-            // PIX, Débito, Crédito
             container.innerHTML = `
                 <div class="payment-input">
                     <span class="label">${metodo}</span>
@@ -2961,16 +2507,11 @@
                 const val = parseFloat(this.value.replace(',', '.')) || 0;
                 const resto = state.total - val;
                 const label = this.parentElement.querySelector('.remaining');
-                if (resto > 0) {
-                    label.textContent = `Falta: R$ ${resto.toFixed(2)}`;
-                    label.style.color = 'var(--orange)';
-                } else if (resto < 0) {
-                    label.textContent = `Excedente: R$ ${Math.abs(resto).toFixed(2)}`;
-                    label.style.color = 'var(--red)';
-                } else {
-                    label.textContent = `✅ Valor exato!`;
-                    label.style.color = 'var(--green)';
-                }
+                if (resto > 0) { label.textContent = `Falta: R$ ${resto.toFixed(2)}`;
+                    label.style.color = 'var(--orange)'; } else if (resto < 0) { label.textContent =
+                        `Excedente: R$ ${Math.abs(resto).toFixed(2)}`;
+                    label.style.color = 'var(--red)'; } else { label.textContent = `✅ Valor exato!`;
+                    label.style.color = 'var(--green)'; }
             });
         }
 
@@ -2982,25 +2523,16 @@
 
             if (metodo === 'Fiado') {
                 const nomeCliente = document.getElementById('fiadoCliente')?.value.trim();
-                if (!nomeCliente) {
-                    showToast('⚠️ Informe o nome do cliente!', 'warning');
-                    return;
-                }
+                if (!nomeCliente) { showToast('⚠️ Informe o nome do cliente!', 'warning'); return; }
                 totalPago = state.total;
             } else if (metodo === 'Dinheiro') {
                 const val = parseFloat(document.getElementById('dinheiroValor')?.value.replace(',', '.') || 0);
-                if (val < state.total) {
-                    showToast('⚠️ Valor insuficiente!', 'warning');
-                    return;
-                }
+                if (val < state.total) { showToast('⚠️ Valor insuficiente!', 'warning'); return; }
                 totalPago = val;
                 troco = val - state.total;
             } else {
                 const val = parseFloat(document.getElementById('valorPago')?.value.replace(',', '.') || 0);
-                if (val < state.total) {
-                    showToast('⚠️ Valor insuficiente!', 'warning');
-                    return;
-                }
+                if (val < state.total) { showToast('⚠️ Valor insuficiente!', 'warning'); return; }
                 totalPago = val;
                 troco = val - state.total;
             }
@@ -3024,10 +2556,7 @@
 
             if (metodo === 'Fiado') {
                 venda.cliente = document.getElementById('fiadoCliente')?.value.trim() || cliente;
-                if (!venda.cliente) {
-                    showToast('⚠️ Nome do cliente obrigatório para fiado!', 'warning');
-                    return;
-                }
+                if (!venda.cliente) { showToast('⚠️ Nome do cliente obrigatório para fiado!', 'warning'); return; }
             }
 
             fetch('/api/vendas', {
@@ -3047,6 +2576,7 @@
                     document.getElementById('descontoInput').value = '0,00';
                     carregarDashboard(state.periodo);
                     carregarResumoCaixa();
+                    verificarPendencias();
                     codigoInput.focus();
                 } else {
                     showToast('❌ Erro: ' + data.error, 'error');
@@ -3059,50 +2589,13 @@
         }
 
         // ============================================================
-        // SINCRONIZAR
-        // ============================================================
-        function sincronizarAgora() {
-            showToast('🔄 Sincronizando...', 'info');
-            fetch('/api/sincronizar', { method: 'POST' })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success) {
-                        showToast('✅ Dados sincronizados com Firebase!', 'success');
-                        carregarProdutos();
-                        carregarClientes();
-                        carregarDashboard(state.periodo);
-                        carregarStatusLoja();
-                        carregarUsuarios();
-                        carregarResumoCaixa();
-                    } else {
-                        showToast('❌ Erro na sincronização!', 'error');
-                    }
-                })
-                .catch(e => showToast('❌ Erro ao sincronizar!', 'error'));
-        }
-
-        // ============================================================
-        // AUTO UPDATE
-        // ============================================================
-        setInterval(() => {
-            if (document.getElementById('panelDashboard').classList.contains('active')) carregarDashboard(state.periodo);
-            if (document.getElementById('panelCaixa').classList.contains('active')) carregarResumoCaixa();
-        }, 30000);
-
-        // ============================================================
         // FECHAR MODAIS COM ESC
         // ============================================================
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
-                if (document.getElementById('paymentModal').classList.contains('active')) {
-                    fecharPagamento();
-                }
-                if (document.getElementById('modalPix').classList.contains('active')) {
-                    fecharModalPix();
-                }
-                if (document.getElementById('modalCliente').classList.contains('active')) {
-                    fecharModalCliente();
-                }
+                if (document.getElementById('paymentModal').classList.contains('active')) fecharPagamento();
+                if (document.getElementById('modalPix').style.display === 'flex') fecharModalPix();
+                if (document.getElementById('modalCliente').style.display === 'flex') fecharModalCliente();
                 if (document.getElementById('searchResults').classList.contains('active')) {
                     document.getElementById('searchResults').classList.remove('active');
                     document.getElementById('buscaProdutoInput').value = '';
@@ -3115,15 +2608,45 @@
         // INICIAR
         // ============================================================
         document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('versaoSistema').textContent = '5.0.0';
-            verificarSessao();
+            document.getElementById('versaoSistema').textContent = '5.2.0';
+            atualizarStatusOnline();
+            // Verificar sessão
+            fetch('/api/auth/status')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.logged_in) {
+                        state.usuario_id = data.usuario_id;
+                        state.nome = data.nome;
+                        state.cargo = data.cargo;
+                        state.db_id = data.db_id;
+
+                        document.getElementById('authPage').classList.add('hidden');
+                        document.getElementById('app').classList.add('active');
+                        document.getElementById('userName').textContent = data.nome;
+                        document.getElementById('userCargo').textContent = data.cargo;
+                        document.getElementById('userAvatar').textContent = data.nome.charAt(0).toUpperCase();
+                        document.getElementById('dbIdDisplay').textContent = `📋 ID: ${data.db_id}`;
+
+                        Promise.all([
+                            carregarProdutos(),
+                            carregarClientes(),
+                            carregarPlanos(),
+                            carregarStatusLoja(),
+                            carregarUsuarios(),
+                            verificarStatusCaixa(),
+                            carregarResumoCaixa(),
+                            carregarDashboard('hoje'),
+                            verificarPendencias()
+                        ]);
+                    }
+                });
             setTimeout(() => codigoInput.focus(), 500);
         });
 
-        console.log('🏪 PDV Inteligente v5.0 - Profissional');
-        console.log('🔑 Busca com setas e Enter');
-        console.log('💳 Pagamento com múltiplos métodos');
-        console.log('📋 Todas as abas funcionando');
+        console.log('🏪 PDV Inteligente v5.2 - Offline-First');
+        console.log('📋 Login salvo no Firebase (qualquer PC)');
+        console.log('🔄 Sincronização bidirecional');
+        console.log('💾 Dados salvos localmente (SQLite)');
     </script>
 </body>
     </html>
