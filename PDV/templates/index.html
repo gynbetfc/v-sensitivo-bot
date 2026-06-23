@@ -6,11 +6,7 @@
     <title>PDV Inteligente v5.0</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* ============================================================
-           CSS COMPLETO - PDV INTELIGENTE v5.0
-           ============================================================ */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
         :root {
             --bg-primary: #0f0f1a;
             --bg-secondary: #1a1a2e;
@@ -29,7 +25,6 @@
             --shadow: 0 8px 32px rgba(0,0,0,0.4);
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: var(--bg-primary);
@@ -40,12 +35,10 @@
             align-items: center;
             padding: 16px;
         }
-
         ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: var(--bg-secondary); }
         ::-webkit-scrollbar-thumb { background: var(--green); border-radius: 10px; }
 
-        /* ===== TOAST ===== */
         .toast-container {
             position: fixed;
             top: 20px;
@@ -95,9 +88,6 @@
             to { transform: translateX(0); opacity: 1; }
         }
 
-        /* ============================================================
-           AUTH - LOGIN / REGISTER
-           ============================================================ */
         .auth-page {
             display: flex;
             justify-content: center;
@@ -108,7 +98,6 @@
             padding: 20px;
         }
         .auth-page.hidden { display: none; }
-
         .auth-box {
             background: var(--bg-card);
             border-radius: var(--radius);
@@ -123,7 +112,6 @@
             from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
         }
-
         .auth-box .logo { text-align: center; font-size: 48px; margin-bottom: 4px; display: block; }
         .auth-box h1 { text-align: center; font-size: 24px; font-weight: 700; color: #fff; margin-bottom: 4px; }
         .auth-box .sub { text-align: center; color: var(--text-secondary); font-size: 13px; margin-bottom: 24px; }
@@ -197,9 +185,6 @@
         .auth-box .msg.success { display: block; background: rgba(34, 197, 94, 0.15); color: var(--green); }
         .auth-box .msg.error { display: block; background: rgba(239, 68, 68, 0.15); color: var(--red); }
 
-        /* ============================================================
-           APP PRINCIPAL
-           ============================================================ */
         .app {
             display: none;
             width: 100%;
@@ -212,7 +197,6 @@
         }
         .app.active { display: block; animation: fadeUp 0.4s ease; }
 
-        /* ===== HEADER ===== */
         .header {
             background: var(--bg-card);
             padding: 12px 20px;
@@ -226,14 +210,7 @@
             top: 0;
             z-index: 100;
         }
-        .header .logo {
-            font-size: 18px;
-            font-weight: 700;
-            color: #fff;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .header .logo { font-size: 18px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
         .header .logo span { color: var(--green); }
         .header .user {
             display: flex;
@@ -262,7 +239,10 @@
             padding: 2px 10px;
             border-radius: 10px;
             font-family: monospace;
+            cursor: pointer;
+            transition: var(--transition);
         }
+        .header .user .db-id:hover { background: var(--border-color); }
         .header .user .status-caixa {
             padding: 3px 14px;
             border-radius: 20px;
@@ -286,16 +266,8 @@
             color: #fff;
         }
 
-        .menu-toggle {
-            display: none;
-            background: none;
-            border: none;
-            color: #fff;
-            font-size: 22px;
-            cursor: pointer;
-        }
+        .menu-toggle { display: none; background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
 
-        /* ===== NAV ===== */
         .nav {
             background: var(--bg-card);
             padding: 6px 16px;
@@ -308,7 +280,6 @@
             flex-wrap: nowrap;
         }
         .nav::-webkit-scrollbar { display: none; }
-
         .nav button {
             padding: 8px 18px;
             border: none;
@@ -329,23 +300,12 @@
             color: #fff;
             background: rgba(34, 197, 94, 0.15);
         }
-        .nav button .badge {
-            background: var(--red);
-            color: #fff;
-            font-size: 9px;
-            padding: 1px 8px;
-            border-radius: 10px;
-            font-weight: 700;
-        }
+        .nav button .badge { background: var(--red); color: #fff; font-size: 9px; padding: 1px 8px; border-radius: 10px; font-weight: 700; }
 
-        /* ===== CONTENT ===== */
         .content { padding: 16px; }
         .panel { display: none; animation: fadeUp 0.3s ease; }
         .panel.active { display: block; }
 
-        /* ============================================================
-           CARDS
-           ============================================================ */
         .card {
             background: var(--bg-card);
             border-radius: var(--radius);
@@ -354,23 +314,9 @@
             transition: var(--transition);
         }
         .card:hover { border-color: rgba(34, 197, 94, 0.2); }
-        .card h3 {
-            font-size: 16px;
-            margin-bottom: 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: #fff;
-        }
+        .card h3 { font-size: 16px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; color: #fff; }
 
-        /* ============================================================
-           PDV - VENDAS
-           ============================================================ */
-        .pdv-grid {
-            display: grid;
-            grid-template-columns: 1fr 1.5fr;
-            gap: 16px;
-        }
+        .pdv-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 16px; }
         .pdv-grid .input-group { margin-bottom: 10px; }
         .pdv-grid .input-group label {
             display: block;
@@ -448,78 +394,22 @@
         }
         .cart-table td { padding: 6px 4px; border-bottom: 1px solid rgba(255,255,255,0.03); }
         .cart-table .qty { text-align: center; }
-        .cart-table .qty button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
-            color: var(--text-secondary);
-            padding: 0 4px;
-        }
+        .cart-table .qty button { background: none; border: none; cursor: pointer; font-size: 14px; color: var(--text-secondary); padding: 0 4px; }
         .cart-table .qty button:hover { color: #fff; }
         .cart-table .price { text-align: right; }
         .cart-table .total-item { text-align: right; font-weight: 600; }
-        .cart-table .btn-remove {
-            background: none;
-            border: none;
-            color: var(--red);
-            cursor: pointer;
-            font-size: 14px;
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
+        .cart-table .btn-remove { background: none; border: none; color: var(--red); cursor: pointer; font-size: 14px; padding: 2px 6px; border-radius: 4px; }
         .cart-table .btn-remove:hover { background: rgba(239, 68, 68, 0.1); }
         .empty-cart { text-align: center; color: var(--text-muted); padding: 24px 0; font-size: 13px; }
 
-        .cart-summary {
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid var(--border-color);
-        }
-        .cart-summary .row {
-            display: flex;
-            justify-content: space-between;
-            padding: 3px 0;
-            font-size: 13px;
-            align-items: center;
-        }
-        .cart-summary .row.total {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--green);
-            padding-top: 6px;
-            border-top: 1px solid var(--border-color);
-            margin-top: 4px;
-        }
-        .cart-summary .row input {
-            width: 70px;
-            padding: 3px 6px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            font-size: 13px;
-            background: var(--bg-primary);
-            color: #fff;
-            text-align: right;
-        }
+        .cart-summary { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color); }
+        .cart-summary .row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 13px; align-items: center; }
+        .cart-summary .row.total { font-size: 18px; font-weight: 700; color: var(--green); padding-top: 6px; border-top: 1px solid var(--border-color); margin-top: 4px; }
+        .cart-summary .row input { width: 70px; padding: 3px 6px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 13px; background: var(--bg-primary); color: #fff; text-align: right; }
         .cart-summary .row input:focus { outline: none; border-color: var(--green); }
 
-        /* ============================================================
-           DASHBOARD
-           ============================================================ */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-        .stat-card {
-            background: var(--bg-card);
-            border-radius: var(--radius);
-            padding: 16px;
-            border: 1px solid var(--border-color);
-            text-align: center;
-            transition: var(--transition);
-        }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
+        .stat-card { background: var(--bg-card); border-radius: var(--radius); padding: 16px; border: 1px solid var(--border-color); text-align: center; transition: var(--transition); }
         .stat-card:hover { border-color: rgba(34, 197, 94, 0.2); }
         .stat-card .value { font-size: 24px; font-weight: 700; }
         .stat-card .label { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
@@ -528,143 +418,39 @@
         .stat-card .purple { color: var(--purple); }
         .stat-card .orange { color: var(--orange); }
 
-        .chart-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-bottom: 16px;
-        }
-        .chart-box {
-            background: var(--bg-card);
-            border-radius: var(--radius);
-            padding: 16px;
-            border: 1px solid var(--border-color);
-        }
+        .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+        .chart-box { background: var(--bg-card); border-radius: var(--radius); padding: 16px; border: 1px solid var(--border-color); }
         .chart-box h4 { font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; }
 
-        .method-bar {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 6px;
-        }
-        .method-bar .label {
-            width: 80px;
-            font-size: 12px;
-            text-align: right;
-            color: var(--text-secondary);
-            flex-shrink: 0;
-        }
-        .method-bar .track {
-            flex: 1;
-            height: 20px;
-            background: var(--bg-primary);
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        .method-bar .fill {
-            height: 100%;
-            border-radius: 10px;
-            transition: width 0.8s ease;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            padding-right: 6px;
-            font-size: 10px;
-            font-weight: 600;
-            color: #fff;
-            min-width: 20px;
-        }
+        .method-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+        .method-bar .label { width: 80px; font-size: 12px; text-align: right; color: var(--text-secondary); flex-shrink: 0; }
+        .method-bar .track { flex: 1; height: 20px; background: var(--bg-primary); border-radius: 10px; overflow: hidden; }
+        .method-bar .fill { height: 100%; border-radius: 10px; transition: width 0.8s ease; display: flex; align-items: center; justify-content: flex-end; padding-right: 6px; font-size: 10px; font-weight: 600; color: #fff; min-width: 20px; }
 
         .vendas-list { max-height: 250px; overflow-y: auto; }
-        .venda-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 6px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.03);
-            font-size: 12px;
-            align-items: center;
-        }
+        .venda-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 12px; align-items: center; }
         .venda-item .valor { font-weight: 600; color: var(--green); }
-        .venda-item .metodo {
-            padding: 1px 10px;
-            border-radius: 10px;
-            font-size: 10px;
-            font-weight: 600;
-        }
+        .venda-item .metodo { padding: 1px 10px; border-radius: 10px; font-size: 10px; font-weight: 600; }
         .venda-item .metodo.dinheiro { background: rgba(34, 197, 94, 0.15); color: var(--green); }
         .venda-item .metodo.pix { background: rgba(59, 130, 246, 0.15); color: var(--blue); }
         .venda-item .metodo.cartao { background: rgba(139, 92, 246, 0.15); color: var(--purple); }
         .venda-item .metodo.fiado { background: rgba(239, 68, 68, 0.15); color: var(--red); }
 
-        /* ============================================================
-           CLIENTES
-           ============================================================ */
-        .clientes-actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 12px;
-        }
-        .clientes-actions input {
-            flex: 1;
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            background: var(--bg-primary);
-            color: #fff;
-            font-size: 13px;
-            min-width: 150px;
-        }
+        .clientes-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+        .clientes-actions input { flex: 1; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-primary); color: #fff; font-size: 13px; min-width: 150px; }
         .clientes-actions input:focus { outline: none; border-color: var(--green); }
-        .clientes-actions button {
-            padding: 8px 16px;
-            background: var(--green);
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 500;
-            font-size: 13px;
-            transition: var(--transition);
-        }
+        .clientes-actions button { padding: 8px 16px; background: var(--green); color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 13px; transition: var(--transition); }
         .clientes-actions button:hover { background: var(--green-dark); }
 
         .clientes-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .clientes-table th {
-            text-align: left;
-            padding: 8px 6px;
-            border-bottom: 1px solid var(--border-color);
-            font-weight: 600;
-            color: var(--text-secondary);
-            font-size: 11px;
-            text-transform: uppercase;
-        }
+        .clientes-table th { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--border-color); font-weight: 600; color: var(--text-secondary); font-size: 11px; text-transform: uppercase; }
         .clientes-table td { padding: 8px 6px; border-bottom: 1px solid rgba(255,255,255,0.03); }
         .clientes-table .divida { color: var(--red); font-weight: 600; }
-        .clientes-table .btn-pagar {
-            padding: 3px 12px;
-            background: var(--green);
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 11px;
-        }
+        .clientes-table .btn-pagar { padding: 3px 12px; background: var(--green); color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 11px; }
         .clientes-table .btn-pagar:hover { background: var(--green-dark); }
-        .clientes-table .btn-delete {
-            background: none;
-            border: none;
-            color: var(--red);
-            cursor: pointer;
-            font-size: 14px;
-            padding: 2px 6px;
-        }
+        .clientes-table .btn-delete { background: none; border: none; color: var(--red); cursor: pointer; font-size: 14px; padding: 2px 6px; }
         .clientes-table .btn-delete:hover { background: rgba(239, 68, 68, 0.1); border-radius: 4px; }
 
-        /* ============================================================
-           CAIXA
-           ============================================================ */
         .caixa-center { text-align: center; padding: 20px 10px; }
         .caixa-center .icon { font-size: 48px; margin-bottom: 6px; }
         .caixa-center .status-text { font-size: 20px; font-weight: 700; }
@@ -672,150 +458,37 @@
         .caixa-center .status-text.fechado { color: var(--red); }
         .caixa-center .sub-info { color: var(--text-secondary); font-size: 13px; margin-top: 4px; }
 
-        .caixa-card {
-            max-width: 420px;
-            margin: 0 auto;
-            background: var(--bg-card);
-            border-radius: var(--radius);
-            padding: 24px;
-            border: 1px solid var(--border-color);
-        }
+        .caixa-card { max-width: 420px; margin: 0 auto; background: var(--bg-card); border-radius: var(--radius); padding: 24px; border: 1px solid var(--border-color); }
         .caixa-card .input-group { margin-bottom: 12px; }
-        .caixa-card .input-group label {
-            display: block;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin-bottom: 3px;
-            text-transform: uppercase;
-        }
-        .caixa-card .input-group input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            font-size: 18px;
-            text-align: center;
-            background: var(--bg-primary);
-            color: #fff;
-        }
+        .caixa-card .input-group label { display: block; font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 3px; text-transform: uppercase; }
+        .caixa-card .input-group input { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 18px; text-align: center; background: var(--bg-primary); color: #fff; }
         .caixa-card .input-group input:focus { outline: none; border-color: var(--green); }
-        .caixa-card .btn-group {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        .caixa-card .btn-group button {
-            padding: 10px 24px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-            flex: 1;
-            min-width: 120px;
-        }
+        .caixa-card .btn-group { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+        .caixa-card .btn-group button { padding: 10px 24px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: var(--transition); flex: 1; min-width: 120px; }
         .caixa-card .btn-group .btn-abrir { background: var(--green); color: #fff; }
         .caixa-card .btn-group .btn-abrir:hover { background: var(--green-dark); }
         .caixa-card .btn-group .btn-fechar { background: var(--red); color: #fff; }
         .caixa-card .btn-group .btn-fechar:hover { background: #dc2626; }
         .caixa-card .btn-group .btn-fechar:disabled { opacity: 0.4; cursor: not-allowed; }
-        .caixa-card .btn-group .btn-relatorio {
-            background: rgba(59, 130, 246, 0.15);
-            color: var(--blue);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-        }
+        .caixa-card .btn-group .btn-relatorio { background: rgba(59, 130, 246, 0.15); color: var(--blue); border: 1px solid rgba(59, 130, 246, 0.2); }
         .caixa-card .btn-group .btn-relatorio:hover { background: rgba(59, 130, 246, 0.25); }
 
-        .caixa-resumo {
-            margin-top: 14px;
-            padding: 14px;
-            background: var(--bg-primary);
-            border-radius: 8px;
-            text-align: left;
-        }
-        .caixa-resumo .row {
-            display: flex;
-            justify-content: space-between;
-            padding: 3px 0;
-            font-size: 13px;
-        }
-        .caixa-resumo .row.total {
-            font-weight: 700;
-            font-size: 15px;
-            border-top: 1px solid var(--border-color);
-            padding-top: 6px;
-            margin-top: 4px;
-            color: var(--green);
-        }
+        .caixa-resumo { margin-top: 14px; padding: 14px; background: var(--bg-primary); border-radius: 8px; text-align: left; }
+        .caixa-resumo .row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 13px; }
+        .caixa-resumo .row.total { font-weight: 700; font-size: 15px; border-top: 1px solid var(--border-color); padding-top: 6px; margin-top: 4px; color: var(--green); }
 
-        /* ============================================================
-           ESTOQUE
-           ============================================================ */
-        .estoque-grid {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 16px;
-        }
+        .estoque-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; }
         .estoque-grid .input-group { margin-bottom: 10px; }
-        .estoque-grid .input-group label {
-            display: block;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin-bottom: 3px;
-            text-transform: uppercase;
-        }
-        .estoque-grid .input-group input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            font-size: 13px;
-            background: var(--bg-primary);
-            color: #fff;
-        }
+        .estoque-grid .input-group label { display: block; font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 3px; text-transform: uppercase; }
+        .estoque-grid .input-group input { width: 100%; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; background: var(--bg-primary); color: #fff; }
         .estoque-grid .input-group input:focus { outline: none; border-color: var(--green); }
-        .estoque-grid .btn-salvar {
-            width: 100%;
-            padding: 10px;
-            background: var(--green);
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-        }
+        .estoque-grid .btn-salvar { width: 100%; padding: 10px; background: var(--green); color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: var(--transition); }
         .estoque-grid .btn-salvar:hover { background: var(--green-dark); }
-        .estoque-grid .btn-limpar {
-            width: 100%;
-            padding: 8px;
-            background: transparent;
-            color: var(--text-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: var(--transition);
-            margin-top: 6px;
-        }
+        .estoque-grid .btn-limpar { width: 100%; padding: 8px; background: transparent; color: var(--text-secondary); border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; transition: var(--transition); margin-top: 6px; }
         .estoque-grid .btn-limpar:hover { background: rgba(255,255,255,0.05); }
 
         .estoque-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        .estoque-table th {
-            text-align: left;
-            padding: 6px 4px;
-            border-bottom: 1px solid var(--border-color);
-            font-weight: 600;
-            color: var(--text-secondary);
-            font-size: 10px;
-            text-transform: uppercase;
-            position: sticky;
-            top: 0;
-            background: var(--bg-card);
-        }
+        .estoque-table th { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--border-color); font-weight: 600; color: var(--text-secondary); font-size: 10px; text-transform: uppercase; position: sticky; top: 0; background: var(--bg-card); }
         .estoque-table td { padding: 6px 4px; border-bottom: 1px solid rgba(255,255,255,0.03); cursor: pointer; }
         .estoque-table tr:hover { background: rgba(255,255,255,0.02); }
         .estoque-table .estoque-baixo { color: var(--red); font-weight: 600; }
@@ -823,93 +496,27 @@
         .estoque-table .estoque-alto { color: var(--green); }
         .estoque-wrapper { max-height: 400px; overflow-y: auto; }
 
-        /* ============================================================
-           LOJA / PLANOS
-           ============================================================ */
-        .planos-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 20px;
-        }
-        .plano-card {
-            background: var(--bg-card);
-            border-radius: var(--radius);
-            padding: 20px;
-            border: 1px solid var(--border-color);
-            text-align: center;
-            transition: var(--transition);
-            cursor: pointer;
-        }
+        .planos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px; }
+        .plano-card { background: var(--bg-card); border-radius: var(--radius); padding: 20px; border: 1px solid var(--border-color); text-align: center; transition: var(--transition); cursor: pointer; }
         .plano-card:hover { border-color: var(--green); transform: translateY(-2px); }
-        .plano-card .preco {
-            font-size: 32px;
-            font-weight: 700;
-            color: #fff;
-        }
-        .plano-card .preco small {
-            font-size: 14px;
-            font-weight: 400;
-            color: var(--text-secondary);
-        }
+        .plano-card .preco { font-size: 32px; font-weight: 700; color: #fff; }
+        .plano-card .preco small { font-size: 14px; font-weight: 400; color: var(--text-secondary); }
         .plano-card .nome { font-size: 16px; font-weight: 600; margin: 6px 0; }
         .plano-card .desc { color: var(--text-secondary); font-size: 13px; }
-        .plano-card .detalhes {
-            margin: 10px 0;
-            padding: 8px 0;
-            border-top: 1px solid var(--border-color);
-            border-bottom: 1px solid var(--border-color);
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-        .plano-card .btn-assinar {
-            width: 100%;
-            padding: 10px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-            background: var(--green);
-            color: #fff;
-        }
+        .plano-card .detalhes { margin: 10px 0; padding: 8px 0; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); font-size: 12px; color: var(--text-secondary); }
+        .plano-card .btn-assinar { width: 100%; padding: 10px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: var(--transition); background: var(--green); color: #fff; }
         .plano-card .btn-assinar:hover { background: var(--green-dark); }
-        .plano-card .btn-assinar.ativo {
-            background: rgba(34, 197, 94, 0.15);
-            color: var(--green);
-            cursor: default;
-        }
-        .plano-card .badge-top {
-            display: inline-block;
-            background: var(--green);
-            color: #fff;
-            font-size: 9px;
-            padding: 2px 12px;
-            border-radius: 20px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
+        .plano-card .btn-assinar.ativo { background: rgba(34, 197, 94, 0.15); color: var(--green); cursor: default; }
+        .plano-card .badge-top { display: inline-block; background: var(--green); color: #fff; font-size: 9px; padding: 2px 12px; border-radius: 20px; font-weight: 700; margin-bottom: 8px; }
 
-        .loja-status {
-            background: var(--bg-card);
-            border-radius: var(--radius);
-            padding: 20px;
-            border: 1px solid var(--border-color);
-        }
-        .loja-status .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 10px;
-        }
+        .loja-status { background: var(--bg-card); border-radius: var(--radius); padding: 20px; border: 1px solid var(--border-color); }
+        .loja-status .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
         .loja-status .info-item { font-size: 13px; }
         .loja-status .info-item .label { color: var(--text-secondary); }
         .loja-status .info-item .value { font-weight: 600; }
         .loja-status .info-item .value.expirado { color: var(--red); }
         .loja-status .info-item .value.ativo { color: var(--green); }
 
-        /* ============================================================
-           MODAL PIX
-           ============================================================ */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -925,183 +532,50 @@
             padding: 20px;
         }
         .modal-overlay.active { display: flex; }
-        .modal {
-            background: var(--bg-card);
-            border-radius: var(--radius);
-            padding: 32px;
-            max-width: 420px;
-            width: 100%;
-            border: 1px solid var(--border-color);
-            animation: fadeUp 0.4s ease;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        .modal .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-        }
+        .modal { background: var(--bg-card); border-radius: var(--radius); padding: 32px; max-width: 420px; width: 100%; border: 1px solid var(--border-color); animation: fadeUp 0.4s ease; max-height: 90vh; overflow-y: auto; }
+        .modal .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
         .modal .modal-header h3 { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-        .modal .modal-header .close {
-            background: none;
-            border: none;
-            font-size: 22px;
-            cursor: pointer;
-            color: var(--text-secondary);
-            transition: var(--transition);
-        }
+        .modal .modal-header .close { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-secondary); transition: var(--transition); }
         .modal .modal-header .close:hover { color: #fff; }
         .modal .pix-info { text-align: center; }
-        .modal .pix-info .valor {
-            font-size: 32px;
-            font-weight: 700;
-            color: var(--green);
-        }
-        .modal .pix-info .chave {
-            background: var(--bg-primary);
-            padding: 10px;
-            border-radius: 8px;
-            font-family: monospace;
-            font-size: 13px;
-            word-break: break-all;
-            margin: 12px 0;
-            cursor: pointer;
-            border: 1px solid var(--border-color);
-            color: var(--text-secondary);
-        }
+        .modal .pix-info .valor { font-size: 32px; font-weight: 700; color: var(--green); }
+        .modal .pix-info .chave { background: var(--bg-primary); padding: 10px; border-radius: 8px; font-family: monospace; font-size: 13px; word-break: break-all; margin: 12px 0; cursor: pointer; border: 1px solid var(--border-color); color: var(--text-secondary); }
         .modal .pix-info .chave:hover { border-color: var(--green); }
-        .modal .btn-verificar {
-            width: 100%;
-            padding: 12px;
-            background: var(--green);
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-        }
+        .modal .btn-verificar { width: 100%; padding: 12px; background: var(--green); color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: var(--transition); }
         .modal .btn-verificar:hover { background: var(--green-dark); }
-        .modal .btn-cancelar {
-            width: 100%;
-            padding: 10px;
-            background: transparent;
-            color: var(--text-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: var(--transition);
-            margin-top: 8px;
-        }
+        .modal .btn-cancelar { width: 100%; padding: 10px; background: transparent; color: var(--text-secondary); border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; transition: var(--transition); margin-top: 8px; }
         .modal .btn-cancelar:hover { background: rgba(255,255,255,0.05); }
 
-        /* ============================================================
-           CONFIG
-           ============================================================ */
-        .config-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-        }
-        .config-grid .input-group { margin-bottom: 10px; }
-        .config-grid .input-group label {
-            display: block;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin-bottom: 3px;
-            text-transform: uppercase;
-        }
-        .config-grid .input-group input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            font-size: 13px;
-            background: var(--bg-primary);
-            color: #fff;
-        }
-        .config-grid .input-group input:focus { outline: none; border-color: var(--green); }
-        .config-grid .btn {
-            width: 100%;
-            padding: 10px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-            color: #fff;
-        }
-        .config-grid .btn-primary { background: var(--green); }
-        .config-grid .btn-primary:hover { background: var(--green-dark); }
-        .config-grid .btn-danger { background: var(--red); }
-        .config-grid .btn-danger:hover { background: #dc2626; }
-
-        .usuarios-lista { max-height: 250px; overflow-y: auto; }
-        .usuario-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 6px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.03);
-        }
-        .usuario-item .info { font-size: 13px; }
-        .usuario-item .info .cargo {
-            font-size: 11px;
-            color: var(--text-secondary);
-            background: var(--bg-primary);
-            padding: 1px 10px;
-            border-radius: 10px;
-        }
-        .usuario-item .acoes button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            transition: var(--transition);
-        }
-        .usuario-item .acoes .btn-delete { color: var(--red); }
-        .usuario-item .acoes .btn-delete:hover { background: rgba(239, 68, 68, 0.1); }
-
-        /* ============================================================
-           MODAL CLIENTE
-           ============================================================ */
         .modal-cliente .form-group { margin-bottom: 10px; }
-        .modal-cliente .form-group label {
-            display: block;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin-bottom: 3px;
-            text-transform: uppercase;
-        }
-        .modal-cliente .form-group input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            font-size: 13px;
-            background: var(--bg-primary);
-            color: #fff;
-        }
+        .modal-cliente .form-group label { display: block; font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 3px; text-transform: uppercase; }
+        .modal-cliente .form-group input { width: 100%; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; background: var(--bg-primary); color: #fff; }
         .modal-cliente .form-group input:focus { outline: none; border-color: var(--green); }
-        .modal-cliente .btn-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 12px;
-        }
+        .modal-cliente .btn-group { display: flex; gap: 10px; margin-top: 12px; }
         .modal-cliente .btn-group button { flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
         .modal-cliente .btn-group .btn-save { background: var(--green); color: #fff; }
         .modal-cliente .btn-group .btn-save:hover { background: var(--green-dark); }
         .modal-cliente .btn-group .btn-cancel { background: transparent; color: var(--text-secondary); border: 1px solid var(--border-color); }
         .modal-cliente .btn-group .btn-cancel:hover { background: rgba(255,255,255,0.05); }
 
-        /* ============================================================
-           RESPONSIVO
-           ============================================================ */
+        .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .config-grid .input-group { margin-bottom: 10px; }
+        .config-grid .input-group label { display: block; font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 3px; text-transform: uppercase; }
+        .config-grid .input-group input { width: 100%; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; background: var(--bg-primary); color: #fff; }
+        .config-grid .input-group input:focus { outline: none; border-color: var(--green); }
+        .config-grid .btn { width: 100%; padding: 10px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: var(--transition); color: #fff; }
+        .config-grid .btn-primary { background: var(--green); }
+        .config-grid .btn-primary:hover { background: var(--green-dark); }
+        .config-grid .btn-danger { background: var(--red); }
+        .config-grid .btn-danger:hover { background: #dc2626; }
+
+        .usuarios-lista { max-height: 250px; overflow-y: auto; }
+        .usuario-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .usuario-item .info { font-size: 13px; }
+        .usuario-item .info .cargo { font-size: 11px; color: var(--text-secondary); background: var(--bg-primary); padding: 1px 10px; border-radius: 10px; }
+        .usuario-item .acoes button { background: none; border: none; cursor: pointer; font-size: 14px; padding: 2px 6px; border-radius: 4px; transition: var(--transition); }
+        .usuario-item .acoes .btn-delete { color: var(--red); }
+        .usuario-item .acoes .btn-delete:hover { background: rgba(239, 68, 68, 0.1); }
+
         @media (max-width: 1024px) {
             .pdv-grid { grid-template-columns: 1fr; }
             .chart-row { grid-template-columns: 1fr; }
@@ -1116,11 +590,7 @@
             .header .logo { font-size: 16px; }
             .header .user .nome { display: none; }
             .menu-toggle { display: block; }
-            .nav {
-                display: none;
-                flex-direction: column;
-                padding: 8px;
-            }
+            .nav { display: none; flex-direction: column; padding: 8px; }
             .nav.open { display: flex; }
             .nav button { padding: 10px 14px; width: 100%; justify-content: center; border-radius: 8px; }
             .content { padding: 10px; }
@@ -1284,7 +754,7 @@
                 <div class="avatar" id="userAvatar">A</div>
                 <span class="nome" id="userName">Usuário</span>
                 <span class="cargo" id="userCargo" style="font-size:11px;color:var(--text-muted);"></span>
-                <span class="db-id" id="dbIdDisplay">ID: ---</span>
+                <span class="db-id" id="dbIdDisplay" onclick="copiarId()" title="Clique para copiar o ID">📋 ID: ---</span>
                 <span class="status-caixa fechado" id="statusCaixa">🔒 Fechado</span>
                 <button class="btn-sair" onclick="fazerLogout()">Sair</button>
             </div>
@@ -1522,7 +992,7 @@
                         <div class="input-group"><label>Expira em</label><span id="expiraEmConfig" style="color:var(--text-secondary);">Carregando...</span></div>
                         <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-color);">
                             <p style="font-size:12px;color:var(--text-secondary);"><strong>Versão:</strong> <span id="versaoSistema">5.0.0</span></p>
-                            <p style="font-size:12px;color:var(--text-secondary);"><strong>ID do Banco:</strong> <span id="dbIdConfig" style="font-family:monospace;">---</span></p>
+                            <p style="font-size:12px;color:var(--text-secondary);"><strong>ID do Banco:</strong> <span id="dbIdConfig" style="font-family:monospace;cursor:pointer;" onclick="copiarId()">---</span></p>
                             <button class="btn btn-primary" onclick="sincronizarAgora()" style="margin-top:10px;background:var(--blue);"><i class="fas fa-sync"></i> Sincronizar</button>
                         </div>
                     </div>
@@ -1574,6 +1044,22 @@
                     setTimeout(() => { if (toast.parentElement) toast.remove(); }, 500);
                 }
             }, 5000);
+        }
+
+        // ============================================================
+        // COPIAR ID
+        // ============================================================
+        function copiarId() {
+            const id = state.db_id || document.getElementById('dbIdConfig').textContent;
+            if (id && id !== '---') {
+                navigator.clipboard.writeText(id).then(() => {
+                    showToast('📋 ID copiado: ' + id, 'success');
+                }).catch(() => {
+                    showToast('📋 ID: ' + id, 'info');
+                });
+            } else {
+                showToast('⚠️ Nenhum ID disponível', 'warning');
+            }
         }
 
         // ============================================================
@@ -1634,8 +1120,7 @@
 
                 if (data.success) {
                     msg.className = 'msg success';
-                    msg.textContent = `✅ Conta criada! Seu ID: ${data.db_id}`;
-                    // Preencher o campo de login com o ID
+                    msg.textContent = `✅ Conta criada! ID: ${data.db_id}`;
                     document.getElementById('loginDbId').value = data.db_id;
                     toggleAuth('login');
                     document.getElementById('loginEmail').value = email;
@@ -1690,7 +1175,7 @@
                     document.getElementById('userName').textContent = data.nome;
                     document.getElementById('userCargo').textContent = data.cargo;
                     document.getElementById('userAvatar').textContent = data.nome.charAt(0).toUpperCase();
-                    document.getElementById('dbIdDisplay').textContent = `ID: ${data.db_id}`;
+                    document.getElementById('dbIdDisplay').textContent = `📋 ID: ${data.db_id}`;
                     document.getElementById('dbIdConfig').textContent = data.db_id;
 
                     await Promise.all([
@@ -1794,7 +1279,7 @@
                     document.getElementById('userName').textContent = data.nome;
                     document.getElementById('userCargo').textContent = data.cargo;
                     document.getElementById('userAvatar').textContent = data.nome.charAt(0).toUpperCase();
-                    document.getElementById('dbIdDisplay').textContent = `ID: ${data.db_id}`;
+                    document.getElementById('dbIdDisplay').textContent = `📋 ID: ${data.db_id}`;
                     document.getElementById('dbIdConfig').textContent = data.db_id;
 
                     await Promise.all([
@@ -2093,8 +1578,8 @@
                     <td>${c.telefone || '-'}</td>
                     <td style="text-align:right;color:${c.divida > 0 ? 'var(--red)' : 'var(--text-secondary)'};font-weight:${c.divida > 0 ? '600' : '400'};">R$ ${c.divida.toFixed(2)}</td>
                     <td style="text-align:center;">
-                        ${c.divida > 0 ? `<button class="btn-pagar" onclick="pagarDivida(${c.id}, ${c.divida})">Pagar</button>` : ''}
-                        <button class="btn-delete" onclick="excluirCliente(${c.id})">✕</button>
+                        ${c.divida > 0 ? `<button class="btn-pagar" onclick="pagarDivida('${c.id}', ${c.divida})">Pagar</button>` : ''}
+                        <button class="btn-delete" onclick="excluirCliente('${c.id}')">✕</button>
                     </td>
                 </tr>
             `).join('');
