@@ -1573,7 +1573,7 @@
                     <div class="card" style="position:relative;">
                         <h3><i class="fas fa-cart-plus" style="color:var(--green);"></i> Ponto de Venda</h3>
                         
-                        <!-- Código de Barras - SEM autofocus para não roubar foco -->
+                        <!-- Código de Barras -->
                         <div class="input-group">
                             <label>Código de Barras</label>
                             <input type="text" id="codigoInput" placeholder="Digite ou leia o código">
@@ -1804,7 +1804,7 @@
     </div>
 
     <!-- ============================================================
-    JAVASCRIPT COMPLETO
+    JAVASCRIPT COMPLETO - CORRIGIDO
     ============================================================ -->
     <script>
         // ============================================================
@@ -2086,7 +2086,7 @@
         }
 
         // ============================================================
-        // PRODUTOS - COMPLETO
+        // PRODUTOS
         // ============================================================
         async function carregarProdutos() {
             try {
@@ -2165,14 +2165,29 @@
         }
 
         // ============================================================
-        // BUSCA PROFISSIONAL (com setas e Enter)
+        // CÓDIGO DE BARRAS - CORRIGIDO: Enter NÃO muda o foco
+        // ============================================================
+        const codigoInput = document.getElementById('codigoInput');
+
+        codigoInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // IMPEDE O TAB
+                const codigo = this.value.trim();
+                if (codigo) {
+                    adicionarPorCodigo(codigo);
+                    this.value = '';
+                    this.focus(); // Mantém o foco
+                }
+            }
+        });
+
+        // ============================================================
+        // BUSCA PROFISSIONAL - CORRIGIDA
         // ============================================================
         const buscaInput = document.getElementById('buscaProdutoInput');
         const searchResults = document.getElementById('searchResults');
 
-        // IMPORTANTE: O campo de busca agora captura o foco quando clicado
         buscaInput.addEventListener('focus', function() {
-            // Se já tem texto, mostrar resultados
             if (this.value.trim()) {
                 triggerSearch(this.value);
             }
@@ -2248,11 +2263,9 @@
                     const item = items[state.searchIndex];
                     const codigo = item.dataset.codigo;
                     selecionarProdutoPorCodigo(codigo);
-                    searchResults.classList.remove('active');
                     buscaInput.value = '';
                     state._resultados = [];
-                    // Foca no código de barras após selecionar
-                    codigoInput.focus();
+                    searchResults.classList.remove('active');
                 }
             } else if (e.key === 'Escape') {
                 searchResults.classList.remove('active');
@@ -2266,68 +2279,66 @@
             const item = e.target.closest('.result-item');
             if (item && item.dataset.codigo) {
                 selecionarProdutoPorCodigo(item.dataset.codigo);
-                searchResults.classList.remove('active');
                 buscaInput.value = '';
                 state._resultados = [];
-                codigoInput.focus();
+                searchResults.classList.remove('active');
             }
         });
 
         // ============================================================
-        // CÓDIGO DE BARRAS - ADICIONA DIRETO AO CARRINHO
+        // ADICIONAR POR CÓDIGO - LIMPA TUDO E FOCA NO CÓDIGO
         // ============================================================
-        const codigoInput = document.getElementById('codigoInput');
-
-        codigoInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault(); // Impede comportamento padrão de submit
-                const codigo = this.value.trim();
-                if (codigo) {
-                    adicionarPorCodigo(codigo);
-                    this.value = '';
-                    this.focus(); // Mantém o foco no campo de código
-                }
-            }
-        });
-
-        // ============================================================
-        // SELECIONAR E ADICIONAR PRODUTO
-        // ============================================================
-        function selecionarProdutoPorCodigo(codigo) {
-            const produto = state.produtos.find(p => p.codigo === codigo);
-            if (produto) {
-                state.selectedProduct = produto;
-                document.getElementById('nomeProduto').value = produto.nome;
-                document.getElementById('precoProduto').value = `R$ ${produto.preco.toFixed(2)}`;
-                document.getElementById('statusMsg').textContent = `✓ ${produto.nome} selecionado`;
-                document.getElementById('statusMsg').className = 'status-msg success';
-
-                // Adiciona automaticamente ao carrinho
-                adicionarAoCarrinho(produto);
-                // Foca no código para continuar lendo
-                codigoInput.focus();
-            } else {
-                document.getElementById('statusMsg').textContent = '✗ Produto não encontrado!';
-                document.getElementById('statusMsg').className = 'status-msg error';
-                document.getElementById('nomeProduto').value = '';
-                document.getElementById('precoProduto').value = '';
-            }
-        }
-
         function adicionarPorCodigo(codigo) {
             const produto = state.produtos.find(p => p.codigo === codigo);
             if (produto) {
                 adicionarAoCarrinho(produto);
                 document.getElementById('statusMsg').textContent = `✓ ${produto.nome} adicionado`;
                 document.getElementById('statusMsg').className = 'status-msg success';
+                // LIMPA TODOS OS CAMPOS
                 document.getElementById('nomeProduto').value = '';
                 document.getElementById('precoProduto').value = '';
+                document.getElementById('buscaProdutoInput').value = '';
+                document.getElementById('searchResults').classList.remove('active');
+                codigoInput.focus();
             } else {
                 document.getElementById('statusMsg').textContent = '✗ Produto não encontrado!';
                 document.getElementById('statusMsg').className = 'status-msg error';
+                document.getElementById('nomeProduto').value = '';
+                document.getElementById('precoProduto').value = '';
+                codigoInput.focus();
             }
         }
 
+        // ============================================================
+        // SELECIONAR PRODUTO POR CÓDIGO (da busca) - LIMPA TUDO
+        // ============================================================
+        function selecionarProdutoPorCodigo(codigo) {
+            const produto = state.produtos.find(p => p.codigo === codigo);
+            if (produto) {
+                state.selectedProduct = produto;
+                document.getElementById('statusMsg').textContent = `✓ ${produto.nome} selecionado`;
+                document.getElementById('statusMsg').className = 'status-msg success';
+
+                adicionarAoCarrinho(produto);
+
+                // LIMPA TODOS OS CAMPOS
+                document.getElementById('nomeProduto').value = '';
+                document.getElementById('precoProduto').value = '';
+                document.getElementById('buscaProdutoInput').value = '';
+                document.getElementById('searchResults').classList.remove('active');
+                codigoInput.focus();
+            } else {
+                document.getElementById('statusMsg').textContent = '✗ Produto não encontrado!';
+                document.getElementById('statusMsg').className = 'status-msg error';
+                document.getElementById('nomeProduto').value = '';
+                document.getElementById('precoProduto').value = '';
+                codigoInput.focus();
+            }
+        }
+
+        // ============================================================
+        // CARRINHO
+        // ============================================================
         function adicionarAoCarrinho(produto) {
             const existente = state.itens.find(i => i.codigo === produto.codigo);
             if (existente) {
@@ -2343,9 +2354,6 @@
             atualizarCarrinho();
         }
 
-        // ============================================================
-        // CARRINHO
-        // ============================================================
         function removerItem(index) {
             state.itens.splice(index, 1);
             atualizarCarrinho();
@@ -3109,7 +3117,6 @@
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('versaoSistema').textContent = '5.0.0';
             verificarSessao();
-            // Foco inicial no campo de código
             setTimeout(() => codigoInput.focus(), 500);
         });
 
