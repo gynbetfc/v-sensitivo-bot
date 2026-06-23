@@ -7,12 +7,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* ============================================================
-           CSS PROFISSIONAL - PDV INTELIGENTE v4.0
-           Design Minimalista, Responsivo, Escuro Premium
+           CSS COMPLETO
            ============================================================ */
-        
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+
         :root {
             --bg-primary: #0f0f1a;
             --bg-secondary: #1a1a2e;
@@ -32,7 +30,7 @@
             --shadow: 0 8px 32px rgba(0,0,0,0.4);
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: var(--bg-primary);
@@ -43,13 +41,12 @@
             align-items: center;
             padding: 16px;
         }
-        
-        /* ===== SCROLLBAR ===== */
+
         ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: var(--bg-secondary); }
         ::-webkit-scrollbar-thumb { background: var(--green); border-radius: 10px; }
-        
-        /* ===== TOAST ===== */
+
+        /* TOAST */
         .toast-container {
             position: fixed;
             top: 20px;
@@ -98,10 +95,8 @@
             from { transform: translateX(120%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
-        
-        /* ============================================================
-           LOGIN / REGISTER
-           ============================================================ */
+
+        /* AUTH */
         .auth-page {
             display: flex;
             justify-content: center;
@@ -112,7 +107,7 @@
             padding: 20px;
         }
         .auth-page.hidden { display: none; }
-        
+
         .auth-box {
             background: var(--bg-card);
             border-radius: var(--radius);
@@ -127,21 +122,10 @@
             from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        
+
         .auth-box .logo { text-align: center; font-size: 48px; margin-bottom: 4px; display: block; }
-        .auth-box h1 {
-            text-align: center;
-            font-size: 24px;
-            font-weight: 700;
-            color: #fff;
-            margin-bottom: 4px;
-        }
-        .auth-box .sub {
-            text-align: center;
-            color: var(--text-secondary);
-            font-size: 13px;
-            margin-bottom: 24px;
-        }
+        .auth-box h1 { text-align: center; font-size: 24px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+        .auth-box .sub { text-align: center; color: var(--text-secondary); font-size: 13px; margin-bottom: 24px; }
         .auth-box .form-group { margin-bottom: 14px; }
         .auth-box .form-group label {
             display: block;
@@ -179,10 +163,7 @@
             transition: var(--transition);
             margin-top: 4px;
         }
-        .auth-box .btn-primary:hover {
-            background: var(--green-dark);
-            transform: translateY(-1px);
-        }
+        .auth-box .btn-primary:hover { background: var(--green-dark); transform: translateY(-1px); }
         .auth-box .btn-primary:active { transform: translateY(0); }
         .auth-box .auth-link {
             text-align: center;
@@ -206,10 +187,8 @@
         }
         .auth-box .msg.success { display: block; background: rgba(34, 197, 94, 0.15); color: var(--green); }
         .auth-box .msg.error { display: block; background: rgba(239, 68, 68, 0.15); color: var(--red); }
-        
-        /* ============================================================
-           APP PRINCIPAL
-           ============================================================ */
+
+        /* APP */
         .app {
             display: none;
             width: 100%;
@@ -221,8 +200,8 @@
             border: 1px solid var(--border-color);
         }
         .app.active { display: block; animation: fadeUp 0.4s ease; }
-        
-        /* ===== HEADER ===== */
+
+        /* HEADER */
         .header {
             background: var(--bg-card);
             padding: 12px 20px;
@@ -236,14 +215,7 @@
             top: 0;
             z-index: 100;
         }
-        .header .logo {
-            font-size: 18px;
-            font-weight: 700;
-            color: #fff;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .header .logo { font-size: 18px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
         .header .logo span { color: var(--green); }
         .header .user {
             display: flex;
@@ -283,21 +255,11 @@
             transition: var(--transition);
             font-size: 12px;
         }
-        .header .user .btn-sair:hover {
-            background: rgba(255,255,255,0.1);
-            color: #fff;
-        }
-        
-        .menu-toggle {
-            display: none;
-            background: none;
-            border: none;
-            color: #fff;
-            font-size: 22px;
-            cursor: pointer;
-        }
-        
-        /* ===== NAV ===== */
+        .header .user .btn-sair:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+        .menu-toggle { display: none; background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
+
+        /* NAV */
         .nav {
             background: var(--bg-card);
             padding: 6px 16px;
@@ -310,7 +272,6 @@
             flex-wrap: nowrap;
         }
         .nav::-webkit-scrollbar { display: none; }
-        
         .nav button {
             padding: 8px 18px;
             border: none;
@@ -327,27 +288,15 @@
             gap: 6px;
         }
         .nav button:hover { color: #fff; background: rgba(255,255,255,0.05); }
-        .nav button.active {
-            color: #fff;
-            background: rgba(34, 197, 94, 0.15);
-        }
-        .nav button .badge {
-            background: var(--red);
-            color: #fff;
-            font-size: 9px;
-            padding: 1px 8px;
-            border-radius: 10px;
-            font-weight: 700;
-        }
-        
-        /* ===== CONTENT ===== */
+        .nav button.active { color: #fff; background: rgba(34, 197, 94, 0.15); }
+        .nav button .badge { background: var(--red); color: #fff; font-size: 9px; padding: 1px 8px; border-radius: 10px; font-weight: 700; }
+
+        /* CONTENT */
         .content { padding: 16px; }
         .panel { display: none; animation: fadeUp 0.3s ease; }
         .panel.active { display: block; }
-        
-        /* ============================================================
-           CARDS
-           ============================================================ */
+
+        /* CARDS */
         .card {
             background: var(--bg-card);
             border-radius: var(--radius);
@@ -356,23 +305,10 @@
             transition: var(--transition);
         }
         .card:hover { border-color: rgba(34, 197, 94, 0.2); }
-        .card h3 {
-            font-size: 16px;
-            margin-bottom: 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: #fff;
-        }
-        
-        /* ============================================================
-           PDV - VENDAS
-           ============================================================ */
-        .pdv-grid {
-            display: grid;
-            grid-template-columns: 1fr 1.5fr;
-            gap: 16px;
-        }
+        .card h3 { font-size: 16px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; color: #fff; }
+
+        /* PDV */
+        .pdv-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 16px; }
         .pdv-grid .input-group { margin-bottom: 10px; }
         .pdv-grid .input-group label {
             display: block;
@@ -393,11 +329,7 @@
             background: var(--bg-primary);
             color: #fff;
         }
-        .pdv-grid .input-group input:focus {
-            outline: none;
-            border-color: var(--green);
-            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
-        }
+        .pdv-grid .input-group input:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1); }
         .pdv-grid .input-group input[readonly] { color: var(--text-secondary); }
         .pdv-grid .btn-buscar {
             width: 100%;
@@ -437,7 +369,8 @@
         }
         .pdv-grid .btn-finalizar:hover { background: var(--green-dark); }
         .pdv-grid .btn-finalizar:disabled { opacity: 0.4; cursor: not-allowed; }
-        
+
+        /* CART */
         .cart-table { width: 100%; border-collapse: collapse; font-size: 12px; }
         .cart-table th {
             text-align: left;
@@ -450,78 +383,23 @@
         }
         .cart-table td { padding: 6px 4px; border-bottom: 1px solid rgba(255,255,255,0.03); }
         .cart-table .qty { text-align: center; }
-        .cart-table .qty button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
-            color: var(--text-secondary);
-            padding: 0 4px;
-        }
+        .cart-table .qty button { background: none; border: none; cursor: pointer; font-size: 14px; color: var(--text-secondary); padding: 0 4px; }
         .cart-table .qty button:hover { color: #fff; }
         .cart-table .price { text-align: right; }
         .cart-table .total-item { text-align: right; font-weight: 600; }
-        .cart-table .btn-remove {
-            background: none;
-            border: none;
-            color: var(--red);
-            cursor: pointer;
-            font-size: 14px;
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
+        .cart-table .btn-remove { background: none; border: none; color: var(--red); cursor: pointer; font-size: 14px; padding: 2px 6px; border-radius: 4px; }
         .cart-table .btn-remove:hover { background: rgba(239, 68, 68, 0.1); }
         .empty-cart { text-align: center; color: var(--text-muted); padding: 24px 0; font-size: 13px; }
-        
-        .cart-summary {
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid var(--border-color);
-        }
-        .cart-summary .row {
-            display: flex;
-            justify-content: space-between;
-            padding: 3px 0;
-            font-size: 13px;
-            align-items: center;
-        }
-        .cart-summary .row.total {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--green);
-            padding-top: 6px;
-            border-top: 1px solid var(--border-color);
-            margin-top: 4px;
-        }
-        .cart-summary .row input {
-            width: 70px;
-            padding: 3px 6px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            font-size: 13px;
-            background: var(--bg-primary);
-            color: #fff;
-            text-align: right;
-        }
+
+        .cart-summary { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color); }
+        .cart-summary .row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 13px; align-items: center; }
+        .cart-summary .row.total { font-size: 18px; font-weight: 700; color: var(--green); padding-top: 6px; border-top: 1px solid var(--border-color); margin-top: 4px; }
+        .cart-summary .row input { width: 70px; padding: 3px 6px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 13px; background: var(--bg-primary); color: #fff; text-align: right; }
         .cart-summary .row input:focus { outline: none; border-color: var(--green); }
-        
-        /* ============================================================
-           DASHBOARD
-           ============================================================ */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-        .stat-card {
-            background: var(--bg-card);
-            border-radius: var(--radius);
-            padding: 16px;
-            border: 1px solid var(--border-color);
-            text-align: center;
-            transition: var(--transition);
-        }
+
+        /* DASHBOARD */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
+        .stat-card { background: var(--bg-card); border-radius: var(--radius); padding: 16px; border: 1px solid var(--border-color); text-align: center; transition: var(--transition); }
         .stat-card:hover { border-color: rgba(34, 197, 94, 0.2); }
         .stat-card .value { font-size: 24px; font-weight: 700; }
         .stat-card .label { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
@@ -529,389 +407,111 @@
         .stat-card .blue { color: var(--blue); }
         .stat-card .purple { color: var(--purple); }
         .stat-card .orange { color: var(--orange); }
-        
-        .chart-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-bottom: 16px;
-        }
-        .chart-box {
-            background: var(--bg-card);
-            border-radius: var(--radius);
-            padding: 16px;
-            border: 1px solid var(--border-color);
-        }
+
+        .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+        .chart-box { background: var(--bg-card); border-radius: var(--radius); padding: 16px; border: 1px solid var(--border-color); }
         .chart-box h4 { font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; }
-        
-        .method-bar {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 6px;
-        }
-        .method-bar .label {
-            width: 80px;
-            font-size: 12px;
-            text-align: right;
-            color: var(--text-secondary);
-            flex-shrink: 0;
-        }
-        .method-bar .track {
-            flex: 1;
-            height: 20px;
-            background: var(--bg-primary);
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        .method-bar .fill {
-            height: 100%;
-            border-radius: 10px;
-            transition: width 0.8s ease;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            padding-right: 6px;
-            font-size: 10px;
-            font-weight: 600;
-            color: #fff;
-            min-width: 20px;
-        }
-        
+
+        .method-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+        .method-bar .label { width: 80px; font-size: 12px; text-align: right; color: var(--text-secondary); flex-shrink: 0; }
+        .method-bar .track { flex: 1; height: 20px; background: var(--bg-primary); border-radius: 10px; overflow: hidden; }
+        .method-bar .fill { height: 100%; border-radius: 10px; transition: width 0.8s ease; display: flex; align-items: center; justify-content: flex-end; padding-right: 6px; font-size: 10px; font-weight: 600; color: #fff; min-width: 20px; }
+
         .vendas-list { max-height: 250px; overflow-y: auto; }
-        .venda-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 6px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.03);
-            font-size: 12px;
-            align-items: center;
-        }
+        .venda-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 12px; align-items: center; }
         .venda-item .valor { font-weight: 600; color: var(--green); }
-        .venda-item .metodo {
-            padding: 1px 10px;
-            border-radius: 10px;
-            font-size: 10px;
-            font-weight: 600;
-        }
+        .venda-item .metodo { padding: 1px 10px; border-radius: 10px; font-size: 10px; font-weight: 600; }
         .venda-item .metodo.dinheiro { background: rgba(34, 197, 94, 0.15); color: var(--green); }
         .venda-item .metodo.pix { background: rgba(59, 130, 246, 0.15); color: var(--blue); }
         .venda-item .metodo.cartao { background: rgba(139, 92, 246, 0.15); color: var(--purple); }
         .venda-item .metodo.fiado { background: rgba(239, 68, 68, 0.15); color: var(--red); }
-        
-        /* ============================================================
-           CLIENTES
-           ============================================================ */
-        .clientes-actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 12px;
-        }
-        .clientes-actions input {
-            flex: 1;
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            background: var(--bg-primary);
-            color: #fff;
-            font-size: 13px;
-            min-width: 150px;
-        }
+
+        /* CLIENTES */
+        .clientes-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+        .clientes-actions input { flex: 1; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-primary); color: #fff; font-size: 13px; min-width: 150px; }
         .clientes-actions input:focus { outline: none; border-color: var(--green); }
-        .clientes-actions button {
-            padding: 8px 16px;
-            background: var(--green);
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 500;
-            font-size: 13px;
-            transition: var(--transition);
-        }
+        .clientes-actions button { padding: 8px 16px; background: var(--green); color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 13px; transition: var(--transition); }
         .clientes-actions button:hover { background: var(--green-dark); }
-        
+
         .clientes-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .clientes-table th {
-            text-align: left;
-            padding: 8px 6px;
-            border-bottom: 1px solid var(--border-color);
-            font-weight: 600;
-            color: var(--text-secondary);
-            font-size: 11px;
-            text-transform: uppercase;
-        }
+        .clientes-table th { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--border-color); font-weight: 600; color: var(--text-secondary); font-size: 11px; text-transform: uppercase; }
         .clientes-table td { padding: 8px 6px; border-bottom: 1px solid rgba(255,255,255,0.03); }
         .clientes-table .divida { color: var(--red); font-weight: 600; }
-        .clientes-table .btn-pagar {
-            padding: 3px 12px;
-            background: var(--green);
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 11px;
-        }
+        .clientes-table .btn-pagar { padding: 3px 12px; background: var(--green); color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 11px; }
         .clientes-table .btn-pagar:hover { background: var(--green-dark); }
-        .clientes-table .btn-delete {
-            background: none;
-            border: none;
-            color: var(--red);
-            cursor: pointer;
-            font-size: 14px;
-            padding: 2px 6px;
-        }
+        .clientes-table .btn-delete { background: none; border: none; color: var(--red); cursor: pointer; font-size: 14px; padding: 2px 6px; }
         .clientes-table .btn-delete:hover { background: rgba(239, 68, 68, 0.1); border-radius: 4px; }
-        
-        /* ============================================================
-           CAIXA
-           ============================================================ */
+
+        /* CAIXA */
         .caixa-center { text-align: center; padding: 20px 10px; }
         .caixa-center .icon { font-size: 48px; margin-bottom: 6px; }
         .caixa-center .status-text { font-size: 20px; font-weight: 700; }
         .caixa-center .status-text.aberto { color: var(--green); }
         .caixa-center .status-text.fechado { color: var(--red); }
         .caixa-center .sub-info { color: var(--text-secondary); font-size: 13px; margin-top: 4px; }
-        
-        .caixa-card {
-            max-width: 420px;
-            margin: 0 auto;
-            background: var(--bg-card);
-            border-radius: var(--radius);
-            padding: 24px;
-            border: 1px solid var(--border-color);
-        }
+
+        .caixa-card { max-width: 420px; margin: 0 auto; background: var(--bg-card); border-radius: var(--radius); padding: 24px; border: 1px solid var(--border-color); }
         .caixa-card .input-group { margin-bottom: 12px; }
-        .caixa-card .input-group label {
-            display: block;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin-bottom: 3px;
-            text-transform: uppercase;
-        }
-        .caixa-card .input-group input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            font-size: 18px;
-            text-align: center;
-            background: var(--bg-primary);
-            color: #fff;
-        }
+        .caixa-card .input-group label { display: block; font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 3px; text-transform: uppercase; }
+        .caixa-card .input-group input { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 18px; text-align: center; background: var(--bg-primary); color: #fff; }
         .caixa-card .input-group input:focus { outline: none; border-color: var(--green); }
-        .caixa-card .btn-group {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        .caixa-card .btn-group button {
-            padding: 10px 24px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-            flex: 1;
-            min-width: 120px;
-        }
+        .caixa-card .btn-group { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+        .caixa-card .btn-group button { padding: 10px 24px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: var(--transition); flex: 1; min-width: 120px; }
         .caixa-card .btn-group .btn-abrir { background: var(--green); color: #fff; }
         .caixa-card .btn-group .btn-abrir:hover { background: var(--green-dark); }
         .caixa-card .btn-group .btn-fechar { background: var(--red); color: #fff; }
         .caixa-card .btn-group .btn-fechar:hover { background: #dc2626; }
         .caixa-card .btn-group .btn-fechar:disabled { opacity: 0.4; cursor: not-allowed; }
-        .caixa-card .btn-group .btn-relatorio {
-            background: rgba(59, 130, 246, 0.15);
-            color: var(--blue);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-        }
+        .caixa-card .btn-group .btn-relatorio { background: rgba(59, 130, 246, 0.15); color: var(--blue); border: 1px solid rgba(59, 130, 246, 0.2); }
         .caixa-card .btn-group .btn-relatorio:hover { background: rgba(59, 130, 246, 0.25); }
-        
-        .caixa-resumo {
-            margin-top: 14px;
-            padding: 14px;
-            background: var(--bg-primary);
-            border-radius: 8px;
-            text-align: left;
-        }
-        .caixa-resumo .row {
-            display: flex;
-            justify-content: space-between;
-            padding: 3px 0;
-            font-size: 13px;
-        }
-        .caixa-resumo .row.total {
-            font-weight: 700;
-            font-size: 15px;
-            border-top: 1px solid var(--border-color);
-            padding-top: 6px;
-            margin-top: 4px;
-            color: var(--green);
-        }
-        
-        /* ============================================================
-           ESTOQUE
-           ============================================================ */
-        .estoque-grid {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 16px;
-        }
+
+        .caixa-resumo { margin-top: 14px; padding: 14px; background: var(--bg-primary); border-radius: 8px; text-align: left; }
+        .caixa-resumo .row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 13px; }
+        .caixa-resumo .row.total { font-weight: 700; font-size: 15px; border-top: 1px solid var(--border-color); padding-top: 6px; margin-top: 4px; color: var(--green); }
+
+        /* ESTOQUE */
+        .estoque-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; }
         .estoque-grid .input-group { margin-bottom: 10px; }
-        .estoque-grid .input-group label {
-            display: block;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin-bottom: 3px;
-            text-transform: uppercase;
-        }
-        .estoque-grid .input-group input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            font-size: 13px;
-            background: var(--bg-primary);
-            color: #fff;
-        }
+        .estoque-grid .input-group label { display: block; font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 3px; text-transform: uppercase; }
+        .estoque-grid .input-group input { width: 100%; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; background: var(--bg-primary); color: #fff; }
         .estoque-grid .input-group input:focus { outline: none; border-color: var(--green); }
-        .estoque-grid .btn-salvar {
-            width: 100%;
-            padding: 10px;
-            background: var(--green);
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-        }
+        .estoque-grid .btn-salvar { width: 100%; padding: 10px; background: var(--green); color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: var(--transition); }
         .estoque-grid .btn-salvar:hover { background: var(--green-dark); }
-        .estoque-grid .btn-limpar {
-            width: 100%;
-            padding: 8px;
-            background: transparent;
-            color: var(--text-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: var(--transition);
-            margin-top: 6px;
-        }
+        .estoque-grid .btn-limpar { width: 100%; padding: 8px; background: transparent; color: var(--text-secondary); border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; transition: var(--transition); margin-top: 6px; }
         .estoque-grid .btn-limpar:hover { background: rgba(255,255,255,0.05); }
-        
+
         .estoque-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        .estoque-table th {
-            text-align: left;
-            padding: 6px 4px;
-            border-bottom: 1px solid var(--border-color);
-            font-weight: 600;
-            color: var(--text-secondary);
-            font-size: 10px;
-            text-transform: uppercase;
-            position: sticky;
-            top: 0;
-            background: var(--bg-card);
-        }
+        .estoque-table th { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--border-color); font-weight: 600; color: var(--text-secondary); font-size: 10px; text-transform: uppercase; position: sticky; top: 0; background: var(--bg-card); }
         .estoque-table td { padding: 6px 4px; border-bottom: 1px solid rgba(255,255,255,0.03); cursor: pointer; }
         .estoque-table tr:hover { background: rgba(255,255,255,0.02); }
         .estoque-table .estoque-baixo { color: var(--red); font-weight: 600; }
         .estoque-table .estoque-medio { color: var(--orange); }
         .estoque-table .estoque-alto { color: var(--green); }
         .estoque-wrapper { max-height: 400px; overflow-y: auto; }
-        
-        /* ============================================================
-           LOJA / PLANOS
-           ============================================================ */
-        .planos-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 20px;
-        }
-        .plano-card {
-            background: var(--bg-card);
-            border-radius: var(--radius);
-            padding: 20px;
-            border: 1px solid var(--border-color);
-            text-align: center;
-            transition: var(--transition);
-            cursor: pointer;
-        }
+
+        /* LOJA */
+        .planos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px; }
+        .plano-card { background: var(--bg-card); border-radius: var(--radius); padding: 20px; border: 1px solid var(--border-color); text-align: center; transition: var(--transition); cursor: pointer; }
         .plano-card:hover { border-color: var(--green); transform: translateY(-2px); }
-        .plano-card .preco {
-            font-size: 32px;
-            font-weight: 700;
-            color: #fff;
-        }
-        .plano-card .preco small {
-            font-size: 14px;
-            font-weight: 400;
-            color: var(--text-secondary);
-        }
+        .plano-card .preco { font-size: 32px; font-weight: 700; color: #fff; }
+        .plano-card .preco small { font-size: 14px; font-weight: 400; color: var(--text-secondary); }
         .plano-card .nome { font-size: 16px; font-weight: 600; margin: 6px 0; }
         .plano-card .desc { color: var(--text-secondary); font-size: 13px; }
-        .plano-card .detalhes {
-            margin: 10px 0;
-            padding: 8px 0;
-            border-top: 1px solid var(--border-color);
-            border-bottom: 1px solid var(--border-color);
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-        .plano-card .btn-assinar {
-            width: 100%;
-            padding: 10px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-            background: var(--green);
-            color: #fff;
-        }
+        .plano-card .detalhes { margin: 10px 0; padding: 8px 0; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); font-size: 12px; color: var(--text-secondary); }
+        .plano-card .btn-assinar { width: 100%; padding: 10px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: var(--transition); background: var(--green); color: #fff; }
         .plano-card .btn-assinar:hover { background: var(--green-dark); }
-        .plano-card .btn-assinar.ativo {
-            background: rgba(34, 197, 94, 0.15);
-            color: var(--green);
-            cursor: default;
-        }
-        .plano-card .badge-top {
-            display: inline-block;
-            background: var(--green);
-            color: #fff;
-            font-size: 9px;
-            padding: 2px 12px;
-            border-radius: 20px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-        
-        .loja-status {
-            background: var(--bg-card);
-            border-radius: var(--radius);
-            padding: 20px;
-            border: 1px solid var(--border-color);
-        }
-        .loja-status .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 10px;
-        }
+        .plano-card .btn-assinar.ativo { background: rgba(34, 197, 94, 0.15); color: var(--green); cursor: default; }
+        .plano-card .badge-top { display: inline-block; background: var(--green); color: #fff; font-size: 9px; padding: 2px 12px; border-radius: 20px; font-weight: 700; margin-bottom: 8px; }
+
+        .loja-status { background: var(--bg-card); border-radius: var(--radius); padding: 20px; border: 1px solid var(--border-color); }
+        .loja-status .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
         .loja-status .info-item { font-size: 13px; }
         .loja-status .info-item .label { color: var(--text-secondary); }
         .loja-status .info-item .value { font-weight: 600; }
         .loja-status .info-item .value.expirado { color: var(--red); }
         .loja-status .info-item .value.ativo { color: var(--green); }
-        
-        /* ============================================================
-           MODAL PIX
-           ============================================================ */
+
+        /* MODAL PIX */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -927,190 +527,60 @@
             padding: 20px;
         }
         .modal-overlay.active { display: flex; }
-        .modal {
-            background: var(--bg-card);
-            border-radius: var(--radius);
-            padding: 32px;
-            max-width: 420px;
-            width: 100%;
-            border: 1px solid var(--border-color);
-            animation: fadeUp 0.4s ease;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        .modal .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-        }
+        .modal { background: var(--bg-card); border-radius: var(--radius); padding: 32px; max-width: 420px; width: 100%; border: 1px solid var(--border-color); animation: fadeUp 0.4s ease; max-height: 90vh; overflow-y: auto; }
+        .modal .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
         .modal .modal-header h3 { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-        .modal .modal-header .close {
-            background: none;
-            border: none;
-            font-size: 22px;
-            cursor: pointer;
-            color: var(--text-secondary);
-            transition: var(--transition);
-        }
+        .modal .modal-header .close { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-secondary); transition: var(--transition); }
         .modal .modal-header .close:hover { color: #fff; }
         .modal .pix-info { text-align: center; }
-        .modal .pix-info .valor {
-            font-size: 32px;
-            font-weight: 700;
-            color: var(--green);
-        }
-        .modal .pix-info .chave {
-            background: var(--bg-primary);
-            padding: 10px;
-            border-radius: 8px;
-            font-family: monospace;
-            font-size: 13px;
-            word-break: break-all;
-            margin: 12px 0;
-            cursor: pointer;
-            border: 1px solid var(--border-color);
-            color: var(--text-secondary);
-        }
+        .modal .pix-info .valor { font-size: 32px; font-weight: 700; color: var(--green); }
+        .modal .pix-info .chave { background: var(--bg-primary); padding: 10px; border-radius: 8px; font-family: monospace; font-size: 13px; word-break: break-all; margin: 12px 0; cursor: pointer; border: 1px solid var(--border-color); color: var(--text-secondary); }
         .modal .pix-info .chave:hover { border-color: var(--green); }
-        .modal .btn-verificar {
-            width: 100%;
-            padding: 12px;
-            background: var(--green);
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-        }
+        .modal .btn-verificar { width: 100%; padding: 12px; background: var(--green); color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: var(--transition); }
         .modal .btn-verificar:hover { background: var(--green-dark); }
-        .modal .btn-cancelar {
-            width: 100%;
-            padding: 10px;
-            background: transparent;
-            color: var(--text-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: var(--transition);
-            margin-top: 8px;
-        }
+        .modal .btn-cancelar { width: 100%; padding: 10px; background: transparent; color: var(--text-secondary); border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; transition: var(--transition); margin-top: 8px; }
         .modal .btn-cancelar:hover { background: rgba(255,255,255,0.05); }
-        
-        /* ============================================================
-           CONFIG
-           ============================================================ */
-        .config-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-        }
-        .config-grid .input-group { margin-bottom: 10px; }
-        .config-grid .input-group label {
-            display: block;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin-bottom: 3px;
-            text-transform: uppercase;
-        }
-        .config-grid .input-group input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            font-size: 13px;
-            background: var(--bg-primary);
-            color: #fff;
-        }
-        .config-grid .input-group input:focus { outline: none; border-color: var(--green); }
-        .config-grid .btn {
-            width: 100%;
-            padding: 10px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-            color: #fff;
-        }
-        .config-grid .btn-primary { background: var(--green); }
-        .config-grid .btn-primary:hover { background: var(--green-dark); }
-        .config-grid .btn-danger { background: var(--red); }
-        .config-grid .btn-danger:hover { background: #dc2626; }
-        
-        .usuarios-lista { max-height: 250px; overflow-y: auto; }
-        .usuario-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 6px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.03);
-        }
-        .usuario-item .info { font-size: 13px; }
-        .usuario-item .info .cargo {
-            font-size: 11px;
-            color: var(--text-secondary);
-            background: var(--bg-primary);
-            padding: 1px 10px;
-            border-radius: 10px;
-        }
-        .usuario-item .acoes button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            transition: var(--transition);
-        }
-        .usuario-item .acoes .btn-delete { color: var(--red); }
-        .usuario-item .acoes .btn-delete:hover { background: rgba(239, 68, 68, 0.1); }
-        
-        /* ============================================================
-           MODAL CLIENTE
-           ============================================================ */
+
+        /* MODAL CLIENTE */
         .modal-cliente .form-group { margin-bottom: 10px; }
-        .modal-cliente .form-group label {
-            display: block;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin-bottom: 3px;
-            text-transform: uppercase;
-        }
-        .modal-cliente .form-group input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            font-size: 13px;
-            background: var(--bg-primary);
-            color: #fff;
-        }
+        .modal-cliente .form-group label { display: block; font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 3px; text-transform: uppercase; }
+        .modal-cliente .form-group input { width: 100%; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; background: var(--bg-primary); color: #fff; }
         .modal-cliente .form-group input:focus { outline: none; border-color: var(--green); }
-        .modal-cliente .btn-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 12px;
-        }
+        .modal-cliente .btn-group { display: flex; gap: 10px; margin-top: 12px; }
         .modal-cliente .btn-group button { flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
         .modal-cliente .btn-group .btn-save { background: var(--green); color: #fff; }
         .modal-cliente .btn-group .btn-save:hover { background: var(--green-dark); }
         .modal-cliente .btn-group .btn-cancel { background: transparent; color: var(--text-secondary); border: 1px solid var(--border-color); }
         .modal-cliente .btn-group .btn-cancel:hover { background: rgba(255,255,255,0.05); }
-        
-        /* ============================================================
-           RESPONSIVO
-           ============================================================ */
+
+        /* CONFIG */
+        .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .config-grid .input-group { margin-bottom: 10px; }
+        .config-grid .input-group label { display: block; font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 3px; text-transform: uppercase; }
+        .config-grid .input-group input { width: 100%; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; background: var(--bg-primary); color: #fff; }
+        .config-grid .input-group input:focus { outline: none; border-color: var(--green); }
+        .config-grid .btn { width: 100%; padding: 10px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: var(--transition); color: #fff; }
+        .config-grid .btn-primary { background: var(--green); }
+        .config-grid .btn-primary:hover { background: var(--green-dark); }
+        .config-grid .btn-danger { background: var(--red); }
+        .config-grid .btn-danger:hover { background: #dc2626; }
+
+        .usuarios-lista { max-height: 250px; overflow-y: auto; }
+        .usuario-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .usuario-item .info { font-size: 13px; }
+        .usuario-item .info .cargo { font-size: 11px; color: var(--text-secondary); background: var(--bg-primary); padding: 1px 10px; border-radius: 10px; }
+        .usuario-item .acoes button { background: none; border: none; cursor: pointer; font-size: 14px; padding: 2px 6px; border-radius: 4px; transition: var(--transition); }
+        .usuario-item .acoes .btn-delete { color: var(--red); }
+        .usuario-item .acoes .btn-delete:hover { background: rgba(239, 68, 68, 0.1); }
+
+        /* RESPONSIVO */
         @media (max-width: 1024px) {
             .pdv-grid { grid-template-columns: 1fr; }
             .chart-row { grid-template-columns: 1fr; }
             .config-grid { grid-template-columns: 1fr; }
             .estoque-grid { grid-template-columns: 1fr; }
         }
-        
+
         @media (max-width: 768px) {
             body { padding: 8px; }
             .auth-box { padding: 24px; }
@@ -1118,11 +588,7 @@
             .header .logo { font-size: 16px; }
             .header .user .nome { display: none; }
             .menu-toggle { display: block; }
-            .nav {
-                display: none;
-                flex-direction: column;
-                padding: 8px;
-            }
+            .nav { display: none; flex-direction: column; padding: 8px; }
             .nav.open { display: flex; }
             .nav button { padding: 10px 14px; width: 100%; justify-content: center; border-radius: 8px; }
             .content { padding: 10px; }
@@ -1136,7 +602,7 @@
             .clientes-table { font-size: 12px; }
             .clientes-table th, .clientes-table td { padding: 4px; }
         }
-        
+
         @media (max-width: 480px) {
             .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
             .stat-card .value { font-size: 20px; }
@@ -1149,10 +615,7 @@
             .caixa-card .btn-group button { min-width: 80px; padding: 8px 14px; font-size: 12px; }
             .planos-grid { grid-template-columns: 1fr; }
         }
-        
-        /* ============================================================
-           UTILITÁRIOS
-           ============================================================ */
+
         .text-center { text-align: center; }
         .text-muted { color: var(--text-muted); }
         .mt-8 { margin-top: 8px; }
@@ -1163,7 +626,7 @@
         .flex-center { display: flex; align-items: center; justify-content: center; }
         .gap-8 { gap: 8px; }
         .w-full { width: 100%; }
-        
+
         .loading-spinner {
             display: inline-block;
             width: 18px;
@@ -1186,7 +649,7 @@
         <div class="modal">
             <div class="modal-header">
                 <h3>💳 Pagamento PIX</h3>
-                <button class="close" onclick="fecharModalPix()">&times;</button>
+                <button class="close" onclick="fecharModalPix()">×</button>
             </div>
             <div id="pixContent">
                 <div class="pix-info">
@@ -1202,7 +665,7 @@
         <div class="modal modal-cliente">
             <div class="modal-header">
                 <h3 id="modalClienteTitle">👤 Novo Cliente</h3>
-                <button class="close" onclick="fecharModalCliente()">&times;</button>
+                <button class="close" onclick="fecharModalCliente()">×</button>
             </div>
             <div class="form-group">
                 <label>Nome</label>
@@ -1233,7 +696,7 @@
             <h1 id="authTitle">PDV Inteligente</h1>
             <p class="sub" id="authSub">Entre na sua conta</p>
             <div class="msg" id="authMsg"></div>
-            
+
             <div id="loginForm">
                 <div class="form-group">
                     <label>Email</label>
@@ -1246,7 +709,7 @@
                 <button class="btn-primary" onclick="fazerLogin()">🚀 Entrar</button>
                 <div class="auth-link">Não tem conta? <span onclick="toggleAuth('register')">Cadastre-se</span></div>
             </div>
-            
+
             <div id="registerForm" style="display:none;">
                 <div class="form-group">
                     <label>Nome</label>
@@ -1395,7 +858,7 @@
                     <div class="icon" id="caixaIcon">🔒</div>
                     <div class="status-text fechado" id="caixaStatusText">CAIXA FECHADO</div>
                     <div class="sub-info" id="caixaSubInfo">Nenhum caixa aberto</div>
-                    
+
                     <div class="caixa-card">
                         <div class="input-group">
                             <label>Valor de Abertura (R$)</label>
@@ -1527,7 +990,7 @@
     </div>
 
     <!-- ============================================================
-    JAVASCRIPT
+    JAVASCRIPT COMPLETO
     ============================================================ -->
     <script>
         // ============================================================
@@ -1571,7 +1034,7 @@
         }
 
         // ============================================================
-        // AUTH
+        // AUTH - TOGGLE LOGIN/REGISTER
         // ============================================================
         function toggleAuth(mode) {
             const login = document.getElementById('loginForm');
@@ -1593,6 +1056,9 @@
             document.getElementById('authMsg').textContent = '';
         }
 
+        // ============================================================
+        // REGISTER
+        // ============================================================
         async function fazerRegistro() {
             const nome = document.getElementById('registerNome').value.trim();
             const email = document.getElementById('registerEmail').value.trim();
@@ -1601,12 +1067,12 @@
 
             if (!nome || !email || !senha) {
                 msg.className = 'msg error';
-                msg.textContent = 'Preencha todos os campos!';
+                msg.textContent = '⚠️ Preencha todos os campos!';
                 return;
             }
             if (senha.length < 4) {
                 msg.className = 'msg error';
-                msg.textContent = 'Senha deve ter pelo menos 4 caracteres!';
+                msg.textContent = '⚠️ Senha deve ter pelo menos 4 caracteres!';
                 return;
             }
 
@@ -1621,11 +1087,13 @@
                     body: JSON.stringify({ nome, email, senha })
                 });
                 const data = await res.json();
+
                 if (data.success) {
                     msg.className = 'msg success';
                     msg.textContent = '✅ Conta criada! Faça login.';
                     toggleAuth('login');
                     document.getElementById('loginEmail').value = email;
+                    document.getElementById('loginSenha').value = '';
                 } else {
                     msg.className = 'msg error';
                     msg.textContent = '❌ ' + data.error;
@@ -1633,9 +1101,13 @@
             } catch (e) {
                 msg.className = 'msg error';
                 msg.textContent = '❌ Erro ao criar conta!';
+                console.error(e);
             }
         }
 
+        // ============================================================
+        // LOGIN
+        // ============================================================
         async function fazerLogin() {
             const email = document.getElementById('loginEmail').value.trim();
             const senha = document.getElementById('loginSenha').value.trim();
@@ -1643,7 +1115,7 @@
 
             if (!email || !senha) {
                 msg.className = 'msg error';
-                msg.textContent = 'Preencha todos os campos!';
+                msg.textContent = '⚠️ Preencha todos os campos!';
                 return;
             }
 
@@ -1658,6 +1130,7 @@
                     body: JSON.stringify({ email, senha })
                 });
                 const data = await res.json();
+
                 if (data.success) {
                     state.usuario_id = data.usuario_id;
                     state.nome = data.nome;
@@ -1681,17 +1154,21 @@
                         carregarResumoCaixa()
                     ]);
 
-                    showToast(`Bem-vindo, ${data.nome}!`, 'success');
+                    showToast(`✅ Bem-vindo, ${data.nome}!`, 'success');
                 } else {
                     msg.className = 'msg error';
-                    msg.textContent = '❌ ' + data.error;
+                    msg.textContent = '❌ ' + (data.error || 'Email ou senha inválidos');
                 }
             } catch (e) {
                 msg.className = 'msg error';
                 msg.textContent = '❌ Erro ao fazer login!';
+                console.error(e);
             }
         }
 
+        // ============================================================
+        // LOGOUT
+        // ============================================================
         function fazerLogout() {
             fetch('/api/auth/logout', { method: 'POST' });
             state.usuario_id = null;
@@ -1706,10 +1183,10 @@
             document.getElementById('loginSenha').value = '';
             document.getElementById('authMsg').className = 'msg';
             document.getElementById('authMsg').textContent = '';
-            showToast('Desconectado', 'info');
+            showToast('🔒 Desconectado', 'info');
         }
 
-        // Enter para login
+        // Enter keys
         document.getElementById('loginSenha').addEventListener('keydown', e => { if (e.key === 'Enter') fazerLogin(); });
         document.getElementById('registerSenha').addEventListener('keydown', e => { if (e.key === 'Enter') fazerRegistro(); });
 
@@ -1824,7 +1301,7 @@
                 document.getElementById('prodPreco').value = p.preco.toFixed(2).replace('.', ',');
                 document.getElementById('prodEstoque').value = p.estoque;
                 document.getElementById('prodCategoria').value = p.categoria || 'Geral';
-                showToast(`Produto ${p.nome} carregado`, 'info');
+                showToast(`📦 ${p.nome} carregado`, 'info');
             }
         }
 
@@ -1836,7 +1313,7 @@
             const categoria = document.getElementById('prodCategoria').value.trim() || 'Geral';
 
             if (!codigo || !nome || isNaN(preco) || preco <= 0) {
-                showToast('Preencha todos os campos corretamente!', 'warning');
+                showToast('⚠️ Preencha todos os campos corretamente!', 'warning');
                 return;
             }
 
@@ -1848,13 +1325,13 @@
                 });
                 const data = await res.json();
                 if (data.success) {
-                    showToast('Produto salvo!', 'success');
+                    showToast('✅ Produto salvo!', 'success');
                     limparCamposProduto();
                     carregarProdutos();
                 } else {
-                    showToast('Erro: ' + data.error, 'error');
+                    showToast('❌ Erro: ' + data.error, 'error');
                 }
-            } catch (e) { showToast('Erro ao salvar!', 'error'); }
+            } catch (e) { showToast('❌ Erro ao salvar!', 'error'); }
         }
 
         function limparCamposProduto() {
@@ -1891,7 +1368,7 @@
             if (!nome) return;
             const encontrados = state.produtos.filter(p => p.nome.toLowerCase().includes(nome.toLowerCase()));
             if (encontrados.length === 0) {
-                showToast('Nenhum produto encontrado', 'warning');
+                showToast('🔍 Nenhum produto encontrado', 'warning');
                 return;
             }
             if (encontrados.length === 1) {
@@ -1921,7 +1398,7 @@
                 event.preventDefault();
                 const nome = document.getElementById('nomeProduto').value || 'ITEM AVULSO';
                 const preco = parseFloat(document.getElementById('precoProduto').value.replace(',', '.'));
-                if (isNaN(preco) || preco <= 0) { showToast('Preço inválido!', 'warning'); return; }
+                if (isNaN(preco) || preco <= 0) { showToast('⚠️ Preço inválido!', 'warning'); return; }
                 const existente = state.itens.find(i => i.nome === nome);
                 if (existente) { existente.quantidade += 1; } else { state.itens.push({ nome, preco, quantidade: 1,
                         codigo: 'AVULSO' }); }
@@ -1973,19 +1450,19 @@
         }
 
         function exibirPagamento() {
-            if (state.itens.length === 0) { showToast('Carrinho vazio!', 'warning'); return; }
-            if (!state.caixa_aberto) { showToast('Caixa fechado!', 'warning'); return; }
+            if (state.itens.length === 0) { showToast('🛒 Carrinho vazio!', 'warning'); return; }
+            if (!state.caixa_aberto) { showToast('🔒 Caixa fechado!', 'warning'); return; }
 
             const metodos = ['Dinheiro', 'PIX', 'Cartão', 'Fiado'];
             const metodo = prompt(
                 `Método de pagamento:\n\n${metodos.map((m,i)=>`${i+1}. ${m}`).join('\n')}\n\nDigite o número (1-4):`);
             const idx = parseInt(metodo) - 1;
-            if (isNaN(idx) || idx < 0 || idx >= metodos.length) { showToast('Opção inválida!', 'warning'); return; }
+            if (isNaN(idx) || idx < 0 || idx >= metodos.length) { showToast('⚠️ Opção inválida!', 'warning'); return; }
             const metodoSelecionado = metodos[idx];
             let cliente = '';
             if (metodoSelecionado === 'Fiado') {
                 cliente = prompt('Nome do cliente:');
-                if (!cliente) { showToast('Nome obrigatório!', 'warning'); return; }
+                if (!cliente) { showToast('⚠️ Nome obrigatório!', 'warning'); return; }
             }
 
             let recebido = state.total;
@@ -1993,7 +1470,7 @@
                 const v = prompt(`Total: R$ ${state.total.toFixed(2)}\nValor recebido:`);
                 if (!v) return;
                 const valor = parseFloat(v.replace(',', '.'));
-                if (isNaN(valor) || valor < state.total) { showToast('Valor insuficiente!', 'warning'); return; }
+                if (isNaN(valor) || valor < state.total) { showToast('⚠️ Valor insuficiente!', 'warning'); return; }
                 recebido = valor;
             }
 
@@ -2026,10 +1503,10 @@
                         carregarDashboard(state.periodo);
                         carregarResumoCaixa();
                     } else {
-                        showToast('Erro: ' + data.error, 'error');
+                        showToast('❌ Erro: ' + data.error, 'error');
                     }
                 })
-                .catch(e => { showToast('Erro ao registrar venda!', 'error'); });
+                .catch(e => { showToast('❌ Erro ao registrar venda!', 'error'); });
         }
 
         // ============================================================
@@ -2096,7 +1573,7 @@
             const telefone = document.getElementById('clienteTelefone').value.trim();
             const email = document.getElementById('clienteEmail').value.trim();
 
-            if (!nome) { showToast('Nome é obrigatório!', 'warning'); return; }
+            if (!nome) { showToast('⚠️ Nome é obrigatório!', 'warning'); return; }
 
             try {
                 const res = await fetch('/api/clientes', {
@@ -2106,20 +1583,20 @@
                 });
                 const data = await res.json();
                 if (data.success) {
-                    showToast('Cliente salvo!', 'success');
+                    showToast('✅ Cliente salvo!', 'success');
                     fecharModalCliente();
                     carregarClientes();
                 } else {
-                    showToast('Erro: ' + data.error, 'error');
+                    showToast('❌ Erro: ' + data.error, 'error');
                 }
-            } catch (e) { showToast('Erro ao salvar!', 'error'); }
+            } catch (e) { showToast('❌ Erro ao salvar!', 'error'); }
         }
 
         async function pagarDivida(id, divida) {
             const valor = prompt(`Dívida: R$ ${divida.toFixed(2)}\nValor a pagar:`);
             if (!valor) return;
             const v = parseFloat(valor.replace(',', '.'));
-            if (isNaN(v) || v <= 0) { showToast('Valor inválido!', 'warning'); return; }
+            if (isNaN(v) || v <= 0) { showToast('⚠️ Valor inválido!', 'warning'); return; }
 
             try {
                 const res = await fetch(`/api/clientes/${id}/pagar`, {
@@ -2129,12 +1606,12 @@
                 });
                 const data = await res.json();
                 if (data.success) {
-                    showToast(`Pagamento de R$ ${v.toFixed(2)} registrado!`, 'success');
+                    showToast(`💰 Pagamento de R$ ${v.toFixed(2)} registrado!`, 'success');
                     carregarClientes();
                 } else {
-                    showToast('Erro: ' + data.error, 'error');
+                    showToast('❌ Erro: ' + data.error, 'error');
                 }
-            } catch (e) { showToast('Erro ao registrar pagamento!', 'error'); }
+            } catch (e) { showToast('❌ Erro ao registrar pagamento!', 'error'); }
         }
 
         async function excluirCliente(id) {
@@ -2142,9 +1619,9 @@
             try {
                 const res = await fetch(`/api/clientes/${id}`, { method: 'DELETE' });
                 const data = await res.json();
-                if (data.success) { showToast('Cliente excluído!', 'success');
-                    carregarClientes(); } else { showToast('Erro: ' + data.error, 'error'); }
-            } catch (e) { showToast('Erro ao excluir!', 'error'); }
+                if (data.success) { showToast('🗑️ Cliente excluído!', 'success');
+                    carregarClientes(); } else { showToast('❌ Erro: ' + data.error, 'error'); }
+            } catch (e) { showToast('❌ Erro ao excluir!', 'error'); }
         }
 
         // ============================================================
@@ -2190,9 +1667,9 @@
         }
 
         async function abrirCaixa() {
-            if (state.caixa_aberto) { showToast('Caixa já aberto!', 'warning'); return; }
+            if (state.caixa_aberto) { showToast('⚠️ Caixa já aberto!', 'warning'); return; }
             const valor = parseFloat(document.getElementById('valorAbertura').value.replace(',', '.'));
-            if (isNaN(valor) || valor < 0) { showToast('Valor inválido!', 'warning'); return; }
+            if (isNaN(valor) || valor < 0) { showToast('⚠️ Valor inválido!', 'warning'); return; }
 
             try {
                 const res = await fetch('/api/caixa/abrir', {
@@ -2208,14 +1685,14 @@
                     showToast('✅ Caixa aberto!', 'success');
                     carregarResumoCaixa();
                 } else {
-                    showToast('Erro: ' + data.error, 'error');
+                    showToast('❌ Erro: ' + data.error, 'error');
                 }
-            } catch (e) { showToast('Erro ao abrir caixa!', 'error'); }
+            } catch (e) { showToast('❌ Erro ao abrir caixa!', 'error'); }
         }
 
         async function fecharCaixa() {
-            if (!state.caixa_aberto) { showToast('Caixa já fechado!', 'warning'); return; }
-            if (state.itens.length > 0) { showToast('Esvazie o carrinho primeiro!', 'warning'); return; }
+            if (!state.caixa_aberto) { showToast('⚠️ Caixa já fechado!', 'warning'); return; }
+            if (state.itens.length > 0) { showToast('⚠️ Esvazie o carrinho primeiro!', 'warning'); return; }
             if (!confirm('Fechar o caixa?')) return;
 
             try {
@@ -2229,9 +1706,9 @@
                     carregarDashboard(state.periodo);
                     carregarResumoCaixa();
                 } else {
-                    showToast('Erro: ' + data.error, 'error');
+                    showToast('❌ Erro: ' + data.error, 'error');
                 }
-            } catch (e) { showToast('Erro ao fechar caixa!', 'error'); }
+            } catch (e) { showToast('❌ Erro ao fechar caixa!', 'error'); }
         }
 
         async function carregarResumoCaixa() {
@@ -2364,9 +1841,9 @@
                     `;
                     document.getElementById('modalPix').classList.add('active');
                 } else {
-                    showToast('Erro: ' + data.error, 'error');
+                    showToast('❌ Erro: ' + data.error, 'error');
                 }
-            } catch (e) { showToast('Erro ao gerar PIX!', 'error'); }
+            } catch (e) { showToast('❌ Erro ao gerar PIX!', 'error'); }
         }
 
         function fecharModalPix() {
@@ -2374,7 +1851,7 @@
         }
 
         function copiarChave(chave) {
-            navigator.clipboard.writeText(chave).then(() => showToast('Chave copiada!', 'success')).catch(() => showToast(
+            navigator.clipboard.writeText(chave).then(() => showToast('📋 Chave copiada!', 'success')).catch(() => showToast(
                 'Chave: ' + chave, 'info'));
         }
 
@@ -2394,7 +1871,7 @@
                 } else {
                     showToast('⏳ Aguardando confirmação...', 'warning');
                 }
-            } catch (e) { showToast('Erro ao verificar!', 'error'); }
+            } catch (e) { showToast('❌ Erro ao verificar!', 'error'); }
         }
 
         async function carregarStatusLoja() {
@@ -2453,8 +1930,8 @@
             const senha = document.getElementById('novoUserSenha').value.trim();
             const cargo = document.getElementById('novoUserCargo').value;
 
-            if (!nome || !email || !senha) { showToast('Preencha todos os campos!', 'warning'); return; }
-            if (senha.length < 4) { showToast('Senha deve ter 4+ caracteres!', 'warning'); return; }
+            if (!nome || !email || !senha) { showToast('⚠️ Preencha todos os campos!', 'warning'); return; }
+            if (senha.length < 4) { showToast('⚠️ Senha deve ter 4+ caracteres!', 'warning'); return; }
 
             try {
                 const res = await fetch('/api/usuarios', {
@@ -2464,16 +1941,16 @@
                 });
                 const data = await res.json();
                 if (data.success) {
-                    showToast('Usuário criado!', 'success');
+                    showToast('✅ Usuário criado!', 'success');
                     document.getElementById('novoUserNome').value = '';
                     document.getElementById('novoUserEmail').value = '';
                     document.getElementById('novoUserSenha').value = '';
                     carregarUsuarios();
                     carregarStatusLoja();
                 } else {
-                    showToast('Erro: ' + data.error, 'error');
+                    showToast('❌ Erro: ' + data.error, 'error');
                 }
-            } catch (e) { showToast('Erro ao criar!', 'error'); }
+            } catch (e) { showToast('❌ Erro ao criar!', 'error'); }
         }
 
         async function excluirUsuario(id) {
@@ -2481,10 +1958,10 @@
             try {
                 const res = await fetch(`/api/usuarios/${id}`, { method: 'DELETE' });
                 const data = await res.json();
-                if (data.success) { showToast('Usuário excluído!', 'success');
+                if (data.success) { showToast('🗑️ Usuário excluído!', 'success');
                     carregarUsuarios();
-                    carregarStatusLoja(); } else { showToast('Erro: ' + data.error, 'error'); }
-            } catch (e) { showToast('Erro ao excluir!', 'error'); }
+                    carregarStatusLoja(); } else { showToast('❌ Erro: ' + data.error, 'error'); }
+            } catch (e) { showToast('❌ Erro ao excluir!', 'error'); }
         }
 
         // ============================================================
@@ -2519,7 +1996,8 @@
             verificarSessao();
         });
 
-        console.log('🏪 PDV Inteligente v4.0 - Design Profissional');
+        console.log('🏪 PDV Inteligente v4.0 carregado com sucesso!');
+        console.log('📱 Design profissional e responsivo');
     </script>
 </body>
-    </html>
+        </html>
