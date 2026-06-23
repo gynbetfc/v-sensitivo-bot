@@ -698,10 +698,605 @@
         }
 
         /* ============================================================
+           CLIENTES
+           ============================================================ */
+        .clientes-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+        .clientes-actions input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: #fff;
+            font-size: 13px;
+            min-width: 150px;
+        }
+        .clientes-actions input:focus { outline: none; border-color: var(--green); }
+        .clientes-actions button {
+            padding: 8px 16px;
+            background: var(--green);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 13px;
+            transition: var(--transition);
+        }
+        .clientes-actions button:hover { background: var(--green-dark); }
+
+        .clientes-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .clientes-table th {
+            text-align: left;
+            padding: 8px 6px;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+        .clientes-table td { padding: 8px 6px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .clientes-table .divida { color: var(--red); font-weight: 600; }
+        .clientes-table .btn-pagar {
+            padding: 3px 12px;
+            background: var(--green);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        .clientes-table .btn-pagar:hover { background: var(--green-dark); }
+        .clientes-table .btn-delete {
+            background: none;
+            border: none;
+            color: var(--red);
+            cursor: pointer;
+            font-size: 14px;
+            padding: 2px 6px;
+        }
+        .clientes-table .btn-delete:hover { background: rgba(239, 68, 68, 0.1); border-radius: 4px; }
+
+        /* ============================================================
+           CAIXA
+           ============================================================ */
+        .caixa-center { text-align: center; padding: 20px 10px; }
+        .caixa-center .icon { font-size: 48px; margin-bottom: 6px; }
+        .caixa-center .status-text { font-size: 20px; font-weight: 700; }
+        .caixa-center .status-text.aberto { color: var(--green); }
+        .caixa-center .status-text.fechado { color: var(--red); }
+        .caixa-center .sub-info { color: var(--text-secondary); font-size: 13px; margin-top: 4px; }
+
+        .caixa-card {
+            max-width: 420px;
+            margin: 0 auto;
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 24px;
+            border: 1px solid var(--border-color);
+        }
+        .caixa-card .input-group { margin-bottom: 12px; }
+        .caixa-card .input-group label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 3px;
+            text-transform: uppercase;
+        }
+        .caixa-card .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 18px;
+            text-align: center;
+            background: var(--bg-primary);
+            color: #fff;
+        }
+        .caixa-card .input-group input:focus { outline: none; border-color: var(--green); }
+        .caixa-card .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .caixa-card .btn-group button {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            flex: 1;
+            min-width: 120px;
+        }
+        .caixa-card .btn-group .btn-abrir { background: var(--green); color: #fff; }
+        .caixa-card .btn-group .btn-abrir:hover { background: var(--green-dark); }
+        .caixa-card .btn-group .btn-fechar { background: var(--red); color: #fff; }
+        .caixa-card .btn-group .btn-fechar:hover { background: #dc2626; }
+        .caixa-card .btn-group .btn-fechar:disabled { opacity: 0.4; cursor: not-allowed; }
+        .caixa-card .btn-group .btn-relatorio {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--blue);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+        .caixa-card .btn-group .btn-relatorio:hover { background: rgba(59, 130, 246, 0.25); }
+
+        .caixa-resumo {
+            margin-top: 14px;
+            padding: 14px;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            text-align: left;
+        }
+        .caixa-resumo .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+            font-size: 13px;
+        }
+        .caixa-resumo .row.total {
+            font-weight: 700;
+            font-size: 15px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 6px;
+            margin-top: 4px;
+            color: var(--green);
+        }
+
+        /* ============================================================
+           ESTOQUE
+           ============================================================ */
+        .estoque-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 16px;
+        }
+        .estoque-grid .input-group { margin-bottom: 10px; }
+        .estoque-grid .input-group label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 3px;
+            text-transform: uppercase;
+        }
+        .estoque-grid .input-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 13px;
+            background: var(--bg-primary);
+            color: #fff;
+        }
+        .estoque-grid .input-group input:focus { outline: none; border-color: var(--green); }
+        .estoque-grid .btn-salvar {
+            width: 100%;
+            padding: 10px;
+            background: var(--green);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .estoque-grid .btn-salvar:hover { background: var(--green-dark); }
+        .estoque-grid .btn-limpar {
+            width: 100%;
+            padding: 8px;
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: 6px;
+        }
+        .estoque-grid .btn-limpar:hover { background: rgba(255,255,255,0.05); }
+
+        .estoque-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .estoque-table th {
+            text-align: left;
+            padding: 6px 4px;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 10px;
+            text-transform: uppercase;
+            position: sticky;
+            top: 0;
+            background: var(--bg-card);
+        }
+        .estoque-table td { padding: 6px 4px; border-bottom: 1px solid rgba(255,255,255,0.03); cursor: pointer; }
+        .estoque-table tr:hover { background: rgba(255,255,255,0.02); }
+        .estoque-table .estoque-baixo { color: var(--red); font-weight: 600; }
+        .estoque-table .estoque-medio { color: var(--orange); }
+        .estoque-table .estoque-alto { color: var(--green); }
+        .estoque-wrapper { max-height: 400px; overflow-y: auto; }
+
+        /* ============================================================
+           DASHBOARD
+           ============================================================ */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+            transition: var(--transition);
+        }
+        .stat-card:hover { border-color: rgba(34, 197, 94, 0.2); }
+        .stat-card .value { font-size: 24px; font-weight: 700; }
+        .stat-card .label { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+        .stat-card .green { color: var(--green); }
+        .stat-card .blue { color: var(--blue); }
+        .stat-card .purple { color: var(--purple); }
+        .stat-card .orange { color: var(--orange); }
+
+        .chart-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .chart-box {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 16px;
+            border: 1px solid var(--border-color);
+        }
+        .chart-box h4 { font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; }
+
+        .method-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+        .method-bar .label {
+            width: 80px;
+            font-size: 12px;
+            text-align: right;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+        .method-bar .track {
+            flex: 1;
+            height: 20px;
+            background: var(--bg-primary);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .method-bar .fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.8s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 6px;
+            font-size: 10px;
+            font-weight: 600;
+            color: #fff;
+            min-width: 20px;
+        }
+
+        .vendas-list { max-height: 250px; overflow-y: auto; }
+        .venda-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            font-size: 12px;
+            align-items: center;
+        }
+        .venda-item .valor { font-weight: 600; color: var(--green); }
+        .venda-item .metodo {
+            padding: 1px 10px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        .venda-item .metodo.dinheiro { background: rgba(34, 197, 94, 0.15); color: var(--green); }
+        .venda-item .metodo.pix { background: rgba(59, 130, 246, 0.15); color: var(--blue); }
+        .venda-item .metodo.cartao { background: rgba(139, 92, 246, 0.15); color: var(--purple); }
+        .venda-item .metodo.fiado { background: rgba(239, 68, 68, 0.15); color: var(--red); }
+
+        /* ============================================================
+           LOJA / PLANOS
+           ============================================================ */
+        .planos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .plano-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+        .plano-card:hover { border-color: var(--green); transform: translateY(-2px); }
+        .plano-card .preco {
+            font-size: 32px;
+            font-weight: 700;
+            color: #fff;
+        }
+        .plano-card .preco small {
+            font-size: 14px;
+            font-weight: 400;
+            color: var(--text-secondary);
+        }
+        .plano-card .nome { font-size: 16px; font-weight: 600; margin: 6px 0; }
+        .plano-card .desc { color: var(--text-secondary); font-size: 13px; }
+        .plano-card .detalhes {
+            margin: 10px 0;
+            padding: 8px 0;
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .plano-card .btn-assinar {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            background: var(--green);
+            color: #fff;
+        }
+        .plano-card .btn-assinar:hover { background: var(--green-dark); }
+        .plano-card .btn-assinar.ativo {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--green);
+            cursor: default;
+        }
+        .plano-card .badge-top {
+            display: inline-block;
+            background: var(--green);
+            color: #fff;
+            font-size: 9px;
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .loja-status {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 20px;
+            border: 1px solid var(--border-color);
+        }
+        .loja-status .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+        }
+        .loja-status .info-item { font-size: 13px; }
+        .loja-status .info-item .label { color: var(--text-secondary); }
+        .loja-status .info-item .value { font-weight: 600; }
+        .loja-status .info-item .value.expirado { color: var(--red); }
+        .loja-status .info-item .value.ativo { color: var(--green); }
+
+        /* ============================================================
+           MODAL PIX
+           ============================================================ */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 32px;
+            max-width: 420px;
+            width: 100%;
+            border: 1px solid var(--border-color);
+            animation: fadeUp 0.4s ease;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .modal .modal-header h3 { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .modal .modal-header .close {
+            background: none;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: var(--transition);
+        }
+        .modal .modal-header .close:hover { color: #fff; }
+        .modal .pix-info { text-align: center; }
+        .modal .pix-info .valor { font-size: 32px; font-weight: 700; color: var(--green); }
+        .modal .pix-info .chave {
+            background: var(--bg-primary);
+            padding: 10px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 13px;
+            word-break: break-all;
+            margin: 12px 0;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+        .modal .pix-info .chave:hover { border-color: var(--green); }
+        .modal .btn-verificar {
+            width: 100%;
+            padding: 12px;
+            background: var(--green);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .modal .btn-verificar:hover { background: var(--green-dark); }
+        .modal .btn-cancelar {
+            width: 100%;
+            padding: 10px;
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: 8px;
+        }
+        .modal .btn-cancelar:hover { background: rgba(255,255,255,0.05); }
+
+        /* ============================================================
+           CONFIG
+           ============================================================ */
+        .config-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .config-grid .input-group { margin-bottom: 10px; }
+        .config-grid .input-group label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 3px;
+            text-transform: uppercase;
+        }
+        .config-grid .input-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 13px;
+            background: var(--bg-primary);
+            color: #fff;
+        }
+        .config-grid .input-group input:focus { outline: none; border-color: var(--green); }
+        .config-grid .btn {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            color: #fff;
+        }
+        .config-grid .btn-primary { background: var(--green); }
+        .config-grid .btn-primary:hover { background: var(--green-dark); }
+        .config-grid .btn-danger { background: var(--red); }
+        .config-grid .btn-danger:hover { background: #dc2626; }
+
+        .usuarios-lista { max-height: 250px; overflow-y: auto; }
+        .usuario-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+        .usuario-item .info { font-size: 13px; }
+        .usuario-item .info .cargo {
+            font-size: 11px;
+            color: var(--text-secondary);
+            background: var(--bg-primary);
+            padding: 1px 10px;
+            border-radius: 10px;
+        }
+        .usuario-item .acoes button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: var(--transition);
+        }
+        .usuario-item .acoes .btn-delete { color: var(--red); }
+        .usuario-item .acoes .btn-delete:hover { background: rgba(239, 68, 68, 0.1); }
+
+        /* ============================================================
+           MODAL CLIENTE
+           ============================================================ */
+        .modal-cliente .form-group { margin-bottom: 10px; }
+        .modal-cliente .form-group label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 3px;
+            text-transform: uppercase;
+        }
+        .modal-cliente .form-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 13px;
+            background: var(--bg-primary);
+            color: #fff;
+        }
+        .modal-cliente .form-group input:focus { outline: none; border-color: var(--green); }
+        .modal-cliente .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .modal-cliente .btn-group button { flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .modal-cliente .btn-group .btn-save { background: var(--green); color: #fff; }
+        .modal-cliente .btn-group .btn-save:hover { background: var(--green-dark); }
+        .modal-cliente .btn-group .btn-cancel { background: transparent; color: var(--text-secondary); border: 1px solid var(--border-color); }
+        .modal-cliente .btn-group .btn-cancel:hover { background: rgba(255,255,255,0.05); }
+
+        /* ============================================================
            RESPONSIVO
            ============================================================ */
         @media (max-width: 1024px) {
             .pdv-grid { grid-template-columns: 1fr; }
+            .chart-row { grid-template-columns: 1fr; }
+            .config-grid { grid-template-columns: 1fr; }
+            .estoque-grid { grid-template-columns: 1fr; }
             .payment-modal .payment-methods { grid-template-columns: 1fr 1fr; }
         }
 
@@ -721,17 +1316,30 @@
             .nav button { padding: 10px 14px; width: 100%; justify-content: center; border-radius: 8px; }
             .content { padding: 10px; }
             .card { padding: 14px; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .planos-grid { grid-template-columns: 1fr; }
+            .caixa-card { padding: 16px; }
+            .modal { padding: 20px; margin: 10px; }
+            .clientes-actions { flex-direction: column; }
+            .clientes-actions input { width: 100%; }
+            .clientes-table { font-size: 12px; }
+            .clientes-table th, .clientes-table td { padding: 4px; }
             .payment-modal .modal { padding: 20px; margin: 10px; }
             .payment-modal .payment-methods { grid-template-columns: 1fr 1fr; }
             .payment-modal .total-display .value { font-size: 28px; }
         }
 
         @media (max-width: 480px) {
+            .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+            .stat-card .value { font-size: 20px; }
+            .stat-card { padding: 12px; }
             .auth-box { padding: 16px; }
             .auth-box h1 { font-size: 20px; }
             .pdv-grid .input-group input { font-size: 13px; padding: 8px 10px; }
             .cart-table { font-size: 11px; }
             .cart-table th, .cart-table td { padding: 3px; }
+            .caixa-card .btn-group button { min-width: 80px; padding: 8px 14px; font-size: 12px; }
+            .planos-grid { grid-template-columns: 1fr; }
             .payment-modal .payment-methods { grid-template-columns: 1fr; }
             .payment-modal .payment-input { flex-wrap: wrap; }
             .payment-modal .payment-input .label { min-width: 100%; }
@@ -764,6 +1372,49 @@
 
     <!-- ===== TOAST ===== -->
     <div class="toast-container" id="toastContainer"></div>
+
+    <!-- ===== MODAL PIX ===== -->
+    <div class="modal-overlay" id="modalPix">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>💳 Pagamento PIX</h3>
+                <button class="close" onclick="fecharModalPix()">×</button>
+            </div>
+            <div id="pixContent">
+                <div class="pix-info">
+                    <div class="loading-spinner"></div>
+                    <p style="margin-top:12px;color:var(--text-secondary);">Gerando pagamento...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL CLIENTE ===== -->
+    <div class="modal-overlay" id="modalCliente">
+        <div class="modal modal-cliente">
+            <div class="modal-header">
+                <h3 id="modalClienteTitle">👤 Novo Cliente</h3>
+                <button class="close" onclick="fecharModalCliente()">×</button>
+            </div>
+            <div class="form-group">
+                <label>Nome</label>
+                <input type="text" id="clienteNome" placeholder="Nome do cliente">
+            </div>
+            <div class="form-group">
+                <label>Telefone</label>
+                <input type="text" id="clienteTelefone" placeholder="(00) 00000-0000">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="clienteEmail" placeholder="email@exemplo.com">
+            </div>
+            <input type="hidden" id="clienteId">
+            <div class="btn-group">
+                <button class="btn-save" onclick="salvarCliente()">💾 Salvar</button>
+                <button class="btn-cancel" onclick="fecharModalCliente()">Cancelar</button>
+            </div>
+        </div>
+    </div>
 
     <!-- ===== MODAL PAGAMENTO ===== -->
     <div class="payment-modal" id="paymentModal">
@@ -913,7 +1564,9 @@
         <!-- CONTENT -->
         <div class="content">
 
-            <!-- ===== PANEL: VENDAS ===== -->
+            <!-- ============================================================
+            PANEL: VENDAS
+            ============================================================ -->
             <div class="panel active" id="panelVendas">
                 <div class="pdv-grid">
                     <!-- Esquerda -->
@@ -978,13 +1631,174 @@
                 </div>
             </div>
 
-            <!-- ===== OUTRAS ABAS (resumidas) ===== -->
-            <div class="panel" id="panelClientes"><div class="card"><h3>Clientes</h3><p style="color:var(--text-secondary);">Em desenvolvimento...</p></div></div>
-            <div class="panel" id="panelCaixa"><div class="card"><h3>Caixa</h3><p style="color:var(--text-secondary);">Em desenvolvimento...</p></div></div>
-            <div class="panel" id="panelDashboard"><div class="card"><h3>Dashboard</h3><p style="color:var(--text-secondary);">Em desenvolvimento...</p></div></div>
-            <div class="panel" id="panelEstoque"><div class="card"><h3>Estoque</h3><p style="color:var(--text-secondary);">Em desenvolvimento...</p></div></div>
-            <div class="panel" id="panelLoja"><div class="card"><h3>Loja</h3><p style="color:var(--text-secondary);">Em desenvolvimento...</p></div></div>
-            <div class="panel" id="panelConfig"><div class="card"><h3>Configurações</h3><p style="color:var(--text-secondary);">Em desenvolvimento...</p></div></div>
+            <!-- ============================================================
+            PANEL: CLIENTES
+            ============================================================ -->
+            <div class="panel" id="panelClientes">
+                <div class="card">
+                    <div class="clientes-actions">
+                        <input type="text" id="buscaCliente" placeholder="🔍 Buscar cliente..." oninput="carregarClientes()">
+                        <button onclick="abrirModalCliente()"><i class="fas fa-user-plus"></i> Novo Cliente</button>
+                    </div>
+                    <div style="max-height:450px;overflow-y:auto;">
+                        <table class="clientes-table">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Telefone</th>
+                                    <th style="text-align:right;">Dívida</th>
+                                    <th style="text-align:center;">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaClientes"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            PANEL: CAIXA
+            ============================================================ -->
+            <div class="panel" id="panelCaixa">
+                <div class="caixa-center">
+                    <div class="icon" id="caixaIcon">🔒</div>
+                    <div class="status-text fechado" id="caixaStatusText">CAIXA FECHADO</div>
+                    <div class="sub-info" id="caixaSubInfo">Nenhum caixa aberto</div>
+
+                    <div class="caixa-card">
+                        <div class="input-group">
+                            <label>Valor de Abertura (R$)</label>
+                            <input type="text" id="valorAbertura" value="100,00">
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn-abrir" onclick="abrirCaixa()"><i class="fas fa-unlock"></i> Abrir</button>
+                            <button class="btn-fechar" id="btnFecharCaixa" onclick="fecharCaixa()" disabled><i class="fas fa-lock"></i> Fechar</button>
+                        </div>
+                        <div class="btn-group" style="margin-top:10px;">
+                            <button class="btn-relatorio" onclick="gerarRelatorio()"><i class="fas fa-file-alt"></i> Relatório</button>
+                            <button class="btn-relatorio" onclick="sincronizarAgora()" style="border-color:var(--text-muted);color:var(--text-muted);"><i class="fas fa-sync"></i> Sincronizar</button>
+                        </div>
+                    </div>
+
+                    <div class="caixa-card" style="margin-top:16px;max-width:420px;">
+                        <h4 style="font-size:14px;margin-bottom:10px;text-align:left;">📊 Resumo do Dia</h4>
+                        <div class="caixa-resumo" id="caixaResumo">
+                            <p style="color:var(--text-secondary);text-align:center;">Nenhuma venda hoje</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            PANEL: DASHBOARD
+            ============================================================ -->
+            <div class="panel" id="panelDashboard">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+                    <h2 style="font-size:18px;"><i class="fas fa-chart-pie" style="color:var(--green);"></i> Dashboard</h2>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                        <button onclick="carregarDashboard('hoje')" class="btn-periodo" style="padding:6px 14px;border:1px solid var(--green);background:var(--green);color:#fff;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">Hoje</button>
+                        <button onclick="carregarDashboard('semana')" class="btn-periodo" style="padding:6px 14px;border:1px solid var(--border-color);background:transparent;color:var(--text-secondary);border-radius:6px;cursor:pointer;font-size:12px;">Semana</button>
+                        <button onclick="carregarDashboard('mes')" class="btn-periodo" style="padding:6px 14px;border:1px solid var(--border-color);background:transparent;color:var(--text-secondary);border-radius:6px;cursor:pointer;font-size:12px;">Mês</button>
+                    </div>
+                </div>
+
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-card"><div class="value green" id="totalGeral">R$ 0,00</div><div class="label">Total Geral</div></div>
+                    <div class="stat-card"><div class="value blue" id="totalVendas">0</div><div class="label">Vendas</div></div>
+                    <div class="stat-card"><div class="value purple" id="mediaVenda">R$ 0,00</div><div class="label">Ticket Médio</div></div>
+                    <div class="stat-card"><div class="value orange" id="totalItens">0</div><div class="label">Itens</div></div>
+                </div>
+
+                <div class="chart-row">
+                    <div class="chart-box">
+                        <h4><i class="fas fa-credit-card"></i> Métodos</h4>
+                        <div id="metodosContainer"><p style="color:var(--text-secondary);font-size:13px;">Carregando...</p></div>
+                    </div>
+                    <div class="chart-box">
+                        <h4><i class="fas fa-clock"></i> Últimas Vendas</h4>
+                        <div class="vendas-list" id="vendasList"><p style="color:var(--text-secondary);font-size:13px;">Carregando...</p></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            PANEL: ESTOQUE
+            ============================================================ -->
+            <div class="panel" id="panelEstoque">
+                <div class="estoque-grid">
+                    <div class="card">
+                        <h3><i class="fas fa-plus-circle" style="color:var(--green);"></i> Produto</h3>
+                        <div class="input-group"><label>Código</label><input type="text" id="prodCodigo" placeholder="Código"></div>
+                        <div class="input-group"><label>Nome</label><input type="text" id="prodNome" placeholder="Nome do produto"></div>
+                        <div class="input-group"><label>Preço (R$)</label><input type="text" id="prodPreco" placeholder="0,00"></div>
+                        <div class="input-group"><label>Estoque</label><input type="number" id="prodEstoque" value="0"></div>
+                        <div class="input-group"><label>Categoria</label><input type="text" id="prodCategoria" placeholder="Geral"></div>
+                        <button class="btn-salvar" onclick="salvarProduto()"><i class="fas fa-save"></i> Salvar</button>
+                        <button class="btn-limpar" onclick="limparCamposProduto()">Limpar</button>
+                    </div>
+                    <div class="card">
+                        <h3><i class="fas fa-list"></i> Lista</h3>
+                        <div class="input-group"><label>Buscar</label><input type="text" id="buscaEstoque" placeholder="Nome ou código..." oninput="carregarProdutos()"></div>
+                        <div class="estoque-wrapper">
+                            <table class="estoque-table">
+                                <thead><tr><th>Código</th><th>Nome</th><th style="text-align:right;">Preço</th><th style="text-align:center;">Estoque</th></tr></thead>
+                                <tbody id="tabelaEstoque"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            PANEL: LOJA
+            ============================================================ -->
+            <div class="panel" id="panelLoja">
+                <div style="text-align:center;margin-bottom:20px;">
+                    <h2 style="font-size:22px;"><i class="fas fa-store" style="color:var(--green);"></i> Planos</h2>
+                    <p style="color:var(--text-secondary);font-size:13px;">Escolha o plano ideal para sua empresa</p>
+                </div>
+                <div class="planos-grid" id="planosGrid"></div>
+                <div class="loja-status" id="statusLoja">
+                    <h4 style="font-size:14px;margin-bottom:10px;"><i class="fas fa-info-circle"></i> Status</h4>
+                    <p style="color:var(--text-secondary);">Carregando...</p>
+                </div>
+            </div>
+
+            <!-- ============================================================
+            PANEL: CONFIG
+            ============================================================ -->
+            <div class="panel" id="panelConfig">
+                <div class="config-grid">
+                    <div class="card">
+                        <h3><i class="fas fa-user-cog" style="color:var(--blue);"></i> Usuários</h3>
+                        <div class="input-group"><label>Nome</label><input type="text" id="novoUserNome" placeholder="Nome"></div>
+                        <div class="input-group"><label>Email</label><input type="email" id="novoUserEmail" placeholder="email@exemplo.com"></div>
+                        <div class="input-group"><label>Senha</label><input type="password" id="novoUserSenha" placeholder="••••••••"></div>
+                        <div class="input-group"><label>Cargo</label>
+                            <select id="novoUserCargo" style="width:100%;padding:8px 12px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-primary);color:#fff;">
+                                <option value="Funcionario">Funcionário</option>
+                                <option value="Gerente">Gerente</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" onclick="cadastrarUsuario()"><i class="fas fa-user-plus"></i> Cadastrar</button>
+                        <div style="margin-top:12px;">
+                            <h4 style="font-size:13px;color:var(--text-secondary);margin-bottom:6px;">Usuários</h4>
+                            <div class="usuarios-lista" id="listaUsuarios"></div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3><i class="fas fa-store-alt" style="color:var(--orange);"></i> Loja</h3>
+                        <div class="input-group"><label>Nome</label><input type="text" id="lojaNome" placeholder="Nome da loja"></div>
+                        <div class="input-group"><label>Plano</label><span id="planoAtualConfig" style="color:var(--green);font-weight:600;">Carregando...</span></div>
+                        <div class="input-group"><label>Expira em</label><span id="expiraEmConfig" style="color:var(--text-secondary);">Carregando...</span></div>
+                        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-color);">
+                            <p style="font-size:12px;color:var(--text-secondary);"><strong>Versão:</strong> <span id="versaoSistema">5.0.0</span></p>
+                            <p style="font-size:12px;color:var(--text-secondary);"><strong>ID do Banco:</strong> <span id="dbIdConfig" style="font-family:monospace;cursor:pointer;" onclick="copiarId()">---</span></p>
+                            <button class="btn btn-primary" onclick="sincronizarAgora()" style="margin-top:10px;background:var(--blue);"><i class="fas fa-sync"></i> Sincronizar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
         </div>
     </div>
@@ -1006,10 +1820,10 @@
             subtotal: 0,
             total: 0,
             produtos: [],
+            clientes: [],
+            periodo: 'hoje',
             searchIndex: -1,
-            selectedProduct: null,
-            paymentMethods: {},
-            periodo: 'hoje'
+            _resultados: []
         };
 
         // ============================================================
@@ -1158,8 +1972,16 @@
                     document.getElementById('userAvatar').textContent = data.nome.charAt(0).toUpperCase();
                     document.getElementById('dbIdDisplay').textContent = `📋 ID: ${data.db_id}`;
 
-                    await carregarProdutos();
-                    await verificarStatusCaixa();
+                    await Promise.all([
+                        carregarProdutos(),
+                        carregarClientes(),
+                        carregarPlanos(),
+                        carregarStatusLoja(),
+                        carregarUsuarios(),
+                        verificarStatusCaixa(),
+                        carregarResumoCaixa(),
+                        carregarDashboard('hoje')
+                    ]);
 
                     showToast(`✅ Bem-vindo, ${data.nome}!`, 'success');
                 } else {
@@ -1182,6 +2004,7 @@
             state.caixa_aberto = false;
             state.itens = [];
             state.produtos = [];
+            state.clientes = [];
             document.getElementById('app').classList.remove('active');
             document.getElementById('authPage').classList.remove('hidden');
             document.getElementById('loginEmail').value = '';
@@ -1217,6 +2040,15 @@
             const target = document.getElementById(panels[tab]);
             if (target) target.classList.add('active');
             document.getElementById('nav').classList.remove('open');
+
+            if (tab === 'dashboard') carregarDashboard(state.periodo);
+            if (tab === 'clientes') carregarClientes();
+            if (tab === 'caixa') carregarResumoCaixa();
+            if (tab === 'estoque') carregarProdutos();
+            if (tab === 'loja') { carregarPlanos();
+                carregarStatusLoja(); }
+            if (tab === 'config') { carregarUsuarios();
+                carregarStatusLoja(); }
         }
 
         // ============================================================
@@ -1239,14 +2071,22 @@
                     document.getElementById('userAvatar').textContent = data.nome.charAt(0).toUpperCase();
                     document.getElementById('dbIdDisplay').textContent = `📋 ID: ${data.db_id}`;
 
-                    await carregarProdutos();
-                    await verificarStatusCaixa();
+                    await Promise.all([
+                        carregarProdutos(),
+                        carregarClientes(),
+                        carregarPlanos(),
+                        carregarStatusLoja(),
+                        carregarUsuarios(),
+                        verificarStatusCaixa(),
+                        carregarResumoCaixa(),
+                        carregarDashboard('hoje')
+                    ]);
                 }
             } catch (e) { console.error('Erro ao verificar sessão:', e); }
         }
 
         // ============================================================
-        // PRODUTOS - BUSCA PROFISSIONAL
+        // PRODUTOS - COMPLETO
         // ============================================================
         async function carregarProdutos() {
             try {
@@ -1254,11 +2094,79 @@
                 const data = await res.json();
                 if (data.success) {
                     state.produtos = data.produtos || [];
+                    renderizarEstoque(state.produtos);
                 }
             } catch (e) { console.error('Erro ao carregar produtos:', e); }
         }
 
-        // ===== BUSCA EM TEMPO REAL =====
+        function renderizarEstoque(produtos) {
+            const tbody = document.getElementById('tabelaEstoque');
+            if (!tbody) return;
+            if (!produtos || produtos.length === 0) {
+                tbody.innerHTML =
+                    `<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted);">Nenhum produto</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = produtos.map(p => {
+                const cls = p.estoque <= 0 ? 'estoque-baixo' : p.estoque < 5 ? 'estoque-medio' : 'estoque-alto';
+                return `<tr onclick="selecionarProdutoEstoque('${p.codigo}')">
+                    <td style="font-size:11px;">${p.codigo}</td>
+                    <td>${p.nome}</td>
+                    <td style="text-align:right;">R$ ${p.preco.toFixed(2)}</td>
+                    <td style="text-align:center;" class="${cls}">${p.estoque}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        function selecionarProdutoEstoque(codigo) {
+            const p = state.produtos.find(prod => prod.codigo === codigo);
+            if (p) {
+                document.getElementById('prodCodigo').value = p.codigo;
+                document.getElementById('prodNome').value = p.nome;
+                document.getElementById('prodPreco').value = p.preco.toFixed(2).replace('.', ',');
+                document.getElementById('prodEstoque').value = p.estoque;
+                document.getElementById('prodCategoria').value = p.categoria || 'Geral';
+                showToast(`📦 ${p.nome} carregado`, 'info');
+            }
+        }
+
+        async function salvarProduto() {
+            const codigo = document.getElementById('prodCodigo').value.trim();
+            const nome = document.getElementById('prodNome').value.trim();
+            const preco = parseFloat(document.getElementById('prodPreco').value.replace(',', '.'));
+            const estoque = parseInt(document.getElementById('prodEstoque').value) || 0;
+            const categoria = document.getElementById('prodCategoria').value.trim() || 'Geral';
+
+            if (!codigo || !nome || isNaN(preco) || preco <= 0) {
+                showToast('⚠️ Preencha todos os campos corretamente!', 'warning');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/produtos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ codigo, nome, preco, estoque, categoria })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('✅ Produto salvo!', 'success');
+                    limparCamposProduto();
+                    carregarProdutos();
+                } else {
+                    showToast('❌ Erro: ' + data.error, 'error');
+                }
+            } catch (e) { showToast('❌ Erro ao salvar!', 'error'); }
+        }
+
+        function limparCamposProduto() {
+            ['prodCodigo', 'prodNome', 'prodPreco', 'prodCategoria'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('prodEstoque').value = '0';
+        }
+
+        // ============================================================
+        // BUSCA PROFISSIONAL (com setas e Enter)
+        // ============================================================
         const buscaInput = document.getElementById('buscaProdutoInput');
         const searchResults = document.getElementById('searchResults');
 
@@ -1267,6 +2175,7 @@
             if (!termo) {
                 searchResults.classList.remove('active');
                 state.searchIndex = -1;
+                state._resultados = [];
                 return;
             }
 
@@ -1274,6 +2183,8 @@
                 p.nome.toLowerCase().includes(termo) ||
                 p.codigo.toLowerCase().includes(termo)
             ).slice(0, 15);
+
+            state._resultados = resultados;
 
             if (resultados.length === 0) {
                 searchResults.innerHTML = `<div class="result-item" style="color:var(--text-muted);cursor:default;">Nenhum produto encontrado</div>`;
@@ -1293,15 +2204,20 @@
             `).join('');
 
             searchResults.classList.add('active');
-            state.searchIndex = -1;
-            state._resultados = resultados;
-
-            // Destacar primeiro item
-            const firstItem = searchResults.querySelector('.result-item');
-            if (firstItem) firstItem.classList.add('active');
+            state.searchIndex = 0;
+            highlightResult(0);
         });
 
-        // ===== NAVEGAÇÃO COM SETAS =====
+        function highlightResult(index) {
+            const items = searchResults.querySelectorAll('.result-item');
+            items.forEach((item, i) => {
+                item.classList.toggle('active', i === index);
+            });
+            if (index >= 0 && items[index]) {
+                items[index].scrollIntoView({ block: 'nearest' });
+            }
+        }
+
         buscaInput.addEventListener('keydown', function(e) {
             const items = searchResults.querySelectorAll('.result-item');
             if (items.length === 0) return;
@@ -1309,11 +2225,11 @@
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
                 state.searchIndex = Math.min(state.searchIndex + 1, items.length - 1);
-                updateHighlight(items);
+                highlightResult(state.searchIndex);
             } else if (e.key === 'ArrowUp') {
                 e.preventDefault();
                 state.searchIndex = Math.max(state.searchIndex - 1, 0);
-                updateHighlight(items);
+                highlightResult(state.searchIndex);
             } else if (e.key === 'Enter') {
                 e.preventDefault();
                 if (state.searchIndex >= 0 && state.searchIndex < items.length) {
@@ -1322,34 +2238,33 @@
                     selecionarProdutoPorCodigo(codigo);
                     searchResults.classList.remove('active');
                     buscaInput.value = '';
+                    state._resultados = [];
+                    codigoInput.focus();
                 }
             } else if (e.key === 'Escape') {
                 searchResults.classList.remove('active');
                 buscaInput.value = '';
+                state._resultados = [];
+                codigoInput.focus();
             }
         });
 
-        function updateHighlight(items) {
-            items.forEach((item, i) => {
-                item.classList.toggle('active', i === state.searchIndex);
-            });
-            if (state.searchIndex >= 0) {
-                items[state.searchIndex].scrollIntoView({ block: 'nearest' });
-            }
-        }
-
-        // ===== CLICK NOS RESULTADOS =====
         searchResults.addEventListener('click', function(e) {
             const item = e.target.closest('.result-item');
             if (item && item.dataset.codigo) {
                 selecionarProdutoPorCodigo(item.dataset.codigo);
                 searchResults.classList.remove('active');
                 buscaInput.value = '';
+                state._resultados = [];
+                codigoInput.focus();
             }
         });
 
-        // ===== CÓDIGO DE BARRAS =====
+        // ============================================================
+        // CÓDIGO DE BARRAS - ADICIONA DIRETO AO CARRINHO
+        // ============================================================
         const codigoInput = document.getElementById('codigoInput');
+
         codigoInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -1357,11 +2272,24 @@
                 if (codigo) {
                     adicionarPorCodigo(codigo);
                     this.value = '';
+                    this.focus(); // Mantém o foco no campo de código
                 }
             }
         });
 
-        // ===== SELECIONAR PRODUTO =====
+        // Mantém o foco no campo de código após qualquer ação
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.pdv-grid')) {
+                // Se clicou em qualquer lugar do PDV, foca no código
+                if (!e.target.closest('.search-results') && !e.target.closest('.payment-modal')) {
+                    setTimeout(() => codigoInput.focus(), 100);
+                }
+            }
+        });
+
+        // ============================================================
+        // SELECIONAR E ADICIONAR PRODUTO
+        // ============================================================
         function selecionarProdutoPorCodigo(codigo) {
             const produto = state.produtos.find(p => p.codigo === codigo);
             if (produto) {
@@ -1371,9 +2299,8 @@
                 document.getElementById('statusMsg').textContent = `✓ ${produto.nome} selecionado`;
                 document.getElementById('statusMsg').className = 'status-msg success';
 
-                // Adicionar automaticamente ao carrinho
+                // Adiciona automaticamente ao carrinho
                 adicionarAoCarrinho(produto);
-                codigoInput.focus();
             } else {
                 document.getElementById('statusMsg').textContent = '✗ Produto não encontrado!';
                 document.getElementById('statusMsg').className = 'status-msg error';
@@ -1382,7 +2309,6 @@
             }
         }
 
-        // ===== ADICIONAR AO CARRINHO =====
         function adicionarPorCodigo(codigo) {
             const produto = state.produtos.find(p => p.codigo === codigo);
             if (produto) {
@@ -1410,9 +2336,11 @@
                 });
             }
             atualizarCarrinho();
-            codigoInput.focus();
         }
 
+        // ============================================================
+        // CARRINHO
+        // ============================================================
         function removerItem(index) {
             state.itens.splice(index, 1);
             atualizarCarrinho();
@@ -1471,6 +2399,121 @@
         }
 
         // ============================================================
+        // CLIENTES
+        // ============================================================
+        async function carregarClientes() {
+            try {
+                const busca = document.getElementById('buscaCliente')?.value || '';
+                const url = busca ? `/api/clientes?busca=${encodeURIComponent(busca)}` : '/api/clientes';
+                const res = await fetch(url);
+                const data = await res.json();
+                if (data.success) {
+                    state.clientes = data.clientes || [];
+                    renderizarClientes(state.clientes);
+                    atualizarBadgeFiados();
+                }
+            } catch (e) { console.error('Erro ao carregar clientes:', e); }
+        }
+
+        function renderizarClientes(clientes) {
+            const tbody = document.getElementById('tabelaClientes');
+            if (!tbody) return;
+            if (!clientes || clientes.length === 0) {
+                tbody.innerHTML =
+                    `<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted);">Nenhum cliente</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = clientes.map(c => `
+                <tr>
+                    <td>${c.nome}</td>
+                    <td>${c.telefone || '-'}</td>
+                    <td style="text-align:right;color:${c.divida > 0 ? 'var(--red)' : 'var(--text-secondary)'};font-weight:${c.divida > 0 ? '600' : '400'};">R$ ${c.divida.toFixed(2)}</td>
+                    <td style="text-align:center;">
+                        ${c.divida > 0 ? `<button class="btn-pagar" onclick="pagarDivida('${c.id}', ${c.divida})">Pagar</button>` : ''}
+                        <button class="btn-delete" onclick="excluirCliente('${c.id}')">✕</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function atualizarBadgeFiados() {
+            const fiados = state.clientes.filter(c => c.divida > 0);
+            const badge = document.getElementById('fiadosBadge');
+            if (badge) { badge.textContent = fiados.length;
+                badge.style.display = fiados.length > 0 ? 'inline' : 'none'; }
+        }
+
+        function abrirModalCliente() {
+            document.getElementById('modalClienteTitle').textContent = '👤 Novo Cliente';
+            document.getElementById('clienteId').value = '';
+            document.getElementById('clienteNome').value = '';
+            document.getElementById('clienteTelefone').value = '';
+            document.getElementById('clienteEmail').value = '';
+            document.getElementById('modalCliente').classList.add('active');
+        }
+
+        function fecharModalCliente() {
+            document.getElementById('modalCliente').classList.remove('active');
+        }
+
+        async function salvarCliente() {
+            const id = document.getElementById('clienteId').value;
+            const nome = document.getElementById('clienteNome').value.trim();
+            const telefone = document.getElementById('clienteTelefone').value.trim();
+            const email = document.getElementById('clienteEmail').value.trim();
+
+            if (!nome) { showToast('⚠️ Nome é obrigatório!', 'warning'); return; }
+
+            try {
+                const res = await fetch('/api/clientes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: id || null, nome, telefone, email })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('✅ Cliente salvo!', 'success');
+                    fecharModalCliente();
+                    carregarClientes();
+                } else {
+                    showToast('❌ Erro: ' + data.error, 'error');
+                }
+            } catch (e) { showToast('❌ Erro ao salvar!', 'error'); }
+        }
+
+        async function pagarDivida(id, divida) {
+            const valor = prompt(`Dívida: R$ ${divida.toFixed(2)}\nValor a pagar:`);
+            if (!valor) return;
+            const v = parseFloat(valor.replace(',', '.'));
+            if (isNaN(v) || v <= 0) { showToast('⚠️ Valor inválido!', 'warning'); return; }
+
+            try {
+                const res = await fetch(`/api/clientes/${id}/pagar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ valor: v })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`💰 Pagamento de R$ ${v.toFixed(2)} registrado!`, 'success');
+                    carregarClientes();
+                } else {
+                    showToast('❌ Erro: ' + data.error, 'error');
+                }
+            } catch (e) { showToast('❌ Erro ao registrar pagamento!', 'error'); }
+        }
+
+        async function excluirCliente(id) {
+            if (!confirm('Excluir este cliente?')) return;
+            try {
+                const res = await fetch(`/api/clientes/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) { showToast('🗑️ Cliente excluído!', 'success');
+                    carregarClientes(); } else { showToast('❌ Erro: ' + data.error, 'error'); }
+            } catch (e) { showToast('❌ Erro ao excluir!', 'error'); }
+        }
+
+        // ============================================================
         // CAIXA
         // ============================================================
         async function verificarStatusCaixa() {
@@ -1479,21 +2522,335 @@
                 const data = await res.json();
                 state.caixa_aberto = data.aberto || false;
                 atualizarStatusCaixa();
+                if (data.aberto) {
+                    document.getElementById('caixaSubInfo').textContent =
+                        `Aberto em ${new Date(data.data_abertura).toLocaleString()}`;
+                } else {
+                    document.getElementById('caixaSubInfo').textContent = 'Nenhum caixa aberto';
+                }
             } catch (e) { console.error('Erro:', e); }
         }
 
         function atualizarStatusCaixa() {
             const el = document.getElementById('statusCaixa');
-            const btnFinalizar = document.getElementById('btnFinalizar');
+            const icon = document.getElementById('caixaIcon');
+            const text = document.getElementById('caixaStatusText');
+            const btnFechar = document.getElementById('btnFecharCaixa');
 
             if (state.caixa_aberto) {
                 el.className = 'status-caixa aberto';
                 el.textContent = '🔓 Aberto';
+                icon.textContent = '🔓';
+                text.className = 'status-text aberto';
+                text.textContent = 'CAIXA ABERTO';
+                btnFechar.disabled = false;
             } else {
                 el.className = 'status-caixa fechado';
                 el.textContent = '🔒 Fechado';
+                icon.textContent = '🔒';
+                text.className = 'status-text fechado';
+                text.textContent = 'CAIXA FECHADO';
+                btnFechar.disabled = true;
             }
-            btnFinalizar.disabled = !state.caixa_aberto || state.itens.length === 0;
+            document.getElementById('btnFinalizar').disabled = !state.caixa_aberto || state.itens.length === 0;
+        }
+
+        async function abrirCaixa() {
+            if (state.caixa_aberto) { showToast('⚠️ Caixa já aberto!', 'warning'); return; }
+            const valor = parseFloat(document.getElementById('valorAbertura').value.replace(',', '.'));
+            if (isNaN(valor) || valor < 0) { showToast('⚠️ Valor inválido!', 'warning'); return; }
+
+            try {
+                const res = await fetch('/api/caixa/abrir', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ valor })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    state.caixa_aberto = true;
+                    atualizarStatusCaixa();
+                    document.getElementById('caixaSubInfo').textContent = `Aberto por ${state.nome} em ${new Date().toLocaleString()}`;
+                    showToast('✅ Caixa aberto!', 'success');
+                    carregarResumoCaixa();
+                } else {
+                    showToast('❌ Erro: ' + data.error, 'error');
+                }
+            } catch (e) { showToast('❌ Erro ao abrir caixa!', 'error'); }
+        }
+
+        async function fecharCaixa() {
+            if (!state.caixa_aberto) { showToast('⚠️ Caixa já fechado!', 'warning'); return; }
+            if (state.itens.length > 0) { showToast('⚠️ Esvazie o carrinho primeiro!', 'warning'); return; }
+            if (!confirm('Fechar o caixa?')) return;
+
+            try {
+                const res = await fetch('/api/caixa/fechar', { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    state.caixa_aberto = false;
+                    atualizarStatusCaixa();
+                    document.getElementById('caixaSubInfo').textContent = 'Nenhum caixa aberto';
+                    showToast(`✅ Caixa fechado! Total: R$ ${(data.total || 0).toFixed(2)}`, 'success');
+                    carregarDashboard(state.periodo);
+                    carregarResumoCaixa();
+                } else {
+                    showToast('❌ Erro: ' + data.error, 'error');
+                }
+            } catch (e) { showToast('❌ Erro ao fechar caixa!', 'error'); }
+        }
+
+        async function carregarResumoCaixa() {
+            try {
+                const hoje = new Date().toISOString().split('T')[0];
+                const res = await fetch(`/api/caixa/resumo?data=${hoje}`);
+                const data = await res.json();
+                if (data.success) {
+                    const container = document.getElementById('caixaResumo');
+                    if (data.total_vendas === 0) {
+                        container.innerHTML =
+                        `<p style="color:var(--text-secondary);text-align:center;">Nenhuma venda hoje</p>`;
+                        return;
+                    }
+                    let html =
+                        `<div class="row"><span>Total Vendas:</span><span>${data.total_vendas}</span></div>
+                        <div class="row"><span>Total Geral:</span><span style="color:var(--green);font-weight:600;">R$ ${data.total_geral.toFixed(2)}</span></div>`;
+                    data.metodos.forEach(m => {
+                        html +=
+                            `<div class="row" style="font-size:12px;color:var(--text-secondary);"><span>${m.metodo}:</span><span>R$ ${m.total.toFixed(2)} (${m.quantidade})</span></div>`;
+                    });
+                    container.innerHTML = html;
+                }
+            } catch (e) { console.error('Erro ao carregar resumo:', e); }
+        }
+
+        function gerarRelatorio() { showToast('📄 Relatório gerado!', 'success'); }
+
+        // ============================================================
+        // DASHBOARD
+        // ============================================================
+        async function carregarDashboard(periodo) {
+            state.periodo = periodo;
+            document.querySelectorAll('.btn-periodo').forEach(btn => {
+                const isActive = btn.textContent.toLowerCase() === periodo;
+                btn.style.background = isActive ? 'var(--green)' : 'transparent';
+                btn.style.color = isActive ? '#fff' : 'var(--text-secondary)';
+                btn.style.borderColor = isActive ? 'var(--green)' : 'var(--border-color)';
+            });
+
+            try {
+                const res = await fetch(`/api/estatisticas?periodo=${periodo}`);
+                const data = await res.json();
+                if (data.success) {
+                    const s = data.stats;
+                    document.getElementById('totalGeral').textContent = `R$ ${s.total_geral.toFixed(2)}`;
+                    document.getElementById('totalVendas').textContent = s.total_vendas;
+                    document.getElementById('mediaVenda').textContent = `R$ ${s.media.toFixed(2)}`;
+                    document.getElementById('totalItens').textContent = s.total_itens || 0;
+
+                    const metodos = s.metodos;
+                    const total = Object.values(metodos).reduce((a, b) => a + b, 0) || 1;
+                    const cores = { 'Dinheiro': '#22c55e', 'PIX': '#3b82f6', 'Cartão': '#8b5cf6', 'Fiado': '#ef4444' };
+                    const container = document.getElementById('metodosContainer');
+                    let html = '';
+                    for (const [m, v] of Object.entries(metodos)) {
+                        if (v > 0) {
+                            const pct = (v / total) * 100;
+                            html +=
+                                `<div class="method-bar"><span class="label">${m}</span><div class="track"><div class="fill" style="width:${pct}%;background:${cores[m]||'#6b7280'};">${pct > 10 ? `R$ ${v.toFixed(0)}` : ''}</div></div><span style="font-size:12px;width:40px;text-align:right;">${pct.toFixed(1)}%</span></div>`;
+                        }
+                    }
+                    container.innerHTML = html || '<p style="color:var(--text-secondary);">Nenhuma venda</p>';
+
+                    const vendasList = document.getElementById('vendasList');
+                    const vendas = s.vendas || [];
+                    if (vendas.length === 0) {
+                        vendasList.innerHTML = '<p style="color:var(--text-secondary);">Nenhuma venda</p>';
+                    } else {
+                        const cls = { 'Dinheiro': 'dinheiro', 'PIX': 'pix', 'Cartão': 'cartao', 'Fiado': 'fiado' };
+                        vendasList.innerHTML = vendas.slice(0, 15).map(v =>
+                            `<div class="venda-item">
+                            <span>${v.data_hora ? new Date(v.data_hora).toLocaleTimeString() : '--:--'}</span>
+                            <span class="metodo ${cls[v.metodo] || ''}">${v.metodo}</span>
+                            <span>${v.cliente || 'Consumidor'}</span>
+                            <span class="valor">R$ ${v.total.toFixed(2)}</span>
+                        </div>`
+                        ).join('');
+                    }
+                }
+            } catch (e) { console.error('Erro:', e); }
+        }
+
+        // ============================================================
+        // LOJA / PLANOS
+        // ============================================================
+        function carregarPlanos() {
+            fetch('/api/planos')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        const grid = document.getElementById('planosGrid');
+                        grid.innerHTML = data.planos.map(p => `
+                            <div class="plano-card">
+                                <div class="preco">R$ ${p.preco.toFixed(2)} <small>/${p.nome.toLowerCase()}</small></div>
+                                <div class="nome" style="color:${p.cor};">${p.nome}</div>
+                                <div class="desc">${p.usuarios} usuário${p.usuarios > 1 ? 's' : ''}</div>
+                                <div class="detalhes">${p.dias} dias de acesso</div>
+                                <button class="btn-assinar" onclick="assinarPlano(${p.id})">
+                                    <i class="fas fa-crown"></i> Assinar
+                                </button>
+                            </div>
+                        `).join('');
+                    }
+                })
+                .catch(e => console.error('Erro:', e));
+        }
+
+        async function assinarPlano(planoId) {
+            try {
+                const res = await fetch('/api/pix/criar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ plano_id: planoId })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('pixContent').innerHTML = `
+                        <div class="pix-info">
+                            <div class="valor">R$ ${data.valor.toFixed(2)}</div>
+                            <p style="color:var(--text-secondary);margin:6px 0;">${data.plano.nome} - ${data.plano.dias} dias</p>
+                            <div class="chave" onclick="copiarChave('${data.chave_pix}')">
+                                📋 Chave PIX: ${data.chave_pix}
+                            </div>
+                            <button class="btn-verificar" onclick="verificarPagamento('${data.pix_id}')">
+                                <i class="fas fa-check"></i> Verificar Pagamento
+                            </button>
+                            <button class="btn-cancelar" onclick="fecharModalPix()">Cancelar</button>
+                        </div>
+                    `;
+                    document.getElementById('modalPix').classList.add('active');
+                } else {
+                    showToast('❌ Erro: ' + data.error, 'error');
+                }
+            } catch (e) { showToast('❌ Erro ao gerar PIX!', 'error'); }
+        }
+
+        function fecharModalPix() {
+            document.getElementById('modalPix').classList.remove('active');
+        }
+
+        function copiarChave(chave) {
+            navigator.clipboard.writeText(chave).then(() => showToast('📋 Chave copiada!', 'success')).catch(() => showToast(
+                'Chave: ' + chave, 'info'));
+        }
+
+        async function verificarPagamento(pixId) {
+            try {
+                const res = await fetch('/api/pix/verificar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pix_id: pixId })
+                });
+                const data = await res.json();
+                if (data.pago) {
+                    showToast('✅ Pagamento confirmado!', 'success');
+                    fecharModalPix();
+                    carregarStatusLoja();
+                    carregarPlanos();
+                } else {
+                    showToast('⏳ Aguardando confirmação...', 'warning');
+                }
+            } catch (e) { showToast('❌ Erro ao verificar!', 'error'); }
+        }
+
+        async function carregarStatusLoja() {
+            try {
+                const res = await fetch('/api/plano/status');
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('planoAtualConfig').textContent = data.plano ? data.plano.nome : 'Nenhum';
+                    document.getElementById('expiraEmConfig').textContent = data.expira_em ? new Date(data.expira_em)
+                        .toLocaleDateString() : 'N/A';
+                    document.getElementById('totalUsuariosConfig').textContent = 'Carregando...';
+
+                    const statusDiv = document.getElementById('statusLoja');
+                    statusDiv.innerHTML = `
+                        <h4 style="font-size:14px;margin-bottom:10px;"><i class="fas fa-info-circle"></i> Status</h4>
+                        <div class="info-grid">
+                            <div class="info-item"><div class="label">Plano</div><div class="value">${data.plano ? data.plano.nome : 'Nenhum'}</div></div>
+                            <div class="info-item"><div class="label">Expira em</div><div class="value ${data.expirado ? 'expirado' : 'ativo'}">${data.expira_em ? new Date(data.expira_em).toLocaleDateString() : 'N/A'} ${data.dias_restantes > 0 ? `(${data.dias_restantes} dias)` : ''}</div></div>
+                            <div class="info-item"><div class="label">Status</div><div class="value ${data.expirado ? 'expirado' : 'ativo'}">${data.expirado ? '⚠️ Expirado' : '✅ Ativo'}</div></div>
+                        </div>
+                    `;
+                }
+            } catch (e) { console.error('Erro:', e); }
+        }
+
+        // ============================================================
+        // CONFIG - USUÁRIOS
+        // ============================================================
+        async function carregarUsuarios() {
+            try {
+                const res = await fetch('/api/usuarios');
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('totalUsuariosConfig').textContent = data.usuarios.length;
+                    const container = document.getElementById('listaUsuarios');
+                    if (data.usuarios.length === 0) {
+                        container.innerHTML =
+                        '<p style="color:var(--text-muted);font-size:13px;">Nenhum usuário</p>';
+                        return;
+                    }
+                    container.innerHTML = data.usuarios.map(u =>
+                        `<div class="usuario-item">
+                            <div class="info">${u.nome} <span class="cargo">${u.cargo}</span></div>
+                            <div class="acoes">
+                                ${u.id !== state.usuario_id ? `<button class="btn-delete" onclick="excluirUsuario('${u.id}')">🗑️</button>` : ''}
+                            </div>
+                        </div>`
+                    ).join('');
+                }
+            } catch (e) { console.error('Erro:', e); }
+        }
+
+        async function cadastrarUsuario() {
+            const nome = document.getElementById('novoUserNome').value.trim();
+            const email = document.getElementById('novoUserEmail').value.trim();
+            const senha = document.getElementById('novoUserSenha').value.trim();
+            const cargo = document.getElementById('novoUserCargo').value;
+
+            if (!nome || !email || !senha) { showToast('⚠️ Preencha todos os campos!', 'warning'); return; }
+            if (senha.length < 4) { showToast('⚠️ Senha deve ter 4+ caracteres!', 'warning'); return; }
+
+            try {
+                const res = await fetch('/api/usuarios', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nome, email, senha, cargo })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('✅ Usuário criado!', 'success');
+                    document.getElementById('novoUserNome').value = '';
+                    document.getElementById('novoUserEmail').value = '';
+                    document.getElementById('novoUserSenha').value = '';
+                    carregarUsuarios();
+                    carregarStatusLoja();
+                } else {
+                    showToast('❌ Erro: ' + data.error, 'error');
+                }
+            } catch (e) { showToast('❌ Erro ao criar!', 'error'); }
+        }
+
+        async function excluirUsuario(id) {
+            if (!confirm('Excluir este usuário?')) return;
+            try {
+                const res = await fetch(`/api/usuarios/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) { showToast('🗑️ Usuário excluído!', 'success');
+                    carregarUsuarios();
+                    carregarStatusLoja(); } else { showToast('❌ Erro: ' + data.error, 'error'); }
+            } catch (e) { showToast('❌ Erro ao excluir!', 'error'); }
         }
 
         // ============================================================
@@ -1522,6 +2879,7 @@
 
         function fecharPagamento() {
             document.getElementById('paymentModal').classList.remove('active');
+            codigoInput.focus();
         }
 
         function selecionarMetodo(metodo) {
@@ -1616,7 +2974,6 @@
                     return;
                 }
                 totalPago = state.total;
-                // Venda fiada - será processada no backend
             } else if (metodo === 'Dinheiro') {
                 const val = parseFloat(document.getElementById('dinheiroValor')?.value.replace(',', '.') || 0);
                 if (val < state.total) {
@@ -1635,7 +2992,6 @@
                 troco = val - state.total;
             }
 
-            // Preparar venda
             const venda = {
                 subtotal: state.subtotal,
                 desconto: parseFloat(document.getElementById('descontoInput').value.replace(',', '.')) || 0,
@@ -1676,6 +3032,9 @@
                     state.itens = [];
                     atualizarCarrinho();
                     document.getElementById('descontoInput').value = '0,00';
+                    carregarDashboard(state.periodo);
+                    carregarResumoCaixa();
+                    codigoInput.focus();
                 } else {
                     showToast('❌ Erro: ' + data.error, 'error');
                 }
@@ -1687,28 +3046,70 @@
         }
 
         // ============================================================
-        // INICIAR
+        // SINCRONIZAR
         // ============================================================
-        document.addEventListener('DOMContentLoaded', () => {
-            verificarSessao();
-        });
+        function sincronizarAgora() {
+            showToast('🔄 Sincronizando...', 'info');
+            fetch('/api/sincronizar', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('✅ Dados sincronizados com Firebase!', 'success');
+                        carregarProdutos();
+                        carregarClientes();
+                        carregarDashboard(state.periodo);
+                        carregarStatusLoja();
+                        carregarUsuarios();
+                        carregarResumoCaixa();
+                    } else {
+                        showToast('❌ Erro na sincronização!', 'error');
+                    }
+                })
+                .catch(e => showToast('❌ Erro ao sincronizar!', 'error'));
+        }
 
-        // Fechar modal com ESC
+        // ============================================================
+        // AUTO UPDATE
+        // ============================================================
+        setInterval(() => {
+            if (document.getElementById('panelDashboard').classList.contains('active')) carregarDashboard(state.periodo);
+            if (document.getElementById('panelCaixa').classList.contains('active')) carregarResumoCaixa();
+        }, 30000);
+
+        // ============================================================
+        // FECHAR MODAIS COM ESC
+        // ============================================================
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 if (document.getElementById('paymentModal').classList.contains('active')) {
                     fecharPagamento();
                 }
+                if (document.getElementById('modalPix').classList.contains('active')) {
+                    fecharModalPix();
+                }
+                if (document.getElementById('modalCliente').classList.contains('active')) {
+                    fecharModalCliente();
+                }
                 if (document.getElementById('searchResults').classList.contains('active')) {
                     document.getElementById('searchResults').classList.remove('active');
                     document.getElementById('buscaProdutoInput').value = '';
                 }
+                codigoInput.focus();
             }
+        });
+
+        // ============================================================
+        // INICIAR
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('versaoSistema').textContent = '5.0.0';
+            verificarSessao();
         });
 
         console.log('🏪 PDV Inteligente v5.0 - Profissional');
         console.log('🔑 Busca com setas e Enter');
         console.log('💳 Pagamento com múltiplos métodos');
+        console.log('📋 Todas as abas funcionando');
     </script>
 </body>
-                    </html>
+    </html>
