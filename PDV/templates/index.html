@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>PDV Inteligente v6.0</title>
+    <title>PDV Inteligente v6.0.4</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* ============================================================
@@ -1896,7 +1896,7 @@
                         <div id="dadosCnpjConfig" style="display:none;background:var(--bg-primary);padding:10px;border-radius:8px;margin-bottom:10px;font-size:12px;color:var(--text-secondary);"></div>
                         <button class="btn btn-primary" onclick="salvarNomeLoja()" style="margin-top:10px;"><i class="fas fa-save"></i> Salvar</button>
                         <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-color);">
-                            <p style="font-size:12px;color:var(--text-secondary);"><strong>Versão:</strong> <span id="versaoSistema">6.0.0</span></p>
+                            <p style="font-size:12px;color:var(--text-secondary);"><strong>Versão:</strong> <span id="versaoSistema">6.0.4</span></p>
                             <p style="font-size:12px;color:var(--text-secondary);"><strong>ID do Banco:</strong> <span id="dbIdConfig" style="font-family:monospace;cursor:pointer;" onclick="copiarId()">---</span></p>
                             <p style="font-size:12px;color:var(--text-secondary);"><strong>Servidor:</strong> <span id="servidorIdConfig" style="font-family:monospace;">---</span></p>
                             <button class="btn btn-primary" onclick="sincronizarAgora()" style="margin-top:10px;background:var(--blue);"><i class="fas fa-sync"></i> Sincronizar Firebase</button>
@@ -2175,10 +2175,8 @@
                     document.getElementById('lojaNomeConfig').value = state.nome_loja;
                     document.getElementById('lojaCnpjConfig').value = state.cnpj;
 
-                    // Verifica plano ativo
                     if (!state.plano_ativo) {
                         document.getElementById('planoExpiradoAviso').style.display = 'flex';
-                        document.getElementById('statusText').textContent = '⚠️ Plano Expirado';
                     } else {
                         document.getElementById('planoExpiradoAviso').style.display = 'none';
                     }
@@ -3517,12 +3515,12 @@
         // INICIAR
         // ============================================================
         document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('versaoSistema').textContent = '6.0.0';
+            document.getElementById('versaoSistema').textContent = '6.0.4';
             verificarSessao();
             setTimeout(() => codigoInput.focus(), 500);
         });
 
-        console.log('🏪 PDV Inteligente v6.0 - Híbrido Offline/Online');
+        console.log('🏪 PDV Inteligente v6.0.4 - Híbrido Offline/Online');
         console.log('📦 Dados salvos localmente');
         console.log('☁️ Sincronização manual com Firebase');
         console.log('🗑️ Botão excluir produto no estoque');
