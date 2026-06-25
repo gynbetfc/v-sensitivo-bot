@@ -1,9 +1,10 @@
+```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>PDV Inteligente v6.0.4</title>
+    <title>PDV Inteligente v6.0.5</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* ============================================================
@@ -282,19 +283,10 @@
             background: rgba(255,255,255,0.1);
             color: #fff;
         }
+        /* REMOVIDO O BOTÃO SINCRONIZAR DO HEADER */
         .header .user .btn-sync {
-            background: var(--blue);
-            border: none;
-            color: #fff;
-            padding: 6px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: var(--transition);
-            font-size: 12px;
-            font-weight: 600;
+            display: none; /* escondido, sincronização automática */
         }
-        .header .user .btn-sync:hover { background: #2563eb; }
-
         .menu-toggle { display: none; background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
 
         /* ===== NAV ===== */
@@ -1042,7 +1034,7 @@
             min-width: 20px;
         }
 
-        .vendas-list { max-height: 250px; overflow-y: auto; }
+        .vendas-list { max-height: 350px; overflow-y: auto; }
         .venda-item {
             display: flex;
             justify-content: space-between;
@@ -1050,6 +1042,8 @@
             border-bottom: 1px solid rgba(255,255,255,0.03);
             font-size: 12px;
             align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
         }
         .venda-item .valor { font-weight: 600; color: var(--green); }
         .venda-item .metodo {
@@ -1062,6 +1056,35 @@
         .venda-item .metodo.pix { background: rgba(59, 130, 246, 0.15); color: var(--blue); }
         .venda-item .metodo.cartao { background: rgba(139, 92, 246, 0.15); color: var(--purple); }
         .venda-item .metodo.fiado { background: rgba(239, 68, 68, 0.15); color: var(--red); }
+        .venda-item .btn-imprimir-venda {
+            background: none;
+            border: none;
+            color: var(--blue);
+            cursor: pointer;
+            font-size: 14px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: var(--transition);
+        }
+        .venda-item .btn-imprimir-venda:hover {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--purple);
+        }
+        .venda-item .produtos-detalhe {
+            font-size: 10px;
+            color: var(--text-secondary);
+            flex: 1 1 100%;
+            margin-top: 2px;
+            padding-left: 4px;
+        }
+        .venda-item .produtos-detalhe span {
+            background: rgba(255,255,255,0.05);
+            padding: 1px 8px;
+            border-radius: 10px;
+            margin-right: 4px;
+            display: inline-block;
+            margin-bottom: 2px;
+        }
 
         /* ============================================================
            LOJA / PLANOS
@@ -1128,6 +1151,16 @@
             border-radius: 20px;
             font-weight: 700;
             margin-bottom: 8px;
+        }
+        .plano-card .plano-teste {
+            background: var(--orange);
+            color: #000;
+            font-size: 9px;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-weight: 700;
+            display: inline-block;
+            margin-bottom: 4px;
         }
 
         .loja-status {
@@ -1395,6 +1428,7 @@
             .payment-modal .modal { padding: 20px; margin: 10px; }
             .payment-modal .payment-methods { grid-template-columns: 1fr 1fr; }
             .payment-modal .total-display .value { font-size: 28px; }
+            .venda-item .produtos-detalhe { font-size: 9px; }
         }
 
         @media (max-width: 480px) {
@@ -1434,6 +1468,109 @@
             animation: spin 0.8s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* CUPOM MODAL */
+        .cupom-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(8px);
+            z-index: 99999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .cupom-modal.active { display: flex; }
+
+        .cupom-modal .cupom-box {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 400px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            color: #1a1a2e;
+            font-family: 'Courier New', monospace;
+            position: relative;
+        }
+
+        .cupom-modal .cupom-box .btn-close-cupom {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #6b7280;
+            transition: var(--transition);
+        }
+
+        .cupom-modal .cupom-box .btn-close-cupom:hover { color: #ef4444; }
+
+        .cupom-modal .cupom-box .cupom-header {
+            text-align: center;
+            font-size: 18px;
+            font-weight: 700;
+            border-bottom: 2px dashed #333;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+
+        .cupom-modal .cupom-box .cupom-linha {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+            font-size: 13px;
+            border-bottom: 1px dotted #e5e7eb;
+        }
+
+        .cupom-modal .cupom-box .cupom-total {
+            font-size: 18px;
+            font-weight: 700;
+            padding: 10px 0;
+            border-top: 2px solid #333;
+            margin-top: 10px;
+            text-align: center;
+            color: #2E7D32;
+        }
+
+        .cupom-modal .cupom-box .cupom-footer {
+            text-align: center;
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 2px dashed #333;
+        }
+
+        .cupom-modal .btn-imprimir {
+            width: 100%;
+            padding: 12px;
+            margin-top: 16px;
+            background: #2E7D32;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .cupom-modal .btn-imprimir:hover { background: #1B5E20; }
+
+        @media print {
+            .cupom-modal .btn-close-cupom,
+            .cupom-modal .btn-imprimir,
+            .cupom-modal .cupom-print-hide { display: none !important; }
+            .cupom-modal .cupom-box { box-shadow: none; border: 1px solid #ccc; }
+        }
     </style>
 </head>
 <body>
@@ -1538,6 +1675,56 @@
         </div>
     </div>
 
+    <!-- ===== MODAL CUPOM ===== -->
+    <div class="cupom-modal" id="cupomModal">
+        <div class="cupom-box" id="cupomContent">
+            <button class="btn-close-cupom" onclick="fecharCupom()">×</button>
+            <div id="cupomPrintArea">
+                <div class="cupom-header">
+                    🏪 <span id="cupomLojaNome">PDV Inteligente</span><br>
+                    <span style="font-size:12px;color:#6b7280;" id="cupomData">--</span>
+                </div>
+                <div id="cupomDadosCnpj" style="font-size:11px;color:#555;text-align:center;margin-bottom:8px;"></div>
+                <div id="cupomItens"></div>
+                <div class="cupom-linha">
+                    <span>Subtotal</span>
+                    <span id="cupomSubtotal">R$ 0,00</span>
+                </div>
+                <div class="cupom-linha" id="cupomDescontoLinha">
+                    <span>Desconto</span>
+                    <span id="cupomDesconto">R$ 0,00</span>
+                </div>
+                <div class="cupom-total">
+                    TOTAL: <span id="cupomTotal">R$ 0,00</span>
+                </div>
+                <div class="cupom-linha">
+                    <span>Método</span>
+                    <span id="cupomMetodo">--</span>
+                </div>
+                <div class="cupom-linha" id="cupomRecebidoLinha">
+                    <span>Recebido</span>
+                    <span id="cupomRecebido">R$ 0,00</span>
+                </div>
+                <div class="cupom-linha" id="cupomTrocoLinha">
+                    <span>Troco</span>
+                    <span id="cupomTroco">R$ 0,00</span>
+                </div>
+                <div class="cupom-linha">
+                    <span>Cliente</span>
+                    <span id="cupomCliente">Consumidor</span>
+                </div>
+                <div class="cupom-linha">
+                    <span>Venda #</span>
+                    <span id="cupomVendaId">--</span>
+                </div>
+                <div class="cupom-footer">
+                    Obrigado pela preferência!
+                </div>
+            </div>
+            <button class="btn-imprimir" onclick="imprimirCupom()">🖨️ IMPRIMIR CUPOM</button>
+        </div>
+    </div>
+
     <!-- ============================================================
     AUTH - LOGIN / REGISTER
     ============================================================ -->
@@ -1625,7 +1812,6 @@
                 <span class="db-id" id="dbIdDisplay" onclick="copiarId()" title="Clique para copiar o ID">📋 ID: ---</span>
                 <span id="lojaNomeDisplay" style="font-size:11px;color:var(--text-muted);">🏪 Loja</span>
                 <span class="status-caixa fechado" id="statusCaixa">🔒 Fechado</span>
-                <button class="btn-sync" onclick="sincronizarAgora()">🔄 Sincronizar</button>
                 <button class="btn-sair" onclick="fazerLogout()">Sair</button>
             </div>
         </header>
@@ -1771,7 +1957,6 @@
                         </div>
                         <div class="btn-group" style="margin-top:10px;">
                             <button class="btn-relatorio" onclick="gerarRelatorio()"><i class="fas fa-file-alt"></i> Relatório</button>
-                            <button class="btn-relatorio" onclick="sincronizarAgora()" style="border-color:var(--text-muted);color:var(--text-muted);"><i class="fas fa-sync"></i> Sincronizar</button>
                         </div>
                     </div>
 
@@ -1896,10 +2081,9 @@
                         <div id="dadosCnpjConfig" style="display:none;background:var(--bg-primary);padding:10px;border-radius:8px;margin-bottom:10px;font-size:12px;color:var(--text-secondary);"></div>
                         <button class="btn btn-primary" onclick="salvarNomeLoja()" style="margin-top:10px;"><i class="fas fa-save"></i> Salvar</button>
                         <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-color);">
-                            <p style="font-size:12px;color:var(--text-secondary);"><strong>Versão:</strong> <span id="versaoSistema">6.0.4</span></p>
+                            <p style="font-size:12px;color:var(--text-secondary);"><strong>Versão:</strong> <span id="versaoSistema">6.0.5</span></p>
                             <p style="font-size:12px;color:var(--text-secondary);"><strong>ID do Banco:</strong> <span id="dbIdConfig" style="font-family:monospace;cursor:pointer;" onclick="copiarId()">---</span></p>
                             <p style="font-size:12px;color:var(--text-secondary);"><strong>Servidor:</strong> <span id="servidorIdConfig" style="font-family:monospace;">---</span></p>
-                            <button class="btn btn-primary" onclick="sincronizarAgora()" style="margin-top:10px;background:var(--blue);"><i class="fas fa-sync"></i> Sincronizar Firebase</button>
                         </div>
                     </div>
                 </div>
@@ -1923,6 +2107,7 @@
             servidor_id: null,
             nome_loja: '',
             cnpj: '',
+            cnpj_dados: {},
             caixa_aberto: false,
             itens: [],
             subtotal: 0,
@@ -2009,6 +2194,8 @@
                             <p><strong>Email:</strong> ${d.email || '-'}</p>
                             ${d.cnae_descricao ? `<p><strong>Atividade:</strong> ${d.cnae_descricao}</p>` : ''}
                             ${d.porte ? `<p><strong>Porte:</strong> ${d.porte}</p>` : ''}
+                            ${d.natureza_juridica ? `<p><strong>Natureza Jurídica:</strong> ${d.natureza_juridica}</p>` : ''}
+                            ${d.data_abertura ? `<p><strong>Data de Abertura:</strong> ${d.data_abertura}</p>` : ''}
                         `;
                     }
                     
@@ -2024,6 +2211,8 @@
                             <p><strong>Email:</strong> ${d.email || '-'}</p>
                             ${d.cnae_descricao ? `<p><strong>Atividade:</strong> ${d.cnae_descricao}</p>` : ''}
                             ${d.porte ? `<p><strong>Porte:</strong> ${d.porte}</p>` : ''}
+                            ${d.natureza_juridica ? `<p><strong>Natureza Jurídica:</strong> ${d.natureza_juridica}</p>` : ''}
+                            ${d.data_abertura ? `<p><strong>Data de Abertura:</strong> ${d.data_abertura}</p>` : ''}
                         `;
                     }
                     
@@ -2161,6 +2350,7 @@
                     state.servidor_id = data.servidor_id;
                     state.nome_loja = data.nome_loja || nome_loja;
                     state.cnpj = data.cnpj || cnpj;
+                    state.cnpj_dados = data.cnpj_dados || {};
                     state.plano_ativo = data.plano_ativo !== false;
 
                     document.getElementById('authPage').classList.add('hidden');
@@ -2180,6 +2370,12 @@
                     } else {
                         document.getElementById('planoExpiradoAviso').style.display = 'none';
                     }
+
+                    // Inicia sincronização automática a cada 3 minutos
+                    if (window._syncInterval) clearInterval(window._syncInterval);
+                    window._syncInterval = setInterval(() => {
+                        sincronizarAgora();
+                    }, 180000); // 3 minutos
 
                     await Promise.all([
                         carregarProdutos(),
@@ -2205,6 +2401,7 @@
         }
 
         function fazerLogout() {
+            if (window._syncInterval) clearInterval(window._syncInterval);
             fetch('/api/auth/logout', { method: 'POST' });
             state.usuario_id = null;
             state.nome = '';
@@ -2276,6 +2473,7 @@
                     state.servidor_id = data.servidor_id;
                     state.nome_loja = data.nome_loja || 'Minha Loja';
                     state.cnpj = data.cnpj || '';
+                    state.cnpj_dados = data.cnpj_dados || {};
                     state.plano_ativo = data.plano_ativo !== false;
 
                     document.getElementById('authPage').classList.add('hidden');
@@ -2295,6 +2493,11 @@
                     } else {
                         document.getElementById('planoExpiradoAviso').style.display = 'none';
                     }
+
+                    if (window._syncInterval) clearInterval(window._syncInterval);
+                    window._syncInterval = setInterval(() => {
+                        sincronizarAgora();
+                    }, 180000);
 
                     await Promise.all([
                         carregarProdutos(),
@@ -2904,6 +3107,8 @@
                     showToast(`✅ Caixa fechado! Total: R$ ${(data.total || 0).toFixed(2)}`, 'success');
                     carregarDashboard(state.periodo);
                     carregarResumoCaixa();
+                    // Sincroniza ao fechar caixa
+                    sincronizarAgora();
                 } else {
                     showToast('❌ Erro: ' + data.error, 'error');
                 }
@@ -2983,17 +3188,131 @@
                         vendasList.innerHTML = '<p style="color:var(--text-secondary);">Nenhuma venda</p>';
                     } else {
                         const cls = { 'Dinheiro': 'dinheiro', 'PIX': 'pix', 'Cartão': 'cartao', 'Fiado': 'fiado' };
-                        vendasList.innerHTML = vendas.slice(0, 15).map(v =>
-                            `<div class="venda-item">
-                            <span>${v.data_hora ? new Date(v.data_hora).toLocaleTimeString() : '--:--'}</span>
-                            <span class="metodo ${cls[v.metodo] || ''}">${v.metodo}</span>
-                            <span>${v.cliente || 'Consumidor'}</span>
-                            <span class="valor">R$ ${v.total.toFixed(2)}</span>
-                        </div>`
-                        ).join('');
+                        vendasList.innerHTML = vendas.slice(0, 15).map(v => {
+                            const itensHtml = v.itens && v.itens.length > 0 ?
+                                v.itens.map(i =>
+                                    `<span>${i.nome} (${i.quantidade}x) R$ ${(i.preco_unitario || i.preco || 0).toFixed(2)}</span>`
+                                ).join(' ') :
+                                '<span style="color:var(--text-muted);">(sem itens)</span>';
+                            return `<div class="venda-item">
+                                <span>${v.data_hora ? new Date(v.data_hora).toLocaleTimeString() : '--:--'}</span>
+                                <span class="metodo ${cls[v.metodo] || ''}">${v.metodo}</span>
+                                <span>${v.cliente || 'Consumidor'}</span>
+                                <span class="valor">R$ ${v.total.toFixed(2)}</span>
+                                <button class="btn-imprimir-venda" onclick="imprimirCupomPorVenda(${v.id})" title="Imprimir cupom">
+                                    <i class="fas fa-print"></i>
+                                </button>
+                                <div class="produtos-detalhe">${itensHtml}</div>
+                            </div>`;
+                        }).join('');
                     }
                 }
             } catch (e) { console.error('Erro:', e); }
+        }
+
+        // ============================================================
+        // IMPRIMIR CUPOM
+        // ============================================================
+        function imprimirCupomPorVenda(vendaId) {
+            fetch('/api/vendas')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        const venda = data.vendas.find(v => v.id === vendaId);
+                        if (venda && venda.itens && venda.itens.length > 0) {
+                            // Prepara os dados do cupom
+                            const dadosCnpj = state.cnpj_dados || {};
+                            const nomeLoja = state.nome_loja || 'PDV Inteligente';
+                            const cnpj = state.cnpj || '';
+                            
+                            // Monta o HTML do cupom
+                            const cupomHtml = `
+                                <div style="font-family:monospace;padding:16px;max-width:300px;margin:0 auto;background:white;">
+                                    <div style="text-align:center;font-weight:bold;font-size:16px;border-bottom:1px dashed #ccc;padding-bottom:8px;">
+                                        ${nomeLoja}
+                                    </div>
+                                    ${cnpj ? `
+                                    <div style="text-align:center;font-size:11px;color:#555;border-bottom:1px dashed #ccc;padding-bottom:8px;">
+                                        CNPJ: ${cnpj}<br>
+                                        ${dadosCnpj.razao_social ? `Razão Social: ${dadosCnpj.razao_social}<br>` : ''}
+                                        ${dadosCnpj.logradouro ? `${dadosCnpj.logradouro}${dadosCnpj.numero ? ', ' + dadosCnpj.numero : ''}${dadosCnpj.bairro ? ' - ' + dadosCnpj.bairro : ''}, ${dadosCnpj.municipio || ''} - ${dadosCnpj.uf || ''}<br>` : ''}
+                                        ${dadosCnpj.telefone ? `Tel: ${dadosCnpj.telefone}<br>` : ''}
+                                        ${dadosCnpj.email ? `Email: ${dadosCnpj.email}<br>` : ''}
+                                        ${dadosCnpj.cnae_descricao ? `Atividade: ${dadosCnpj.cnae_descricao}<br>` : ''}
+                                    </div>
+                                    ` : ''}
+                                    <div style="font-size:11px;color:#666;border-bottom:1px dashed #ccc;padding-bottom:8px;text-align:center;">
+                                        ${new Date(venda.data_hora).toLocaleString()}
+                                    </div>
+                                    <div style="border-bottom:1px dashed #ccc;padding:8px 0;">
+                                        ${venda.itens.map(item => `
+                                            <div style="display:flex;justify-content:space-between;font-size:13px;">
+                                                <span>${item.nome} (${item.quantidade}x)</span>
+                                                <span>R$ ${(item.preco_unitario * item.quantidade).toFixed(2)}</span>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                    <div style="padding:8px 0;border-bottom:1px dashed #ccc;">
+                                        <div style="display:flex;justify-content:space-between;">
+                                            <span>Subtotal</span>
+                                            <span>R$ ${venda.subtotal.toFixed(2)}</span>
+                                        </div>
+                                        ${venda.desconto > 0 ? `
+                                            <div style="display:flex;justify-content:space-between;color:#666;">
+                                                <span>Desconto</span>
+                                                <span>-R$ ${venda.desconto.toFixed(2)}</span>
+                                            </div>
+                                        ` : ''}
+                                        <div style="display:flex;justify-content:space-between;font-weight:bold;font-size:16px;margin-top:4px;">
+                                            <span>TOTAL</span>
+                                            <span>R$ ${venda.total.toFixed(2)}</span>
+                                        </div>
+                                    </div>
+                                    <div style="padding:8px 0;border-bottom:1px dashed #ccc;font-size:12px;color:#666;">
+                                        <div>Forma de pagamento: ${venda.metodo}</div>
+                                        ${venda.cliente ? `<div>Cliente: ${venda.cliente}</div>` : ''}
+                                        <div>Venda #${venda.id}</div>
+                                    </div>
+                                    <div style="text-align:center;font-size:11px;color:#999;padding-top:8px;">
+                                        Obrigado pela preferência!
+                                    </div>
+                                </div>
+                            `;
+
+                            // Abre janela para impressão
+                            const win = window.open('', '_blank', 'width=400,height=600');
+                            win.document.write(`
+                                <html>
+                                    <head>
+                                        <title>Cupom Fiscal</title>
+                                        <style>
+                                            body { margin: 0; display: flex; justify-content: center; background: #f0f0f0; font-family: 'Courier New', monospace; }
+                                            @media print {
+                                                body { background: white; }
+                                                .no-print { display: none; }
+                                            }
+                                        </style>
+                                    </head>
+                                    <body>
+                                        ${cupomHtml}
+                                        <div style="text-align:center;padding:16px;" class="no-print">
+                                            <button onclick="window.print()" style="padding:10px 24px;background:#6C63FF;color:white;border:none;border-radius:8px;font-weight:bold;cursor:pointer;">🖨️ Imprimir</button>
+                                            <button onclick="window.close()" style="padding:10px 24px;margin-left:8px;background:#ddd;border:none;border-radius:8px;cursor:pointer;">Fechar</button>
+                                        </div>
+                                        <script>
+                                            window.onload = function() {
+                                                setTimeout(() => window.print(), 1000);
+                                            }
+                                        <\/script>
+                                    </body>
+                                </html>
+                            `);
+                        } else {
+                            showToast('⚠️ Venda sem itens para imprimir', 'warning');
+                        }
+                    }
+                })
+                .catch(e => showToast('❌ Erro ao carregar venda!', 'error'));
         }
 
         // ============================================================
@@ -3007,10 +3326,11 @@
                         const grid = document.getElementById('planosGrid');
                         grid.innerHTML = data.planos.map(p => `
                             <div class="plano-card">
+                                ${p.id === 5 ? '<div class="plano-teste">🧪 TESTE 3 MIN</div>' : ''}
                                 <div class="preco">R$ ${p.preco.toFixed(2)} <small>/${p.nome.toLowerCase()}</small></div>
                                 <div class="nome" style="color:var(--green);">${p.nome}</div>
                                 <div class="desc">${p.usuarios} usuário${p.usuarios > 1 ? 's' : ''}</div>
-                                <div class="detalhes">${p.dias} dias de acesso</div>
+                                <div class="detalhes">${p.id === 5 ? '3 minutos de acesso' : p.dias + ' dias de acesso'}</div>
                                 <button class="btn-assinar" onclick="assinarPlano(${p.id})">
                                     <i class="fas fa-crown"></i> Assinar
                                 </button>
@@ -3099,7 +3419,7 @@
                         <h4 style="font-size:14px;margin-bottom:10px;"><i class="fas fa-info-circle"></i> Status</h4>
                         <div class="info-grid">
                             <div class="info-item"><div class="label">Plano</div><div class="value">${data.plano ? data.plano.nome : 'Nenhum'}</div></div>
-                            <div class="info-item"><div class="label">Expira em</div><div class="value ${data.expirado ? 'expirado' : 'ativo'}">${data.expira_em ? new Date(data.expira_em).toLocaleDateString() : 'N/A'} ${data.dias_restantes > 0 ? `(${data.dias_restantes} dias)` : ''}</div></div>
+                            <div class="info-item"><div class="label">Expira em</div><div class="value ${data.expirado ? 'expirado' : 'ativo'}">${data.expira_em ? new Date(data.expira_em).toLocaleDateString() : 'N/A'} ${data.dias_restantes > 0 ? `(${data.dias_restantes.toFixed(1)} dias)` : ''}</div></div>
                             <div class="info-item"><div class="label">Status</div><div class="value ${data.expirado ? 'expirado' : 'ativo'}">${data.expirado ? '⚠️ Expirado' : '✅ Ativo'}</div></div>
                         </div>
                     `;
@@ -3119,16 +3439,44 @@
                 return;
             }
 
+            // Captura os dados do CNPJ exibidos
+            const dadosCnpj = {};
+            const container = document.getElementById('dadosCnpjConfig');
+            if (container && container.style.display !== 'none') {
+                const lines = container.innerHTML.split('<p>');
+                lines.forEach(line => {
+                    if (line.includes('<strong>')) {
+                        const key = line.split('<strong>')[1]?.split('</strong>')[0]?.trim();
+                        const value = line.split('</strong>')?.[1]?.replace('</p>', '')?.trim() || '';
+                        if (key && value && value !== '-') {
+                            const map = {
+                                'Razão Social': 'razao_social',
+                                'Nome Fantasia': 'nome_fantasia',
+                                'Endereço': 'logradouro',
+                                'Telefone': 'telefone',
+                                'Email': 'email',
+                                'Atividade': 'cnae_descricao',
+                                'Porte': 'porte',
+                                'Natureza Jurídica': 'natureza_juridica',
+                                'Data de Abertura': 'data_abertura'
+                            };
+                            if (map[key]) dadosCnpj[map[key]] = value;
+                        }
+                    }
+                });
+            }
+
             try {
                 const res = await fetch('/api/loja/nome', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nome, cnpj })
+                    body: JSON.stringify({ nome, cnpj, cnpj_dados: dadosCnpj })
                 });
                 const data = await res.json();
                 if (data.success) {
                     state.nome_loja = nome;
                     state.cnpj = cnpj;
+                    state.cnpj_dados = dadosCnpj;
                     document.getElementById('lojaNomeDisplay').textContent = `🏪 ${nome}`;
                     showToast('✅ Informações salvas!', 'success');
                     carregarStatusLoja();
@@ -3458,27 +3806,18 @@
         // ============================================================
         function sincronizarAgora() {
             if (!state.plano_ativo) {
-                showToast('⚠️ Plano expirado!', 'warning');
+                // Não mostra toast para não encher
                 return;
             }
             
-            showToast('🔄 Sincronizando com Firebase...', 'info');
             fetch('/api/sincronizar', { method: 'POST' })
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
-                        showToast(`✅ Dados sincronizados! ${data.produtos || 0} produtos, ${data.clientes || 0} clientes, ${data.vendas || 0} vendas`, 'success');
-                        carregarProdutos();
-                        carregarClientes();
-                        carregarDashboard(state.periodo);
-                        carregarStatusLoja();
-                        carregarUsuarios();
-                        carregarResumoCaixa();
-                    } else {
-                        showToast('❌ Erro na sincronização!', 'error');
+                        // Só mostra toast se for manual ou se houve mudança
                     }
                 })
-                .catch(e => showToast('❌ Erro ao sincronizar!', 'error'));
+                .catch(e => console.error('Erro ao sincronizar:', e));
         }
 
         // ============================================================
@@ -3515,16 +3854,18 @@
         // INICIAR
         // ============================================================
         document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('versaoSistema').textContent = '6.0.4';
+            document.getElementById('versaoSistema').textContent = '6.0.5';
             verificarSessao();
             setTimeout(() => codigoInput.focus(), 500);
         });
 
-        console.log('🏪 PDV Inteligente v6.0.4 - Híbrido Offline/Online');
+        console.log('🏪 PDV Inteligente v6.0.5 - Híbrido Offline/Online');
         console.log('📦 Dados salvos localmente');
-        console.log('☁️ Sincronização manual com Firebase');
+        console.log('☁️ Sincronização automática a cada 3 min');
         console.log('🗑️ Botão excluir produto no estoque');
         console.log('📋 CNPJ integrado com busca automática');
+        console.log('🧪 Plano de teste de 3 minutos disponível');
     </script>
 </body>
-    </html>
+</html>
+```
