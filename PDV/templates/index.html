@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>PDV Inteligente v6.0.7</title>
+    <title>PDV Inteligente v6.0.8</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
@@ -525,7 +525,7 @@
                     <div id="dadosCnpjConfig" style="display:none;background:var(--bg-primary);padding:10px;border-radius:8px;margin-bottom:10px;font-size:12px;color:var(--text-secondary);"></div>
                     <button class="btn btn-primary" onclick="salvarNomeLoja()" style="margin-top:10px;"><i class="fas fa-save"></i> Salvar</button>
                     <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-color);">
-                        <p style="font-size:12px;color:var(--text-secondary);"><strong>Versão:</strong> <span id="versaoSistema">6.0.7</span></p>
+                        <p style="font-size:12px;color:var(--text-secondary);"><strong>Versão:</strong> <span id="versaoSistema">6.0.8</span></p>
                         <p style="font-size:12px;color:var(--text-secondary);"><strong>ID do Banco:</strong> <span id="dbIdConfig" style="font-family:monospace;cursor:pointer;" onclick="copiarId()">---</span></p>
                         <p style="font-size:12px;color:var(--text-secondary);"><strong>Servidor:</strong> <span id="servidorIdConfig" style="font-family:monospace;">---</span></p>
                     </div>
@@ -567,7 +567,7 @@ function copiarId(){
 }
 
 // ============================================================
-// BUSCAR DADOS CNPJ AUTOMATICAMENTE
+// BUSCAR DADOS CNPJ
 // ============================================================
 async function buscarDadosCNPJ(cnpj){
     const cnpjLimpo=cnpj.replace(/\D/g,'');
@@ -962,7 +962,7 @@ async function carregarDashboard(periodo){
 }
 
 // ============================================================
-// IMPRIMIR CUPOM - MODAL DIRETO SEM ALERT
+// IMPRIMIR CUPOM
 // ============================================================
 let ultimoCupomData=null;
 function imprimirCupomPorVenda(vendaId){
@@ -1002,9 +1002,7 @@ function mostrarCupom(venda){
     document.getElementById('cupomVendaId').textContent=venda.id||'--';
     document.getElementById('cupomModal').classList.add('active');
     ultimoCupomData=venda;
-    // Foco no primeiro botão para navegação por teclado
     setTimeout(()=>{const primeiro=document.getElementById('cupomBtnImprimir');if(primeiro)primeiro.focus();},100);
-    // Inicializa seleção por teclado
     window._cupomSelectedIndex=0;
 }
 function fecharCupom(){document.getElementById('cupomModal').classList.remove('active');}
@@ -1047,7 +1045,6 @@ document.addEventListener('keydown', function(e) {
         if (btn) btn.click();
     }
 });
-// Ao abrir o modal, o primeiro botão recebe foco e classe selected
 document.getElementById('cupomBtnImprimir').addEventListener('focus', function() {
     document.querySelectorAll('#cupomActions button').forEach(b => b.classList.remove('selected'));
     this.classList.add('selected');
@@ -1197,7 +1194,6 @@ function confirmarPagamento(){
         if(data.success){
             let msg='✅ Venda finalizada!\nTotal: R$ '+state.total.toFixed(2)+'\nMétodo: '+metodo;if(troco>0)msg+='\nTroco: R$ '+troco.toFixed(2);
             showToast(msg,'success');
-            // Abre o modal do cupom diretamente
             venda.id=data.id;
             venda.data_hora=new Date().toISOString();
             mostrarCupom(venda);
@@ -1247,11 +1243,11 @@ document.addEventListener('keydown',function(e){
 // INICIAR
 // ============================================================
 document.addEventListener('DOMContentLoaded',()=>{
-    document.getElementById('versaoSistema').textContent='6.0.7';
+    document.getElementById('versaoSistema').textContent='6.0.8';
     verificarSessao();
     setTimeout(()=>document.getElementById('codigoInput').focus(),500);
 });
-console.log('🏪 PDV Inteligente v6.0.7');
+console.log('🏪 PDV Inteligente v6.0.8');
 console.log('📦 Dados salvos localmente');
 console.log('☁️ Sincronização automática a cada 3 min');
 console.log('📋 CNPJ integrado com busca automática');
@@ -1259,4 +1255,4 @@ console.log('🧪 Plano de teste de 3 minutos disponível');
 console.log('🖨️ Cupom com navegação por teclado (setas + Enter)');
 </script>
 </body>
-            </html>
+    </html>
