@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>PDV Inteligente v6.0.8</title>
+    <title>PDV Inteligente v6.0.9</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
@@ -311,6 +311,16 @@
         .text-center{text-align:center}.text-muted{color:var(--text-muted)}.mt-8{margin-top:8px}.mt-16{margin-top:16px}.mb-8{margin-bottom:8px}.mb-16{margin-bottom:16px}.flex{display:flex}.flex-center{display:flex;align-items:center;justify-content:center}.gap-8{gap:8px}.w-full{width:100%}.loading-spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--border-color);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
         .cupom-modal .cupom-actions .btn-imprimir:focus,.cupom-modal .cupom-actions .btn-nao-imprimir:focus{outline:2px solid var(--green);outline-offset:2px}
         .cupom-modal .cupom-actions .selected{background:var(--green);color:#fff;transform:scale(1.02)}
+        /* Estilos para o cupom impresso */
+        @media print {
+            body * { visibility: hidden; }
+            .cupom-box, .cupom-box * { visibility: visible; }
+            .cupom-box { position: absolute; left: 0; top: 0; width: 100%; max-width: 100%; border: none; box-shadow: none; padding: 10px; font-size: 12px; }
+            .cupom-box .cupom-header { font-size: 14px; }
+            .cupom-box .cupom-linha { font-size: 11px; padding: 2px 0; }
+            .cupom-box .cupom-total { font-size: 14px; }
+            .cupom-box .btn-close-cupom, .cupom-box .cupom-actions { display: none !important; }
+        }
     </style>
 </head>
 <body>
@@ -355,7 +365,7 @@
     <div class="cupom-box" id="cupomContent">
         <button class="btn-close-cupom" onclick="fecharCupom()">×</button>
         <div id="cupomPrintArea">
-            <div class="cupom-header">🏪 <span id="cupomLojaNome">PDV Inteligente</span><br><span style="font-size:12px;color:#6b7280;" id="cupomData">--</span></div>
+            <div class="cupom-header" id="cupomHeader">🏪 <span id="cupomLojaNome">PDV Inteligente</span><br><span style="font-size:12px;color:#6b7280;" id="cupomData">--</span></div>
             <div id="cupomDadosCnpj" style="font-size:11px;color:#555;text-align:center;margin-bottom:8px;"></div>
             <div id="cupomItens"></div>
             <div class="cupom-linha"><span>Subtotal</span><span id="cupomSubtotal">R$ 0,00</span></div>
@@ -525,7 +535,7 @@
                     <div id="dadosCnpjConfig" style="display:none;background:var(--bg-primary);padding:10px;border-radius:8px;margin-bottom:10px;font-size:12px;color:var(--text-secondary);"></div>
                     <button class="btn btn-primary" onclick="salvarNomeLoja()" style="margin-top:10px;"><i class="fas fa-save"></i> Salvar</button>
                     <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-color);">
-                        <p style="font-size:12px;color:var(--text-secondary);"><strong>Versão:</strong> <span id="versaoSistema">6.0.8</span></p>
+                        <p style="font-size:12px;color:var(--text-secondary);"><strong>Versão:</strong> <span id="versaoSistema">6.0.9</span></p>
                         <p style="font-size:12px;color:var(--text-secondary);"><strong>ID do Banco:</strong> <span id="dbIdConfig" style="font-family:monospace;cursor:pointer;" onclick="copiarId()">---</span></p>
                         <p style="font-size:12px;color:var(--text-secondary);"><strong>Servidor:</strong> <span id="servidorIdConfig" style="font-family:monospace;">---</span></p>
                     </div>
@@ -579,6 +589,8 @@ async function buscarDadosCNPJ(cnpj){
         const data=await res.json();
         if(data.success){
             const d=data.dados;
+            // Salva os dados no estado para uso no cupom
+            state.cnpj_dados = d;
             const containerReg=document.getElementById('dadosCnpjRegistro');
             if(containerReg){
                 containerReg.style.display='block';
@@ -971,7 +983,9 @@ function imprimirCupomPorVenda(vendaId){
     }).catch(e=>showToast('❌ Erro ao carregar venda!','error'));
 }
 function mostrarCupom(venda){
-    const dadosCnpj=state.cnpj_dados||{},nomeLoja=state.nome_loja||'PDV Inteligente',cnpj=state.cnpj||'';
+    const dadosCnpj=state.cnpj_dados||{};
+    const nomeLoja=state.nome_loja||'PDV Inteligente';
+    const cnpj=state.cnpj||'';
     document.getElementById('cupomLojaNome').textContent=nomeLoja;
     document.getElementById('cupomData').textContent=new Date(venda.data_hora).toLocaleString();
     let cnpjHtml='';
@@ -1002,19 +1016,17 @@ function mostrarCupom(venda){
     document.getElementById('cupomVendaId').textContent=venda.id||'--';
     document.getElementById('cupomModal').classList.add('active');
     ultimoCupomData=venda;
+    // Foco no primeiro botão para navegação por teclado
     setTimeout(()=>{const primeiro=document.getElementById('cupomBtnImprimir');if(primeiro)primeiro.focus();},100);
     window._cupomSelectedIndex=0;
 }
 function fecharCupom(){document.getElementById('cupomModal').classList.remove('active');}
 function imprimirCupom(){
-    const printWindow=window.open('','_blank','width=400,height=600');
-    const html=document.getElementById('cupomPrintArea').innerHTML;
-    printWindow.document.write('<html><head><title>Cupom Fiscal</title><style>body{font-family:"Courier New",monospace;padding:20px;margin:0;background:#fff;color:#000;}@media print{body{padding:0;}}</style></head><body>'+html+'</body></html>');
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
-    setTimeout(()=>{printWindow.close();},1000);
-    fecharCupom();
+    // Usa window.print() que automaticamente usa a impressora padrão do sistema
+    // O CSS @media print garante que apenas o conteúdo do cupom seja impresso
+    window.print();
+    // Fecha o modal após a impressão (ou após o usuário fechar o diálogo)
+    setTimeout(()=>{fecharCupom();}, 1000);
 }
 
 // ============================================================
@@ -1066,19 +1078,64 @@ async function assinarPlano(planoId){
     try{
         const res=await fetch('/api/pix/criar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plano_id:planoId})});
         const data=await res.json();
-        if(data.success){document.getElementById('pixContent').innerHTML='<div class="pix-info"><div class="valor">R$ '+data.valor.toFixed(2)+'</div><p style="color:var(--text-secondary);margin:6px 0;">'+data.plano.nome+' - '+data.plano.dias+' dias</p><div class="chave" onclick="copiarChave(\''+data.chave_pix+'\')">📋 Chave PIX: '+data.chave_pix+'</div><button class="btn-verificar" onclick="verificarPagamento(\''+data.pix_id+'\')"><i class="fas fa-check"></i> Verificar Pagamento</button><button class="btn-cancelar" onclick="fecharModalPix()">Cancelar</button></div>';document.getElementById('modalPix').classList.add('active');}
-        else{showToast('❌ Erro: '+data.error,'error');}
-    }catch(e){showToast('❌ Erro ao gerar PIX!','error');}
+        if(data.success){
+            // Exibe o QR Code e as informações do PIX
+            let html = '<div class="pix-info">';
+            html += '<div class="valor">R$ '+data.valor.toFixed(2)+'</div>';
+            html += '<p style="color:var(--text-secondary);margin:6px 0;">'+data.plano.nome+' - '+data.plano.dias+' dias</p>';
+            if(data.qr_code_base64){
+                html += '<img src="data:image/png;base64,'+data.qr_code_base64+'" style="max-width:220px;border-radius:12px;display:block;margin:0 auto 12px;" alt="QR Code PIX">';
+            }
+            if(data.qr_code){
+                window._pixQrCode = data.qr_code;
+                html += '<div class="chave" onclick="copiarChavePix()">📋 Clique para copiar o código PIX (Copia e Cola)</div>';
+            }
+            html += '<button class="btn-verificar" onclick="verificarPagamento(\''+data.pix_id+'\')"><i class="fas fa-sync"></i> Verificar Pagamento</button>';
+            html += '<button class="btn-cancelar" onclick="fecharModalPix()">Cancelar</button>';
+            html += '</div>';
+            document.getElementById('pixContent').innerHTML = html;
+            document.getElementById('modalPix').classList.add('active');
+            // Auto-check a cada 5 segundos
+            if(window._pixAutoCheck) clearInterval(window._pixAutoCheck);
+            window._pixAutoCheck = setInterval(() => verificarPagamento(data.pix_id, true), 5000);
+        } else {
+            document.getElementById('pixContent').innerHTML = '<div class="pix-info" style="text-align:center;padding:20px;"><p style="color:var(--red);">❌ '+(data.error||'Erro ao gerar PIX')+'</p><button class="btn-cancelar" style="margin-top:12px;" onclick="fecharModalPix()">Fechar</button></div>';
+            showToast('❌ '+(data.error||'Erro ao gerar PIX'),'error');
+        }
+    } catch(e) {
+        document.getElementById('pixContent').innerHTML = '<div class="pix-info" style="text-align:center;padding:20px;"><p style="color:var(--red);">❌ Erro de conexão</p><button class="btn-cancelar" style="margin-top:12px;" onclick="fecharModalPix()">Fechar</button></div>';
+        showToast('❌ Erro ao gerar PIX!','error');
+        console.error(e);
+    }
 }
-function fecharModalPix(){document.getElementById('modalPix').classList.remove('active');}
-function copiarChave(chave){navigator.clipboard.writeText(chave).then(()=>showToast('📋 Chave copiada!','success')).catch(()=>showToast('Chave: '+chave,'info'));}
-async function verificarPagamento(pixId){
+function fecharModalPix(){
+    if(window._pixAutoCheck){clearInterval(window._pixAutoCheck);window._pixAutoCheck=null;}
+    window._pixQrCode=null;
+    document.getElementById('modalPix').classList.remove('active');
+}
+function copiarChavePix(){
+    const txt=window._pixQrCode||'';
+    if(!txt) return;
+    navigator.clipboard.writeText(txt).then(()=>showToast('📋 Código PIX copiado!','success')).catch(()=>{showToast('📋 Código: '+txt,'info');});
+}
+async function verificarPagamento(pixId, silencioso=false){
     try{
         const res=await fetch('/api/pix/verificar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pix_id:pixId})});
         const data=await res.json();
-        if(data.pago){showToast('✅ Pagamento confirmado!','success');fecharModalPix();carregarStatusLoja();carregarPlanos();state.plano_ativo=true;document.getElementById('planoExpiradoAviso').style.display='none';}
-        else{showToast('⏳ Aguardando confirmação...','warning');}
-    }catch(e){showToast('❌ Erro ao verificar!','error');}
+        if(data.pago){
+            if(window._pixAutoCheck){clearInterval(window._pixAutoCheck);window._pixAutoCheck=null;}
+            showToast('✅ Pagamento confirmado! Plano ativado!','success');
+            fecharModalPix();
+            carregarStatusLoja();
+            carregarPlanos();
+            state.plano_ativo=true;
+            document.getElementById('planoExpiradoAviso').style.display='none';
+        } else if(!silencioso){
+            showToast('⏳ Aguardando confirmação do PIX...','warning');
+        }
+    } catch(e) {
+        if(!silencioso) showToast('❌ Erro ao verificar!','error');
+    }
 }
 async function carregarStatusLoja(){
     try{
@@ -1162,6 +1219,7 @@ function abrirPagamento(){
     document.getElementById('clientePagamento').value='';
     metodoAtivo='Dinheiro';
     selecionarMetodo('Dinheiro');
+    // Foco no primeiro método de pagamento para navegação por teclado
     setTimeout(()=>{const primeiro=document.querySelector('#paymentMethods button');if(primeiro)primeiro.focus();},100);
 }
 function fecharPagamento(){document.getElementById('paymentModal').classList.remove('active');document.getElementById('codigoInput').focus();}
@@ -1173,6 +1231,7 @@ function selecionarMetodo(metodo){
     if(metodo==='Dinheiro'){container.innerHTML='<div class="payment-input"><span class="label">Dinheiro</span><input type="text" id="dinheiroValor" placeholder="0,00" value="'+state.total.toFixed(2).replace('.',',')+'"><span class="remaining">Total: R$ '+state.total.toFixed(2)+'</span></div>';const input=document.getElementById('dinheiroValor');input.focus();input.select();input.addEventListener('input',function(){const val=parseFloat(this.value.replace(',','.'))||0;const resto=state.total-val;const label=this.parentElement.querySelector('.remaining');if(resto>0){label.textContent='Falta: R$ '+resto.toFixed(2);label.style.color='var(--orange)';}else if(resto<0){label.textContent='Troco: R$ '+Math.abs(resto).toFixed(2);label.style.color='var(--green)';}else{label.textContent='✅ Valor exato!';label.style.color='var(--green)';}});return;}
     container.innerHTML='<div class="payment-input"><span class="label">'+metodo+'</span><input type="text" id="valorPago" placeholder="0,00" value="'+state.total.toFixed(2).replace('.',',')+'"><span class="remaining">Total: R$ '+state.total.toFixed(2)+'</span></div>';const input=document.getElementById('valorPago');input.focus();input.select();input.addEventListener('input',function(){const val=parseFloat(this.value.replace(',','.'))||0;const resto=state.total-val;const label=this.parentElement.querySelector('.remaining');if(resto>0){label.textContent='Falta: R$ '+resto.toFixed(2);label.style.color='var(--orange)';}else if(resto<0){label.textContent='Excedente: R$ '+Math.abs(resto).toFixed(2);label.style.color='var(--red)';}else{label.textContent='✅ Valor exato!';label.style.color='var(--green)';}});
 }
+// Navegação por teclado nos métodos de pagamento
 document.addEventListener('keydown',function(e){
     if(!document.getElementById('paymentModal').classList.contains('active'))return;
     const metodos=document.querySelectorAll('#paymentMethods button');if(metodos.length===0)return;
@@ -1196,6 +1255,7 @@ function confirmarPagamento(){
             showToast(msg,'success');
             venda.id=data.id;
             venda.data_hora=new Date().toISOString();
+            // Abre o modal do cupom diretamente
             mostrarCupom(venda);
             fecharPagamento();
             state.itens=[];atualizarCarrinho();document.getElementById('descontoInput').value='0,00';
@@ -1243,16 +1303,17 @@ document.addEventListener('keydown',function(e){
 // INICIAR
 // ============================================================
 document.addEventListener('DOMContentLoaded',()=>{
-    document.getElementById('versaoSistema').textContent='6.0.8';
+    document.getElementById('versaoSistema').textContent='6.0.9';
     verificarSessao();
     setTimeout(()=>document.getElementById('codigoInput').focus(),500);
 });
-console.log('🏪 PDV Inteligente v6.0.8');
+console.log('🏪 PDV Inteligente v6.0.9');
 console.log('📦 Dados salvos localmente');
 console.log('☁️ Sincronização automática a cada 3 min');
 console.log('📋 CNPJ integrado com busca automática');
 console.log('🧪 Plano de teste de 3 minutos disponível');
 console.log('🖨️ Cupom com navegação por teclado (setas + Enter)');
+console.log('✅ PIX funcionando com QR Code');
 </script>
 </body>
     </html>
