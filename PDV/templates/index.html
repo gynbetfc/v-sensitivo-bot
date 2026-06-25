@@ -33,6 +33,7 @@
             min-height: 100vh;
         }
         
+        /* Sidebar */
         .sidebar {
             width: 250px;
             background: var(--white);
@@ -43,7 +44,6 @@
             position: fixed;
             height: 100vh;
             z-index: 100;
-            overflow-y: auto;
         }
         
         .sidebar-brand {
@@ -156,6 +156,7 @@
             transform: translateY(-1px);
         }
         
+        /* Main Content */
         .main {
             margin-left: 250px;
             flex: 1;
@@ -229,6 +230,7 @@
             background: #c8d6e5;
         }
         
+        /* Cards */
         .card {
             background: var(--white);
             border-radius: var(--radius);
@@ -244,8 +246,6 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
         }
         
         .stats-grid {
@@ -273,6 +273,7 @@
             color: var(--gray);
         }
         
+        /* Tabelas */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -309,8 +310,8 @@
         .badge-danger { background: rgba(255, 107, 107, 0.15); color: var(--danger); }
         .badge-warning { background: rgba(255, 193, 7, 0.15); color: var(--warning); }
         .badge-primary { background: rgba(108, 99, 255, 0.15); color: var(--primary); }
-        .badge-info { background: rgba(54, 162, 235, 0.15); color: #36A2EB; }
         
+        /* Forms */
         .form-group {
             margin-bottom: 16px;
         }
@@ -343,6 +344,7 @@
             gap: 16px;
         }
         
+        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -365,8 +367,8 @@
             background: var(--white);
             border-radius: var(--radius);
             padding: 32px;
-            max-width: 600px;
-            width: 95%;
+            max-width: 500px;
+            width: 90%;
             max-height: 90vh;
             overflow-y: auto;
             animation: modalIn 0.3s ease;
@@ -398,6 +400,7 @@
             transition: var(--transition);
         }
         
+        /* Toast */
         .toast-container {
             position: fixed;
             top: 20px;
@@ -428,6 +431,7 @@
             to { transform: translateX(0); opacity: 1; }
         }
         
+        /* Tabs */
         .tabs {
             display: flex;
             gap: 4px;
@@ -435,7 +439,6 @@
             background: var(--light-gray);
             padding: 4px;
             border-radius: 8px;
-            flex-wrap: wrap;
         }
         
         .tab {
@@ -458,6 +461,7 @@
             background: rgba(255,255,255,0.5);
         }
         
+        /* PIX Modal */
         .pix-info {
             text-align: center;
         }
@@ -513,6 +517,7 @@
             background: #c8d6e5;
         }
         
+        /* Loading */
         .loading-spinner {
             width: 40px;
             height: 40px;
@@ -527,6 +532,38 @@
             to { transform: rotate(360deg); }
         }
         
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 60px;
+            }
+            .sidebar-brand h1, .sidebar-brand span,
+            .sidebar-user .name, .sidebar-user .cargo,
+            .sidebar-user .loja, .sidebar-user .status,
+            .nav-item span {
+                display: none;
+            }
+            .sidebar-user .avatar {
+                margin-right: 0;
+                float: none;
+            }
+            .sidebar-user {
+                text-align: center;
+                padding: 12px;
+            }
+            .main {
+                margin-left: 60px;
+                padding: 16px;
+            }
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        /* PDV específico */
         .pdv-layout {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -648,148 +685,6 @@
             color: var(--primary-dark);
             transform: scale(1.1);
         }
-        
-        .btn-imprimir-venda {
-            background: none;
-            border: none;
-            color: var(--primary);
-            cursor: pointer;
-            padding: 4px 8px;
-            font-size: 14px;
-            transition: var(--transition);
-        }
-        
-        .btn-imprimir-venda:hover {
-            color: var(--primary-dark);
-            transform: scale(1.1);
-        }
-        
-        .plano-expirado-aviso {
-            background: var(--danger);
-            color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            margin-bottom: 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        
-        .plano-expirado-aviso a {
-            color: white;
-            font-weight: 700;
-            text-decoration: underline;
-        }
-        
-        .btn-buscar-cnpj {
-            padding: 10px 16px;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: var(--transition);
-            white-space: nowrap;
-        }
-        
-        .btn-buscar-cnpj:hover {
-            background: var(--primary-dark);
-        }
-        
-        .dados-cnpj {
-            background: var(--bg);
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-top: 8px;
-            font-size: 14px;
-        }
-        
-        .dados-cnpj p {
-            margin: 4px 0;
-        }
-        
-        .dados-cnpj strong {
-            color: var(--dark);
-        }
-        
-        .input-group {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-        
-        .input-group input {
-            flex: 1;
-        }
-        
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 60px;
-            }
-            .sidebar-brand h1, .sidebar-brand span,
-            .sidebar-user .name, .sidebar-user .cargo,
-            .sidebar-user .loja, .sidebar-user .status,
-            .nav-item span {
-                display: none;
-            }
-            .sidebar-user .avatar {
-                margin-right: 0;
-                float: none;
-            }
-            .sidebar-user {
-                text-align: center;
-                padding: 12px;
-            }
-            .main {
-                margin-left: 60px;
-                padding: 16px;
-            }
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-            .stats-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-            .carrinho-item {
-                grid-template-columns: 1fr 0.5fr 0.5fr 0.5fr 0.3fr;
-                font-size: 13px;
-            }
-        }
-        
-        .busca-container {
-            position: relative;
-        }
-        
-        .resultados-busca {
-            position: absolute;
-            background: white;
-            border: 1px solid var(--light-gray);
-            border-radius: 8px;
-            max-height: 200px;
-            overflow-y: auto;
-            display: none;
-            width: 100%;
-            z-index: 10;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        
-        .resultados-busca .item {
-            padding: 8px 12px;
-            cursor: pointer;
-            border-bottom: 1px solid var(--light-gray);
-            transition: var(--transition);
-        }
-        
-        .resultados-busca .item:hover {
-            background: rgba(108, 99, 255, 0.08);
-        }
-        
-        .resultados-busca .item:last-child {
-            border-bottom: none;
-        }
     </style>
 </head>
 <body>
@@ -797,7 +692,7 @@
     <nav class="sidebar" id="sidebar">
         <div class="sidebar-brand">
             <h1>🏪 PDV</h1>
-            <span>Inteligente v6.0.4</span>
+            <span>Inteligente v6.0</span>
         </div>
         
         <div class="sidebar-user">
@@ -850,12 +745,6 @@
             </div>
         </div>
         
-        <!-- Aviso de plano expirado -->
-        <div id="planoExpiradoAviso" style="display:none;" class="plano-expirado-aviso">
-            <span>⚠️ <strong>Seu plano expirou!</strong> Renove seu plano para continuar usando o PDV.</span>
-            <a href="#" onclick="navegarPara('config')">Ver Planos →</a>
-        </div>
-        
         <!-- Conteúdo das páginas -->
         <div id="pageContent">
             <!-- Vendas -->
@@ -871,11 +760,11 @@
                                    onkeydown="if(event.key==='Enter') buscarPorCodigo()">
                         </div>
                         
-                        <div class="form-group busca-container">
+                        <div class="form-group">
                             <label>Buscar Produto</label>
                             <input type="text" id="buscaProduto" placeholder="Digite o nome do produto"
                                    oninput="buscarProdutosPorNome(this.value)">
-                            <div class="resultados-busca" id="resultadosBusca"></div>
+                            <div id="resultadosBusca" style="position:absolute;background:white;border:1px solid var(--light-gray);border-radius:8px;max-height:200px;overflow-y:auto;display:none;width:100%;z-index:10;"></div>
                         </div>
                         
                         <div id="produtoSelecionado" class="produto-selecionado" style="display:none;">
@@ -886,11 +775,13 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Quantidade</label>
-                                <input type="number" id="qtdProduto" value="1" min="1">
+                                <input type="number" id="qtdProduto" value="1" min="1" 
+                                       onchange="atualizarPrecoTotal()">
                             </div>
                             <div class="form-group">
                                 <label>Preço Unitário (R$)</label>
-                                <input type="number" id="precoUnitario" value="0" step="0.01">
+                                <input type="number" id="precoUnitario" value="0" step="0.01"
+                                       onchange="atualizarPrecoTotal()">
                             </div>
                         </div>
                         
@@ -921,7 +812,7 @@
                             <div style="display:flex;justify-content:space-between;font-size:14px;color:var(--gray);">
                                 <span>Desconto:</span>
                                 <span><input type="number" id="descontoVenda" value="0" step="0.01" 
-                                           style="width:80px;padding:4px 8px;border:1px solid var(--light-gray);border-radius:4px;text-align:right;" onchange="atualizarCarrinho()"></span>
+                                           style="width:80px;padding:4px 8px;border:1px solid var(--light-gray);border-radius:4px;text-align:right;"></span>
                             </div>
                             <div style="display:flex;justify-content:space-between;font-size:20px;font-weight:700;margin-top:8px;">
                                 <span>TOTAL:</span>
@@ -1036,13 +927,8 @@
                         </div>
                         <div class="form-group">
                             <label>CNPJ</label>
-                            <div class="input-group">
-                                <input type="text" id="cnpjLoja" placeholder="00.000.000/0000-00" 
-                                       onchange="buscarDadosCNPJ(this.value)">
-                                <button class="btn-buscar-cnpj" onclick="buscarDadosCNPJ(document.getElementById('cnpjLoja').value)">
-                                    <i class="fas fa-search"></i> Buscar
-                                </button>
-                            </div>
+                            <input type="text" id="cnpjLoja" placeholder="00.000.000/0000-00" 
+                                   onchange="buscarDadosCNPJ(this.value)">
                         </div>
                         <div id="dadosCNPJ" style="margin-top:12px;"></div>
                         <button class="btn-primary" onclick="salvarInfoLoja()">
@@ -1166,7 +1052,7 @@
             <div id="pixContent">
                 <div class="pix-info" style="text-align:center;padding:20px;">
                     <div class="loading-spinner" style="margin:0 auto 12px;"></div>
-                    <p style="color:var(--gray);">Gerando pagamento...</p>
+                    <p style="color:var(--text-secondary);">Gerando pagamento...</p>
                 </div>
             </div>
         </div>
@@ -1221,7 +1107,7 @@
         let usuarioAtual = null;
         let dbId = null;
         let planoAtual = null;
-        let planoAtivo = true;
+        let paginaAtual = 'vendas';
         let autoCheckPix = null;
 
         // ===== INICIALIZAÇÃO =====
@@ -1230,7 +1116,6 @@
             carregarStatusCaixa();
             carregarPlanos();
             carregarClientes();
-            carregarInfoLoja();
             
             // Navegação
             document.querySelectorAll('.nav-item').forEach(item => {
@@ -1245,9 +1130,7 @@
                 // Ctrl+Enter finaliza venda
                 if (e.ctrlKey && e.key === 'Enter') {
                     e.preventDefault();
-                    if (carrinho.length > 0) {
-                        abrirPagamento();
-                    }
+                    abrirPagamento();
                 }
                 // Escape fecha modais
                 if (e.key === 'Escape') {
@@ -1270,29 +1153,15 @@
                 if (data.logged_in) {
                     usuarioAtual = data;
                     dbId = data.db_id;
-                    planoAtivo = data.plano_ativo !== false;
                     atualizarSidebar(data);
-                    
-                    if (!planoAtivo) {
-                        document.getElementById('planoExpiradoAviso').style.display = 'flex';
-                        document.getElementById('statusText').textContent = '⚠️ Plano Expirado';
-                        document.getElementById('statusText').style.color = 'var(--danger)';
-                    } else {
-                        document.getElementById('planoExpiradoAviso').style.display = 'none';
-                        document.getElementById('statusText').textContent = 'Conectado';
-                        document.getElementById('statusText').style.color = 'var(--success)';
-                    }
-                    
                     await verificarPlano();
                     await carregarDashboard('hoje');
                     await carregarEstoque();
-                    await carregarUsuarios();
                 } else {
                     window.location.href = '/login';
                 }
             } catch (e) {
                 console.error('Erro ao verificar autenticação:', e);
-                showToast('❌ Erro ao conectar ao servidor!', 'error');
             }
         }
 
@@ -1301,6 +1170,7 @@
             document.getElementById('userCargo').textContent = data.cargo || '-';
             document.getElementById('userLoja').textContent = `🏪 ${data.nome_loja || 'Minha Loja'}`;
             document.getElementById('userAvatar').textContent = (data.nome || 'U')[0].toUpperCase();
+            document.getElementById('statusText').textContent = 'Conectado';
         }
 
         async function verificarPlano() {
@@ -1310,16 +1180,7 @@
                 if (data.success) {
                     planoAtual = data;
                     if (data.expirado) {
-                        planoAtivo = false;
-                        document.getElementById('planoExpiradoAviso').style.display = 'flex';
-                        document.getElementById('statusText').textContent = '⚠️ Plano Expirado';
-                        document.getElementById('statusText').style.color = 'var(--danger)';
-                        showToast('⚠️ Seu plano expirou! Renove para continuar usando o PDV.', 'warning');
-                    } else {
-                        planoAtivo = true;
-                        document.getElementById('planoExpiradoAviso').style.display = 'none';
-                        document.getElementById('statusText').textContent = `Conectado (${data.dias_restantes} dias)`;
-                        document.getElementById('statusText').style.color = 'var(--success)';
+                        showToast('⚠️ Seu plano expirou! Faça um novo pagamento.', 'warning');
                     }
                 }
             } catch (e) {
@@ -1338,21 +1199,20 @@
 
         // ===== NAVEGAÇÃO =====
         function navegarPara(page) {
-            // Se plano expirado e não for config, bloquear
-            if (!planoAtivo && page !== 'config' && page !== 'loja') {
-                showToast('⚠️ Seu plano expirou! Renove em Configurações.', 'warning');
-                page = 'config';
-            }
-            
+            // Atualizar sidebar
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            document.querySelector(`.nav-item[data-page="${page}"]`)?.classList.add('active');
+            document.querySelector(`.nav-item[data-page="${page}"]`).classList.add('active');
             
+            // Esconder todas as páginas
             document.querySelectorAll('.page-content').forEach(el => el.style.display = 'none');
             
+            // Mostrar página selecionada
             const target = document.getElementById(`page-${page}`);
             if (target) {
                 target.style.display = 'block';
+                paginaAtual = page;
                 
+                // Atualizar título
                 const titles = {
                     'vendas': '📋 Vendas',
                     'clientes': '👥 Clientes',
@@ -1364,13 +1224,15 @@
                 };
                 document.getElementById('pageTitle').textContent = titles[page] || page;
                 
+                // Carregar dados da página
                 if (page === 'clientes') carregarClientes();
                 if (page === 'estoque') carregarEstoque();
                 if (page === 'dashboard') carregarDashboard('hoje');
                 if (page === 'caixa') carregarStatusCaixa();
-                if (page === 'config') { carregarUsuarios(); carregarPlanos(); }
+                if (page === 'config') carregarUsuarios();
                 if (page === 'loja') carregarInfoLoja();
                 
+                // Foco no código de barras se for vendas
                 if (page === 'vendas') {
                     setTimeout(() => document.getElementById('codigoBarras').focus(), 100);
                 }
@@ -1435,10 +1297,6 @@
         }
 
         function abrirModalUsuario() {
-            if (!planoAtivo) {
-                showToast('⚠️ Plano expirado! Renove para criar usuários.', 'warning');
-                return;
-            }
             document.getElementById('usuarioNome').value = '';
             document.getElementById('usuarioEmail').value = '';
             document.getElementById('usuarioSenha').value = '';
@@ -1498,9 +1356,6 @@
                     
                     html += '</tbody></table>';
                     container.innerHTML = html;
-                } else if (data.plano_expirado) {
-                    showToast('⚠️ Plano expirado!', 'warning');
-                    document.getElementById('listaClientes').innerHTML = '<p style="color:var(--danger);">Plano expirado. Renove para acessar clientes.</p>';
                 }
             } catch (e) {
                 console.error('Erro ao carregar clientes:', e);
@@ -1509,11 +1364,6 @@
         }
 
         async function salvarCliente() {
-            if (!planoAtivo) {
-                showToast('⚠️ Plano expirado!', 'warning');
-                return;
-            }
-            
             const id = document.getElementById('clienteId').value;
             const data = {
                 nome: document.getElementById('clienteNome').value,
@@ -1653,9 +1503,6 @@
                     
                     html += '</tbody></table>';
                     container.innerHTML = html;
-                } else if (data.plano_expirado) {
-                    showToast('⚠️ Plano expirado!', 'warning');
-                    document.getElementById('listaEstoque').innerHTML = '<p style="color:var(--danger);">Plano expirado. Renove para acessar o estoque.</p>';
                 }
             } catch (e) {
                 console.error('Erro ao carregar estoque:', e);
@@ -1664,11 +1511,6 @@
         }
 
         async function salvarProduto() {
-            if (!planoAtivo) {
-                showToast('⚠️ Plano expirado!', 'warning');
-                return;
-            }
-            
             const data = {
                 codigo: document.getElementById('produtoCodigo').value || `PROD${Date.now()}`,
                 nome: document.getElementById('produtoNome').value,
@@ -1734,11 +1576,6 @@
 
         // ===== PDV - BUSCA E CARRINHO =====
         async function buscarPorCodigo() {
-            if (!planoAtivo) {
-                showToast('⚠️ Plano expirado!', 'warning');
-                return;
-            }
-            
             const codigo = document.getElementById('codigoBarras').value.trim();
             if (!codigo) return;
             
@@ -1759,11 +1596,6 @@
         }
 
         async function buscarProdutosPorNome(nome) {
-            if (!planoAtivo) {
-                document.getElementById('resultadosBusca').style.display = 'none';
-                return;
-            }
-            
             const container = document.getElementById('resultadosBusca');
             if (!nome || nome.length < 2) {
                 container.style.display = 'none';
@@ -1777,7 +1609,8 @@
                 if (data.success && data.produtos.length > 0) {
                     container.style.display = 'block';
                     container.innerHTML = data.produtos.map(p => `
-                        <div class="item" onclick="selecionarProduto(${JSON.stringify(p).replace(/"/g, '&quot;')})">
+                        <div style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--light-gray);"
+                             onclick="selecionarProduto(${JSON.stringify(p).replace(/"/g, '&quot;')})">
                             <strong>${p.nome}</strong> - R$ ${p.preco.toFixed(2)} <span style="color:var(--gray);font-size:12px;">(${p.estoque} und)</span>
                         </div>
                     `).join('');
@@ -1799,15 +1632,16 @@
             document.getElementById('qtdProduto').value = 1;
             document.getElementById('resultadosBusca').style.display = 'none';
             document.getElementById('buscaProduto').value = '';
-            document.getElementById('codigoBarras').focus();
+            atualizarPrecoTotal();
+        }
+
+        function atualizarPrecoTotal() {
+            const qtd = parseInt(document.getElementById('qtdProduto').value) || 1;
+            const preco = parseFloat(document.getElementById('precoUnitario').value) || 0;
+            // Mostrar total do item
         }
 
         function adicionarAoCarrinho() {
-            if (!planoAtivo) {
-                showToast('⚠️ Plano expirado!', 'warning');
-                return;
-            }
-            
             if (!produtoSelecionado) {
                 showToast('⚠️ Selecione um produto primeiro!', 'warning');
                 return;
@@ -1821,11 +1655,13 @@
                 return;
             }
             
+            // Verificar estoque
             if (produtoSelecionado.estoque !== undefined && produtoSelecionado.estoque < qtd) {
                 showToast(`⚠️ Estoque insuficiente! Disponível: ${produtoSelecionado.estoque}`, 'warning');
                 return;
             }
             
+            // Verificar se produto já está no carrinho
             const existente = carrinho.find(item => item.codigo === produtoSelecionado.codigo);
             if (existente) {
                 existente.quantidade += qtd;
@@ -1840,7 +1676,7 @@
                 });
             }
             
-            const nomeProduto = produtoSelecionado.nome;
+            // Resetar seleção
             produtoSelecionado = null;
             document.getElementById('produtoSelecionado').style.display = 'none';
             document.getElementById('produtoSelecionadoNome').textContent = 'Nenhum produto selecionado';
@@ -1849,7 +1685,7 @@
             document.getElementById('codigoBarras').focus();
             
             atualizarCarrinho();
-            showToast(`✅ ${nomeProduto} adicionado!`, 'success');
+            showToast(`✅ ${produtoSelecionado ? produtoSelecionado.nome : 'Produto'} adicionado!`, 'success');
         }
 
         function atualizarCarrinho() {
@@ -1891,6 +1727,7 @@
                 container.innerHTML = html;
             }
             
+            // Atualizar totais
             const subtotal = carrinho.reduce((sum, item) => sum + item.total, 0);
             const desconto = parseFloat(document.getElementById('descontoVenda').value) || 0;
             const total = subtotal - desconto;
@@ -1898,6 +1735,7 @@
             document.getElementById('subtotalCarrinho').textContent = `R$ ${subtotal.toFixed(2)}`;
             document.getElementById('totalCarrinho').textContent = `R$ ${total.toFixed(2)}`;
             
+            // Habilitar/desabilitar botão finalizar
             document.getElementById('btnFinalizarVenda').disabled = carrinho.length === 0;
         }
 
@@ -1910,11 +1748,6 @@
 
         // ===== PDV - FINALIZAR VENDA =====
         function abrirPagamento() {
-            if (!planoAtivo) {
-                showToast('⚠️ Plano expirado!', 'warning');
-                return;
-            }
-            
             if (carrinho.length === 0) {
                 showToast('⚠️ Carrinho vazio!', 'warning');
                 return;
@@ -1927,12 +1760,14 @@
             document.getElementById('modalTotalPagamento').textContent = `R$ ${total.toFixed(2)}`;
             document.getElementById('clienteVenda').value = '';
             
+            // Resetar seleção de método
             document.querySelectorAll('.metodo-pagamento').forEach(el => el.classList.remove('selected'));
             metodoSelecionado = null;
             document.getElementById('btnConfirmarPagamento').disabled = true;
             
             abrirModal('modalPagamento');
             
+            // Foco no primeiro método de pagamento
             setTimeout(() => {
                 const primeiro = document.querySelector('.metodo-pagamento');
                 if (primeiro) {
@@ -1942,6 +1777,7 @@
                 }
             }, 100);
             
+            // Carregar lista de clientes para autocomplete
             carregarClientesParaAutocomplete();
         }
 
@@ -1966,11 +1802,13 @@
             metodoSelecionado = el.dataset.metodo;
             document.getElementById('btnConfirmarPagamento').disabled = false;
             
+            // Se for fiado, pedir nome do cliente
             if (metodoSelecionado === 'Fiado') {
                 document.getElementById('clienteVenda').focus();
             }
         }
 
+        // Navegação por teclado nos métodos de pagamento
         document.addEventListener('keydown', function(e) {
             if (!document.getElementById('modalPagamento').classList.contains('active')) return;
             
@@ -1999,11 +1837,6 @@
         });
 
         async function finalizarVenda() {
-            if (!planoAtivo) {
-                showToast('⚠️ Plano expirado!', 'warning');
-                return;
-            }
-            
             if (!metodoSelecionado) {
                 showToast('⚠️ Selecione um método de pagamento!', 'warning');
                 return;
@@ -2040,12 +1873,15 @@
                     showToast('✅ Venda finalizada com sucesso!', 'success');
                     fecharModal('modalPagamento');
                     
+                    // Imprimir cupom
                     imprimirCupom(venda, data.id);
                     
+                    // Limpar carrinho
                     carrinho = [];
                     document.getElementById('descontoVenda').value = 0;
                     atualizarCarrinho();
                     
+                    // Recarregar dados
                     carregarDashboard('hoje');
                     carregarStatusCaixa();
                 } else {
@@ -2061,16 +1897,14 @@
         function imprimirCupom(venda, vendaId) {
             const data = new Date();
             const dataStr = data.toLocaleString('pt-BR');
-            const nomeLoja = document.getElementById('userLoja').textContent.replace('🏪 ', '') || 'Minha Loja';
-            const cnpj = document.getElementById('cnpjLoja')?.value || sessionStorage.getItem('cnpj') || '00.000.000/0000-00';
             
             let html = `
                 <div style="font-family:monospace;padding:16px;max-width:300px;margin:0 auto;background:white;">
                     <div style="text-align:center;font-weight:bold;font-size:16px;border-bottom:1px dashed #ccc;padding-bottom:8px;">
-                        ${nomeLoja}
+                        ${document.getElementById('userLoja').textContent || 'Minha Loja'}
                     </div>
                     <div style="text-align:center;font-size:12px;color:#666;border-bottom:1px dashed #ccc;padding-bottom:8px;">
-                        CNPJ: ${cnpj}<br>
+                        CNPJ: ${document.getElementById('cnpjLoja').value || '00.000.000/0000-00'}<br>
                         ${dataStr}
                     </div>
                     <div style="border-bottom:1px dashed #ccc;padding:8px 0;">
@@ -2108,6 +1942,7 @@
                 </div>
             `;
             
+            // Abrir em nova janela para impressão
             const win = window.open('', '_blank', 'width=400,height=600');
             win.document.write(`
                 <html>
@@ -2133,6 +1968,7 @@
                         </div>
                         <script>
                             window.onload = function() {
+                                // Auto-print após 1 segundo
                                 setTimeout(() => window.print(), 1000);
                             }
                         <\/script>
@@ -2173,6 +2009,7 @@
                     `;
                 }
                 
+                // Carregar resumo do dia
                 const resResumo = await fetch('/api/caixa/resumo');
                 const resumo = await resResumo.json();
                 if (resumo.success) {
@@ -2187,11 +2024,11 @@
                                 <div style="font-size:20px;font-weight:700;">${resumo.total_vendas}</div>
                                 <div style="font-size:12px;color:var(--gray);">Vendas</div>
                             </div>
-                            ${resumo.metodos ? resumo.metodos.map(m => `
+                            ${resumo.metodos ? Object.entries(resumo.metodos).map(([metodo, dados]) => `
                                 <div style="background:var(--bg);padding:12px;border-radius:8px;text-align:center;">
-                                    <div style="font-size:16px;font-weight:600;">${m.metodo}</div>
-                                    <div style="font-size:14px;">R$ ${m.total.toFixed(2)}</div>
-                                    <div style="font-size:11px;color:var(--gray);">${m.quantidade} vendas</div>
+                                    <div style="font-size:16px;font-weight:600;">${metodo}</div>
+                                    <div style="font-size:14px;">R$ ${dados.total.toFixed(2)}</div>
+                                    <div style="font-size:11px;color:var(--gray);">${dados.quantidade} vendas</div>
                                 </div>
                             `).join('') : ''}
                         </div>
@@ -2203,11 +2040,6 @@
         }
 
         async function abrirCaixa() {
-            if (!planoAtivo) {
-                showToast('⚠️ Plano expirado! Renove para abrir o caixa.', 'warning');
-                return;
-            }
-            
             const valor = prompt('Valor de abertura do caixa (R$):', '0');
             if (valor === null) return;
             
@@ -2266,6 +2098,7 @@
                     document.getElementById('ticketMedio').textContent = `R$ ${stats.media.toFixed(2)}`;
                     document.getElementById('totalItensVendidos').textContent = stats.total_itens || 0;
                     
+                    // Métodos de pagamento
                     const metodosHtml = Object.entries(stats.metodos || {})
                         .filter(([_, valor]) => valor > 0)
                         .map(([metodo, valor]) => `
@@ -2277,12 +2110,13 @@
                     
                     document.getElementById('metodosPagamento').innerHTML = metodosHtml;
                     
+                    // Últimas vendas
                     const vendasHtml = stats.vendas && stats.vendas.length > 0 ? 
-                        stats.vendas.slice(0, 10).map(v => {
+                        stats.vendas.slice(0, 5).map(v => {
                             const hora = new Date(v.data_hora).toLocaleTimeString('pt-BR');
                             const itensNomes = v.itens.map(i => i.nome).join(', ');
                             return `
-                                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--light-gray);align-items:center;flex-wrap:wrap;gap:4px;">
+                                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--light-gray);">
                                     <div>
                                         <strong>${hora}</strong>
                                         <span style="color:var(--gray);font-size:13px;margin-left:8px;">${itensNomes || 'Produtos'}</span>
@@ -2290,7 +2124,7 @@
                                     <div>
                                         <span class="badge badge-primary">${v.metodo}</span>
                                         <strong style="margin-left:8px;">R$ ${v.total.toFixed(2)}</strong>
-                                        <button class="btn-imprimir-venda" onclick="imprimirCupomPorVenda(${v.id})" title="Imprimir cupom">
+                                        <button class="btn-imprimir" onclick="imprimirCupomPorVenda(${v.id})" title="Imprimir cupom">
                                             <i class="fas fa-print"></i>
                                         </button>
                                     </div>
@@ -2299,8 +2133,6 @@
                         }).join('') : '<p style="color:var(--gray);">Nenhuma venda neste período.</p>';
                     
                     document.getElementById('ultimasVendas').innerHTML = vendasHtml;
-                } else if (data.plano_expirado) {
-                    showToast('⚠️ Plano expirado!', 'warning');
                 }
             } catch (e) {
                 console.error('Erro ao carregar dashboard:', e);
@@ -2313,17 +2145,20 @@
                 const data = await res.json();
                 if (data.success) {
                     const venda = data.vendas.find(v => v.id === vendaId);
-                    if (venda && venda.itens && venda.itens.length > 0) {
-                        imprimirCupom({
-                            itens: venda.itens,
-                            subtotal: venda.subtotal,
-                            desconto: venda.desconto,
-                            total: venda.total,
-                            metodo: venda.metodo,
-                            cliente: venda.cliente
-                        }, venda.id);
-                    } else {
-                        showToast('⚠️ Venda sem itens para imprimir', 'warning');
+                    if (venda) {
+                        // Verificar se tem itens
+                        if (venda.itens && venda.itens.length > 0) {
+                            imprimirCupom({
+                                itens: venda.itens,
+                                subtotal: venda.subtotal,
+                                desconto: venda.desconto,
+                                total: venda.total,
+                                metodo: venda.metodo,
+                                cliente: venda.cliente
+                            }, venda.id);
+                        } else {
+                            showToast('⚠️ Venda sem itens para imprimir', 'warning');
+                        }
                     }
                 }
             } catch (e) {
@@ -2334,14 +2169,10 @@
         // ===== LOJA =====
         async function carregarInfoLoja() {
             try {
-                const res = await fetch('/api/loja/info');
+                const res = await fetch('/api/auth/status');
                 const data = await res.json();
-                if (data.success) {
+                if (data.logged_in) {
                     document.getElementById('nomeLoja').value = data.nome_loja || '';
-                    document.getElementById('cnpjLoja').value = data.cnpj || '';
-                    if (data.cnpj) {
-                        sessionStorage.setItem('cnpj', data.cnpj);
-                    }
                 }
             } catch (e) {
                 console.error('Erro ao carregar info da loja:', e);
@@ -2358,17 +2189,17 @@
             }
             
             try {
+                // Salvar nome da loja
                 const res = await fetch('/api/loja/nome', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nome, cnpj })
+                    body: JSON.stringify({ nome })
                 });
                 const data = await res.json();
                 
                 if (data.success) {
                     showToast('✅ Informações salvas com sucesso!', 'success');
                     document.getElementById('userLoja').textContent = `🏪 ${nome}`;
-                    sessionStorage.setItem('cnpj', cnpj);
                 } else {
                     showToast('❌ ' + data.error, 'error');
                 }
@@ -2378,46 +2209,37 @@
         }
 
         async function buscarDadosCNPJ(cnpj) {
-            if (!cnpj || cnpj.length < 14) {
-                showToast('⚠️ Digite um CNPJ válido com 14 dígitos.', 'warning');
-                return;
-            }
+            if (!cnpj || cnpj.length < 14) return;
             
+            // Remover máscara
             const cnpjLimpo = cnpj.replace(/\D/g, '');
-            if (cnpjLimpo.length !== 14) {
-                showToast('⚠️ CNPJ deve ter 14 dígitos.', 'warning');
-                return;
-            }
+            if (cnpjLimpo.length !== 14) return;
             
             showToast('🔍 Buscando informações do CNPJ...', 'info');
             
             try {
-                const res = await fetch(`/api/cnpj/${cnpjLimpo}`);
-                const data = await res.json();
-                
-                if (data.success) {
-                    const d = data.dados;
-                    document.getElementById('nomeLoja').value = d.nome_fantasia || d.razao_social || '';
+                // Usar API pública do Brasil API
+                const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjLimpo}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('nomeLoja').value = data.nome_fantasia || data.razao_social || '';
                     
+                    // Exibir informações adicionais
                     const container = document.getElementById('dadosCNPJ');
                     container.innerHTML = `
-                        <div class="dados-cnpj">
-                            <p><strong>Razão Social:</strong> ${d.razao_social || '-'}</p>
-                            <p><strong>Nome Fantasia:</strong> ${d.nome_fantasia || '-'}</p>
-                            <p><strong>Endereço:</strong> ${d.logradouro || ''}${d.numero ? ', ' + d.numero : ''}${d.bairro ? ' - ' + d.bairro : ''}, ${d.municipio || ''} - ${d.uf || ''}</p>
-                            <p><strong>CEP:</strong> ${d.cep || '-'}</p>
-                            <p><strong>Telefone:</strong> ${d.telefone || '-'}</p>
-                            <p><strong>Email:</strong> ${d.email || '-'}</p>
-                            ${d.cnae_descricao ? `<p><strong>Atividade:</strong> ${d.cnae_descricao}</p>` : ''}
-                            ${d.porte ? `<p><strong>Porte:</strong> ${d.porte}</p>` : ''}
-                            ${d.natureza_juridica ? `<p><strong>Natureza Jurídica:</strong> ${d.natureza_juridica}</p>` : ''}
-                            ${d.data_abertura ? `<p><strong>Data de Abertura:</strong> ${d.data_abertura}</p>` : ''}
-                            <p style="font-size:11px;color:var(--gray);margin-top:8px;">Dados obtidos da Receita Federal</p>
+                        <div style="background:var(--bg);padding:12px;border-radius:8px;">
+                            <p><strong>Razão Social:</strong> ${data.razao_social || '-'}</p>
+                            <p><strong>Nome Fantasia:</strong> ${data.nome_fantasia || '-'}</p>
+                            <p><strong>Endereço:</strong> ${data.logradouro || ''}, ${data.numero || ''} - ${data.bairro || ''}, ${data.municipio || ''} - ${data.uf || ''}</p>
+                            <p><strong>Telefone:</strong> ${data.ddd_telefone_1 || '-'}</p>
+                            <p><strong>Email:</strong> ${data.email || '-'}</p>
+                            ${data.cnae_fiscal_descricao ? `<p><strong>Atividade:</strong> ${data.cnae_fiscal_descricao}</p>` : ''}
+                            <p style="font-size:12px;color:var(--gray);">Dados obtidos da Receita Federal via Brasil API</p>
                         </div>
                     `;
                     showToast('✅ Dados do CNPJ carregados!', 'success');
                 } else {
-                    showToast('❌ ' + data.error, 'error');
+                    showToast('⚠️ CNPJ não encontrado ou inválido', 'warning');
                 }
             } catch (e) {
                 console.error('Erro ao buscar CNPJ:', e);
@@ -2469,8 +2291,6 @@
                     
                     html += '</tbody></table>';
                     container.innerHTML = html;
-                } else if (data.plano_expirado) {
-                    document.getElementById('listaUsuarios').innerHTML = '<p style="color:var(--danger);">Plano expirado. Renove para gerenciar usuários.</p>';
                 }
             } catch (e) {
                 console.error('Erro ao carregar usuários:', e);
@@ -2478,11 +2298,6 @@
         }
 
         async function salvarUsuario() {
-            if (!planoAtivo) {
-                showToast('⚠️ Plano expirado!', 'warning');
-                return;
-            }
-            
             const data = {
                 nome: document.getElementById('usuarioNome').value,
                 email: document.getElementById('usuarioEmail').value,
@@ -2581,7 +2396,7 @@
                     let html = `
                         <div class="pix-info">
                             <div class="valor">R$ ${data.valor.toFixed(2)}</div>
-                            <p style="color:var(--gray);margin:6px 0 14px;">${data.plano.nome} • ${data.plano.dias} dias</p>
+                            <p style="color:var(--text-secondary);margin:6px 0 14px;">${data.plano.nome} • ${data.plano.dias} dias</p>
                     `;
                     
                     if (data.qr_code_base64) {
@@ -2606,6 +2421,7 @@
                     
                     document.getElementById('pixContent').innerHTML = html;
                     
+                    // Auto-check a cada 5 segundos
                     if (window._pixAutoCheck) clearInterval(window._pixAutoCheck);
                     window._pixAutoCheck = setInterval(() => {
                         verificarPagamento(data.pix_id, true);
@@ -2639,6 +2455,7 @@
             navigator.clipboard.writeText(txt)
                 .then(() => showToast('📋 Código PIX copiado!', 'success'))
                 .catch(() => {
+                    // Fallback
                     const textarea = document.createElement('textarea');
                     textarea.value = txt;
                     document.body.appendChild(textarea);
@@ -2665,10 +2482,8 @@
                     }
                     showToast('✅ Pagamento confirmado! Plano ativado!', 'success');
                     fecharModalPix();
-                    await verificarPlano();
                     carregarPlanos();
-                    carregarUsuarios();
-                    location.reload();
+                    verificarPlano();
                 } else if (!silencioso) {
                     showToast('⏳ Aguardando confirmação do PIX...', 'warning');
                 }
@@ -2688,11 +2503,6 @@
 
         // ===== SINCRONIZAÇÃO =====
         async function sincronizar() {
-            if (!planoAtivo) {
-                showToast('⚠️ Plano expirado! Renove para sincronizar.', 'warning');
-                return;
-            }
-            
             showToast('🔄 Sincronizando dados...', 'info');
             
             try {
@@ -2711,14 +2521,16 @@
             }
         }
 
+        // ===== INICIALIZAÇÃO DE ATALHOS =====
         document.addEventListener('keydown', function(e) {
+            // Ctrl+S sincroniza
             if (e.ctrlKey && e.key === 's') {
                 e.preventDefault();
                 sincronizar();
             }
         });
 
-        console.log('🏪 PDV Inteligente v6.0.4 carregado!');
+        console.log('🏪 PDV Inteligente v6.0.2 carregado!');
         console.log('📋 Atalhos: Ctrl+Enter = Finalizar venda, Ctrl+S = Sincronizar');
     </script>
 </body>
