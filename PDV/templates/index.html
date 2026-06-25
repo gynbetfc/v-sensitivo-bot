@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>PDV Inteligente v6.0.6</title>
+    <title>PDV Inteligente v6.0.7</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
@@ -298,7 +298,7 @@
         .cupom-modal .cupom-box .cupom-linha{display:flex;justify-content:space-between;padding:3px 0;font-size:13px;border-bottom:1px dotted #e5e7eb}
         .cupom-modal .cupom-box .cupom-total{font-size:18px;font-weight:700;padding:10px 0;border-top:2px solid #333;margin-top:10px;text-align:center;color:#2E7D32}
         .cupom-modal .cupom-box .cupom-footer{text-align:center;font-size:12px;color:#6b7280;margin-top:15px;padding-top:10px;border-top:2px dashed #333}
-        .cupom-modal .btn-imprimir{width:100%;padding:12px;margin-top:16px;background:#2E7D32;color:#fff;border:0;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;transition:var(--transition)}
+        .cupom-modal .btn-imprimir{width:100%;padding:12px;margin-top:8px;background:#2E7D32;color:#fff;border:0;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;transition:var(--transition)}
         .cupom-modal .btn-imprimir:hover{background:#1B5E20}
         .cupom-modal .btn-nao-imprimir{width:100%;padding:12px;margin-top:8px;background:#6b7280;color:#fff;border:0;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;transition:var(--transition)}
         .cupom-modal .btn-nao-imprimir:hover{background:#4b5563}
@@ -309,13 +309,15 @@
         @media(max-width:768px){body{padding:8px}.auth-box{padding:24px}.header{padding:10px 14px}.header .logo{font-size:16px}.header .user .nome{display:none}.menu-toggle{display:block}.nav{display:none;flex-direction:column;padding:8px}.nav.open{display:flex}.nav button{padding:10px 14px;width:100%;justify-content:center;border-radius:8px}.content{padding:10px}.card{padding:14px}.stats-grid{grid-template-columns:1fr 1fr}.planos-grid{grid-template-columns:1fr}.caixa-card{padding:16px}.modal{padding:20px;margin:10px}.clientes-actions{flex-direction:column}.clientes-actions input{width:100%}.clientes-table{font-size:12px}.clientes-table td,.clientes-table th{padding:4px}.payment-modal .modal{padding:20px;margin:10px}.payment-modal .payment-methods{grid-template-columns:1fr 1fr}.payment-modal .total-display .value{font-size:28px}.venda-item .produtos-detalhe{font-size:9px}}
         @media(max-width:480px){.stats-grid{grid-template-columns:1fr 1fr;gap:8px}.stat-card .value{font-size:20px}.stat-card{padding:12px}.auth-box{padding:16px}.auth-box h1{font-size:20px}.pdv-grid .input-group input{font-size:13px;padding:8px 10px}.cart-table{font-size:11px}.cart-table td,.cart-table th{padding:3px}.caixa-card .btn-group button{min-width:80px;padding:8px 14px;font-size:12px}.planos-grid{grid-template-columns:1fr}.payment-modal .payment-methods{grid-template-columns:1fr}.payment-modal .payment-input{flex-wrap:wrap}.payment-modal .payment-input .label{min-width:100%}}
         .text-center{text-align:center}.text-muted{color:var(--text-muted)}.mt-8{margin-top:8px}.mt-16{margin-top:16px}.mb-8{margin-bottom:8px}.mb-16{margin-bottom:16px}.flex{display:flex}.flex-center{display:flex;align-items:center;justify-content:center}.gap-8{gap:8px}.w-full{width:100%}.loading-spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--border-color);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+        .cupom-modal .cupom-actions .btn-imprimir:focus,.cupom-modal .cupom-actions .btn-nao-imprimir:focus{outline:2px solid var(--green);outline-offset:2px}
+        .cupom-modal .cupom-actions .selected{background:var(--green);color:#fff;transform:scale(1.02)}
     </style>
 </head>
 <body>
 <div class="toast-container" id="toastContainer"></div>
 <div class="plano-expirado-aviso" id="planoExpiradoAviso">
     <span>⚠️ <strong>Seu plano expirou!</strong> Renove seu plano para continuar usando o PDV.</span>
-    <a onclick="trocarTab('loja')">Ver Planos →</a>
+    <a onclick="trocarTab('planos')">Ver Planos →</a>
 </div>
 <div class="modal-overlay" id="modalPix">
     <div class="modal">
@@ -366,9 +368,9 @@
             <div class="cupom-linha"><span>Venda #</span><span id="cupomVendaId">--</span></div>
             <div class="cupom-footer">Obrigado pela preferência!</div>
         </div>
-        <div class="cupom-actions">
-            <button class="btn-imprimir" onclick="imprimirCupom()">🖨️ IMPRIMIR CUPOM</button>
-            <button class="btn-nao-imprimir" onclick="fecharCupom()">❌ FECHAR SEM IMPRIMIR</button>
+        <div class="cupom-actions" id="cupomActions">
+            <button class="btn-imprimir" id="cupomBtnImprimir" onclick="imprimirCupom()">🖨️ IMPRIMIR CUPOM</button>
+            <button class="btn-nao-imprimir" id="cupomBtnFechar" onclick="fecharCupom()">❌ FECHAR SEM IMPRIMIR</button>
         </div>
     </div>
 </div>
@@ -420,7 +422,7 @@
         <button data-tab="caixa" onclick="trocarTab('caixa')"><i class="fas fa-cash-register"></i> Caixa</button>
         <button data-tab="dashboard" onclick="trocarTab('dashboard')"><i class="fas fa-chart-pie"></i> Dashboard</button>
         <button data-tab="estoque" onclick="trocarTab('estoque')"><i class="fas fa-boxes"></i> Estoque</button>
-        <button data-tab="loja" onclick="trocarTab('loja')"><i class="fas fa-store"></i> Loja</button>
+        <button data-tab="planos" onclick="trocarTab('planos')"><i class="fas fa-store"></i> Planos</button>
         <button data-tab="config" onclick="trocarTab('config')"><i class="fas fa-cog"></i> Config</button>
     </nav>
     <div class="content">
@@ -500,7 +502,7 @@
                 </div>
             </div>
         </div>
-        <div class="panel" id="panelLoja">
+        <div class="panel" id="panelPlanos">
             <div style="text-align:center;margin-bottom:20px;"><h2 style="font-size:22px;"><i class="fas fa-store" style="color:var(--green);"></i> Planos</h2><p style="color:var(--text-secondary);font-size:13px;">Escolha o plano ideal para sua empresa</p></div>
             <div class="planos-grid" id="planosGrid"></div>
             <div class="loja-status" id="statusLoja"><h4 style="font-size:14px;margin-bottom:10px;"><i class="fas fa-info-circle"></i> Status</h4><p style="color:var(--text-secondary);">Carregando...</p></div>
@@ -523,7 +525,7 @@
                     <div id="dadosCnpjConfig" style="display:none;background:var(--bg-primary);padding:10px;border-radius:8px;margin-bottom:10px;font-size:12px;color:var(--text-secondary);"></div>
                     <button class="btn btn-primary" onclick="salvarNomeLoja()" style="margin-top:10px;"><i class="fas fa-save"></i> Salvar</button>
                     <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-color);">
-                        <p style="font-size:12px;color:var(--text-secondary);"><strong>Versão:</strong> <span id="versaoSistema">6.0.6</span></p>
+                        <p style="font-size:12px;color:var(--text-secondary);"><strong>Versão:</strong> <span id="versaoSistema">6.0.7</span></p>
                         <p style="font-size:12px;color:var(--text-secondary);"><strong>ID do Banco:</strong> <span id="dbIdConfig" style="font-family:monospace;cursor:pointer;" onclick="copiarId()">---</span></p>
                         <p style="font-size:12px;color:var(--text-secondary);"><strong>Servidor:</strong> <span id="servidorIdConfig" style="font-family:monospace;">---</span></p>
                     </div>
@@ -648,7 +650,6 @@ async function fazerLogin(){
             if(window._syncInterval)clearInterval(window._syncInterval);
             window._syncInterval=setInterval(()=>{sincronizarAgora();},180000);
             await Promise.all([carregarProdutos(),carregarClientes(),carregarPlanos(),carregarStatusLoja(),carregarUsuarios(),verificarStatusCaixa(),carregarResumoCaixa(),carregarDashboard('hoje')]);
-            // Busca automática do CNPJ se existir
             if(state.cnpj){setTimeout(()=>{buscarDadosCNPJ(state.cnpj);},500);}
             showToast('✅ Bem-vindo, '+data.nome+'!','success');
         }else{msg.className='msg error';msg.textContent='❌ '+(data.error||'Email ou senha inválidos');}
@@ -675,14 +676,14 @@ function trocarTab(tab){
     document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
     const btn=document.querySelector('.nav button[data-tab="'+tab+'"]');if(btn)btn.classList.add('active');
     document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-    const panels={vendas:'panelVendas',clientes:'panelClientes',caixa:'panelCaixa',dashboard:'panelDashboard',estoque:'panelEstoque',loja:'panelLoja',config:'panelConfig'};
+    const panels={vendas:'panelVendas',clientes:'panelClientes',caixa:'panelCaixa',dashboard:'panelDashboard',estoque:'panelEstoque',planos:'panelPlanos',config:'panelConfig'};
     const target=document.getElementById(panels[tab]);if(target)target.classList.add('active');
     document.getElementById('nav').classList.remove('open');
     if(tab==='dashboard')carregarDashboard(state.periodo);
     if(tab==='clientes')carregarClientes();
     if(tab==='caixa')carregarResumoCaixa();
     if(tab==='estoque')carregarProdutos();
-    if(tab==='loja'){carregarPlanos();carregarStatusLoja();}
+    if(tab==='planos'){carregarPlanos();carregarStatusLoja();}
     if(tab==='config'){carregarUsuarios();carregarStatusLoja();}
 }
 
@@ -961,7 +962,7 @@ async function carregarDashboard(periodo){
 }
 
 // ============================================================
-// IMPRIMIR CUPOM
+// IMPRIMIR CUPOM - MODAL DIRETO SEM ALERT
 // ============================================================
 let ultimoCupomData=null;
 function imprimirCupomPorVenda(vendaId){
@@ -1001,6 +1002,10 @@ function mostrarCupom(venda){
     document.getElementById('cupomVendaId').textContent=venda.id||'--';
     document.getElementById('cupomModal').classList.add('active');
     ultimoCupomData=venda;
+    // Foco no primeiro botão para navegação por teclado
+    setTimeout(()=>{const primeiro=document.getElementById('cupomBtnImprimir');if(primeiro)primeiro.focus();},100);
+    // Inicializa seleção por teclado
+    window._cupomSelectedIndex=0;
 }
 function fecharCupom(){document.getElementById('cupomModal').classList.remove('active');}
 function imprimirCupom(){
@@ -1011,7 +1016,46 @@ function imprimirCupom(){
     printWindow.focus();
     printWindow.print();
     setTimeout(()=>{printWindow.close();},1000);
+    fecharCupom();
 }
+
+// ============================================================
+// NAVEGAÇÃO POR TECLADO NO CUPOM
+// ============================================================
+document.addEventListener('keydown', function(e) {
+    if (!document.getElementById('cupomModal').classList.contains('active')) return;
+    const botoes = document.querySelectorAll('#cupomActions button');
+    if (botoes.length === 0) return;
+    let currentIdx = -1;
+    botoes.forEach((btn, i) => { if (btn.classList.contains('selected')) currentIdx = i; });
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (currentIdx === -1) {
+            currentIdx = 0;
+        } else {
+            const dir = e.key === 'ArrowDown' ? 1 : -1;
+            currentIdx = (currentIdx + dir + botoes.length) % botoes.length;
+        }
+        botoes.forEach(btn => btn.classList.remove('selected'));
+        botoes[currentIdx].classList.add('selected');
+        botoes[currentIdx].focus();
+        window._cupomSelectedIndex = currentIdx;
+    } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const idx = window._cupomSelectedIndex !== undefined ? window._cupomSelectedIndex : 0;
+        const btn = botoes[idx];
+        if (btn) btn.click();
+    }
+});
+// Ao abrir o modal, o primeiro botão recebe foco e classe selected
+document.getElementById('cupomBtnImprimir').addEventListener('focus', function() {
+    document.querySelectorAll('#cupomActions button').forEach(b => b.classList.remove('selected'));
+    this.classList.add('selected');
+});
+document.getElementById('cupomBtnFechar').addEventListener('focus', function() {
+    document.querySelectorAll('#cupomActions button').forEach(b => b.classList.remove('selected'));
+    this.classList.add('selected');
+});
 
 // ============================================================
 // LOJA / PLANOS
@@ -1153,20 +1197,16 @@ function confirmarPagamento(){
         if(data.success){
             let msg='✅ Venda finalizada!\nTotal: R$ '+state.total.toFixed(2)+'\nMétodo: '+metodo;if(troco>0)msg+='\nTroco: R$ '+troco.toFixed(2);
             showToast(msg,'success');
-            // Pergunta se quer imprimir
-            if(confirm('🖨️ Deseja imprimir o cupom fiscal?')){
-                venda.id=data.id;
-                venda.data_hora=new Date().toISOString();
-                mostrarCupom(venda);
-            }
+            // Abre o modal do cupom diretamente
+            venda.id=data.id;
+            venda.data_hora=new Date().toISOString();
+            mostrarCupom(venda);
             fecharPagamento();
             state.itens=[];atualizarCarrinho();document.getElementById('descontoInput').value='0,00';
-            // Limpar campos de seleção
             document.getElementById('nomeProduto').value='';
             document.getElementById('precoProduto').value='';
             document.getElementById('statusMsg').textContent='Aguardando produto...';
             document.getElementById('statusMsg').className='status-msg';
-            // Foco no código de barras
             document.getElementById('codigoInput').focus();
             carregarDashboard(state.periodo);carregarResumoCaixa();
         }else{showToast('❌ Erro: '+data.error,'error');}
@@ -1207,15 +1247,16 @@ document.addEventListener('keydown',function(e){
 // INICIAR
 // ============================================================
 document.addEventListener('DOMContentLoaded',()=>{
-    document.getElementById('versaoSistema').textContent='6.0.6';
+    document.getElementById('versaoSistema').textContent='6.0.7';
     verificarSessao();
     setTimeout(()=>document.getElementById('codigoInput').focus(),500);
 });
-console.log('🏪 PDV Inteligente v6.0.6');
+console.log('🏪 PDV Inteligente v6.0.7');
 console.log('📦 Dados salvos localmente');
 console.log('☁️ Sincronização automática a cada 3 min');
 console.log('📋 CNPJ integrado com busca automática');
 console.log('🧪 Plano de teste de 3 minutos disponível');
+console.log('🖨️ Cupom com navegação por teclado (setas + Enter)');
 </script>
 </body>
-    </html>
+            </html>
