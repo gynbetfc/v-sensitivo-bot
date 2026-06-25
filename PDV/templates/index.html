@@ -934,6 +934,7 @@
             transition: var(--transition);
             margin-top: 6px;
         }
+        .estoque-grid .btn-limpar:hover { background: rgba(255,255,255,0.05); }
         .estoque-grid .btn-excluir {
             width: 100%;
             padding: 8px;
@@ -1049,7 +1050,6 @@
             border-bottom: 1px solid rgba(255,255,255,0.03);
             font-size: 12px;
             align-items: center;
-            gap: 4px;
         }
         .venda-item .valor { font-weight: 600; color: var(--green); }
         .venda-item .metodo {
@@ -1062,121 +1062,6 @@
         .venda-item .metodo.pix { background: rgba(59, 130, 246, 0.15); color: var(--blue); }
         .venda-item .metodo.cartao { background: rgba(139, 92, 246, 0.15); color: var(--purple); }
         .venda-item .metodo.fiado { background: rgba(239, 68, 68, 0.15); color: var(--red); }
-        .venda-item .btn-cupom {
-            background: none;
-            border: none;
-            color: var(--blue);
-            cursor: pointer;
-            font-size: 16px;
-            padding: 0 6px;
-            transition: var(--transition);
-        }
-        .venda-item .btn-cupom:hover { color: var(--purple); }
-
-        /* ============================================================
-           CUPOM MODAL
-           ============================================================ */
-        .cupom-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(8px);
-            z-index: 99999;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        .cupom-modal.active { display: flex; }
-
-        .cupom-modal .cupom-box {
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            max-width: 400px;
-            width: 100%;
-            max-height: 90vh;
-            overflow-y: auto;
-            color: #1a1a2e;
-            font-family: 'Courier New', monospace;
-            position: relative;
-        }
-
-        .cupom-modal .cupom-box .btn-close-cupom {
-            position: absolute;
-            top: 10px;
-            right: 15px;
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: #6b7280;
-            transition: var(--transition);
-        }
-
-        .cupom-modal .cupom-box .btn-close-cupom:hover { color: #ef4444; }
-
-        .cupom-modal .cupom-box .cupom-header {
-            text-align: center;
-            font-size: 18px;
-            font-weight: 700;
-            border-bottom: 2px dashed #333;
-            padding-bottom: 10px;
-            margin-bottom: 10px;
-        }
-
-        .cupom-modal .cupom-box .cupom-linha {
-            display: flex;
-            justify-content: space-between;
-            padding: 3px 0;
-            font-size: 13px;
-            border-bottom: 1px dotted #e5e7eb;
-        }
-
-        .cupom-modal .cupom-box .cupom-total {
-            font-size: 18px;
-            font-weight: 700;
-            padding: 10px 0;
-            border-top: 2px solid #333;
-            margin-top: 10px;
-            text-align: center;
-            color: #2E7D32;
-        }
-
-        .cupom-modal .cupom-box .cupom-footer {
-            text-align: center;
-            font-size: 12px;
-            color: #6b7280;
-            margin-top: 15px;
-            padding-top: 10px;
-            border-top: 2px dashed #333;
-        }
-
-        .cupom-modal .btn-imprimir {
-            width: 100%;
-            padding: 12px;
-            margin-top: 16px;
-            background: #2E7D32;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .cupom-modal .btn-imprimir:hover { background: #1B5E20; }
-
-        @media print {
-            .cupom-modal .btn-close-cupom,
-            .cupom-modal .btn-imprimir,
-            .cupom-modal .cupom-print-hide { display: none !important; }
-            .cupom-modal .cupom-box { box-shadow: none; border: 1px solid #ccc; }
-        }
 
         /* ============================================================
            LOJA / PLANOS
@@ -1488,7 +1373,6 @@
             .payment-modal .modal { padding: 20px; margin: 10px; }
             .payment-modal .payment-methods { grid-template-columns: 1fr 1fr; }
             .payment-modal .total-display .value { font-size: 28px; }
-            .cupom-modal .cupom-box { padding: 20px; margin: 10px; }
         }
 
         @media (max-width: 480px) {
@@ -1505,10 +1389,6 @@
             .payment-modal .payment-methods { grid-template-columns: 1fr; }
             .payment-modal .payment-input { flex-wrap: wrap; }
             .payment-modal .payment-input .label { min-width: 100%; }
-            .cupom-modal .cupom-box { padding: 16px; }
-            .cupom-modal .cupom-box .cupom-header { font-size: 14px; }
-            .cupom-modal .cupom-box .cupom-linha { font-size: 11px; }
-            .cupom-modal .cupom-box .cupom-total { font-size: 15px; }
         }
 
         .text-center { text-align: center; }
@@ -1627,51 +1507,6 @@
                     <i class="fas fa-check"></i> Confirmar Venda
                 </button>
             </div>
-        </div>
-    </div>
-
-    <!-- ===== MODAL CUPOM ===== -->
-    <div class="cupom-modal" id="cupomModal">
-        <div class="cupom-box" id="cupomContent">
-            <button class="btn-close-cupom" onclick="fecharCupom()">×</button>
-            <div id="cupomPrintArea">
-                <div class="cupom-header">
-                    🏪 PDV INTELIGENTE<br>
-                    <span style="font-size:12px;color:#6b7280;" id="cupomData">--</span>
-                </div>
-                <div id="cupomItens"></div>
-                <div class="cupom-linha">
-                    <span>Subtotal</span>
-                    <span id="cupomSubtotal">R$ 0,00</span>
-                </div>
-                <div class="cupom-linha" id="cupomDescontoLinha">
-                    <span>Desconto</span>
-                    <span id="cupomDesconto">R$ 0,00</span>
-                </div>
-                <div class="cupom-total">
-                    TOTAL: <span id="cupomTotal">R$ 0,00</span>
-                </div>
-                <div class="cupom-linha">
-                    <span>Método</span>
-                    <span id="cupomMetodo">--</span>
-                </div>
-                <div class="cupom-linha" id="cupomRecebidoLinha">
-                    <span>Recebido</span>
-                    <span id="cupomRecebido">R$ 0,00</span>
-                </div>
-                <div class="cupom-linha" id="cupomTrocoLinha">
-                    <span>Troco</span>
-                    <span id="cupomTroco">R$ 0,00</span>
-                </div>
-                <div class="cupom-linha">
-                    <span>Cliente</span>
-                    <span id="cupomCliente">Consumidor</span>
-                </div>
-                <div class="cupom-footer">
-                    Obrigado pela preferência!
-                </div>
-            </div>
-            <button class="btn-imprimir" onclick="imprimirCupom()">🖨️ IMPRIMIR CUPOM</button>
         </div>
     </div>
 
@@ -1943,7 +1778,7 @@
             </div>
 
             <!-- ============================================================
-            PANEL: ESTOQUE
+            PANEL: ESTOQUE (com botão excluir)
             ============================================================ -->
             <div class="panel" id="panelEstoque">
                 <div class="estoque-grid">
@@ -2374,6 +2209,7 @@
             }
         }
 
+        // EXCLUIR PRODUTO SELECIONADO
         async function excluirProdutoSelecionado() {
             const codigo = document.getElementById('prodCodigo').value.trim();
             if (!codigo) {
@@ -2443,7 +2279,7 @@
         }
 
         // ============================================================
-        // CÓDIGO DE BARRAS - CORRIGIDO
+        // CÓDIGO DE BARRAS
         // ============================================================
         const codigoInput = document.getElementById('codigoInput');
 
@@ -2911,7 +2747,7 @@
         function gerarRelatorio() { showToast('📄 Relatório gerado!', 'success'); }
 
         // ============================================================
-        // DASHBOARD - COM ITENS E BOTÃO IMPRIMIR
+        // DASHBOARD
         // ============================================================
         async function carregarDashboard(periodo) {
             state.periodo = periodo;
@@ -2932,7 +2768,6 @@
                     document.getElementById('mediaVenda').textContent = `R$ ${s.media.toFixed(2)}`;
                     document.getElementById('totalItens').textContent = s.total_itens || 0;
 
-                    // Métodos
                     const metodos = s.metodos;
                     const total = Object.values(metodos).reduce((a, b) => a + b, 0) || 1;
                     const cores = { 'Dinheiro': '#22c55e', 'PIX': '#3b82f6', 'Cartão': '#8b5cf6', 'Fiado': '#ef4444' };
@@ -2941,159 +2776,30 @@
                     for (const [m, v] of Object.entries(metodos)) {
                         if (v > 0) {
                             const pct = (v / total) * 100;
-                            html += `
-                                <div class="method-bar">
-                                    <span class="label">${m}</span>
-                                    <div class="track">
-                                        <div class="fill" style="width:${pct}%;background:${cores[m]||'#6b7280'};">
-                                            ${pct > 10 ? `R$ ${v.toFixed(0)}` : ''}
-                                        </div>
-                                    </div>
-                                    <span style="font-size:12px;width:40px;text-align:right;">${pct.toFixed(1)}%</span>
-                                </div>
-                            `;
+                            html +=
+                                `<div class="method-bar"><span class="label">${m}</span><div class="track"><div class="fill" style="width:${pct}%;background:${cores[m]||'#6b7280'};">${pct > 10 ? `R$ ${v.toFixed(0)}` : ''}</div></div><span style="font-size:12px;width:40px;text-align:right;">${pct.toFixed(1)}%</span></div>`;
                         }
                     }
                     container.innerHTML = html || '<p style="color:var(--text-secondary);">Nenhuma venda</p>';
 
-                    // Últimas Vendas - COM ITENS E BOTÃO IMPRIMIR
                     const vendasList = document.getElementById('vendasList');
                     const vendas = s.vendas || [];
                     if (vendas.length === 0) {
                         vendasList.innerHTML = '<p style="color:var(--text-secondary);">Nenhuma venda</p>';
                     } else {
                         const cls = { 'Dinheiro': 'dinheiro', 'PIX': 'pix', 'Cartão': 'cartao', 'Fiado': 'fiado' };
-                        vendasList.innerHTML = vendas.slice(0, 15).map(v => {
-                            const itensCount = v.itens ? v.itens.length : 0;
-                            const itensNomes = v.itens ? v.itens.map(i => i.nome).join(', ') : '';
-                            return `
-                                <div class="venda-item">
-                                    <span>${v.data_hora ? new Date(v.data_hora).toLocaleTimeString() : '--:--'}</span>
-                                    <span class="metodo ${cls[v.metodo] || ''}">${v.metodo}</span>
-                                    <span style="font-size:11px;color:var(--text-muted);" title="${itensNomes}">
-                                        ${itensCount} item${itensCount > 1 ? 's' : ''}
-                                    </span>
-                                    <span class="valor">R$ ${v.total.toFixed(2)}</span>
-                                    <button class="btn-cupom" onclick="abrirCupom(${v.id})" title="Ver/Imprimir cupom">
-                                        🖨️
-                                    </button>
-                                </div>
-                            `;
-                        }).join('');
+                        vendasList.innerHTML = vendas.slice(0, 15).map(v =>
+                            `<div class="venda-item">
+                            <span>${v.data_hora ? new Date(v.data_hora).toLocaleTimeString() : '--:--'}</span>
+                            <span class="metodo ${cls[v.metodo] || ''}">${v.metodo}</span>
+                            <span>${v.cliente || 'Consumidor'}</span>
+                            <span class="valor">R$ ${v.total.toFixed(2)}</span>
+                        </div>`
+                        ).join('');
                     }
                 }
             } catch (e) { console.error('Erro:', e); }
         }
-
-        // ============================================================
-        // CUPOM - ABRIR E IMPRIMIR
-        // ============================================================
-
-        let cupomAtual = null;
-
-        async function abrirCupom(vendaId) {
-            try {
-                const res = await fetch(`/api/cupom/${vendaId}`);
-                const data = await res.json();
-
-                if (data.success) {
-                    cupomAtual = data.cupom;
-                    preencherCupom(cupomAtual);
-                    document.getElementById('cupomModal').classList.add('active');
-                } else {
-                    showToast('❌ ' + data.error, 'error');
-                }
-            } catch (e) {
-                showToast('❌ Erro ao buscar cupom!', 'error');
-                console.error(e);
-            }
-        }
-
-        function fecharCupom() {
-            document.getElementById('cupomModal').classList.remove('active');
-        }
-
-        function preencherCupom(cupom) {
-            const data = new Date(cupom.data_hora);
-            document.getElementById('cupomData').textContent = data.toLocaleString('pt-BR');
-
-            const container = document.getElementById('cupomItens');
-            container.innerHTML = '';
-
-            if (cupom.itens && cupom.itens.length > 0) {
-                cupom.itens.forEach(item => {
-                    const div = document.createElement('div');
-                    div.className = 'cupom-linha';
-                    div.innerHTML = `
-                        <span>${item.quantidade || 1}x ${item.nome}</span>
-                        <span>R$ ${(item.total || item.preco * item.quantidade || 0).toFixed(2)}</span>
-                    `;
-                    container.appendChild(div);
-                });
-            } else {
-                container.innerHTML = '<div class="cupom-linha"><span colspan="2">Nenhum item</span></div>';
-            }
-
-            document.getElementById('cupomSubtotal').textContent = `R$ ${(cupom.subtotal || 0).toFixed(2)}`;
-
-            const descontoLinha = document.getElementById('cupomDescontoLinha');
-            if (cupom.desconto > 0) {
-                document.getElementById('cupomDesconto').textContent = `- R$ ${cupom.desconto.toFixed(2)}`;
-                descontoLinha.style.display = 'flex';
-            } else {
-                descontoLinha.style.display = 'none';
-            }
-
-            document.getElementById('cupomTotal').textContent = `R$ ${(cupom.total || 0).toFixed(2)}`;
-            document.getElementById('cupomMetodo').textContent = cupom.metodo || 'Dinheiro';
-            document.getElementById('cupomCliente').textContent = cupom.cliente || 'Consumidor';
-
-            const recebidoLinha = document.getElementById('cupomRecebidoLinha');
-            const trocoLinha = document.getElementById('cupomTrocoLinha');
-
-            if (cupom.metodo === 'Dinheiro' && cupom.recebido) {
-                document.getElementById('cupomRecebido').textContent = `R$ ${(cupom.recebido || 0).toFixed(2)}`;
-                document.getElementById('cupomTroco').textContent = `R$ ${(cupom.troco || 0).toFixed(2)}`;
-                recebidoLinha.style.display = 'flex';
-                trocoLinha.style.display = 'flex';
-            } else {
-                recebidoLinha.style.display = 'none';
-                trocoLinha.style.display = 'none';
-            }
-        }
-
-        function imprimirCupom() {
-            const printArea = document.getElementById('cupomPrintArea');
-
-            const printWindow = window.open('', '_blank', 'width=400,height=600');
-            printWindow.document.write(`
-                <html>
-                <head>
-                    <title>Cupom Fiscal</title>
-                    <style>
-                        body { font-family: 'Courier New', monospace; padding: 20px; max-width: 400px; margin: 0 auto; color: #1a1a2e; background: white; }
-                        .cupom-header { text-align: center; font-size: 18px; font-weight: 700; border-bottom: 2px dashed #333; padding-bottom: 10px; margin-bottom: 10px; }
-                        .cupom-linha { display: flex; justify-content: space-between; padding: 3px 0; font-size: 13px; border-bottom: 1px dotted #e5e7eb; }
-                        .cupom-total { font-size: 18px; font-weight: 700; padding: 10px 0; border-top: 2px solid #333; margin-top: 10px; text-align: center; color: #2E7D32; }
-                        .cupom-footer { text-align: center; font-size: 12px; color: #6b7280; margin-top: 15px; padding-top: 10px; border-top: 2px dashed #333; }
-                    </style>
-                </head>
-                <body>
-                    ${printArea.innerHTML}
-                </body>
-                </html>
-            `);
-            printWindow.document.close();
-            printWindow.focus();
-            printWindow.print();
-            printWindow.close();
-        }
-
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                fecharCupom();
-            }
-        });
 
         // ============================================================
         // LOJA / PLANOS
@@ -3535,9 +3241,6 @@
                 if (document.getElementById('modalCliente').classList.contains('active')) {
                     fecharModalCliente();
                 }
-                if (document.getElementById('cupomModal').classList.contains('active')) {
-                    fecharCupom();
-                }
                 if (document.getElementById('searchResults').classList.contains('active')) {
                     document.getElementById('searchResults').classList.remove('active');
                     document.getElementById('buscaProdutoInput').value = '';
@@ -3559,7 +3262,6 @@
         console.log('📦 Dados salvos localmente');
         console.log('☁️ Sincronização manual com Firebase');
         console.log('🗑️ Botão excluir produto no estoque');
-        console.log('🖨️ Cupom com impressão');
     </script>
 </body>
-</html>
+    </html>
