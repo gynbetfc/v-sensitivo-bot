@@ -1336,6 +1336,28 @@
         .modal-cliente .btn-group .btn-cancel:hover { background: rgba(255,255,255,0.05); }
 
         /* ============================================================
+           AVISO PLANO EXPIRADO
+           ============================================================ */
+        .plano-expirado-aviso {
+            background: var(--red);
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .plano-expirado-aviso a {
+            color: #fff;
+            font-weight: 700;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        /* ============================================================
            RESPONSIVO
            ============================================================ */
         @media (max-width: 1024px) {
@@ -1418,6 +1440,12 @@
 
     <!-- ===== TOAST ===== -->
     <div class="toast-container" id="toastContainer"></div>
+
+    <!-- ===== AVISO PLANO EXPIRADO ===== -->
+    <div class="plano-expirado-aviso" id="planoExpiradoAviso">
+        <span>⚠️ <strong>Seu plano expirou!</strong> Renove seu plano para continuar usando o PDV.</span>
+        <a onclick="trocarTab('loja')">Ver Planos →</a>
+    </div>
 
     <!-- ===== MODAL PIX ===== -->
     <div class="modal-overlay" id="modalPix">
@@ -1538,6 +1566,11 @@
                     <label>Nome da Loja</label>
                     <input type="text" id="loginLojaNome" placeholder="Minha Loja">
                 </div>
+                <div class="form-group">
+                    <label>CNPJ (opcional)</label>
+                    <input type="text" id="loginCnpj" placeholder="00.000.000/0000-00">
+                    <div class="hint">🔑 Informe o CNPJ para vincular à loja</div>
+                </div>
                 <button class="btn-primary" onclick="fazerLogin()">🚀 Entrar</button>
                 <div class="auth-link">Não tem conta? <span onclick="toggleAuth('register')">Cadastre-se</span></div>
             </div>
@@ -1564,6 +1597,12 @@
                     <label>Nome da Loja</label>
                     <input type="text" id="registerLojaNome" placeholder="Nome da sua loja" value="Minha Loja">
                 </div>
+                <div class="form-group">
+                    <label>CNPJ (opcional)</label>
+                    <input type="text" id="registerCnpj" placeholder="00.000.000/0000-00" onchange="buscarDadosCNPJ(this.value)">
+                    <div class="hint">🔍 Digite o CNPJ para buscar dados da empresa</div>
+                </div>
+                <div id="dadosCnpjRegistro" style="display:none;background:var(--bg-primary);padding:10px;border-radius:8px;margin-bottom:10px;font-size:12px;color:var(--text-secondary);"></div>
                 <button class="btn-primary" onclick="fazerRegistro()">📝 Criar Conta</button>
                 <div class="auth-link">Já tem conta? <span onclick="toggleAuth('login')">Faça login</span></div>
             </div>
@@ -1809,7 +1848,7 @@
             </div>
 
             <!-- ============================================================
-            PANEL: LOJA
+            PANEL: LOJA / PLANOS
             ============================================================ -->
             <div class="panel" id="panelLoja">
                 <div style="text-align:center;margin-bottom:20px;">
@@ -1848,7 +1887,14 @@
                     <div class="card">
                         <h3><i class="fas fa-store-alt" style="color:var(--orange);"></i> Loja</h3>
                         <div class="input-group"><label>Nome da Loja</label><input type="text" id="lojaNomeConfig" placeholder="Nome da loja"></div>
-                        <button class="btn btn-primary" onclick="salvarNomeLoja()" style="margin-top:10px;"><i class="fas fa-save"></i> Salvar Nome</button>
+                        <div class="input-group"><label>CNPJ</label>
+                            <input type="text" id="lojaCnpjConfig" placeholder="00.000.000/0000-00">
+                            <button class="btn btn-primary" onclick="buscarDadosCNPJ(document.getElementById('lojaCnpjConfig').value)" style="margin-top:4px;padding:6px 12px;font-size:11px;background:var(--blue);">
+                                <i class="fas fa-search"></i> Buscar CNPJ
+                            </button>
+                        </div>
+                        <div id="dadosCnpjConfig" style="display:none;background:var(--bg-primary);padding:10px;border-radius:8px;margin-bottom:10px;font-size:12px;color:var(--text-secondary);"></div>
+                        <button class="btn btn-primary" onclick="salvarNomeLoja()" style="margin-top:10px;"><i class="fas fa-save"></i> Salvar</button>
                         <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-color);">
                             <p style="font-size:12px;color:var(--text-secondary);"><strong>Versão:</strong> <span id="versaoSistema">6.0.0</span></p>
                             <p style="font-size:12px;color:var(--text-secondary);"><strong>ID do Banco:</strong> <span id="dbIdConfig" style="font-family:monospace;cursor:pointer;" onclick="copiarId()">---</span></p>
@@ -1876,6 +1922,7 @@
             db_id: null,
             servidor_id: null,
             nome_loja: '',
+            cnpj: '',
             caixa_aberto: false,
             itens: [],
             subtotal: 0,
@@ -1885,7 +1932,8 @@
             periodo: 'hoje',
             searchIndex: -1,
             _resultados: [],
-            produtoSelecionado: null
+            produtoSelecionado: null,
+            plano_ativo: true
         };
 
         // ============================================================
@@ -1926,6 +1974,84 @@
         }
 
         // ============================================================
+        // BUSCAR DADOS CNPJ
+        // ============================================================
+        async function buscarDadosCNPJ(cnpj) {
+            const cnpjLimpo = cnpj.replace(/\D/g, '');
+            if (cnpjLimpo.length !== 14 && cnpjLimpo.length > 0) {
+                showToast('⚠️ CNPJ inválido! Digite 14 dígitos.', 'warning');
+                return;
+            }
+            if (cnpjLimpo.length === 0) {
+                document.getElementById('dadosCnpjRegistro').style.display = 'none';
+                document.getElementById('dadosCnpjConfig').style.display = 'none';
+                return;
+            }
+            
+            showToast('🔍 Buscando dados do CNPJ...', 'info');
+            
+            try {
+                const res = await fetch(`/api/cnpj/${cnpjLimpo}`);
+                const data = await res.json();
+                
+                if (data.success) {
+                    const d = data.dados;
+                    
+                    // Atualiza o container de registro
+                    const containerReg = document.getElementById('dadosCnpjRegistro');
+                    if (containerReg) {
+                        containerReg.style.display = 'block';
+                        containerReg.innerHTML = `
+                            <p><strong>Razão Social:</strong> ${d.razao_social || '-'}</p>
+                            <p><strong>Nome Fantasia:</strong> ${d.nome_fantasia || '-'}</p>
+                            <p><strong>Endereço:</strong> ${d.logradouro || ''}${d.numero ? ', ' + d.numero : ''}${d.bairro ? ' - ' + d.bairro : ''}, ${d.municipio || ''} - ${d.uf || ''}</p>
+                            <p><strong>Telefone:</strong> ${d.telefone || '-'}</p>
+                            <p><strong>Email:</strong> ${d.email || '-'}</p>
+                            ${d.cnae_descricao ? `<p><strong>Atividade:</strong> ${d.cnae_descricao}</p>` : ''}
+                            ${d.porte ? `<p><strong>Porte:</strong> ${d.porte}</p>` : ''}
+                        `;
+                    }
+                    
+                    // Atualiza o container da config
+                    const containerConfig = document.getElementById('dadosCnpjConfig');
+                    if (containerConfig) {
+                        containerConfig.style.display = 'block';
+                        containerConfig.innerHTML = `
+                            <p><strong>Razão Social:</strong> ${d.razao_social || '-'}</p>
+                            <p><strong>Nome Fantasia:</strong> ${d.nome_fantasia || '-'}</p>
+                            <p><strong>Endereço:</strong> ${d.logradouro || ''}${d.numero ? ', ' + d.numero : ''}${d.bairro ? ' - ' + d.bairro : ''}, ${d.municipio || ''} - ${d.uf || ''}</p>
+                            <p><strong>Telefone:</strong> ${d.telefone || '-'}</p>
+                            <p><strong>Email:</strong> ${d.email || '-'}</p>
+                            ${d.cnae_descricao ? `<p><strong>Atividade:</strong> ${d.cnae_descricao}</p>` : ''}
+                            ${d.porte ? `<p><strong>Porte:</strong> ${d.porte}</p>` : ''}
+                        `;
+                    }
+                    
+                    // Preenche automaticamente o nome da loja no registro
+                    if (d.nome_fantasia) {
+                        document.getElementById('registerLojaNome').value = d.nome_fantasia;
+                    } else if (d.razao_social) {
+                        document.getElementById('registerLojaNome').value = d.razao_social;
+                    }
+                    
+                    // Preenche automaticamente o nome da loja na config
+                    if (d.nome_fantasia) {
+                        document.getElementById('lojaNomeConfig').value = d.nome_fantasia;
+                    } else if (d.razao_social) {
+                        document.getElementById('lojaNomeConfig').value = d.razao_social;
+                    }
+                    
+                    showToast('✅ Dados do CNPJ carregados!', 'success');
+                } else {
+                    showToast('❌ ' + (data.error || 'CNPJ não encontrado'), 'error');
+                }
+            } catch (e) {
+                showToast('❌ Erro ao buscar CNPJ!', 'error');
+                console.error(e);
+            }
+        }
+
+        // ============================================================
         // AUTH
         // ============================================================
         function toggleAuth(mode) {
@@ -1954,6 +2080,7 @@
             const senha = document.getElementById('registerSenha').value.trim();
             const db_id = document.getElementById('registerDbId').value.trim();
             const nome_loja = document.getElementById('registerLojaNome').value.trim() || 'Minha Loja';
+            const cnpj = document.getElementById('registerCnpj').value.trim();
             const msg = document.getElementById('authMsg');
 
             if (!nome || !email || !senha) {
@@ -1975,7 +2102,7 @@
                 const res = await fetch('/api/auth/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nome, email, senha, db_id, nome_loja })
+                    body: JSON.stringify({ nome, email, senha, db_id, nome_loja, cnpj })
                 });
                 const data = await res.json();
 
@@ -1987,6 +2114,7 @@
                     document.getElementById('loginEmail').value = email;
                     document.getElementById('loginSenha').value = '';
                     document.getElementById('loginLojaNome').value = nome_loja;
+                    document.getElementById('loginCnpj').value = cnpj;
                     showToast(`✅ Conta criada! ID: ${data.db_id}`, 'success');
                 } else {
                     msg.className = 'msg error';
@@ -2004,6 +2132,7 @@
             const senha = document.getElementById('loginSenha').value.trim();
             const db_id = document.getElementById('loginDbId').value.trim();
             const nome_loja = document.getElementById('loginLojaNome').value.trim() || 'Minha Loja';
+            const cnpj = document.getElementById('loginCnpj').value.trim();
             const msg = document.getElementById('authMsg');
 
             if (!email || !senha) {
@@ -2031,6 +2160,8 @@
                     state.db_id = data.db_id;
                     state.servidor_id = data.servidor_id;
                     state.nome_loja = data.nome_loja || nome_loja;
+                    state.cnpj = data.cnpj || cnpj;
+                    state.plano_ativo = data.plano_ativo !== false;
 
                     document.getElementById('authPage').classList.add('hidden');
                     document.getElementById('app').classList.add('active');
@@ -2042,6 +2173,15 @@
                     document.getElementById('dbIdConfig').textContent = data.db_id;
                     document.getElementById('servidorIdConfig').textContent = data.servidor_id || '---';
                     document.getElementById('lojaNomeConfig').value = state.nome_loja;
+                    document.getElementById('lojaCnpjConfig').value = state.cnpj;
+
+                    // Verifica plano ativo
+                    if (!state.plano_ativo) {
+                        document.getElementById('planoExpiradoAviso').style.display = 'flex';
+                        document.getElementById('statusText').textContent = '⚠️ Plano Expirado';
+                    } else {
+                        document.getElementById('planoExpiradoAviso').style.display = 'none';
+                    }
 
                     await Promise.all([
                         carregarProdutos(),
@@ -2137,6 +2277,8 @@
                     state.db_id = data.db_id;
                     state.servidor_id = data.servidor_id;
                     state.nome_loja = data.nome_loja || 'Minha Loja';
+                    state.cnpj = data.cnpj || '';
+                    state.plano_ativo = data.plano_ativo !== false;
 
                     document.getElementById('authPage').classList.add('hidden');
                     document.getElementById('app').classList.add('active');
@@ -2148,6 +2290,13 @@
                     document.getElementById('dbIdConfig').textContent = data.db_id;
                     document.getElementById('servidorIdConfig').textContent = data.servidor_id || '---';
                     document.getElementById('lojaNomeConfig').value = state.nome_loja;
+                    document.getElementById('lojaCnpjConfig').value = state.cnpj;
+
+                    if (!state.plano_ativo) {
+                        document.getElementById('planoExpiradoAviso').style.display = 'flex';
+                    } else {
+                        document.getElementById('planoExpiradoAviso').style.display = 'none';
+                    }
 
                     await Promise.all([
                         carregarProdutos(),
@@ -2173,6 +2322,8 @@
                 if (data.success) {
                     state.produtos = data.produtos || [];
                     renderizarEstoque(state.produtos);
+                } else if (data.plano_expirado) {
+                    showToast('⚠️ Plano expirado! Renove para acessar o estoque.', 'warning');
                 }
             } catch (e) { console.error('Erro ao carregar produtos:', e); }
         }
@@ -2244,6 +2395,11 @@
         }
 
         async function salvarProduto() {
+            if (!state.plano_ativo) {
+                showToast('⚠️ Plano expirado! Renove para salvar produtos.', 'warning');
+                return;
+            }
+            
             const codigo = document.getElementById('prodCodigo').value.trim();
             const nome = document.getElementById('prodNome').value.trim();
             const preco = parseFloat(document.getElementById('prodPreco').value.replace(',', '.'));
@@ -2403,6 +2559,11 @@
         // ADICIONAR PRODUTOS
         // ============================================================
         function adicionarPorCodigo(codigo) {
+            if (!state.plano_ativo) {
+                showToast('⚠️ Plano expirado!', 'warning');
+                return;
+            }
+            
             const produto = state.produtos.find(p => p.codigo === codigo);
             if (produto) {
                 adicionarAoCarrinho(produto);
@@ -2423,6 +2584,11 @@
         }
 
         function selecionarProdutoPorCodigo(codigo) {
+            if (!state.plano_ativo) {
+                showToast('⚠️ Plano expirado!', 'warning');
+                return;
+            }
+            
             const produto = state.produtos.find(p => p.codigo === codigo);
             if (produto) {
                 state.selectedProduct = produto;
@@ -2444,6 +2610,11 @@
         }
 
         function adicionarAoCarrinho(produto) {
+            if (!state.plano_ativo) {
+                showToast('⚠️ Plano expirado!', 'warning');
+                return;
+            }
+            
             const existente = state.itens.find(i => i.codigo === produto.codigo);
             if (existente) {
                 existente.quantidade += 1;
@@ -2531,6 +2702,8 @@
                     state.clientes = data.clientes || [];
                     renderizarClientes(state.clientes);
                     atualizarBadgeFiados();
+                } else if (data.plano_expirado) {
+                    showToast('⚠️ Plano expirado!', 'warning');
                 }
             } catch (e) { console.error('Erro ao carregar clientes:', e); }
         }
@@ -2564,6 +2737,10 @@
         }
 
         function abrirModalCliente() {
+            if (!state.plano_ativo) {
+                showToast('⚠️ Plano expirado!', 'warning');
+                return;
+            }
             document.getElementById('modalClienteTitle').textContent = '👤 Novo Cliente';
             document.getElementById('clienteId').value = '';
             document.getElementById('clienteNome').value = '';
@@ -2577,6 +2754,11 @@
         }
 
         async function salvarCliente() {
+            if (!state.plano_ativo) {
+                showToast('⚠️ Plano expirado!', 'warning');
+                return;
+            }
+            
             const id = document.getElementById('clienteId').value;
             const nome = document.getElementById('clienteNome').value.trim();
             const telefone = document.getElementById('clienteTelefone').value.trim();
@@ -2602,6 +2784,11 @@
         }
 
         async function pagarDivida(id, divida) {
+            if (!state.plano_ativo) {
+                showToast('⚠️ Plano expirado!', 'warning');
+                return;
+            }
+            
             const valor = prompt(`Dívida: R$ ${divida.toFixed(2)}\nValor a pagar:`);
             if (!valor) return;
             const v = parseFloat(valor.replace(',', '.'));
@@ -2676,6 +2863,11 @@
         }
 
         async function abrirCaixa() {
+            if (!state.plano_ativo) {
+                showToast('⚠️ Plano expirado! Renove para abrir o caixa.', 'warning');
+                return;
+            }
+            
             if (state.caixa_aberto) { showToast('⚠️ Caixa já aberto!', 'warning'); return; }
             const valor = parseFloat(document.getElementById('valorAbertura').value.replace(',', '.'));
             if (isNaN(valor) || valor < 0) { showToast('⚠️ Valor inválido!', 'warning'); return; }
@@ -2750,6 +2942,11 @@
         // DASHBOARD
         // ============================================================
         async function carregarDashboard(periodo) {
+            if (!state.plano_ativo) {
+                showToast('⚠️ Plano expirado!', 'warning');
+                return;
+            }
+            
             state.periodo = periodo;
             document.querySelectorAll('.btn-periodo').forEach(btn => {
                 const isActive = btn.textContent.toLowerCase() === periodo;
@@ -2813,7 +3010,7 @@
                         grid.innerHTML = data.planos.map(p => `
                             <div class="plano-card">
                                 <div class="preco">R$ ${p.preco.toFixed(2)} <small>/${p.nome.toLowerCase()}</small></div>
-                                <div class="nome" style="color:${p.cor};">${p.nome}</div>
+                                <div class="nome" style="color:var(--green);">${p.nome}</div>
                                 <div class="desc">${p.usuarios} usuário${p.usuarios > 1 ? 's' : ''}</div>
                                 <div class="detalhes">${p.dias} dias de acesso</div>
                                 <button class="btn-assinar" onclick="assinarPlano(${p.id})">
@@ -2877,6 +3074,9 @@
                     fecharModalPix();
                     carregarStatusLoja();
                     carregarPlanos();
+                    // Recarregar status do plano
+                    state.plano_ativo = true;
+                    document.getElementById('planoExpiradoAviso').style.display = 'none';
                 } else {
                     showToast('⏳ Aguardando confirmação...', 'warning');
                 }
@@ -2888,10 +3088,13 @@
                 const res = await fetch('/api/plano/status');
                 const data = await res.json();
                 if (data.success) {
-                    document.getElementById('planoAtualConfig').textContent = data.plano ? data.plano.nome : 'Nenhum';
-                    document.getElementById('expiraEmConfig').textContent = data.expira_em ? new Date(data.expira_em)
-                        .toLocaleDateString() : 'N/A';
-                    document.getElementById('totalUsuariosConfig').textContent = 'Carregando...';
+                    state.plano_ativo = !data.expirado;
+                    
+                    if (data.expirado) {
+                        document.getElementById('planoExpiradoAviso').style.display = 'flex';
+                    } else {
+                        document.getElementById('planoExpiradoAviso').style.display = 'none';
+                    }
 
                     const statusDiv = document.getElementById('statusLoja');
                     statusDiv.innerHTML = `
@@ -2911,6 +3114,8 @@
         // ============================================================
         async function salvarNomeLoja() {
             const nome = document.getElementById('lojaNomeConfig').value.trim();
+            const cnpj = document.getElementById('lojaCnpjConfig').value.trim();
+            
             if (!nome) {
                 showToast('⚠️ Digite um nome para a loja!', 'warning');
                 return;
@@ -2920,13 +3125,14 @@
                 const res = await fetch('/api/loja/nome', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nome })
+                    body: JSON.stringify({ nome, cnpj })
                 });
                 const data = await res.json();
                 if (data.success) {
                     state.nome_loja = nome;
+                    state.cnpj = cnpj;
                     document.getElementById('lojaNomeDisplay').textContent = `🏪 ${nome}`;
-                    showToast('✅ Nome da loja salvo!', 'success');
+                    showToast('✅ Informações salvas!', 'success');
                     carregarStatusLoja();
                 } else {
                     showToast('❌ Erro: ' + data.error, 'error');
@@ -2960,11 +3166,18 @@
                             </div>
                         </div>`
                     ).join('');
+                } else if (data.plano_expirado) {
+                    showToast('⚠️ Plano expirado!', 'warning');
                 }
             } catch (e) { console.error('Erro:', e); }
         }
 
         async function cadastrarUsuario() {
+            if (!state.plano_ativo) {
+                showToast('⚠️ Plano expirado!', 'warning');
+                return;
+            }
+            
             const nome = document.getElementById('novoUserNome').value.trim();
             const email = document.getElementById('novoUserEmail').value.trim();
             const senha = document.getElementById('novoUserSenha').value.trim();
@@ -3011,6 +3224,11 @@
         let valoresPagos = {};
 
         function abrirPagamento() {
+            if (!state.plano_ativo) {
+                showToast('⚠️ Plano expirado!', 'warning');
+                return;
+            }
+            
             if (state.itens.length === 0) {
                 showToast('🛒 Carrinho vazio!', 'warning');
                 return;
@@ -3026,6 +3244,12 @@
             valoresPagos = {};
             metodoAtivo = 'Dinheiro';
             selecionarMetodo('Dinheiro');
+            
+            // Foco no primeiro método de pagamento
+            setTimeout(() => {
+                const primeiro = document.querySelector('#paymentMethods button');
+                if (primeiro) primeiro.focus();
+            }, 100);
         }
 
         function fecharPagamento() {
@@ -3112,7 +3336,42 @@
             });
         }
 
+        // Navegação por teclado nos métodos de pagamento
+        document.addEventListener('keydown', function(e) {
+            if (!document.getElementById('paymentModal').classList.contains('active')) return;
+            
+            const metodos = document.querySelectorAll('#paymentMethods button');
+            if (metodos.length === 0) return;
+            
+            let currentIndex = -1;
+            metodos.forEach((el, i) => {
+                if (el.classList.contains('active')) currentIndex = i;
+            });
+            
+            if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+                e.preventDefault();
+                const nextIndex = (currentIndex + 1) % metodos.length;
+                selecionarMetodo(metodos[nextIndex].dataset.metodo);
+                metodos[nextIndex].focus();
+            } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                e.preventDefault();
+                const prevIndex = (currentIndex - 1 + metodos.length) % metodos.length;
+                selecionarMetodo(metodos[prevIndex].dataset.metodo);
+                metodos[prevIndex].focus();
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (metodoAtivo) {
+                    confirmarPagamento();
+                }
+            }
+        });
+
         function confirmarPagamento() {
+            if (!state.plano_ativo) {
+                showToast('⚠️ Plano expirado!', 'warning');
+                return;
+            }
+            
             const cliente = document.getElementById('clientePagamento')?.value.trim() || '';
             let totalPago = 0;
             let metodo = metodoAtivo;
@@ -3200,6 +3459,11 @@
         // SINCRONIZAR
         // ============================================================
         function sincronizarAgora() {
+            if (!state.plano_ativo) {
+                showToast('⚠️ Plano expirado!', 'warning');
+                return;
+            }
+            
             showToast('🔄 Sincronizando com Firebase...', 'info');
             fetch('/api/sincronizar', { method: 'POST' })
                 .then(r => r.json())
@@ -3262,6 +3526,7 @@
         console.log('📦 Dados salvos localmente');
         console.log('☁️ Sincronização manual com Firebase');
         console.log('🗑️ Botão excluir produto no estoque');
+        console.log('📋 CNPJ integrado com busca automática');
     </script>
 </body>
     </html>
