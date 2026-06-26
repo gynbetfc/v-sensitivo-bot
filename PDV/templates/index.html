@@ -6,7 +6,6 @@
     <title>PDV Inteligente v6.0.11</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* ===== CSS COMPLETO ===== */
         *{margin:0;padding:0;box-sizing:border-box}
         :root{--bg-primary:#0f0f1a;--bg-secondary:#1a1a2e;--bg-card:#16162e;--bg-card-hover:#1e1e3a;--text-primary:#ffffff;--text-secondary:#a0a0c0;--text-muted:#6a6a8a;--border-color:#2a2a4a;--green:#22c55e;--green-dark:#16a34a;--blue:#3b82f6;--purple:#8b5cf6;--orange:#f59e0b;--red:#ef4444;--radius:12px;--shadow:0 8px 32px rgba(0,0,0,0.4);--transition:all 0.3s cubic-bezier(0.4,0,0.2,1)}
         html,body{height:100%;min-height:100vh}
@@ -71,7 +70,7 @@
         .nav button:hover{color:#fff;background:rgba(255,255,255,.05)}
         .nav button.active{color:#fff;background:rgba(34,197,94,.15)}
         .nav button .badge{background:var(--red);color:#fff;font-size:9px;padding:1px 8px;border-radius:10px;font-weight:700}
-        .plano-expirado-aviso{background:var(--red);color:#fff;padding:12px 20px;border-radius:8px;margin-bottom:16px;display:none;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;width:100%;box-sizing:border-box}
+        .plano-expirado-aviso{background:var(--red);color:#fff;padding:12px 20px;border-radius:8px;margin-bottom:16px;display:none;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;width:100%}
         .plano-expirado-aviso a{color:#fff;font-weight:700;text-decoration:underline;cursor:pointer}
         .plano-expirado-aviso a:hover{color:#ffd700}
         .content{padding:16px}
@@ -318,18 +317,17 @@
     </style>
 </head>
 <body>
-    <!-- TOAST -->
     <div class="toast-container" id="toastContainer"></div>
-
-    <!-- MODAL PIX -->
+    <div class="plano-expirado-aviso" id="planoExpiradoAviso">
+        <span>⚠️ <strong>Seu plano expirou!</strong> Renove seu plano para continuar usando o PDV.</span>
+        <a onclick="trocarTab('planos')">Ver Planos →</a>
+    </div>
     <div class="modal-overlay" id="modalPix">
         <div class="modal">
             <div class="modal-header"><h3>💳 Pagamento PIX</h3><button class="close" onclick="fecharModalPix()">×</button></div>
             <div id="pixContent"><div class="pix-info"><div class="loading-spinner"></div><p style="margin-top:12px;color:var(--text-secondary);">Gerando pagamento...</p></div></div>
         </div>
     </div>
-
-    <!-- MODAL CLIENTE -->
     <div class="modal-overlay" id="modalCliente">
         <div class="modal modal-cliente">
             <div class="modal-header"><h3 id="modalClienteTitle">👤 Novo Cliente</h3><button class="close" onclick="fecharModalCliente()">×</button></div>
@@ -340,8 +338,6 @@
             <div class="btn-group"><button class="btn-save" onclick="salvarCliente()">💾 Salvar</button><button class="btn-cancel" onclick="fecharModalCliente()">Cancelar</button></div>
         </div>
     </div>
-
-    <!-- MODAL PAGAMENTO -->
     <div class="payment-modal" id="paymentModal">
         <div class="modal">
             <div class="modal-header"><h3>💳 Finalizar Venda</h3><button class="close" onclick="fecharPagamento()">×</button></div>
@@ -358,8 +354,6 @@
             <div class="payment-actions"><button class="btn-cancel" onclick="fecharPagamento()">Cancelar</button><button class="btn-confirm" onclick="confirmarPagamento()"><i class="fas fa-check"></i> Confirmar Venda</button></div>
         </div>
     </div>
-
-    <!-- MODAL CUPOM -->
     <div class="cupom-modal" id="cupomModal">
         <div class="cupom-box" id="cupomContent">
             <button class="btn-close-cupom" onclick="fecharCupom()">×</button>
@@ -383,8 +377,6 @@
             </div>
         </div>
     </div>
-
-    <!-- AUTH -->
     <div class="auth-page" id="authPage">
         <div class="auth-box" id="authBox">
             <span class="logo">🏪</span>
@@ -413,8 +405,6 @@
             </div>
         </div>
     </div>
-
-    <!-- APP -->
     <div class="app" id="app">
         <header class="header">
             <div class="logo">🏪 <span>PDV</span> Inteligente</div>
@@ -439,12 +429,6 @@
             <button data-tab="config" onclick="trocarTab('config')"><i class="fas fa-cog"></i> Config</button>
         </nav>
         <div class="content">
-            <!-- AVISO PLANO EXPIRADO (posicionado corretamente) -->
-            <div class="plano-expirado-aviso" id="planoExpiradoAviso" style="display:none;width:100%;margin:0;padding:12px 20px;background:var(--red);color:#fff;border-radius:8px;margin-bottom:16px;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;box-sizing:border-box;">
-                <span>⚠️ <strong>Seu plano expirou!</strong> Renove seu plano para continuar usando o PDV.</span>
-                <a onclick="trocarTab('planos')" style="color:#fff;font-weight:700;text-decoration:underline;cursor:pointer;">Ver Planos →</a>
-            </div>
-
             <!-- VENDAS -->
             <div class="panel active" id="panelVendas">
                 <div class="pdv-grid">
@@ -560,8 +544,6 @@
             </div>
         </div>
     </div>
-
-    <!-- ===== JAVASCRIPT COMPLETO ===== -->
     <script>
         // ============================================================
         // ESTADO
@@ -1324,4 +1306,4 @@
         console.log('✅ PIX funcionando com QR Code');
     </script>
 </body>
-    </html>
+                                            </html>
