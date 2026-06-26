@@ -397,11 +397,16 @@
                 <div class="form-group"><label>Nome</label><input type="text" id="registerNome" placeholder="Seu nome"></div>
                 <div class="form-group"><label>Email</label><input type="email" id="registerEmail" placeholder="seu@email.com"></div>
                 <div class="form-group"><label>Senha</label><input type="password" id="registerSenha" placeholder="••••••••"></div>
-                <!-- Campos ocultos (ID do Banco, Nome da Loja e CNPJ) -->
+                <!-- CNPJ visível no registro -->
+                <div class="form-group">
+                    <label>CNPJ (opcional)</label>
+                    <input type="text" id="registerCnpj" placeholder="00.000.000/0000-00">
+                    <div class="hint">🔍 Digite o CNPJ para buscar dados da empresa automaticamente</div>
+                </div>
+                <div id="dadosCnpjRegistro" style="display:none;background:var(--bg-primary);padding:10px;border-radius:8px;margin-bottom:10px;font-size:12px;color:var(--text-secondary);"></div>
+                <!-- Campos ocultos -->
                 <input type="hidden" id="registerDbId" value="">
                 <input type="hidden" id="registerLojaNome" value="Minha Loja">
-                <input type="hidden" id="registerCnpj" value="">
-                <div id="dadosCnpjRegistro" style="display:none;background:var(--bg-primary);padding:10px;border-radius:8px;margin-bottom:10px;font-size:12px;color:var(--text-secondary);"></div>
                 <button class="btn-primary" onclick="fazerRegistro()">📝 Criar Conta</button>
                 <div class="auth-link">Já tem conta? <span onclick="toggleAuth('login')">Faça login</span></div>
             </div>
@@ -649,9 +654,9 @@
                     
                     // Preencher campos
                     document.getElementById('prodNome').value = d.nome || '';
-                    document.getElementById('prodCategoria').value = d.marca || 'Geral';
+                    document.getElementById('prodCategoria').value = d.marca || d.categoria || 'Geral';
                     
-                    // Se tiver preço (algumas APIs podem ter)
+                    // Se tiver preço sugerido (algumas APIs podem ter)
                     if (d.preco_sugerido) {
                         document.getElementById('prodPreco').value = d.preco_sugerido.toFixed(2).replace('.', ',');
                     }
@@ -660,6 +665,7 @@
                     const fonte = d.fonte || 'API externa';
                     let info = `✅ Produto encontrado! (Fonte: ${fonte})`;
                     if (d.marca) info += `\nMarca: ${d.marca}`;
+                    if (d.fabricante) info += `\nFabricante: ${d.fabricante}`;
                     if (d.ncm) info += `\nNCM: ${d.ncm}`;
                     
                     showToast(info, 'success');
@@ -694,12 +700,12 @@
         }
 
         async function fazerRegistro(){
-            const nome=document.getElementById('registerNome').value.trim(),email=document.getElementById('registerEmail').value.trim(),senha=document.getElementById('registerSenha').value.trim(),msg=document.getElementById('authMsg');
+            const nome=document.getElementById('registerNome').value.trim(),email=document.getElementById('registerEmail').value.trim(),senha=document.getElementById('registerSenha').value.trim(),cnpj=document.getElementById('registerCnpj').value.trim(),msg=document.getElementById('authMsg');
             if(!nome||!email||!senha){msg.className='msg error';msg.textContent='⚠️ Preencha todos os campos!';return;}
             if(senha.length<4){msg.className='msg error';msg.textContent='⚠️ Senha deve ter pelo menos 4 caracteres!';return;}
             msg.className='msg';msg.textContent='⏳ Criando conta...';msg.style.display='block';
             try{
-                const res=await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,email,senha})});
+                const res=await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,email,senha,cnpj})});
                 const data=await res.json();
                 if(data.success){
                     msg.className='msg success';msg.textContent='✅ Conta criada!';
@@ -1390,10 +1396,10 @@
         console.log('📦 Dados salvos localmente');
         console.log('☁️ Sincronização automática a cada 3 min');
         console.log('📋 CNPJ integrado com busca automática');
-        console.log('🔍 Busca de produtos por código de barras com múltiplas APIs');
+        console.log('🔍 Busca de produtos por código de barras com Thunderbit');
         console.log('🧪 Plano de teste de 3 minutos disponível');
         console.log('🖨️ Cupom com navegação por teclado (setas + Enter)');
         console.log('✅ PIX funcionando com QR Code');
     </script>
 </body>
-                </html>
+                                                                                                                                                                       </html>
