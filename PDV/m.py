@@ -268,6 +268,63 @@ def carregar_usuario_firebase(db_id):
         logger.error(f"⚠️ Erro Firebase: {e}")
         return None
 
+
+
+# ============================================================
+# CACHE LOCAL DO PLANO (OFFLINE)
+# ============================================================
+
+def salvar_plano_cache(db_id, plano_id, expira_em):
+    """Salva o plano no cache local (SQLite)"""
+    try:
+        with get_db('data/usuarios.db') as conn:
+            conn.execute("""
+                UPDATE users SET 
+                    plano_cache = ?,
+                    expira_cache = ?,
+                    ultima_verificacao = ?
+                WHERE db_id = ?
+            """, (plano_id, expira_em, datetime.now().isoformat(), db_id))
+            conn.commit()
+            logger.info(f"✅ Plano cache salvo: {db_id}")
+    except Exception as e:
+        logger.error(f"⚠️ Erro ao salvar cache do plano: {e}")
+
+def carregar_plano_cache(db_id):
+    """Carrega o plano do cache local"""
+    try:
+        with get_db('data/usuarios.db') as conn:
+            cursor = conn.execute("""
+                SELECT plano_cache, expira_cache, ultima_verificacao 
+                FROM users WHERE db_id = ?
+            """, (db_id,))
+            result = cursor.fetchone()
+            if result:
+                return {
+                    'plano_id': result[0],
+                    'expira_em': result[1],
+                    'ultima_verificacao': result[2]
+                }
+            return None
+    except Exception as e:
+        logger.error(f"⚠️ Erro ao carregar cache do plano: {e}")
+        return None
+
+def verificar_e_salvar_plano(db_id):
+    """Verifica o plano no Firebase e salva no cache"""
+    try:
+        dados = carregar_usuario_firebase(db_id)
+        if dados:
+            expira = dados.get('expira_em')
+            plano_id = dados.get('plano', 1)
+            if expira:
+                salvar_plano_cache(db_id, plano_id, expira)
+                return True
+    except:
+        pass
+    return False
+
+
 def criar_usuario_firebase(db_id, nome, email, servidor_id, nome_loja="", cnpj="", cnpj_dados=None):
     dados = {
         'db_id': db_id,
@@ -332,9 +389,47 @@ def get_db_id():
 def get_usuario_id():
     return session.get('usuario_id')
 
+
 def is_plano_ativo(db_id):
+    """Verifica se o plano está ativo (com cache offline)"""
     if not db_id:
         return False
+    
+    GRACE_PERIOD_DIAS = 3
+    
+    # 1. TENTA CARREGAR DO FIREBASE (ONLINE)
+    try:
+        dados = carregar_usuario_firebase(db_id)
+        if dados:
+            expira = dados.get('expira_em')
+            plano_id = dados.get('plano', 1)
+            if expira:
+                salvar_plano_cache(db_id, plano_id, expira)
+                expira_date = datetime.fromisoformat(expira)
+                dias_restantes = (expira_date - datetime.now()).total_seconds() / 86400
+                if dias_restantes >= -GRACE_PERIOD_DIAS:
+                    return True
+                else:
+                    return False
+    except:
+        pass
+    
+    # 2. USA CACHE LOCAL
+    cache = carregar_plano_cache(db_id)
+    if cache and cache.get('expira_em'):
+        try:
+            expira_date = datetime.fromisoformat(cache['expira_em'])
+            dias_restantes = (expira_date - datetime.now()).total_seconds() / 86400
+            if dias_restantes >= -GRACE_PERIOD_DIAS:
+                return True
+            else:
+                return False
+        except:
+            pass
+    
+    # 3. SE NÃO TEM DADOS, CONSIDERA EXPIRADO
+    return False
+
     dados = carregar_usuario_firebase(db_id)
     if not dados:
         return False
@@ -346,6 +441,58 @@ def is_plano_ativo(db_id):
         return expira_date >= datetime.now()
     except:
         return False
+
+
+
+def get_status_plano(db_id):
+    """Retorna status detalhado do plano (para exibir avisos)"""
+    if not db_id:
+        return {'status': 'sem_plano', 'dias_restantes': 0, 'expirado': True}
+    
+    # Tenta carregar do Firebase
+    dados = None
+    try:
+        dados = carregar_usuario_firebase(db_id)
+    except:
+        pass
+    
+    if not dados:
+        dados = carregar_plano_cache(db_id)
+    
+    if not dados:
+        return {'status': 'sem_plano', 'dias_restantes': 0, 'expirado': True}
+    
+    expira = dados.get('expira_em') if isinstance(dados, dict) else None
+    if not expira:
+        return {'status': 'sem_plano', 'dias_restantes': 0, 'expirado': True}
+    
+    try:
+        expira_date = datetime.fromisoformat(expira)
+        dias_restantes = (expira_date - datetime.now()).total_seconds() / 86400
+        
+        if dias_restantes > 30:
+            status = 'saudavel'
+        elif dias_restantes > 7:
+            status = 'alerta'
+        elif dias_restantes > 3:
+            status = 'urgente'
+        elif dias_restantes > 0:
+            status = 'critico'
+        elif dias_restantes > -3:
+            status = 'grace_period'
+        else:
+            status = 'expirado'
+        
+        return {
+            'status': status,
+            'dias_restantes': max(0, dias_restantes),
+            'expirado': dias_restantes < -3,
+            'em_grace_period': -3 < dias_restantes <= 0,
+            'expira_em': expira
+        }
+    except:
+        return {'status': 'erro', 'dias_restantes': 0, 'expirado': True}
+
 
 def get_dias_restantes(db_id):
     if not db_id:
@@ -728,7 +875,10 @@ def init_db():
                 cnpj_dados TEXT DEFAULT '{}',
                 session_id TEXT DEFAULT '',
                 ultimo_acesso TIMESTAMP,
-                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                plano_cache INTEGER DEFAULT 1,
+                expira_cache TEXT,
+                ultima_verificacao TEXT
             )
         ''')
         
@@ -1112,6 +1262,18 @@ def login():
                     WHERE id=?
                 """, (nova_session_id, datetime.now().isoformat(), user[0]))
             
+            
+            # Salvar plano no cache local
+            try:
+                dados_firebase = carregar_usuario_firebase(user_db_id)
+                if dados_firebase:
+                    plano_id = dados_firebase.get('plano', 1)
+                    expira_em = dados_firebase.get('expira_em')
+                    if expira_em:
+                        salvar_plano_cache(user_db_id, plano_id, expira_em)
+            except:
+                pass
+
             SESSOES_ATIVAS[user_db_id] = nova_session_id
             
             logger.info(f"✅ Login bem-sucedido: {email} (db_id: {user_db_id})")
@@ -1772,6 +1934,53 @@ def get_estatisticas():
 # ============================================================
 # ROTAS DE PLANOS E PIX
 # ============================================================
+
+
+
+# ============================================================
+# ROTA PARA STATUS DETALHADO DO PLANO (COM AVISOS)
+# ============================================================
+
+@app.route('/api/plano/status/detalhado')
+def get_plano_status_detalhado():
+    try:
+        db_id = get_db_id()
+        if not db_id:
+            return jsonify({"success": False, "error": "Não autenticado"}), 401
+        
+        status = get_status_plano(db_id)
+        
+        # Buscar plano atual
+        dados = carregar_usuario_firebase(db_id)
+        if not dados:
+            dados = carregar_plano_cache(db_id)
+        
+        plano_id = dados.get('plano', 1) if dados else 1
+        plano = next((p for p in PLANOS if p['id'] == plano_id), None)
+        
+        # Mensagens de aviso
+        mensagens = {
+            'saudavel': '✅ Seu plano está ativo e saudável',
+            'alerta': f"⚠️ Seu plano vence em {int(status['dias_restantes'])} dias. Renove em breve!",
+            'urgente': f"🔴 URGENTE! Seu plano vence em {int(status['dias_restantes'])} dias!",
+            'critico': f"⛔ CRÍTICO! Seu plano vence HOJE! Renove agora!",
+            'grace_period': '⚠️ Seu plano expirou, mas você tem 3 dias de tolerância!',
+            'expirado': '❌ Plano expirado! Renove para continuar usando o PDV.'
+        }
+        
+        return jsonify({
+            "success": True,
+            "plano": plano,
+            "status": status,
+            "mensagem": mensagens.get(status.get('status', 'expirado'), 'Status desconhecido'),
+            "dias_restantes": status.get('dias_restantes', 0),
+            "expirado": status.get('expirado', True),
+            "em_grace_period": status.get('em_grace_period', False)
+        })
+    except Exception as e:
+        logger.error(f"❌ Erro ao buscar status detalhado: {e}")
+        return jsonify({"success": False, "error": str(e)})
+
 
 @app.route('/api/planos')
 def get_planos():
