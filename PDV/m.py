@@ -506,7 +506,7 @@ def buscar_produto_por_codigo_barras(codigo_barras):
     return {"success": True, "dados": dados_produto, "fonte": "Fallback"}
 
 # ============================================================
-# IMPRESSÃO DE NOTA FISCAL (APENAS WINDOWS)
+# IMPRESSÃO DE CUPOM (FORMATAÇÃO PROFISSIONAL)
 # ============================================================
 
 def imprimir_cupom(dados_impressao):
@@ -515,6 +515,7 @@ def imprimir_cupom(dados_impressao):
         return {"success": True, "message": "Impressão simulada (ambiente não Windows)"}
     
     try:
+        # Dados do cupom
         nome_loja = dados_impressao.get('nome_loja', 'MINHA LOJA')
         cnpj = dados_impressao.get('cnpj', '')
         data_hora = dados_impressao.get('data_hora', datetime.now().strftime('%d/%m/%Y %H:%M'))
@@ -526,86 +527,79 @@ def imprimir_cupom(dados_impressao):
         metodo = dados_impressao.get('metodo', 'Dinheiro')
         cliente = dados_impressao.get('cliente', '')
         usuario = dados_impressao.get('usuario', '')
-        
+
+        # Formatar CNPJ
         if cnpj and len(cnpj) == 14:
             cnpj = f"{cnpj[:2]}.{cnpj[2:5]}.{cnpj[5:8]}/{cnpj[8:12]}-{cnpj[12:14]}"
-        
+
+        # Construir texto do cupom (formatação profissional para 80mm)
         linhas = []
-        largura = 48
-        
+        largura = 48  # 80mm = 48 caracteres
+
+        # Cabeçalho
         linhas.append('=' * largura)
         linhas.append(nome_loja.center(largura))
         if cnpj:
             linhas.append(f'CNPJ: {cnpj}'.center(largura))
         linhas.append('-' * largura)
-        linhas.append(f'CUPOM FISCAL'.center(largura))
+        linhas.append('CUPOM FISCAL'.center(largura))
         linhas.append(f'Data: {data_hora}'.center(largura))
         if venda_id:
             linhas.append(f'Venda: #{venda_id}'.center(largura))
         linhas.append('=' * largura)
         linhas.append('')
-        
+
+        # Itens
         linhas.append('ITEM'.ljust(3) + 'DESCRIÇÃO'.ljust(25) + 'QTD'.rjust(4) + 'TOTAL'.rjust(16))
         linhas.append('-' * largura)
-        
+
         for idx, item in enumerate(itens, 1):
             nome = item.get('nome', 'Item')[:22]
             qtd = item.get('quantidade', 1)
             total_item = item.get('total', 0)
             preco_unit = item.get('preco_unitario', 0)
-            
+
             linhas.append(f"{str(idx).ljust(3)}{nome.ljust(25)}{str(qtd).rjust(4)}{f'R$ {total_item:.2f}'.rjust(16)}")
-            
             if qtd > 1 and preco_unit:
                 linhas.append(f"{' '*3}{'R$ ' + f'{preco_unit:.2f}'.rjust(6)} x {qtd}".ljust(largura - 10))
-        
+
         linhas.append('-' * largura)
-        
+
+        # Totais
         linhas.append(f"{'SUBTOTAL:'.ljust(32)}R$ {subtotal:.2f}".rjust(largura))
         if desconto > 0:
             linhas.append(f"{'DESCONTO:'.ljust(32)}R$ {desconto:.2f}".rjust(largura))
         linhas.append(f"{'TOTAL:'.ljust(32)}R$ {total:.2f}".rjust(largura))
         linhas.append('-' * largura)
-        
+
+        # Forma de pagamento
         linhas.append(f"FORMA DE PAGAMENTO: {metodo}".center(largura))
         if cliente:
             linhas.append(f"CLIENTE: {cliente}".center(largura))
         if usuario:
             linhas.append(f"OPERADOR: {usuario}".center(largura))
-        
+
         linhas.append('=' * largura)
         linhas.append('')
         linhas.append('VOLTE SEMPRE!'.center(largura))
         linhas.append('=' * largura)
-        
+
+        # Texto completo do cupom
         texto_cupom = '\n'.join(linhas) + '\n\n'
-        
-        impressoras = win32print.EnumPrinters(win32print.PRINTER_ENUM_LOCAL | win32print.PRINTER_ENUM_CONNECTIONS)
-        
-        impressora_nome = None
-        termos_busca = ['thermal', 'térmica', 'pos', 'esc', '80', '58']
-        
-        for p in impressoras:
-            nome = p[2].lower()
-            for termo in termos_busca:
-                if termo in nome:
-                    impressora_nome = p[2]
-                    break
-            if impressora_nome:
-                break
+
+        # === IMPRESSÃO DIRETA (sem janela) ===
+        # Usar a impressora padrão do Windows
+        impressora_nome = win32print.GetDefaultPrinter()
         
         if not impressora_nome:
-            try:
-                impressora_nome = win32print.GetDefaultPrinter()
-            except:
-                impressora_nome = None
-        
-        if not impressora_nome:
-            return {"success": False, "error": "Nenhuma impressora encontrada"}
-        
+            return {"success": False, "error": "Nenhuma impressora padrão definida"}
+
+        # Abrir impressora
         hprinter = win32print.OpenPrinter(impressora_nome)
         try:
+            # Configurar para impressão térmica (RAW)
             dados_bytes = texto_cupom.encode('latin-1', 'replace')
+            
             win32print.StartDocPrinter(hprinter, 1, ("Cupom Fiscal", None, "RAW"))
             win32print.StartPagePrinter(hprinter)
             win32print.WritePrinter(hprinter, dados_bytes)
@@ -613,10 +607,10 @@ def imprimir_cupom(dados_impressao):
             win32print.EndDocPrinter(hprinter)
         finally:
             win32print.ClosePrinter(hprinter)
-        
+
         logger.info(f"✅ Cupom impresso: Venda #{venda_id} - R$ {total:.2f}")
         return {"success": True, "message": "Cupom impresso com sucesso!"}
-        
+
     except Exception as e:
         logger.error(f"❌ Erro ao imprimir cupom: {e}")
         return {"success": False, "error": str(e)}
