@@ -1323,11 +1323,40 @@
         // ============================================================
         // LOJA / PLANOS
         // ============================================================
+
+
         function carregarPlanos(){
-            fetch('/api/planos').then(r=>r.json()).then(data=>{
-                if(data.success){const grid=document.getElementById('planosGrid');grid.innerHTML=data.planos.map(p=>'<div class="plano-card">'+(p.id===5?'<div class="plano-teste">🧪 TESTE 3 MIN</div>':'')+'<div class="preco">R$ '+p.preco.toFixed(2)+' <small>/'+p.nome.toLowerCase()+'</small></div><div class="nome" style="color:var(--green);">'+p.nome+'</div><div class="desc">'+p.usuarios+' usuário'+(p.usuarios>1?'s':'')+'</div><div class="detalhes">'+(p.id===5?'3 minutos de acesso':p.dias+' dias de acesso')+'</div><button class="btn-assinar" onclick="assinarPlano('+p.id+')"><i class="fas fa-crown"></i> Assinar</button></div>').join('');}
-            }).catch(e=>console.error('Erro:',e));
+            fetch('/api/planos')
+                .then(r => r.json())
+                .then(data => {
+                    if(data.success){
+                        const grid = document.getElementById('planosGrid');
+                        grid.innerHTML = data.planos.map(p => {
+                            // Define o texto do limite de produtos
+                            let limiteTexto = '';
+                            if (p.produtos === -1) {
+                                limiteTexto = '♾️ Produtos ilimitados';
+                            } else {
+                                limiteTexto = '📦 ' + p.produtos + ' produtos';
+                            }
+                            
+                            return '<div class="plano-card">' +
+                                (p.id === 5 ? '<div class="plano-teste">🧪 TESTE 3 MIN</div>' : '') +
+                                '<div class="preco">R$ ' + p.preco.toFixed(2) + ' <small>/' + p.nome.toLowerCase() + '</small></div>' +
+                                '<div class="nome" style="color:var(--green);">' + p.nome + '</div>' +
+                                '<div class="desc">' + p.usuarios + ' usuário' + (p.usuarios > 1 ? 's' : '') + '</div>' +
+                                '<div class="detalhes">' +
+                                    (p.id === 5 ? '3 minutos de acesso' : p.dias + ' dias de acesso') +
+                                    '<br><span style="font-size:11px;color:var(--text-muted);">' + limiteTexto + '</span>' +
+                                '</div>' +
+                                '<button class="btn-assinar" onclick="assinarPlano(' + p.id + ')"><i class="fas fa-crown"></i> Assinar</button>' +
+                            '</div>';
+                        }).join('');
+                    }
+                })
+                .catch(e => console.error('Erro:', e));
         }
+
         async function assinarPlano(planoId){
             try{
                 const res=await fetch('/api/pix/criar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plano_id:planoId})});
