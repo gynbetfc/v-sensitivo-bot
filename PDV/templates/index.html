@@ -1271,6 +1271,7 @@
                 if(!silencioso) showToast('❌ Erro ao verificar!','error');
             }
         }
+        
         async function carregarStatusLoja(){
             try{
                 const res=await fetch('/api/plano/status');
@@ -1278,6 +1279,33 @@
                 if(data.success){
                     state.plano_ativo=!data.expirado;
                     if(data.expirado){document.getElementById('planoExpiradoAviso').style.display='flex';}
+                    else{document.getElementById('planoExpiradoAviso').style.display='none';}
+                    const statusDiv=document.getElementById('statusLoja');
+                    
+                    // ===== PRODUTOS =====
+                    let produtosText = '';
+                    if (data.limite_produtos === -1) {
+                        produtosText = '♾️ Ilimitado';
+                    } else {
+                        produtosText = data.produtos_atuais + ' / ' + data.limite_produtos;
+                    }
+                    
+                    // ===== BARRA DE PROGRESSO =====
+                    let progressBar = '';
+                    if (data.limite_produtos !== -1 && data.limite_produtos > 0) {
+                        const percent = Math.min(100, (data.produtos_atuais / data.limite_produtos) * 100);
+                        let color = 'var(--green)';
+                        if (percent > 80) color = 'var(--orange)';
+                        if (percent > 95) color = 'var(--red)';
+                        
+                        progressBar = '<div style="margin-top: 6px; background: var(--bg-primary); border-radius: 10px; height: 8px; overflow: hidden;"><div style="width: ' + percent + '%; height: 100%; background: ' + color + '; border-radius: 10px; transition: width 0.5s;"></div></div><div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">' + percent.toFixed(0) + '% utilizado</div>';
+                    }
+                    
+                    statusDiv.innerHTML='<h4 style="font-size:14px;margin-bottom:10px;"><i class="fas fa-info-circle"></i> Status</h4><div class="info-grid"><div class="info-item"><div class="label">Plano</div><div class="value">'+(data.plano?data.plano.nome:'Nenhum')+'</div></div><div class="info-item"><div class="label">Expira em</div><div class="value '+(data.expirado?'expirado':'ativo')+'">'+(data.expira_em?new Date(data.expira_em).toLocaleDateString():'N/A')+' '+(data.dias_restantes>0?'('+data.dias_restantes.toFixed(1)+' dias)':'')+'</div></div><div class="info-item"><div class="label">Status</div><div class="value '+(data.expirado?'expirado':'ativo')+'">'+(data.expirado?'⚠️ Expirado':'✅ Ativo')+'</div></div><div class="info-item"><div class="label">👥 Usuários</div><div class="value" style="color: var(--blue);">'+(data.usuarios_atuais||0)+' / '+(data.usuarios_limite||1)+'</div></div><div class="info-item" style="grid-column: span 2;"><div class="label">📦 Produtos no Estoque</div><div class="value" style="color: '+(data.limite_produtos===-1?'var(--purple)':data.produtos_restantes<10?'var(--orange)':'var(--green)')+';">'+produtosText+(data.limite_produtos===-1?' ♾️':data.produtos_restantes>0?' ('+data.produtos_restantes+' restantes)':' ⚠️')+'</div>'+progressBar+'</div></div>';
+                }
+            }catch(e){console.error('Erro:',e);}
+        }
+
                     else{document.getElementById('planoExpiradoAviso').style.display='none';}
                     const statusDiv=document.getElementById('statusLoja');
                     statusDiv.innerHTML='<h4 style="font-size:14px;margin-bottom:10px;"><i class="fas fa-info-circle"></i> Status</h4><div class="info-grid"><div class="info-item"><div class="label">Plano</div><div class="value">'+(data.plano?data.plano.nome:'Nenhum')+'</div></div><div class="info-item"><div class="label">Expira em</div><div class="value '+(data.expirado?'expirado':'ativo')+'">'+(data.expira_em?new Date(data.expira_em).toLocaleDateString():'N/A')+' '+(data.dias_restantes>0?'('+data.dias_restantes.toFixed(1)+' dias)':'')+'</div></div><div class="info-item"><div class="label">Status</div><div class="value '+(data.expirado?'expirado':'ativo')+'">'+(data.expirado?'⚠️ Expirado':'✅ Ativo')+'</div></div></div>';
