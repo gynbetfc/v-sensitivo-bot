@@ -85,11 +85,10 @@ MERCADO_PAGO_ACCESS_TOKEN = os.environ.get(
 
 # ===== PLANOS =====
 PLANOS = [
-    {'id': 1, 'usuarios': 1, 'preco': 0.01, 'nome': '🔰 BÁSICO', 'dias': 7},
-    {'id': 2, 'usuarios': 3, 'preco': 0.01, 'nome': '⭐ STANDARD', 'dias': 30},
-    {'id': 3, 'usuarios': 5, 'preco': 0.01, 'nome': '💎 PREMIUM', 'dias': 90},
-    {'id': 4, 'usuarios': 10, 'preco': 0.01, 'nome': '🔥 EMPRESARIAL', 'dias': 365},
-    {'id': 5, 'usuarios': 2, 'preco': 0.01, 'nome': '🧪 TESTE 3 MIN', 'dias': 0.00208333},
+    {'id': 1, 'usuarios': 1, 'preco': 79.00, 'nome': '🔰 BÁSICO', 'dias': 30, 'produtos': 200},
+    {'id': 2, 'usuarios': 3, 'preco': 129.00, 'nome': '⭐ STANDARD', 'dias': 30, 'produtos': 1000},
+    {'id': 3, 'usuarios': 5, 'preco': 179.00, 'nome': '💎 PREMIUM', 'dias': 30, 'produtos': 5000},
+    {'id': 4, 'usuarios': 10, 'preco': 199.00, 'nome': '👑 EMPRESARIAL', 'dias': 30, 'produtos': -1},
 ]
 
 pagamentos_pendentes = {}
@@ -574,6 +573,59 @@ def plano_bloqueado_response():
 # ============================================================
 # BUSCA INTELIGENTE DE PRODUTO POR CÓDIGO DE BARRAS
 # ============================================================
+
+
+
+# ============================================================
+# LIMITE DE PRODUTOS POR PLANO
+# ============================================================
+
+def get_limite_produtos(db_id):
+    """Retorna o limite de produtos do plano do usuário"""
+    if not db_id:
+        return 0
+    
+    dados = carregar_usuario_firebase(db_id)
+    if not dados:
+        return 0
+    
+    plano_id = dados.get('plano', 1)
+    plano = next((p for p in PLANOS if p['id'] == plano_id), None)
+    if not plano:
+        return 0
+    
+    return plano.get('produtos', 0)
+
+def get_total_produtos(db_id):
+    """Retorna a quantidade atual de produtos do usuário"""
+    if not db_id:
+        return 0
+    
+    try:
+        with get_db('data/produtos.db') as conn:
+            cursor = conn.execute("SELECT COUNT(*) FROM produtos WHERE db_id=?", (db_id,))
+            return cursor.fetchone()[0] or 0
+    except:
+        return 0
+
+def pode_adicionar_produto(db_id, quantidade=1):
+    """Verifica se o usuário pode adicionar mais produtos"""
+    if not db_id:
+        return False, "Usuário não autenticado"
+    
+    limite = get_limite_produtos(db_id)
+    atual = get_total_produtos(db_id)
+    
+    # -1 = ilimitado
+    if limite == -1:
+        return True, f"Produtos ilimitados ({atual} atuais)"
+    
+    if atual + quantidade > limite:
+        return False, f"Limite de {limite} produtos atingido! ({atual}/{limite})"
+    
+    restam = limite - atual
+    return True, f"Pode adicionar! ({atual}/{limite} - restam {restam})"
+
 
 def buscar_produto_por_codigo_barras(codigo_barras):
     """
@@ -1460,6 +1512,7 @@ def get_produtos():
         logger.error(f"❌ Erro ao buscar produtos: {e}")
         return jsonify({"success": False, "error": str(e)})
 
+
 @app.route('/api/produtos', methods=['POST'])
 def save_produto():
     try:
@@ -1475,6 +1528,18 @@ def save_produto():
         if not data.get('codigo') or not data.get('nome'):
             return jsonify({"success": False, "error": "Código e nome são obrigatórios"})
 
+        # ===== VERIFICAR LIMITE DE PRODUTOS =====
+        # Verificar se é um novo produto (não uma atualização)
+        with get_db('data/produtos.db') as conn:
+            cursor = conn.execute("SELECT COUNT(*) FROM produtos WHERE codigo=? AND db_id=?", (data['codigo'], db_id))
+            existe = cursor.fetchone()[0] > 0
+        
+        # Só verifica limite se for um produto novo
+        if not existe:
+            pode, mensagem = pode_adicionar_produto(db_id, 1)
+            if not pode:
+                return jsonify({"success": False, "error": mensagem}), 403
+
         with get_db('data/produtos.db') as conn:
             conn.execute("""
                 INSERT INTO produtos (codigo, nome, preco, estoque, categoria, db_id)
@@ -1488,6 +1553,7 @@ def save_produto():
     except Exception as e:
         logger.error(f"❌ Erro ao salvar produto: {e}")
         return jsonify({"success": False, "error": str(e)})
+
 
 @app.route('/api/produtos/<codigo>', methods=['DELETE'])
 def delete_produto(codigo):
@@ -2075,6 +2141,55 @@ def get_plano_status_detalhado():
 @app.route('/api/planos')
 def get_planos():
     return jsonify({"success": True, "planos": PLANOS})
+
+
+
+@app.route('/api/plano/status/limite')
+def get_plano_limite():
+    """Retorna o status do plano com limite de produtos"""
+    try:
+        db_id = get_db_id()
+        if not db_id:
+            return jsonify({"success": False, "error": "Não autenticado"}), 401
+        
+        dados = carregar_usuario_firebase(db_id)
+        if not dados:
+            return jsonify({"success": False, "error": "Dados não encontrados"})
+        
+        plano_id = dados.get('plano', 1)
+        plano = next((p for p in PLANOS if p['id'] == plano_id), None)
+        
+        if not plano:
+            return jsonify({"success": False, "error": "Plano não encontrado"})
+        
+        limite = plano.get('produtos', 0)
+        atual = get_total_produtos(db_id)
+        usuarios = plano.get('usuarios', 1)
+        expira = dados.get('expira_em')
+        
+        # Calcular dias restantes
+        dias_restantes = 0
+        if expira:
+            try:
+                expira_date = datetime.fromisoformat(expira)
+                dias_restantes = max(0, (expira_date - datetime.now()).total_seconds() / 86400)
+            except:
+                pass
+        
+        return jsonify({
+            "success": True,
+            "plano": plano,
+            "limite_produtos": limite,
+            "produtos_atuais": atual,
+            "produtos_restantes": -1 if limite == -1 else max(0, limite - atual),
+            "limite_usuarios": usuarios,
+            "dias_restantes": dias_restantes,
+            "expirado": dias_restantes <= 0
+        })
+    except Exception as e:
+        logger.error(f"❌ Erro ao buscar limite: {e}")
+        return jsonify({"success": False, "error": str(e)})
+
 
 @app.route('/api/plano/status')
 def get_plano_status():
