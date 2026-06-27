@@ -383,10 +383,9 @@
             <div id="loginForm">
                 <div class="form-group"><label>Email</label><input type="email" id="loginEmail" placeholder="seu@email.com" autofocus></div>
                 <div class="form-group"><label>Senha</label><input type="password" id="loginSenha" placeholder="••••••••"></div>
-                <!-- Campos ocultos (ID do Banco e Nome da Loja) -->
+                <!-- Campos ocultos corrigidos -->
                 <input type="hidden" id="loginDbId" value="">
-                <input type="hidden" id="loginLojaNome" value="">
-                <input type="hidden" id="loginCnpj" value="">
+                <input type="hidden" id="loginServidorId" value="">
                 <button class="btn-primary" onclick="fazerLogin()">🚀 Entrar</button>
                 <div class="auth-link">Não tem conta? <span onclick="toggleAuth('register')">Cadastre-se</span></div>
             </div>
@@ -394,15 +393,15 @@
                 <div class="form-group"><label>Nome</label><input type="text" id="registerNome" placeholder="Seu nome"></div>
                 <div class="form-group"><label>Email</label><input type="email" id="registerEmail" placeholder="seu@email.com"></div>
                 <div class="form-group"><label>Senha</label><input type="password" id="registerSenha" placeholder="••••••••"></div>
-                <!-- CNPJ visível no registro -->
                 <div class="form-group">
                     <label>CNPJ (opcional)</label>
                     <input type="text" id="registerCnpj" placeholder="00.000.000/0000-00">
                     <div class="hint">🔍 Digite o CNPJ para buscar dados da empresa automaticamente</div>
                 </div>
                 <div id="dadosCnpjRegistro" style="display:none;background:var(--bg-primary);padding:10px;border-radius:8px;margin-bottom:10px;font-size:12px;color:var(--text-secondary);"></div>
-                <!-- Campos ocultos -->
+                <!-- Campos ocultos corrigidos -->
                 <input type="hidden" id="registerDbId" value="">
+                <input type="hidden" id="registerServidorId" value="">
                 <input type="hidden" id="registerLojaNome" value="Minha Loja">
                 <button class="btn-primary" onclick="fazerRegistro()">📝 Criar Conta</button>
                 <div class="auth-link">Já tem conta? <span onclick="toggleAuth('login')">Faça login</span></div>
@@ -432,10 +431,10 @@
             <button data-tab="planos" onclick="trocarTab('planos')"><i class="fas fa-store"></i> Planos</button>
             <button data-tab="config" onclick="trocarTab('config')"><i class="fas fa-cog"></i> Config</button>
         </nav>
-            <div class="plano-expirado-aviso" id="planoExpiradoAviso">
-        <span>⚠️ <strong>Seu plano expirou!</strong> Renove seu plano para continuar usando o PDV.</span>
-        <a onclick="trocarTab('planos')">Ver Planos →</a>
-    </div>
+        <div class="plano-expirado-aviso" id="planoExpiradoAviso">
+            <span>⚠️ <strong>Seu plano expirou!</strong> Renove seu plano para continuar usando o PDV.</span>
+            <a onclick="trocarTab('planos')">Ver Planos →</a>
+        </div>
         <div class="content">
             <!-- VENDAS -->
             <div class="panel active" id="panelVendas">
@@ -564,8 +563,6 @@
         </div>
     </div>
     <script>
-        
-        
         // ============================================================
         // DETECTAR SISTEMA OPERACIONAL
         // ============================================================
@@ -617,6 +614,266 @@
         }
 
         // ============================================================
+        // TOGGLE AUTH
+        // ============================================================
+        function toggleAuth(mode){
+            const login=document.getElementById('loginForm'),register=document.getElementById('registerForm'),title=document.getElementById('authTitle'),sub=document.getElementById('authSub');
+            if(mode==='register'){login.style.display='none';register.style.display='block';title.textContent='Criar Conta';sub.textContent='Comece agora mesmo';}
+            else{login.style.display='block';register.style.display='none';title.textContent='PDV Inteligente';sub.textContent='Entre na sua conta';}
+            document.getElementById('authMsg').className='msg';document.getElementById('authMsg').textContent='';
+        }
+
+        // ============================================================
+        // FAZER REGISTRO - CORRIGIDO
+        // ============================================================
+        async function fazerRegistro(){
+            const nome=document.getElementById('registerNome').value.trim();
+            const email=document.getElementById('registerEmail').value.trim();
+            const senha=document.getElementById('registerSenha').value.trim();
+            const cnpj=document.getElementById('registerCnpj').value.trim();
+            const msg=document.getElementById('authMsg');
+            
+            if(!nome||!email||!senha){
+                msg.className='msg error';
+                msg.textContent='⚠️ Preencha todos os campos!';
+                return;
+            }
+            if(senha.length<4){
+                msg.className='msg error';
+                msg.textContent='⚠️ Senha deve ter pelo menos 4 caracteres!';
+                return;
+            }
+            
+            msg.className='msg';
+            msg.textContent='⏳ Criando conta...';
+            msg.style.display='block';
+            
+            try{
+                const res=await fetch('/api/auth/register',{
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({
+                        nome,
+                        email,
+                        senha,
+                        cnpj,
+                        nome_loja: document.getElementById('registerLojaNome').value || 'Minha Loja',
+                        db_id: document.getElementById('registerDbId').value || '',
+                        cnpj_dados: state.cnpj_dados || {}
+                    })
+                });
+                const data=await res.json();
+                
+                if(data.success){
+                    msg.className='msg success';
+                    msg.textContent='✅ Conta criada!';
+                    toggleAuth('login');
+                    document.getElementById('loginEmail').value=email;
+                    document.getElementById('loginSenha').value='';
+                    showToast('✅ Conta criada com sucesso!','success');
+                }else{
+                    msg.className='msg error';
+                    msg.textContent='❌ '+data.error;
+                }
+            }catch(e){
+                msg.className='msg error';
+                msg.textContent='❌ Erro ao criar conta!';
+                console.error(e);
+            }
+        }
+
+        // ============================================================
+        // FAZER LOGIN - CORRIGIDO
+        // ============================================================
+        async function fazerLogin(){
+            const email=document.getElementById('loginEmail').value.trim();
+            const senha=document.getElementById('loginSenha').value.trim();
+            const msg=document.getElementById('authMsg');
+            
+            if(!email||!senha){
+                msg.className='msg error';
+                msg.textContent='⚠️ Preencha todos os campos!';
+                return;
+            }
+            
+            msg.className='msg';
+            msg.textContent='⏳ Entrando...';
+            msg.style.display='block';
+            
+            try{
+                const res=await fetch('/api/auth/login',{
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({
+                        email,
+                        senha,
+                        db_id: document.getElementById('loginDbId').value || '',
+                        servidor_id: document.getElementById('loginServidorId').value || ''
+                    })
+                });
+                const data=await res.json();
+                
+                console.log('📥 Resposta do login:', data);
+                
+                if(data.success){
+                    // CORRIGIDO: usar os campos corretos
+                    state.usuario_id = data.id || data.usuario_id;
+                    state.nome = data.nome || 'Usuário';
+                    state.cargo = data.cargo || 'Funcionario';
+                    state.db_id = data.db_id;
+                    state.servidor_id = data.servidor_id;
+                    state.nome_loja = data.nome_loja || 'Minha Loja';
+                    state.cnpj = data.cnpj || '';
+                    state.cnpj_dados = data.cnpj_dados || {};
+                    state.plano_ativo = data.plano_ativo !== false;
+                    
+                    document.getElementById('authPage').classList.add('hidden');
+                    document.getElementById('app').classList.add('active');
+                    document.getElementById('userName').textContent=data.nome;
+                    document.getElementById('userCargo').textContent=data.cargo;
+                    document.getElementById('userAvatar').textContent=data.nome.charAt(0).toUpperCase();
+                    document.getElementById('dbIdDisplay').textContent='📋 ID: '+data.db_id;
+                    document.getElementById('lojaNomeDisplay').textContent='🏪 '+state.nome_loja;
+                    document.getElementById('dbIdConfig').textContent=data.db_id;
+                    document.getElementById('servidorIdConfig').textContent=data.servidor_id||'---';
+                    document.getElementById('lojaNomeConfig').value=state.nome_loja;
+                    document.getElementById('lojaCnpjConfig').value=state.cnpj;
+                    
+                    if(!state.plano_ativo){
+                        document.getElementById('planoExpiradoAviso').style.display='flex';
+                    }else{
+                        document.getElementById('planoExpiradoAviso').style.display='none';
+                    }
+                    
+                    if(window._syncInterval)clearInterval(window._syncInterval);
+                    window._syncInterval=setInterval(()=>{sincronizarAgora();},180000);
+                    
+                    await Promise.all([
+                        carregarProdutos(),
+                        carregarClientes(),
+                        carregarPlanos(),
+                        carregarStatusLoja(),
+                        carregarUsuarios(),
+                        verificarStatusCaixa(),
+                        carregarResumoCaixa(),
+                        carregarDashboard('hoje')
+                    ]);
+                    
+                    if(state.cnpj){
+                        setTimeout(()=>{buscarDadosCNPJ(state.cnpj);},500);
+                    }
+                    
+                    showToast('✅ Bem-vindo, '+data.nome+'!','success');
+                }else{
+                    msg.className='msg error';
+                    msg.textContent='❌ '+(data.error||'Email ou senha inválidos');
+                }
+            }catch(e){
+                msg.className='msg error';
+                msg.textContent='❌ Erro ao fazer login!';
+                console.error(e);
+            }
+        }
+
+        // ============================================================
+        // FAZER LOGOUT
+        // ============================================================
+        function fazerLogout(){
+            if(window._syncInterval)clearInterval(window._syncInterval);
+            fetch('/api/auth/logout',{method:'POST'});
+            state.usuario_id=null;state.nome='';state.cargo='';state.db_id=null;state.servidor_id=null;state.caixa_aberto=false;state.itens=[];state.produtos=[];state.clientes=[];
+            document.getElementById('app').classList.remove('active');
+            document.getElementById('authPage').classList.remove('hidden');
+            document.getElementById('loginEmail').value='';
+            document.getElementById('loginSenha').value='';
+            document.getElementById('authMsg').className='msg';
+            document.getElementById('authMsg').textContent='';
+            showToast('🔒 Desconectado','info');
+        }
+
+        // ============================================================
+        // EVENT LISTENERS PARA ENTER
+        // ============================================================
+        document.getElementById('loginSenha').addEventListener('keydown',e=>{if(e.key==='Enter')fazerLogin();});
+        document.getElementById('registerSenha').addEventListener('keydown',e=>{if(e.key==='Enter')fazerRegistro();});
+
+        // ============================================================
+        // MENU
+        // ============================================================
+        function toggleMenu(){document.getElementById('nav').classList.toggle('open');}
+        function trocarTab(tab){
+            document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+            const btn=document.querySelector('.nav button[data-tab="'+tab+'"]');if(btn)btn.classList.add('active');
+            document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+            const panels={vendas:'panelVendas',clientes:'panelClientes',caixa:'panelCaixa',dashboard:'panelDashboard',estoque:'panelEstoque',planos:'panelPlanos',config:'panelConfig'};
+            const target=document.getElementById(panels[tab]);if(target)target.classList.add('active');
+            document.getElementById('nav').classList.remove('open');
+            if(tab==='dashboard')carregarDashboard(state.periodo);
+            if(tab==='clientes')carregarClientes();
+            if(tab==='caixa')carregarResumoCaixa();
+            if(tab==='estoque')carregarProdutos();
+            if(tab==='planos'){carregarPlanos();carregarStatusLoja();}
+            if(tab==='config'){carregarUsuarios();carregarStatusLoja();}
+        }
+
+        // ============================================================
+        // VERIFICAR SESSÃO
+        // ============================================================
+        async function verificarSessao(){
+            try{
+                const res=await fetch('/api/auth/status');
+                const data=await res.json();
+                if(data.logged_in){
+                    state.usuario_id=data.usuario_id;
+                    state.nome=data.nome;
+                    state.cargo=data.cargo;
+                    state.db_id=data.db_id;
+                    state.servidor_id=data.servidor_id;
+                    state.nome_loja=data.nome_loja||'Minha Loja';
+                    state.cnpj=data.cnpj||'';
+                    state.cnpj_dados=data.cnpj_dados||{};
+                    state.plano_ativo=data.plano_ativo!==false;
+                    
+                    document.getElementById('authPage').classList.add('hidden');
+                    document.getElementById('app').classList.add('active');
+                    document.getElementById('userName').textContent=data.nome;
+                    document.getElementById('userCargo').textContent=data.cargo;
+                    document.getElementById('userAvatar').textContent=data.nome.charAt(0).toUpperCase();
+                    document.getElementById('dbIdDisplay').textContent='📋 ID: '+data.db_id;
+                    document.getElementById('lojaNomeDisplay').textContent='🏪 '+state.nome_loja;
+                    document.getElementById('dbIdConfig').textContent=data.db_id;
+                    document.getElementById('servidorIdConfig').textContent=data.servidor_id||'---';
+                    document.getElementById('lojaNomeConfig').value=state.nome_loja;
+                    document.getElementById('lojaCnpjConfig').value=state.cnpj;
+                    
+                    if(!state.plano_ativo){
+                        document.getElementById('planoExpiradoAviso').style.display='flex';
+                    }else{
+                        document.getElementById('planoExpiradoAviso').style.display='none';
+                    }
+                    
+                    if(window._syncInterval)clearInterval(window._syncInterval);
+                    window._syncInterval=setInterval(()=>{sincronizarAgora();},180000);
+                    
+                    await Promise.all([
+                        carregarProdutos(),
+                        carregarClientes(),
+                        carregarPlanos(),
+                        carregarStatusLoja(),
+                        carregarUsuarios(),
+                        verificarStatusCaixa(),
+                        carregarResumoCaixa(),
+                        carregarDashboard('hoje')
+                    ]);
+                    
+                    if(state.cnpj){
+                        setTimeout(()=>{buscarDadosCNPJ(state.cnpj);},500);
+                    }
+                }
+            }catch(e){console.error('Erro ao verificar sessão:',e);}
+        }
+
+        // ============================================================
         // BUSCAR DADOS CNPJ
         // ============================================================
         async function buscarDadosCNPJ(cnpj){
@@ -652,53 +909,36 @@
         // ============================================================
         // BUSCAR PRODUTO POR CÓDIGO DE BARRAS (ESTOQUE)
         // ============================================================
-
         async function buscarProdutoPorCodigo() {
             const codigo = document.getElementById('prodCodigo').value.trim();
-            
             if (!codigo) {
                 showToast('⚠️ Digite ou leia um código de barras primeiro!', 'warning');
                 return;
             }
-            
-            // Mostrar loading
             const btn = document.querySelector('#prodCodigo + button');
             const originalText = btn.textContent;
             btn.textContent = '⏳ Buscando...';
             btn.disabled = true;
-            
             try {
                 const res = await fetch(`/api/produto/buscar/${codigo}`);
                 const data = await res.json();
-                
                 if (data.success && data.dados) {
                     const d = data.dados;
-                    
-                    // Preencher campos
                     document.getElementById('prodNome').value = d.nome || '';
                     document.getElementById('prodCategoria').value = d.marca || d.categoria || 'Geral';
-                    
-                    // Se tiver preço sugerido (algumas APIs podem ter)
                     if (d.preco_sugerido) {
                         document.getElementById('prodPreco').value = d.preco_sugerido.toFixed(2).replace('.', ',');
                     }
-                    
-                    // Mostrar informações adicionais
                     const fonte = d.fonte || 'API externa';
                     let info = `✅ Produto encontrado! (Fonte: ${fonte})`;
                     if (d.marca) info += `\nMarca: ${d.marca}`;
                     if (d.fabricante) info += `\nFabricante: ${d.fabricante}`;
                     if (d.ncm) info += `\nNCM: ${d.ncm}`;
-                    
                     showToast(info, 'success');
-                    
-                    // Focar no preço para ajuste manual se necessário
                     document.getElementById('prodPreco').focus();
                     document.getElementById('prodPreco').select();
-                    
                 } else {
                     showToast(`❌ ${data.error || 'Produto não encontrado!'}`, 'error');
-                    // Limpar campos para evitar confusão
                     document.getElementById('prodNome').value = '';
                     document.getElementById('prodCategoria').value = 'Geral';
                 }
@@ -709,124 +949,6 @@
                 btn.textContent = originalText;
                 btn.disabled = false;
             }
-        }
-
-        // ============================================================
-        // AUTH
-        // ============================================================
-        function toggleAuth(mode){
-            const login=document.getElementById('loginForm'),register=document.getElementById('registerForm'),title=document.getElementById('authTitle'),sub=document.getElementById('authSub');
-            if(mode==='register'){login.style.display='none';register.style.display='block';title.textContent='Criar Conta';sub.textContent='Comece agora mesmo';}
-            else{login.style.display='block';register.style.display='none';title.textContent='PDV Inteligente';sub.textContent='Entre na sua conta';}
-            document.getElementById('authMsg').className='msg';document.getElementById('authMsg').textContent='';
-        }
-
-        async function fazerRegistro(){
-            const nome=document.getElementById('registerNome').value.trim(),email=document.getElementById('registerEmail').value.trim(),senha=document.getElementById('registerSenha').value.trim(),cnpj=document.getElementById('registerCnpj').value.trim(),msg=document.getElementById('authMsg');
-            if(!nome||!email||!senha){msg.className='msg error';msg.textContent='⚠️ Preencha todos os campos!';return;}
-            if(senha.length<4){msg.className='msg error';msg.textContent='⚠️ Senha deve ter pelo menos 4 caracteres!';return;}
-            msg.className='msg';msg.textContent='⏳ Criando conta...';msg.style.display='block';
-            try{
-                const res=await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,email,senha,cnpj})});
-                const data=await res.json();
-                if(data.success){
-                    msg.className='msg success';msg.textContent='✅ Conta criada!';
-                    toggleAuth('login');
-                    document.getElementById('loginEmail').value=email;
-                    document.getElementById('loginSenha').value='';
-                    showToast('✅ Conta criada com sucesso!','success');
-                }else{msg.className='msg error';msg.textContent='❌ '+data.error;}
-            }catch(e){msg.className='msg error';msg.textContent='❌ Erro ao criar conta!';console.error(e);}
-        }
-
-        async function fazerLogin(){
-            const email=document.getElementById('loginEmail').value.trim(),senha=document.getElementById('loginSenha').value.trim(),msg=document.getElementById('authMsg');
-            if(!email||!senha){msg.className='msg error';msg.textContent='⚠️ Preencha todos os campos!';return;}
-            msg.className='msg';msg.textContent='⏳ Entrando...';msg.style.display='block';
-            try{
-                const res=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,senha})});
-                const data=await res.json();
-                if(data.success){
-                    state.usuario_id=data.usuario_id;state.nome=data.nome;state.cargo=data.cargo;state.db_id=data.db_id;
-                    state.servidor_id=data.servidor_id;state.nome_loja=data.nome_loja||'Minha Loja';state.cnpj=data.cnpj||'';state.cnpj_dados=data.cnpj_dados||{};state.plano_ativo=data.plano_ativo!==false;
-                    document.getElementById('authPage').classList.add('hidden');document.getElementById('app').classList.add('active');
-                    document.getElementById('userName').textContent=data.nome;document.getElementById('userCargo').textContent=data.cargo;
-                    document.getElementById('userAvatar').textContent=data.nome.charAt(0).toUpperCase();
-                    document.getElementById('dbIdDisplay').textContent='📋 ID: '+data.db_id;
-                    document.getElementById('lojaNomeDisplay').textContent='🏪 '+state.nome_loja;
-                    document.getElementById('dbIdConfig').textContent=data.db_id;
-                    document.getElementById('servidorIdConfig').textContent=data.servidor_id||'---';
-                    document.getElementById('lojaNomeConfig').value=state.nome_loja;
-                    document.getElementById('lojaCnpjConfig').value=state.cnpj;
-                    if(!state.plano_ativo){document.getElementById('planoExpiradoAviso').style.display='flex';}
-                    else{document.getElementById('planoExpiradoAviso').style.display='none';}
-                    if(window._syncInterval)clearInterval(window._syncInterval);
-                    window._syncInterval=setInterval(()=>{sincronizarAgora();},180000);
-                    await Promise.all([carregarProdutos(),carregarClientes(),carregarPlanos(),carregarStatusLoja(),carregarUsuarios(),verificarStatusCaixa(),carregarResumoCaixa(),carregarDashboard('hoje')]);
-                    if(state.cnpj){setTimeout(()=>{buscarDadosCNPJ(state.cnpj);},500);}
-                    showToast('✅ Bem-vindo, '+data.nome+'!','success');
-                }else{msg.className='msg error';msg.textContent='❌ '+(data.error||'Email ou senha inválidos');}
-            }catch(e){msg.className='msg error';msg.textContent='❌ Erro ao fazer login!';console.error(e);}
-        }
-
-        function fazerLogout(){
-            if(window._syncInterval)clearInterval(window._syncInterval);
-            fetch('/api/auth/logout',{method:'POST'});
-            state.usuario_id=null;state.nome='';state.cargo='';state.db_id=null;state.servidor_id=null;state.caixa_aberto=false;state.itens=[];state.produtos=[];state.clientes=[];
-            document.getElementById('app').classList.remove('active');document.getElementById('authPage').classList.remove('hidden');
-            document.getElementById('loginEmail').value='';document.getElementById('loginSenha').value='';
-            document.getElementById('authMsg').className='msg';document.getElementById('authMsg').textContent='';
-            showToast('🔒 Desconectado','info');
-        }
-        document.getElementById('loginSenha').addEventListener('keydown',e=>{if(e.key==='Enter')fazerLogin();});
-        document.getElementById('registerSenha').addEventListener('keydown',e=>{if(e.key==='Enter')fazerRegistro();});
-
-        // ============================================================
-        // MENU
-        // ============================================================
-        function toggleMenu(){document.getElementById('nav').classList.toggle('open');}
-        function trocarTab(tab){
-            document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
-            const btn=document.querySelector('.nav button[data-tab="'+tab+'"]');if(btn)btn.classList.add('active');
-            document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-            const panels={vendas:'panelVendas',clientes:'panelClientes',caixa:'panelCaixa',dashboard:'panelDashboard',estoque:'panelEstoque',planos:'panelPlanos',config:'panelConfig'};
-            const target=document.getElementById(panels[tab]);if(target)target.classList.add('active');
-            document.getElementById('nav').classList.remove('open');
-            if(tab==='dashboard')carregarDashboard(state.periodo);
-            if(tab==='clientes')carregarClientes();
-            if(tab==='caixa')carregarResumoCaixa();
-            if(tab==='estoque')carregarProdutos();
-            if(tab==='planos'){carregarPlanos();carregarStatusLoja();}
-            if(tab==='config'){carregarUsuarios();carregarStatusLoja();}
-        }
-
-        // ============================================================
-        // VERIFICAR SESSÃO
-        // ============================================================
-        async function verificarSessao(){
-            try{
-                const res=await fetch('/api/auth/status');
-                const data=await res.json();
-                if(data.logged_in){
-                    state.usuario_id=data.usuario_id;state.nome=data.nome;state.cargo=data.cargo;state.db_id=data.db_id;
-                    state.servidor_id=data.servidor_id;state.nome_loja=data.nome_loja||'Minha Loja';state.cnpj=data.cnpj||'';state.cnpj_dados=data.cnpj_dados||{};state.plano_ativo=data.plano_ativo!==false;
-                    document.getElementById('authPage').classList.add('hidden');document.getElementById('app').classList.add('active');
-                    document.getElementById('userName').textContent=data.nome;document.getElementById('userCargo').textContent=data.cargo;
-                    document.getElementById('userAvatar').textContent=data.nome.charAt(0).toUpperCase();
-                    document.getElementById('dbIdDisplay').textContent='📋 ID: '+data.db_id;
-                    document.getElementById('lojaNomeDisplay').textContent='🏪 '+state.nome_loja;
-                    document.getElementById('dbIdConfig').textContent=data.db_id;
-                    document.getElementById('servidorIdConfig').textContent=data.servidor_id||'---';
-                    document.getElementById('lojaNomeConfig').value=state.nome_loja;
-                    document.getElementById('lojaCnpjConfig').value=state.cnpj;
-                    if(!state.plano_ativo){document.getElementById('planoExpiradoAviso').style.display='flex';}
-                    else{document.getElementById('planoExpiradoAviso').style.display='none';}
-                    if(window._syncInterval)clearInterval(window._syncInterval);
-                    window._syncInterval=setInterval(()=>{sincronizarAgora();},180000);
-                    await Promise.all([carregarProdutos(),carregarClientes(),carregarPlanos(),carregarStatusLoja(),carregarUsuarios(),verificarStatusCaixa(),carregarResumoCaixa(),carregarDashboard('hoje')]);
-                    if(state.cnpj){setTimeout(()=>{buscarDadosCNPJ(state.cnpj);},500);}
-                }
-            }catch(e){console.error('Erro ao verificar sessão:',e);}
         }
 
         // ============================================================
@@ -1125,14 +1247,11 @@
         function fecharCupom(){document.getElementById('cupomModal').classList.remove('active');}
         
         function imprimirCupom() {
-            // Verificar se é Windows
             fetch('/api/health')
                 .then(r => r.json())
                 .then(data => {
                     const isWindows = data && data.os === 'win32';
-                    
                     if (isWindows) {
-                        // Impressão direta via API
                         fetch('/api/imprimir/cupom', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -1163,7 +1282,6 @@
                     setTimeout(() => fecharCupom(), 1000);
                 });
         }
-
 
         // ============================================================
         // NAVEGAÇÃO POR TECLADO NO CUPOM
@@ -1282,7 +1400,6 @@
                     else{document.getElementById('planoExpiradoAviso').style.display='none';}
                     const statusDiv=document.getElementById('statusLoja');
                     
-                    // ===== PRODUTOS =====
                     let produtosText = '';
                     if (data.limite_produtos === -1) {
                         produtosText = '♾️ Ilimitado';
@@ -1290,7 +1407,6 @@
                         produtosText = data.produtos_atuais + ' / ' + data.limite_produtos;
                     }
                     
-                    // ===== BARRA DE PROGRESSO =====
                     let progressBar = '';
                     if (data.limite_produtos !== -1 && data.limite_produtos > 0) {
                         const percent = Math.min(100, (data.produtos_atuais / data.limite_produtos) * 100);
@@ -1302,13 +1418,6 @@
                     }
                     
                     statusDiv.innerHTML='<h4 style="font-size:14px;margin-bottom:10px;"><i class="fas fa-info-circle"></i> Status</h4><div class="info-grid"><div class="info-item"><div class="label">Plano</div><div class="value">'+(data.plano?data.plano.nome:'Nenhum')+'</div></div><div class="info-item"><div class="label">Expira em</div><div class="value '+(data.expirado?'expirado':'ativo')+'">'+(data.expira_em?new Date(data.expira_em).toLocaleDateString():'N/A')+' '+(data.dias_restantes>0?'('+data.dias_restantes.toFixed(1)+' dias)':'')+'</div></div><div class="info-item"><div class="label">Status</div><div class="value '+(data.expirado?'expirado':'ativo')+'">'+(data.expirado?'⚠️ Expirado':'✅ Ativo')+'</div></div><div class="info-item"><div class="label">👥 Usuários</div><div class="value" style="color: var(--blue);">'+(data.usuarios_atuais||0)+' / '+(data.usuarios_limite||1)+'</div></div><div class="info-item" style="grid-column: span 2;"><div class="label">📦 Produtos no Estoque</div><div class="value" style="color: '+(data.limite_produtos===-1?'var(--purple)':data.produtos_restantes<10?'var(--orange)':'var(--green)')+';">'+produtosText+(data.limite_produtos===-1?' ♾️':data.produtos_restantes>0?' ('+data.produtos_restantes+' restantes)':' ⚠️')+'</div>'+progressBar+'</div></div>';
-                }
-            }catch(e){console.error('Erro:',e);}
-        }
-
-                    else{document.getElementById('planoExpiradoAviso').style.display='none';}
-                    const statusDiv=document.getElementById('statusLoja');
-                    statusDiv.innerHTML='<h4 style="font-size:14px;margin-bottom:10px;"><i class="fas fa-info-circle"></i> Status</h4><div class="info-grid"><div class="info-item"><div class="label">Plano</div><div class="value">'+(data.plano?data.plano.nome:'Nenhum')+'</div></div><div class="info-item"><div class="label">Expira em</div><div class="value '+(data.expirado?'expirado':'ativo')+'">'+(data.expira_em?new Date(data.expira_em).toLocaleDateString():'N/A')+' '+(data.dias_restantes>0?'('+data.dias_restantes.toFixed(1)+' dias)':'')+'</div></div><div class="info-item"><div class="label">Status</div><div class="value '+(data.expirado?'expirado':'ativo')+'">'+(data.expirado?'⚠️ Expirado':'✅ Ativo')+'</div></div></div>';
                 }
             }catch(e){console.error('Erro:',e);}
         }
@@ -1458,35 +1567,36 @@
             }
         });
 
-        // Permitir que o Enter no campo código de barras dispare a busca no estoque
-        document.addEventListener('DOMContentLoaded', function() {
-            const codigoInput = document.getElementById('prodCodigo');
-            if (codigoInput) {
-                codigoInput.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        buscarProdutoPorCodigo();
-                    }
-                });
-            }
-        });
-
         // ============================================================
-        // INICIAR
+        // DOM CONTENT LOADED - INICIAR
         // ============================================================
         document.addEventListener('DOMContentLoaded',()=>{
             document.getElementById('versaoSistema').textContent='8.0.0';
+            
+            // Carregar ID do servidor para usar no login/registro
+            fetch('/api/servidor/id')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        state.servidor_id = data.servidor_id;
+                        document.getElementById('loginServidorId').value = data.servidor_id;
+                        document.getElementById('registerServidorId').value = data.servidor_id;
+                        document.getElementById('servidorIdConfig').textContent = data.servidor_id;
+                    }
+                })
+                .catch(console.error);
+            
             verificarSessao();
             setTimeout(()=>document.getElementById('codigoInput').focus(),500);
         });
+
         console.log('🏪 PDV Inteligente v8.0.0');
         console.log('📦 Dados salvos localmente');
         console.log('☁️ Sincronização automática a cada 3 min');
         console.log('📋 CNPJ integrado com busca automática');
-        console.log('🔍 Busca de produtos por código de barras com Thunderbit');
-        console.log('🧪 Plano de teste de 3 minutos disponível');
+        console.log('🔍 Busca de produtos por código de barras');
         console.log('🖨️ Cupom com navegação por teclado (setas + Enter)');
         console.log('✅ PIX funcionando com QR Code');
     </script>
 </body>
-                                                                                                                                                                       </html>
+</html>
