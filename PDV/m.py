@@ -224,6 +224,23 @@ def get_db(db_path):
 # FUNÇÕES FIREBASE
 # ============================================================
 
+
+def validar_cnpj_firebase(cnpj):
+    """Verifica se um CNPJ já existe no Firebase"""
+    try:
+        url = f'{FB_URL}/pdv/usuarios.json'
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            usuarios = response.json()
+            if usuarios:
+                for key, dados in usuarios.items():
+                    if dados.get('cnpj') == cnpj:
+                        return True
+        return False
+    except:
+        return False
+
+
 def _fb_key(db_id):
     return db_id.replace(".", "_").replace("@", "_").replace("#", "").replace("$", "").replace("[", "").replace("]", "").replace("/", "_")
 
@@ -707,7 +724,7 @@ def init_db():
                 db_id TEXT,
                 servidor_id TEXT,
                 nome_loja TEXT DEFAULT '',
-                cnpj TEXT DEFAULT '',
+                cnpj TEXT UNIQUE DEFAULT '',
                 cnpj_dados TEXT DEFAULT '{}',
                 session_id TEXT DEFAULT '',
                 ultimo_acesso TIMESTAMP,
@@ -910,13 +927,60 @@ def init_db():
                 logger.info("✅ Coluna 'criado_em' adicionada em config")
             except: pass
 
+    
+        # Criar índice para CNPJ (otimiza buscas)
+        try:
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_users_cnpj ON users(cnpj)")
+            logger.info("✅ Índice idx_users_cnpj criado")
+        except:
+            pass
+
     logger.info("✅ Bancos de dados inicializados e todas as colunas verificadas")
 
 # ============================================================
 # ROTAS DE AUTENTICAÇÃO
 # ============================================================
 
-@app.route('/api/auth/register', methods=['POST'])
+
+
+# ============================================================
+# ROTA PARA VALIDAR CNPJ (VERIFICA SE JÁ EXISTE)
+# ============================================================
+
+@app.route('/api/validar/cnpj/<cnpj>', methods=['GET'])
+def validar_cnpj_route(cnpj):
+    try:
+        cnpj_limpo = ''.join(filter(str.isdigit, cnpj))
+        if len(cnpj_limpo) != 14:
+            return jsonify({"success": False, "error": "CNPJ inválido"})
+        
+        # Verificar no banco local
+        with get_db('data/usuarios.db') as conn:
+            cursor = conn.execute("SELECT email FROM users WHERE cnpj=?", (cnpj_limpo,))
+            result = cursor.fetchone()
+            if result:
+                return jsonify({
+                    "success": True,
+                    "existe": True,
+                    "email": result[0],
+                    "fonte": "local"
+                })
+        
+        # Verificar no Firebase
+        if validar_cnpj_firebase(cnpj_limpo):
+            return jsonify({
+                "success": True,
+                "existe": True,
+                "fonte": "firebase"
+            })
+        
+        return jsonify({"success": True, "existe": False})
+    except Exception as e:
+        logger.error(f"❌ Erro ao validar CNPJ: {e}")
+        return jsonify({"success": False, "error": str(e)})
+
+
+@app.route(\'/api/auth/register\', methods=['POST'])
 @rate_limit(max_requests=5, window=300)
 def register():
     try:
@@ -941,6 +1005,27 @@ def register():
         usuario_firebase = carregar_usuario_firebase(db_id)
         if usuario_firebase and usuario_firebase.get('email') != email:
             return jsonify({"success": False, "error": "Este ID de loja pertence a outro usuário"})
+
+        
+        # ===== VERIFICAR SE CNPJ JÁ EXISTE =====
+        if cnpj:
+            # Verificar no banco local
+            with get_db('data/usuarios.db') as conn:
+                cursor = conn.execute("SELECT email FROM users WHERE cnpj=?", (cnpj,))
+                result = cursor.fetchone()
+                if result:
+                    return jsonify({
+                        "success": False, 
+                        "error": f"Este CNPJ já está cadastrado no email: {result[0]}. Faça login com essa conta."
+                    })
+            
+            # Verificar no Firebase
+            if validar_cnpj_firebase(cnpj):
+                return jsonify({
+                    "success": False,
+                    "error": "Este CNPJ já está cadastrado. Faça login com sua conta existente."
+                })
+        
 
         user_id = str(uuid.uuid4())[:8]
         with get_db('data/usuarios.db') as conn:
@@ -1954,7 +2039,28 @@ def criar_usuario():
             if cursor.fetchone():
                 return jsonify({"success": False, "error": "Este email já está cadastrado"})
 
-            user_id = str(uuid.uuid4())[:8]
+            
+        # ===== VERIFICAR SE CNPJ JÁ EXISTE =====
+        if cnpj:
+            # Verificar no banco local
+            with get_db('data/usuarios.db') as conn:
+                cursor = conn.execute("SELECT email FROM users WHERE cnpj=?", (cnpj,))
+                result = cursor.fetchone()
+                if result:
+                    return jsonify({
+                        "success": False, 
+                        "error": f"Este CNPJ já está cadastrado no email: {result[0]}. Faça login com essa conta."
+                    })
+            
+            # Verificar no Firebase
+            if validar_cnpj_firebase(cnpj):
+                return jsonify({
+                    "success": False,
+                    "error": "Este CNPJ já está cadastrado. Faça login com sua conta existente."
+                })
+        
+
+        user_id = str(uuid.uuid4())[:8]
             conn.execute("""
                 INSERT INTO users (id, nome, email, senha, cargo, db_id, servidor_id, nome_loja, cnpj)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
