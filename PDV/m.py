@@ -980,7 +980,7 @@ def validar_cnpj_route(cnpj):
         return jsonify({"success": False, "error": str(e)})
 
 
-@app.route(\'/api/auth/register\', methods=['POST'])
+@app.route('/api/auth/register', methods=['POST'])
 @rate_limit(max_requests=5, window=300)
 def register():
     try:
@@ -1993,6 +1993,7 @@ def get_usuarios():
         logger.error(f"❌ Erro ao buscar usuários: {e}")
         return jsonify({"success": False, "error": str(e)})
 
+
 @app.route('/api/usuarios', methods=['POST'])
 def criar_usuario():
     try:
@@ -2008,6 +2009,7 @@ def criar_usuario():
         nome = (data.get('nome') or '').strip()
         email = (data.get('email') or '').strip().lower()
         senha = data.get('senha') or ''
+        cnpj = session.get('cnpj', '') or ''
 
         if not nome or not email or not senha:
             return jsonify({"success": False, "error": "Preencha nome, email e senha"})
@@ -2039,28 +2041,24 @@ def criar_usuario():
             if cursor.fetchone():
                 return jsonify({"success": False, "error": "Este email já está cadastrado"})
 
-            
-        # ===== VERIFICAR SE CNPJ JÁ EXISTE =====
-        if cnpj:
-            # Verificar no banco local
-            with get_db('data/usuarios.db') as conn:
+            # ===== VERIFICAR SE CNPJ JÁ EXISTE (LOCAL) =====
+            if cnpj:
                 cursor = conn.execute("SELECT email FROM users WHERE cnpj=?", (cnpj,))
                 result = cursor.fetchone()
                 if result:
                     return jsonify({
-                        "success": False, 
+                        "success": False,
                         "error": f"Este CNPJ já está cadastrado no email: {result[0]}. Faça login com essa conta."
                     })
-            
-            # Verificar no Firebase
-            if validar_cnpj_firebase(cnpj):
+
+            # ===== VERIFICAR CNPJ NO FIREBASE =====
+            if cnpj and validar_cnpj_firebase(cnpj):
                 return jsonify({
                     "success": False,
                     "error": "Este CNPJ já está cadastrado. Faça login com sua conta existente."
                 })
-        
 
-        user_id = str(uuid.uuid4())[:8]
+            user_id = str(uuid.uuid4())[:8]
             conn.execute("""
                 INSERT INTO users (id, nome, email, senha, cargo, db_id, servidor_id, nome_loja, cnpj)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -2091,6 +2089,7 @@ def criar_usuario():
     except Exception as e:
         logger.error(f"❌ Erro ao criar usuário: {e}")
         return jsonify({"success": False, "error": str(e)})
+
 
 @app.route('/api/usuarios/<user_id>', methods=['DELETE'])
 def delete_usuario(user_id):
