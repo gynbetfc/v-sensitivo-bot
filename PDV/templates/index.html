@@ -88,8 +88,6 @@
         .pdv-grid .input-group input{width:100%;padding:9px 12px;border:1px solid var(--border-color);border-radius:8px;font-size:14px;transition:var(--transition);background:var(--bg-primary);color:#fff}
         .pdv-grid .input-group input:focus{outline:0;border-color:var(--green);box-shadow:0 0 0 3px rgba(34,197,94,.1)}
         .pdv-grid .input-group input[readonly]{color:var(--text-secondary);background:var(--bg-primary);cursor:not-allowed}
-        .pdv-grid .btn-buscar{width:100%;padding:9px;background:rgba(59,130,246,.15);color:var(--blue);border:1px solid rgba(59,130,246,.2);border-radius:8px;cursor:pointer;font-weight:500;transition:var(--transition);margin-bottom:8px}
-        .pdv-grid .btn-buscar:hover{background:rgba(59,130,246,.25)}
         .pdv-grid .status-msg{padding:8px 12px;border-radius:8px;font-size:12px;margin-bottom:10px;background:var(--bg-primary);color:var(--text-secondary)}
         .pdv-grid .status-msg.success{color:var(--green);background:rgba(34,197,94,.1)}
         .pdv-grid .status-msg.error{color:var(--red);background:rgba(239,68,68,.1)}
@@ -448,8 +446,8 @@
                 <div class="pdv-grid">
                     <div class="card" style="position:relative;">
                         <h3><i class="fas fa-cart-plus" style="color:var(--green);"></i> Ponto de Venda</h3>
-                        <div class="input-group"><label>Código de Barras <span style="font-size:10px;color:var(--text-muted);font-weight:400;">(F1 para focar)</span></label><input type="text" id="codigoInput" placeholder="Digite ou leia o código"></div>
-                        <div class="input-group" style="position:relative;"><label>Buscar Produto <span style="font-size:10px;color:var(--text-muted);font-weight:400;">(F2 para focar)</span></label><input type="text" id="buscaProdutoInput" placeholder="Digite o nome do produto"><div class="search-results" id="searchResults"></div></div>
+                        <div class="input-group"><label>Código de Barras <span style="font-size:10px;color:var(--text-muted);font-weight:400;">(F1)</span></label><input type="text" id="codigoInput" placeholder="Digite ou leia o código"></div>
+                        <div class="input-group" style="position:relative;"><label>Buscar Produto <span style="font-size:10px;color:var(--text-muted);font-weight:400;">(F2)</span></label><input type="text" id="buscaProdutoInput" placeholder="Digite o nome do produto"><div class="search-results" id="searchResults"></div></div>
                         <div class="input-group"><label>Produto Selecionado</label><input type="text" id="nomeProduto" readonly placeholder="Selecione um produto"></div>
                         <div class="input-group"><label>Preço Unitário (R$)</label><input type="text" id="precoProduto" readonly placeholder="0,00"></div>
                         <div class="status-msg" id="statusMsg">Aguardando produto...</div>
@@ -1157,7 +1155,7 @@
         function gerarRelatorio(){showToast('📄 Relatório gerado!','success');}
 
         // ============================================================
-        // DASHBOARD - CORRIGIDO
+        // DASHBOARD
         // ============================================================
         async function carregarDashboard(periodo){
             if(!state.plano_ativo){showToast('⚠️ Plano expirado!','warning');return;}
@@ -1309,26 +1307,44 @@
         document.addEventListener('keydown', function(e) {
             const tag = document.activeElement.tagName;
             const isInput = tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA';
+            const modalPagamentoAberto = document.getElementById('paymentModal').classList.contains('active');
+            const modalCupomAberto = document.getElementById('cupomModal').classList.contains('active');
+            
+            // ===== ESC - Fechar modais (prioridade máxima) =====
+            if (e.key === 'Escape') {
+                if (modalPagamentoAberto) {
+                    e.preventDefault();
+                    fecharPagamento();
+                    return;
+                }
+                if (modalCupomAberto) {
+                    e.preventDefault();
+                    fecharCupom();
+                    return;
+                }
+                if (document.getElementById('modalPix').classList.contains('active')) {
+                    e.preventDefault();
+                    fecharModalPix();
+                    return;
+                }
+                if (document.getElementById('modalCliente').classList.contains('active')) {
+                    e.preventDefault();
+                    fecharModalCliente();
+                    return;
+                }
+                if (document.getElementById('searchResults').classList.contains('active')) {
+                    document.getElementById('searchResults').classList.remove('active');
+                    document.getElementById('buscaProdutoInput').value = '';
+                    document.getElementById('codigoInput').focus();
+                }
+                return;
+            }
             
             // ===== BLOQUEAR F5 (recarregar página) =====
             if (e.key === 'F5' || (e.ctrlKey && (e.key === 'r' || e.key === 'R'))) {
                 e.preventDefault();
-                if (state.db_id) {
-                    showToast('🔄 Atualizando dados...', 'info');
-                    Promise.all([
-                        carregarProdutos(),
-                        carregarClientes(),
-                        carregarStatusLoja(),
-                        carregarUsuarios(),
-                        verificarStatusCaixa(),
-                        carregarResumoCaixa(),
-                        carregarDashboard(state.periodo || 'hoje')
-                    ]).then(() => {
-                        showToast('✅ Dados atualizados!', 'success');
-                    }).catch(() => {
-                        showToast('⚠️ Erro ao atualizar alguns dados', 'warning');
-                    });
-                }
+                e.stopPropagation();
+                showToast('🔄 Use os botões para atualizar', 'info');
                 return;
             }
             
@@ -1339,30 +1355,22 @@
                 
                 const key = e.key;
                 
-                // ===== VERIFICAR SE MODAL DE PAGAMENTO ESTÁ ABERTO =====
-                const modalPagamentoAberto = document.getElementById('paymentModal').classList.contains('active');
-                
                 // ===== SE MODAL DE PAGAMENTO ESTIVER ABERTO =====
                 if (modalPagamentoAberto) {
                     if (key === 'F1') {
-                        // F1 no modal = Finalizar SEM impressão
                         confirmarPagamento(false);
                         return;
                     }
                     if (key === 'F2') {
-                        // F2 no modal = Finalizar COM impressão
                         confirmarPagamento(true);
                         return;
                     }
-                    if (key === 'Escape') {
-                        fecharPagamento();
-                        return;
-                    }
-                    return; // Bloqueia outras teclas F quando modal está aberto
+                    showToast('⛔ Use F1 ou F2 para finalizar', 'warning');
+                    return;
                 }
                 
                 // ===== SE MODAL DE CUPOM ESTIVER ABERTO =====
-                if (document.getElementById('cupomModal').classList.contains('active')) {
+                if (modalCupomAberto) {
                     if (key === 'F1') {
                         fecharCupomSemImprimir();
                         return;
@@ -1371,34 +1379,53 @@
                         imprimirCupom();
                         return;
                     }
+                    showToast('⛔ Use F1 ou F2 no cupom', 'warning');
+                    return;
+                }
+                
+                // ===== SE MODAL PIX ESTIVER ABERTO =====
+                if (document.getElementById('modalPix').classList.contains('active')) {
+                    if (key === 'Escape') {
+                        fecharModalPix();
+                    }
+                    return;
+                }
+                
+                // ===== SE MODAL CLIENTE ESTIVER ABERTO =====
+                if (document.getElementById('modalCliente').classList.contains('active')) {
+                    if (key === 'Escape') {
+                        fecharModalCliente();
+                    }
                     return;
                 }
                 
                 // ===== SE NENHUM MODAL ESTIVER ABERTO =====
                 
-                // F1 - Focar no campo de código de barras
+                // ===== F1 - Focar no campo de código de barras =====
                 if (key === 'F1') {
                     trocarTab('vendas');
                     setTimeout(() => {
                         document.getElementById('codigoInput').focus();
                         document.getElementById('codigoInput').select();
-                    }, 100);
-                    showToast('🔍 Foco no código de barras (F1)', 'info');
+                    }, 150);
+                    showToast('🔍 Código de barras (F1)', 'info');
                     return;
                 }
                 
-                // F2 - Focar no campo de busca por nome
+                // ===== F2 - Focar no campo de busca por nome =====
                 if (key === 'F2') {
                     trocarTab('vendas');
                     setTimeout(() => {
-                        document.getElementById('buscaProdutoInput').focus();
-                        document.getElementById('buscaProdutoInput').select();
-                    }, 100);
+                        const campo = document.getElementById('buscaProdutoInput');
+                        campo.focus();
+                        campo.select();
+                        campo.click();
+                    }, 150);
                     showToast('🔍 Buscar por nome (F2)', 'info');
                     return;
                 }
                 
-                // F5 - Finalizar Venda (Abrir modal de pagamento)
+                // ===== F5 - Abrir modal de pagamento =====
                 if (key === 'F5') {
                     if (!state.db_id) {
                         showToast('⚠️ Faça login primeiro!', 'warning');
@@ -1420,74 +1447,53 @@
                     return;
                 }
                 
-                // F3 - Dashboard (navegação)
+                // ===== F3 - Dashboard =====
                 if (key === 'F3') {
                     trocarTab('dashboard');
                     showToast('📊 Dashboard (F3)', 'info');
                     return;
                 }
                 
-                // F4 - Estoque
+                // ===== F4 - Estoque =====
                 if (key === 'F4') {
                     trocarTab('estoque');
                     showToast('📦 Estoque (F4)', 'info');
                     return;
                 }
                 
-                // F6 - Clientes
+                // ===== F6 - Clientes =====
                 if (key === 'F6') {
                     trocarTab('clientes');
                     showToast('👥 Clientes (F6)', 'info');
                     return;
                 }
                 
-                // F7 - Caixa
+                // ===== F7 - Caixa =====
                 if (key === 'F7') {
                     trocarTab('caixa');
                     showToast('💰 Caixa (F7)', 'info');
                     return;
                 }
                 
-                // F8 - Planos
+                // ===== F8 - Planos =====
                 if (key === 'F8') {
                     trocarTab('planos');
                     showToast('🏪 Planos (F8)', 'info');
                     return;
                 }
                 
-                // F9 - Configurações
+                // ===== F9 - Configurações =====
                 if (key === 'F9') {
                     trocarTab('config');
                     showToast('⚙️ Configurações (F9)', 'info');
                     return;
                 }
                 
-                // F10, F11, F12 - Bloqueados (não fazem nada)
+                // ===== F10, F11, F12 - Bloqueados =====
                 if (key === 'F10' || key === 'F11' || key === 'F12') {
                     showToast('⛔ Tecla F' + key.replace('F', '') + ' bloqueada', 'warning');
                     return;
                 }
-            }
-            
-            // ===== ESC - Fechar modais =====
-            if (e.key === 'Escape') {
-                if (document.getElementById('paymentModal').classList.contains('active')) {
-                    fecharPagamento();
-                }
-                if (document.getElementById('modalPix').classList.contains('active')) {
-                    fecharModalPix();
-                }
-                if (document.getElementById('modalCliente').classList.contains('active')) {
-                    fecharModalCliente();
-                }
-                if (document.getElementById('cupomModal').classList.contains('active')) {
-                    fecharCupom();
-                }
-                if (document.getElementById('searchResults').classList.contains('active')) {
-                    document.getElementById('searchResults').classList.remove('active');
-                    document.getElementById('buscaProdutoInput').value = '';
-                }
-                document.getElementById('codigoInput').focus();
             }
         });
 
@@ -1660,7 +1666,7 @@
         async function excluirUsuario(id){if(!confirm('Excluir este usuário?'))return;try{const res=await fetch('/api/usuarios/'+id,{method:'DELETE'});const data=await res.json();if(data.success){showToast('🗑️ Usuário excluído!','success');carregarUsuarios();carregarStatusLoja();}else{showToast('❌ Erro: '+data.error,'error');}}catch(e){showToast('❌ Erro ao excluir!','error');}}
 
         // ============================================================
-        // PAGAMENTO - v9.0.0
+        // PAGAMENTO
         // ============================================================
         let metodoAtivo = 'Dinheiro';
         let _deveImprimir = false;
@@ -1861,7 +1867,7 @@
         console.log('⌨️ ATALHOS:');
         console.log('  F1 → Focar código de barras');
         console.log('  F2 → Focar busca por nome');
-        console.log('  F5 → Finalizar venda (abrir modal)');
+        console.log('  F5 → Finalizar venda');
         console.log('  F1 (modal) → Finalizar sem imprimir');
         console.log('  F2 (modal) → Finalizar com impressão');
         console.log('  ↑↓ (modal) → Navegar métodos');
