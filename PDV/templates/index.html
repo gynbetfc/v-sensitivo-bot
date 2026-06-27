@@ -137,15 +137,7 @@
         .payment-modal .payment-input input{flex:1;padding:8px 10px;border:0;background:0;color:#fff;font-size:16px;font-weight:600;text-align:right;outline:0}
         .payment-modal .payment-input input::placeholder{color:var(--text-muted);font-weight:400}
         .payment-modal .payment-input .remaining{font-size:12px;color:var(--text-muted)}
-        .payment-modal .payment-actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
-        .payment-modal .payment-actions button{flex:1;padding:12px;border:0;border-radius:8px;font-weight:600;cursor:pointer;transition:var(--transition);font-size:14px;min-width:100px}
-        .payment-modal .payment-actions .btn-confirm{background:var(--green);color:#fff}
-        .payment-modal .payment-actions .btn-confirm:hover{background:var(--green-dark)}
-        .payment-modal .payment-actions .btn-cancel{background:0;color:var(--text-secondary);border:1px solid var(--border-color)}
-        .payment-modal .payment-actions .btn-cancel:hover{background:rgba(255,255,255,.05)}
-        .payment-modal .cliente-input{margin-bottom:16px}
-        .payment-modal .cliente-input input{width:100%;padding:10px 12px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-primary);color:#fff;font-size:14px}
-        .payment-modal .cliente-input input:focus{outline:0;border-color:var(--green)}
+        .payment-modal .payment-actions{display:none}
         .payment-modal .atalhos-info{font-size:11px;color:var(--text-muted);text-align:center;margin-top:12px;padding:8px;background:var(--bg-primary);border-radius:6px}
         .payment-modal .atalhos-info kbd{background:var(--border-color);padding:2px 8px;border-radius:4px;font-size:10px;color:var(--text-secondary);border:1px solid var(--border-color)}
         .clientes-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
@@ -303,18 +295,19 @@
         .cupom-modal .cupom-box .cupom-linha{display:flex;justify-content:space-between;padding:3px 0;font-size:13px;border-bottom:1px dotted #e5e7eb}
         .cupom-modal .cupom-box .cupom-total{font-size:18px;font-weight:700;padding:10px 0;border-top:2px solid #333;margin-top:10px;text-align:center;color:#2E7D32}
         .cupom-modal .cupom-box .cupom-footer{text-align:center;font-size:12px;color:#6b7280;margin-top:15px;padding-top:10px;border-top:2px dashed #333}
-        .cupom-modal .cupom-actions{display:flex;gap:10px;flex-direction:column;margin-top:16px}
-        .cupom-modal .cupom-actions button{width:100%;padding:12px;border:0;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;transition:var(--transition)}
-        .cupom-modal .cupom-actions .btn-f1{background:var(--blue);color:#fff}
-        .cupom-modal .cupom-actions .btn-f1:hover{background:#2563eb}
-        .cupom-modal .cupom-actions .btn-f2{background:var(--green);color:#fff}
-        .cupom-modal .cupom-actions .btn-f2:hover{background:var(--green-dark)}
-        @media print{.cupom-modal .btn-close-cupom,.cupom-modal .cupom-actions{display:none!important}.cupom-modal .cupom-box{box-shadow:none;border:1px solid #ccc}}
-        @media print{body *{visibility:hidden}.cupom-box,.cupom-box *{visibility:visible}.cupom-box{position:absolute;left:0;top:0;width:100%;max-width:100%;border:none;box-shadow:none;padding:10px;font-size:12px}.cupom-box .cupom-header{font-size:14px}.cupom-box .cupom-linha{font-size:11px;padding:2px 0}.cupom-box .cupom-total{font-size:14px}.cupom-box .btn-close-cupom,.cupom-box .cupom-actions{display:none!important}}
+        .cupom-modal .cupom-options{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+        .cupom-modal .cupom-options button{padding:14px;border:2px solid var(--border-color);border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;transition:var(--transition);background:var(--bg-primary);color:var(--text-secondary);text-align:center}
+        .cupom-modal .cupom-options button:hover{border-color:var(--green);color:#fff;background:rgba(34,197,94,.05)}
+        .cupom-modal .cupom-options button.active{border-color:var(--green);background:rgba(34,197,94,.15);color:var(--green)}
+        .cupom-modal .cupom-options button i{margin-right:10px}
+        @media print{.cupom-modal .btn-close-cupom,.cupom-modal .cupom-options{display:none!important}.cupom-modal .cupom-box{box-shadow:none;border:1px solid #ccc}}
+        @media print{body *{visibility:hidden}.cupom-box,.cupom-box *{visibility:visible}.cupom-box{position:absolute;left:0;top:0;width:100%;max-width:100%;border:none;box-shadow:none;padding:10px;font-size:12px}.cupom-box .cupom-header{font-size:14px}.cupom-box .cupom-linha{font-size:11px;padding:2px 0}.cupom-box .cupom-total{font-size:14px}.cupom-box .btn-close-cupom,.cupom-box .cupom-options{display:none!important}}
         @media(max-width:1024px){.pdv-grid,.chart-row,.config-grid,.estoque-grid{grid-template-columns:1fr}.payment-modal .payment-methods{flex-direction:column}}
         @media(max-width:768px){body{padding:8px}.auth-box{padding:24px}.header{padding:10px 14px}.header .logo{font-size:16px}.header .user .nome{display:none}.menu-toggle{display:block}.nav{display:none;flex-direction:column;padding:8px}.nav.open{display:flex}.nav button{padding:10px 14px;width:100%;justify-content:center;border-radius:8px}.content{padding:10px}.card{padding:14px}.stats-grid{grid-template-columns:1fr 1fr}.planos-grid{grid-template-columns:1fr}.caixa-card{padding:16px}.modal{padding:20px;margin:10px}.clientes-actions{flex-direction:column}.clientes-actions input{width:100%}.clientes-table{font-size:12px}.clientes-table td,.clientes-table th{padding:4px}.payment-modal .modal{padding:20px;margin:10px}.payment-modal .total-display .value{font-size:28px}.venda-item .produtos-detalhe{font-size:9px}}
         @media(max-width:480px){.stats-grid{grid-template-columns:1fr 1fr;gap:8px}.stat-card .value{font-size:20px}.stat-card{padding:12px}.auth-box{padding:16px}.auth-box h1{font-size:20px}.pdv-grid .input-group input{font-size:13px;padding:8px 10px}.cart-table{font-size:11px}.cart-table td,.cart-table th{padding:3px}.caixa-card .btn-group button{min-width:80px;padding:8px 14px;font-size:12px}.planos-grid{grid-template-columns:1fr}.payment-modal .payment-methods{flex-direction:column}.payment-modal .payment-input{flex-wrap:wrap}.payment-modal .payment-input .label{min-width:100%}}
         .text-center{text-align:center}.text-muted{color:var(--text-muted)}.mt-8{margin-top:8px}.mt-16{margin-top:16px}.mb-8{margin-bottom:8px}.mb-16{margin-bottom:16px}.flex{display:flex}.flex-center{display:flex;align-items:center;justify-content:center}.gap-8{gap:8px}.w-full{width:100%}.loading-spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--border-color);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+        .f1-hint{color:var(--text-muted);font-size:11px;text-align:center;padding:8px;background:var(--bg-primary);border-radius:6px;margin-top:6px}
+        .f1-hint kbd{background:var(--border-color);padding:2px 10px;border-radius:4px;font-size:10px;color:var(--text-secondary);border:1px solid var(--border-color)}
     </style>
 </head>
 <body>
@@ -350,11 +343,10 @@
             </div>
             <div id="paymentInputs"></div>
             <div class="payment-actions">
-                <button class="btn-cancel" onclick="fecharPagamento()">Cancelar</button>
-                <button class="btn-confirm" onclick="confirmarPagamento(false)"><i class="fas fa-check"></i> F1 - Finalizar</button>
+                <button class="btn-cancel" onclick="fecharPagamento()" style="width:100%;padding:12px;background:0;color:var(--text-secondary);border:1px solid var(--border-color);border-radius:8px;font-weight:600;cursor:pointer;transition:var(--transition);font-size:14px;">Cancelar</button>
             </div>
             <div class="atalhos-info">
-                <kbd>↑</kbd> <kbd>↓</kbd> Navegar &nbsp;|&nbsp; <kbd>F1</kbd> Finalizar sem imprimir &nbsp;|&nbsp; <kbd>F2</kbd> Finalizar com impressão &nbsp;|&nbsp; <kbd>ESC</kbd> Cancelar
+                <kbd>↑</kbd> <kbd>↓</kbd> Navegar &nbsp;|&nbsp; <kbd>F1</kbd> Finalizar
             </div>
         </div>
     </div>
@@ -375,10 +367,11 @@
                 <div class="cupom-linha"><span>Venda #</span><span id="cupomVendaId">--</span></div>
                 <div class="cupom-footer">Obrigado pela preferência!</div>
             </div>
-            <div class="cupom-actions" id="cupomActions">
-                <button class="btn-f1" id="cupomBtnF1" onclick="fecharCupomSemImprimir()"><kbd>F1</kbd> FECHAR SEM IMPRIMIR</button>
-                <button class="btn-f2" id="cupomBtnF2" onclick="imprimirCupom()"><kbd>F2</kbd> IMPRIMIR CUPOM</button>
+            <div class="cupom-options" id="cupomOptions">
+                <button id="cupomOptImprimir" class="active" onclick="cupomEscolher('imprimir')"><i class="fas fa-print"></i> 🖨️ Imprimir Cupom</button>
+                <button id="cupomOptNaoImprimir" onclick="cupomEscolher('nao')"><i class="fas fa-times"></i> ❌ Não Imprimir</button>
             </div>
+            <div class="f1-hint"><kbd>↑</kbd> <kbd>↓</kbd> Escolher &nbsp;|&nbsp; <kbd>F1</kbd> Confirmar</div>
         </div>
     </div>
     <div class="auth-page" id="authPage">
@@ -446,12 +439,13 @@
                 <div class="pdv-grid">
                     <div class="card" style="position:relative;">
                         <h3><i class="fas fa-cart-plus" style="color:var(--green);"></i> Ponto de Venda</h3>
-                        <div class="input-group"><label>Código de Barras <span style="font-size:10px;color:var(--text-muted);font-weight:400;">(F1)</span></label><input type="text" id="codigoInput" placeholder="Digite ou leia o código"></div>
-                        <div class="input-group" style="position:relative;"><label>Buscar Produto <span style="font-size:10px;color:var(--text-muted);font-weight:400;">(F2)</span></label><input type="text" id="buscaProdutoInput" placeholder="Digite o nome do produto"><div class="search-results" id="searchResults"></div></div>
+                        <div class="input-group"><label>Código de Barras</label><input type="text" id="codigoInput" placeholder="Digite ou leia o código"></div>
+                        <div class="input-group" style="position:relative;"><label>Buscar Produto</label><input type="text" id="buscaProdutoInput" placeholder="Digite o nome do produto"><div class="search-results" id="searchResults"></div></div>
                         <div class="input-group"><label>Produto Selecionado</label><input type="text" id="nomeProduto" readonly placeholder="Selecione um produto"></div>
                         <div class="input-group"><label>Preço Unitário (R$)</label><input type="text" id="precoProduto" readonly placeholder="0,00"></div>
                         <div class="status-msg" id="statusMsg">Aguardando produto...</div>
-                        <button class="btn-finalizar" id="btnFinalizar" onclick="abrirPagamento(false)" disabled><i class="fas fa-check-circle"></i> FINALIZAR VENDA <span style="font-size:10px;font-weight:400;">(F5)</span></button>
+                        <button class="btn-finalizar" id="btnFinalizar" onclick="abrirPagamento()" disabled><i class="fas fa-check-circle"></i> FINALIZAR VENDA</button>
+                        <div class="f1-hint"><kbd>F1</kbd> Avançar / Confirmar</div>
                     </div>
                     <div class="card">
                         <h3><i class="fas fa-shopping-bag" style="color:var(--blue);"></i> Carrinho</h3>
@@ -866,8 +860,194 @@
         const state = {
             usuario_id:null,nome:'',cargo:'',db_id:null,servidor_id:null,nome_loja:'',cnpj:'',cnpj_dados:{},caixa_aberto:false,
             itens:[],subtotal:0,total:0,produtos:[],clientes:[],periodo:'hoje',searchIndex:-1,_resultados:[],produtoSelecionado:null,plano_ativo:true,
-            ultimaVenda:null
+            ultimaVenda:null,
+            // Controle do F1
+            f1Estado: 0, // 0=codigo, 1=busca, 2=modal, 3=cupom
+            cupomEscolha: 'imprimir' // 'imprimir' ou 'nao'
         };
+
+        // ============================================================
+        // ATALHO F1 - A TECLA MÁGICA
+        // ============================================================
+        document.addEventListener('keydown', function(e) {
+            const modalPagamentoAberto = document.getElementById('paymentModal').classList.contains('active');
+            const modalCupomAberto = document.getElementById('cupomModal').classList.contains('active');
+            
+            // ===== BLOQUEAR TODAS AS TECLAS F (menos F1) =====
+            if (e.key >= 'F2' && e.key <= 'F12') {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+            
+            // ===== BLOQUEAR F5 (recarregar página) =====
+            if (e.key === 'F5' || (e.ctrlKey && (e.key === 'r' || e.key === 'R'))) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+            
+            // ===== BLOQUEAR ENTER =====
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+            
+            // ===== ESC - Fechar modais =====
+            if (e.key === 'Escape') {
+                if (modalPagamentoAberto) {
+                    e.preventDefault();
+                    fecharPagamento();
+                    return;
+                }
+                if (modalCupomAberto) {
+                    e.preventDefault();
+                    fecharCupom();
+                    return;
+                }
+                if (document.getElementById('modalPix').classList.contains('active')) {
+                    e.preventDefault();
+                    fecharModalPix();
+                    return;
+                }
+                if (document.getElementById('modalCliente').classList.contains('active')) {
+                    e.preventDefault();
+                    fecharModalCliente();
+                    return;
+                }
+                if (document.getElementById('searchResults').classList.contains('active')) {
+                    document.getElementById('searchResults').classList.remove('active');
+                    document.getElementById('buscaProdutoInput').value = '';
+                    document.getElementById('codigoInput').focus();
+                }
+                return;
+            }
+            
+            // ===== SETAS ↑↓ no modal de pagamento =====
+            if (modalPagamentoAberto && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+                e.preventDefault();
+                const metodos = document.querySelectorAll('#paymentMethods button');
+                if (metodos.length === 0) return;
+                
+                let currentIndex = -1;
+                metodos.forEach((el, i) => { if (el.classList.contains('active')) currentIndex = i; });
+                
+                if (e.key === 'ArrowDown') {
+                    const nextIndex = (currentIndex + 1) % metodos.length;
+                    selecionarMetodo(metodos[nextIndex].dataset.metodo);
+                    metodos[nextIndex].focus();
+                } else if (e.key === 'ArrowUp') {
+                    const prevIndex = (currentIndex - 1 + metodos.length) % metodos.length;
+                    selecionarMetodo(metodos[prevIndex].dataset.metodo);
+                    metodos[prevIndex].focus();
+                }
+                return;
+            }
+            
+            // ===== SETAS ↑↓ no cupom =====
+            if (modalCupomAberto && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+                e.preventDefault();
+                const opts = document.querySelectorAll('#cupomOptions button');
+                if (opts.length === 0) return;
+                
+                let currentIndex = -1;
+                opts.forEach((el, i) => { if (el.classList.contains('active')) currentIndex = i; });
+                
+                if (currentIndex === -1) currentIndex = 0;
+                
+                if (e.key === 'ArrowDown') {
+                    const nextIndex = (currentIndex + 1) % opts.length;
+                    cupomEscolher(opts[nextIndex].id === 'cupomOptImprimir' ? 'imprimir' : 'nao');
+                    opts[nextIndex].focus();
+                } else if (e.key === 'ArrowUp') {
+                    const prevIndex = (currentIndex - 1 + opts.length) % opts.length;
+                    cupomEscolher(opts[prevIndex].id === 'cupomOptImprimir' ? 'imprimir' : 'nao');
+                    opts[prevIndex].focus();
+                }
+                return;
+            }
+            
+            // ===== F1 - A TECLA MÁGICA =====
+            if (e.key === 'F1') {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // --- SE MODAL DE CUPOM ESTIVER ABERTO ---
+                if (modalCupomAberto) {
+                    if (state.cupomEscolha === 'imprimir') {
+                        imprimirCupom();
+                    } else {
+                        fecharCupomSemImprimir();
+                    }
+                    return;
+                }
+                
+                // --- SE MODAL DE PAGAMENTO ESTIVER ABERTO ---
+                if (modalPagamentoAberto) {
+                    confirmarPagamento(false);
+                    return;
+                }
+                
+                // --- SE NENHUM MODAL ESTIVER ABERTO ---
+                
+                // Verificar se há itens no carrinho
+                if (state.itens.length > 0) {
+                    // Se tem itens, verifica se caixa está aberto e plano ativo
+                    if (!state.caixa_aberto) {
+                        showToast('🔒 Caixa fechado! Abra o caixa primeiro.', 'warning');
+                        return;
+                    }
+                    if (!state.plano_ativo) {
+                        showToast('⚠️ Plano expirado!', 'warning');
+                        return;
+                    }
+                    // Abrir modal de pagamento
+                    abrirPagamento();
+                    return;
+                }
+                
+                // Se não tem itens, alterna entre código de barras e busca
+                const codigoInput = document.getElementById('codigoInput');
+                const buscaInput = document.getElementById('buscaProdutoInput');
+                
+                // Se o foco está no código ou em nenhum lugar, foca no código
+                if (document.activeElement !== buscaInput || state.f1Estado === 0) {
+                    codigoInput.focus();
+                    codigoInput.select();
+                    state.f1Estado = 1;
+                    showToast('🔍 Código de barras (F1)', 'info');
+                } else {
+                    // Foca na busca
+                    buscaInput.focus();
+                    buscaInput.select();
+                    state.f1Estado = 0;
+                    showToast('🔍 Buscar por nome (F1)', 'info');
+                }
+            }
+        });
+
+        // ============================================================
+        // FUNÇÕES DO CUPOM
+        // ============================================================
+        function cupomEscolher(opcao) {
+            state.cupomEscolha = opcao;
+            const optImprimir = document.getElementById('cupomOptImprimir');
+            const optNao = document.getElementById('cupomOptNaoImprimir');
+            
+            if (opcao === 'imprimir') {
+                optImprimir.classList.add('active');
+                optNao.classList.remove('active');
+            } else {
+                optNao.classList.add('active');
+                optImprimir.classList.remove('active');
+            }
+        }
+
+        function fecharCupomSemImprimir() {
+            showToast('✅ Venda finalizada sem impressão!', 'success');
+            fecharCupom();
+        }
 
         // ============================================================
         // BUSCAR DADOS CNPJ
@@ -991,7 +1171,13 @@
         // ============================================================
         // PDV - CÓDIGO DE BARRAS E BUSCA
         // ============================================================
-        document.getElementById('codigoInput').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();const codigo=this.value.trim();if(codigo){adicionarPorCodigo(codigo);this.value='';this.focus();}}});
+        document.getElementById('codigoInput').addEventListener('keydown',function(e){
+            if(e.key==='Enter'){
+                e.preventDefault();
+                const codigo=this.value.trim();
+                if(codigo){adicionarPorCodigo(codigo);this.value='';this.focus();}
+            }
+        });
         const buscaInput=document.getElementById('buscaProdutoInput');
         const searchResults=document.getElementById('searchResults');
         buscaInput.addEventListener('focus',function(){if(this.value.trim()){triggerSearch(this.value);}});
@@ -1246,16 +1432,13 @@
             document.getElementById('cupomModal').classList.add('active');
             ultimoCupomData=venda;
             ultimaVendaId=venda.id;
-            setTimeout(()=>{const primeiro=document.getElementById('cupomBtnF1');if(primeiro)primeiro.focus();},100);
-            window._cupomSelectedIndex=0;
+            state.cupomEscolha = 'imprimir';
+            document.getElementById('cupomOptImprimir').classList.add('active');
+            document.getElementById('cupomOptNaoImprimir').classList.remove('active');
+            setTimeout(()=>{document.getElementById('cupomOptImprimir').focus();},100);
         }
 
         function fecharCupom(){document.getElementById('cupomModal').classList.remove('active');}
-
-        function fecharCupomSemImprimir(){
-            showToast('✅ Venda finalizada sem impressão!', 'success');
-            fecharCupom();
-        }
 
         function imprimirCupom() {
             if (!ultimoCupomData) {
@@ -1279,6 +1462,7 @@
                 troco: ultimoCupomData.troco || 0
             };
             
+            // Tentar imprimir via API
             fetch('/api/imprimir/cupom', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1300,202 +1484,6 @@
                 setTimeout(() => fecharCupom(), 2000);
             });
         }
-
-        // ============================================================
-        // ATALHOS DO TECLADO - v9.0.0
-        // ============================================================
-        document.addEventListener('keydown', function(e) {
-            const tag = document.activeElement.tagName;
-            const isInput = tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA';
-            const modalPagamentoAberto = document.getElementById('paymentModal').classList.contains('active');
-            const modalCupomAberto = document.getElementById('cupomModal').classList.contains('active');
-            
-            // ===== ESC - Fechar modais (prioridade máxima) =====
-            if (e.key === 'Escape') {
-                if (modalPagamentoAberto) {
-                    e.preventDefault();
-                    fecharPagamento();
-                    return;
-                }
-                if (modalCupomAberto) {
-                    e.preventDefault();
-                    fecharCupom();
-                    return;
-                }
-                if (document.getElementById('modalPix').classList.contains('active')) {
-                    e.preventDefault();
-                    fecharModalPix();
-                    return;
-                }
-                if (document.getElementById('modalCliente').classList.contains('active')) {
-                    e.preventDefault();
-                    fecharModalCliente();
-                    return;
-                }
-                if (document.getElementById('searchResults').classList.contains('active')) {
-                    document.getElementById('searchResults').classList.remove('active');
-                    document.getElementById('buscaProdutoInput').value = '';
-                    document.getElementById('codigoInput').focus();
-                }
-                return;
-            }
-            
-            // ===== BLOQUEAR F5 (recarregar página) =====
-            if (e.key === 'F5' || (e.ctrlKey && (e.key === 'r' || e.key === 'R'))) {
-                e.preventDefault();
-                e.stopPropagation();
-                showToast('🔄 Use os botões para atualizar', 'info');
-                return;
-            }
-            
-            // ===== TECLAS F1 a F12 =====
-            if (e.key >= 'F1' && e.key <= 'F12') {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                const key = e.key;
-                
-                // ===== SE MODAL DE PAGAMENTO ESTIVER ABERTO =====
-                if (modalPagamentoAberto) {
-                    if (key === 'F1') {
-                        confirmarPagamento(false);
-                        return;
-                    }
-                    if (key === 'F2') {
-                        confirmarPagamento(true);
-                        return;
-                    }
-                    showToast('⛔ Use F1 ou F2 para finalizar', 'warning');
-                    return;
-                }
-                
-                // ===== SE MODAL DE CUPOM ESTIVER ABERTO =====
-                if (modalCupomAberto) {
-                    if (key === 'F1') {
-                        fecharCupomSemImprimir();
-                        return;
-                    }
-                    if (key === 'F2') {
-                        imprimirCupom();
-                        return;
-                    }
-                    showToast('⛔ Use F1 ou F2 no cupom', 'warning');
-                    return;
-                }
-                
-                // ===== SE MODAL PIX ESTIVER ABERTO =====
-                if (document.getElementById('modalPix').classList.contains('active')) {
-                    if (key === 'Escape') {
-                        fecharModalPix();
-                    }
-                    return;
-                }
-                
-                // ===== SE MODAL CLIENTE ESTIVER ABERTO =====
-                if (document.getElementById('modalCliente').classList.contains('active')) {
-                    if (key === 'Escape') {
-                        fecharModalCliente();
-                    }
-                    return;
-                }
-                
-                // ===== SE NENHUM MODAL ESTIVER ABERTO =====
-                
-                // ===== F1 - Focar no campo de código de barras =====
-                if (key === 'F1') {
-                    trocarTab('vendas');
-                    setTimeout(() => {
-                        document.getElementById('codigoInput').focus();
-                        document.getElementById('codigoInput').select();
-                    }, 150);
-                    showToast('🔍 Código de barras (F1)', 'info');
-                    return;
-                }
-                
-                // ===== F2 - Focar no campo de busca por nome =====
-                if (key === 'F2') {
-                    trocarTab('vendas');
-                    setTimeout(() => {
-                        const campo = document.getElementById('buscaProdutoInput');
-                        campo.focus();
-                        campo.select();
-                        campo.click();
-                    }, 150);
-                    showToast('🔍 Buscar por nome (F2)', 'info');
-                    return;
-                }
-                
-                // ===== F5 - Abrir modal de pagamento =====
-                if (key === 'F5') {
-                    if (!state.db_id) {
-                        showToast('⚠️ Faça login primeiro!', 'warning');
-                        return;
-                    }
-                    if (state.itens.length === 0) {
-                        showToast('🛒 Carrinho vazio!', 'warning');
-                        return;
-                    }
-                    if (!state.caixa_aberto) {
-                        showToast('🔒 Caixa fechado!', 'warning');
-                        return;
-                    }
-                    if (!state.plano_ativo) {
-                        showToast('⚠️ Plano expirado!', 'warning');
-                        return;
-                    }
-                    abrirPagamento(false);
-                    return;
-                }
-                
-                // ===== F3 - Dashboard =====
-                if (key === 'F3') {
-                    trocarTab('dashboard');
-                    showToast('📊 Dashboard (F3)', 'info');
-                    return;
-                }
-                
-                // ===== F4 - Estoque =====
-                if (key === 'F4') {
-                    trocarTab('estoque');
-                    showToast('📦 Estoque (F4)', 'info');
-                    return;
-                }
-                
-                // ===== F6 - Clientes =====
-                if (key === 'F6') {
-                    trocarTab('clientes');
-                    showToast('👥 Clientes (F6)', 'info');
-                    return;
-                }
-                
-                // ===== F7 - Caixa =====
-                if (key === 'F7') {
-                    trocarTab('caixa');
-                    showToast('💰 Caixa (F7)', 'info');
-                    return;
-                }
-                
-                // ===== F8 - Planos =====
-                if (key === 'F8') {
-                    trocarTab('planos');
-                    showToast('🏪 Planos (F8)', 'info');
-                    return;
-                }
-                
-                // ===== F9 - Configurações =====
-                if (key === 'F9') {
-                    trocarTab('config');
-                    showToast('⚙️ Configurações (F9)', 'info');
-                    return;
-                }
-                
-                // ===== F10, F11, F12 - Bloqueados =====
-                if (key === 'F10' || key === 'F11' || key === 'F12') {
-                    showToast('⛔ Tecla F' + key.replace('F', '') + ' bloqueada', 'warning');
-                    return;
-                }
-            }
-        });
 
         // ============================================================
         // LOJA / PLANOS
@@ -1669,14 +1657,12 @@
         // PAGAMENTO
         // ============================================================
         let metodoAtivo = 'Dinheiro';
-        let _deveImprimir = false;
 
-        function abrirPagamento(deveImprimir = false){
+        function abrirPagamento(){
             if(!state.plano_ativo){showToast('⚠️ Plano expirado!','warning');return;}
             if(state.itens.length===0){showToast('🛒 Carrinho vazio!','warning');return;}
             if(!state.caixa_aberto){showToast('🔒 Caixa fechado!','warning');return;}
             
-            _deveImprimir = deveImprimir;
             document.getElementById('paymentTotal').textContent='R$ '+state.total.toFixed(2);
             document.getElementById('paymentModal').classList.add('active');
             document.getElementById('clientePagamento').value='';
@@ -1726,28 +1712,6 @@
                 else{label.textContent='✅ Valor exato!';label.style.color='var(--green)';}
             });
         }
-
-        // Navegação com setas no modal (vertical)
-        document.addEventListener('keydown', function(e) {
-            if (!document.getElementById('paymentModal').classList.contains('active')) return;
-            const metodos = document.querySelectorAll('#paymentMethods button');
-            if (metodos.length === 0) return;
-            
-            let currentIndex = -1;
-            metodos.forEach((el, i) => { if (el.classList.contains('active')) currentIndex = i; });
-            
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                const nextIndex = (currentIndex + 1) % metodos.length;
-                selecionarMetodo(metodos[nextIndex].dataset.metodo);
-                metodos[nextIndex].focus();
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                const prevIndex = (currentIndex - 1 + metodos.length) % metodos.length;
-                selecionarMetodo(metodos[prevIndex].dataset.metodo);
-                metodos[prevIndex].focus();
-            }
-        });
 
         function confirmarPagamento(deveImprimir = false){
             if(!state.plano_ativo){showToast('⚠️ Plano expirado!','warning');return;}
@@ -1808,10 +1772,6 @@
                         carregarDashboard(state.periodo);carregarResumoCaixa();
                         
                         mostrarCupom(venda);
-                        
-                        if (deveImprimir) {
-                            setTimeout(() => { imprimirCupom(); }, 500);
-                        }
                     }else{
                         showToast('❌ Erro: '+data.error,'error');
                     }
@@ -1865,12 +1825,8 @@
 
         console.log('🏪 PDV Inteligente v' + SISTEMA_VERSAO);
         console.log('⌨️ ATALHOS:');
-        console.log('  F1 → Focar código de barras');
-        console.log('  F2 → Focar busca por nome');
-        console.log('  F5 → Finalizar venda');
-        console.log('  F1 (modal) → Finalizar sem imprimir');
-        console.log('  F2 (modal) → Finalizar com impressão');
-        console.log('  ↑↓ (modal) → Navegar métodos');
+        console.log('  F1 → Tudo!');
+        console.log('  ↑↓ → Navegar (modais)');
         console.log('  ESC → Fechar modais');
     </script>
 </body>
