@@ -390,10 +390,65 @@ def get_usuario_id():
     return session.get('usuario_id')
 
 
+
 def is_plano_ativo(db_id):
-    """Verifica se o plano está ativo (com cache offline)"""
+    """Verifica se o plano está ativo (PRIORIZA CACHE LOCAL)"""
     if not db_id:
         return False
+    
+    GRACE_PERIOD_DIAS = 3
+    
+    # 1. PRIMEIRO: TENTA CARREGAR DO CACHE LOCAL
+    cache = carregar_plano_cache(db_id)
+    if cache and cache.get('expira_em'):
+        try:
+            expira_date = datetime.fromisoformat(cache['expira_em'])
+            dias_restantes = (expira_date - datetime.now()).total_seconds() / 86400
+            
+            # Grace period de 3 dias
+            if dias_restantes >= -GRACE_PERIOD_DIAS:
+                logger.info(f"✅ Plano ativo (cache): {db_id} - {dias_restantes:.1f} dias")
+                return True
+            else:
+                logger.warning(f"⚠️ Plano expirado (cache): {db_id}")
+                return False
+        except Exception as e:
+            logger.error(f"⚠️ Erro ao ler cache: {e}")
+    
+    # 2. SE NÃO TEM CACHE, TENTA FIREBASE (ONLINE)
+    try:
+        dados = carregar_usuario_firebase(db_id)
+        if dados:
+            expira = dados.get('expira_em')
+            plano_id = dados.get('plano', 1)
+            if expira:
+                # Salvar no cache para próxima vez
+                salvar_plano_cache(db_id, plano_id, expira)
+                expira_date = datetime.fromisoformat(expira)
+                dias_restantes = (expira_date - datetime.now()).total_seconds() / 86400
+                if dias_restantes >= -GRACE_PERIOD_DIAS:
+                    logger.info(f"✅ Plano ativo (Firebase): {db_id}")
+                    return True
+                else:
+                    logger.warning(f"⚠️ Plano expirado (Firebase): {db_id}")
+                    return False
+    except Exception as e:
+        logger.warning(f"⚠️ Firebase offline, usando cache: {e}")
+    
+    # 3. SE NÃO TEM NENHUM DADO, CRIA UM CACHE PADRÃO (7 DIAS)
+    # Isso permite que o PDV funcione mesmo na primeira vez sem internet
+    try:
+        expira_padrao = (datetime.now() + timedelta(days=7)).isoformat()
+        salvar_plano_cache(db_id, 1, expira_padrao)
+        logger.info(f"✅ Cache padrão criado para {db_id}")
+        return True
+    except:
+        pass
+    
+    # 4. ÚLTIMO RECURSO: CONSIDERA ATIVO (evita bloquear o usuário)
+    logger.warning(f"⚠️ Sem dados do plano, permitindo acesso: {db_id}")
+    return True
+
     
     GRACE_PERIOD_DIAS = 3
     
@@ -1085,6 +1140,29 @@ def init_db():
         except:
             pass
 
+    
+        # ===== VERIFICAR COLUNAS DE CACHE =====
+        cursor = conn.execute("PRAGMA table_info(users)")
+        colunas_existentes = [row[1] for row in cursor.fetchall()]
+        
+        if 'plano_cache' not in colunas_existentes:
+            try:
+                conn.execute("ALTER TABLE users ADD COLUMN plano_cache INTEGER DEFAULT 1")
+                logger.info("✅ Coluna plano_cache adicionada")
+            except: pass
+        
+        if 'expira_cache' not in colunas_existentes:
+            try:
+                conn.execute("ALTER TABLE users ADD COLUMN expira_cache TEXT")
+                logger.info("✅ Coluna expira_cache adicionada")
+            except: pass
+        
+        if 'ultima_verificacao' not in colunas_existentes:
+            try:
+                conn.execute("ALTER TABLE users ADD COLUMN ultima_verificacao TEXT")
+                logger.info("✅ Coluna ultima_verificacao adicionada")
+            except: pass
+
     logger.info("✅ Bancos de dados inicializados e todas as colunas verificadas")
 
 # ============================================================
@@ -1262,6 +1340,18 @@ def login():
                     WHERE id=?
                 """, (nova_session_id, datetime.now().isoformat(), user[0]))
             
+            
+            # Salvar plano no cache local
+            try:
+                dados_firebase = carregar_usuario_firebase(user_db_id)
+                if dados_firebase:
+                    plano_id = dados_firebase.get('plano', 1)
+                    expira_em = dados_firebase.get('expira_em')
+                    if expira_em:
+                        salvar_plano_cache(user_db_id, plano_id, expira_em)
+            except:
+                pass
+
             
             # Salvar plano no cache local
             try:
