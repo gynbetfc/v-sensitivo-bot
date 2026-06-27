@@ -318,10 +318,7 @@
 </head>
 <body>
     <div class="toast-container" id="toastContainer"></div>
-    <div class="plano-expirado-aviso" id="planoExpiradoAviso">
-        <span>⚠️ <strong>Seu plano expirou!</strong> Renove seu plano para continuar usando o PDV.</span>
-        <a onclick="trocarTab('planos')">Ver Planos →</a>
-    </div>
+    
     <div class="modal-overlay" id="modalPix">
         <div class="modal">
             <div class="modal-header"><h3>💳 Pagamento PIX</h3><button class="close" onclick="fecharModalPix()">×</button></div>
@@ -435,6 +432,10 @@
             <button data-tab="planos" onclick="trocarTab('planos')"><i class="fas fa-store"></i> Planos</button>
             <button data-tab="config" onclick="trocarTab('config')"><i class="fas fa-cog"></i> Config</button>
         </nav>
+            <div class="plano-expirado-aviso" id="planoExpiradoAviso">
+        <span>⚠️ <strong>Seu plano expirou!</strong> Renove seu plano para continuar usando o PDV.</span>
+        <a onclick="trocarTab('planos')">Ver Planos →</a>
+    </div>
         <div class="content">
             <!-- VENDAS -->
             <div class="panel active" id="panelVendas">
@@ -563,6 +564,27 @@
         </div>
     </div>
     <script>
+        
+        
+        // ============================================================
+        // DETECTAR SISTEMA OPERACIONAL
+        // ============================================================
+        window.isWindows = navigator.platform.indexOf('Win') > -1;
+        console.log('🖥️ Sistema:', window.isWindows ? 'Windows' : 'Outro');
+
+        // ============================================================
+        // ENTER PARA FINALIZAR VENDA
+        // ============================================================
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && state.itens.length > 0 && state.caixa_aberto) {
+                const tag = document.activeElement.tagName;
+                if (tag !== 'INPUT' && tag !== 'SELECT' && tag !== 'TEXTAREA') {
+                    e.preventDefault();
+                    abrirPagamento();
+                }
+            }
+        });
+
         // ============================================================
         // ESTADO
         // ============================================================
@@ -1101,10 +1123,47 @@
             window._cupomSelectedIndex=0;
         }
         function fecharCupom(){document.getElementById('cupomModal').classList.remove('active');}
-        function imprimirCupom(){
-            window.print();
-            setTimeout(()=>{fecharCupom();}, 1000);
+        
+        function imprimirCupom() {
+            // Verificar se é Windows
+            fetch('/api/health')
+                .then(r => r.json())
+                .then(data => {
+                    const isWindows = data && data.os === 'win32';
+                    
+                    if (isWindows) {
+                        // Impressão direta via API
+                        fetch('/api/imprimir/cupom', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(ultimoCupomData || {})
+                        })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.success) {
+                                showToast('🖨️ Cupom enviado para impressora!', 'success');
+                                fecharCupom();
+                            } else {
+                                showToast('❌ Erro na impressão: ' + (data.error || 'desconhecido'), 'error');
+                                window.print();
+                                setTimeout(() => fecharCupom(), 1000);
+                            }
+                        })
+                        .catch(() => {
+                            window.print();
+                            setTimeout(() => fecharCupom(), 1000);
+                        });
+                    } else {
+                        window.print();
+                        setTimeout(() => fecharCupom(), 1000);
+                    }
+                })
+                .catch(() => {
+                    window.print();
+                    setTimeout(() => fecharCupom(), 1000);
+                });
         }
+
 
         // ============================================================
         // NAVEGAÇÃO POR TECLADO NO CUPOM
