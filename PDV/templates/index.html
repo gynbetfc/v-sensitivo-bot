@@ -300,6 +300,8 @@
         .cupom-modal .cupom-options button:hover{border-color:var(--green);color:#fff;background:rgba(34,197,94,.05)}
         .cupom-modal .cupom-options button.active{border-color:var(--green);background:rgba(34,197,94,.15);color:var(--green)}
         .cupom-modal .cupom-options button i{margin-right:10px}
+        .cupom-modal .f1-hint{color:var(--text-muted);font-size:11px;text-align:center;padding:8px;background:var(--bg-primary);border-radius:6px;margin-top:12px}
+        .cupom-modal .f1-hint kbd{background:var(--border-color);padding:2px 10px;border-radius:4px;font-size:10px;color:var(--text-secondary);border:1px solid var(--border-color)}
         @media print{.cupom-modal .btn-close-cupom,.cupom-modal .cupom-options{display:none!important}.cupom-modal .cupom-box{box-shadow:none;border:1px solid #ccc}}
         @media print{body *{visibility:hidden}.cupom-box,.cupom-box *{visibility:visible}.cupom-box{position:absolute;left:0;top:0;width:100%;max-width:100%;border:none;box-shadow:none;padding:10px;font-size:12px}.cupom-box .cupom-header{font-size:14px}.cupom-box .cupom-linha{font-size:11px;padding:2px 0}.cupom-box .cupom-total{font-size:14px}.cupom-box .btn-close-cupom,.cupom-box .cupom-options{display:none!important}}
         @media(max-width:1024px){.pdv-grid,.chart-row,.config-grid,.estoque-grid{grid-template-columns:1fr}.payment-modal .payment-methods{flex-direction:column}}
@@ -562,6 +564,193 @@
         </div>
     </div>
     <script>
+        // ============================================================
+        // BLOQUEIO TOTAL DE TECLAS
+        // ============================================================
+        document.addEventListener('keydown', function(e) {
+            // ===== BLOQUEAR F1 a F12 =====
+            if (e.key >= 'F1' && e.key <= 'F12') {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // === SE F1, processar ===
+                if (e.key === 'F1') {
+                    processarF1();
+                }
+                // === SE F2 a F12, apenas bloquear ===
+                return;
+            }
+            
+            // ===== BLOQUEAR F5, Ctrl+R, Ctrl+Shift+R =====
+            if (e.key === 'F5' || (e.ctrlKey && (e.key === 'r' || e.key === 'R'))) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+            
+            // ===== BLOQUEAR Ctrl+Shift+I (DevTools) =====
+            if (e.ctrlKey && e.shiftKey && (e.key === 'i' || e.key === 'I')) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+            
+            // ===== BLOQUEAR F12 (DevTools) =====
+            if (e.key === 'F12') {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+            
+            // ===== BLOQUEAR ENTER =====
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+            
+            // ===== ESC - Fechar modais =====
+            if (e.key === 'Escape') {
+                const modalPagamentoAberto = document.getElementById('paymentModal').classList.contains('active');
+                const modalCupomAberto = document.getElementById('cupomModal').classList.contains('active');
+                
+                if (modalPagamentoAberto) {
+                    e.preventDefault();
+                    fecharPagamento();
+                    return;
+                }
+                if (modalCupomAberto) {
+                    e.preventDefault();
+                    fecharCupom();
+                    return;
+                }
+                if (document.getElementById('modalPix').classList.contains('active')) {
+                    e.preventDefault();
+                    fecharModalPix();
+                    return;
+                }
+                if (document.getElementById('modalCliente').classList.contains('active')) {
+                    e.preventDefault();
+                    fecharModalCliente();
+                    return;
+                }
+                if (document.getElementById('searchResults').classList.contains('active')) {
+                    document.getElementById('searchResults').classList.remove('active');
+                    document.getElementById('buscaProdutoInput').value = '';
+                    document.getElementById('codigoInput').focus();
+                }
+                return;
+            }
+            
+            // ===== SETAS ↑↓ no modal de pagamento =====
+            const modalPagamentoAberto = document.getElementById('paymentModal').classList.contains('active');
+            const modalCupomAberto = document.getElementById('cupomModal').classList.contains('active');
+            
+            if (modalPagamentoAberto && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+                e.preventDefault();
+                const metodos = document.querySelectorAll('#paymentMethods button');
+                if (metodos.length === 0) return;
+                
+                let currentIndex = -1;
+                metodos.forEach((el, i) => { if (el.classList.contains('active')) currentIndex = i; });
+                
+                if (e.key === 'ArrowDown') {
+                    const nextIndex = (currentIndex + 1) % metodos.length;
+                    selecionarMetodo(metodos[nextIndex].dataset.metodo);
+                    metodos[nextIndex].focus();
+                } else if (e.key === 'ArrowUp') {
+                    const prevIndex = (currentIndex - 1 + metodos.length) % metodos.length;
+                    selecionarMetodo(metodos[prevIndex].dataset.metodo);
+                    metodos[prevIndex].focus();
+                }
+                return;
+            }
+            
+            // ===== SETAS ↑↓ no cupom =====
+            if (modalCupomAberto && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+                e.preventDefault();
+                const opts = document.querySelectorAll('#cupomOptions button');
+                if (opts.length === 0) return;
+                
+                let currentIndex = -1;
+                opts.forEach((el, i) => { if (el.classList.contains('active')) currentIndex = i; });
+                
+                if (currentIndex === -1) currentIndex = 0;
+                
+                if (e.key === 'ArrowDown') {
+                    const nextIndex = (currentIndex + 1) % opts.length;
+                    const opt = opts[nextIndex];
+                    const valor = opt.id === 'cupomOptImprimir' ? 'imprimir' : 'nao';
+                    cupomEscolher(valor);
+                    opt.focus();
+                } else if (e.key === 'ArrowUp') {
+                    const prevIndex = (currentIndex - 1 + opts.length) % opts.length;
+                    const opt = opts[prevIndex];
+                    const valor = opt.id === 'cupomOptImprimir' ? 'imprimir' : 'nao';
+                    cupomEscolher(valor);
+                    opt.focus();
+                }
+                return;
+            }
+        });
+
+        // ============================================================
+        // PROCESSAR F1 - A TECLA MÁGICA
+        // ============================================================
+        function processarF1() {
+            const modalPagamentoAberto = document.getElementById('paymentModal').classList.contains('active');
+            const modalCupomAberto = document.getElementById('cupomModal').classList.contains('active');
+            const codigoInput = document.getElementById('codigoInput');
+            const buscaInput = document.getElementById('buscaProdutoInput');
+            
+            // --- SE MODAL DE CUPOM ESTIVER ABERTO ---
+            if (modalCupomAberto) {
+                if (state.cupomEscolha === 'imprimir') {
+                    imprimirCupom();
+                } else {
+                    fecharCupomSemImprimir();
+                }
+                return;
+            }
+            
+            // --- SE MODAL DE PAGAMENTO ESTIVER ABERTO ---
+            if (modalPagamentoAberto) {
+                confirmarPagamento(false);
+                return;
+            }
+            
+            // --- SE NENHUM MODAL ESTIVER ABERTO ---
+            
+            // Verificar se há itens no carrinho
+            if (state.itens.length > 0) {
+                // Se tem itens, verifica se caixa está aberto e plano ativo
+                if (!state.caixa_aberto) {
+                    showToast('🔒 Caixa fechado! Abra o caixa primeiro.', 'warning');
+                    return;
+                }
+                if (!state.plano_ativo) {
+                    showToast('⚠️ Plano expirado!', 'warning');
+                    return;
+                }
+                // Abrir modal de pagamento
+                abrirPagamento();
+                return;
+            }
+            
+            // Se não tem itens, alterna entre código de barras e busca
+            // Se o foco está no código ou em nenhum lugar, foca no código
+            if (document.activeElement !== buscaInput) {
+                codigoInput.focus();
+                codigoInput.select();
+                showToast('🔍 Código de barras (F1)', 'info');
+            } else {
+                // Foca na busca
+                buscaInput.focus();
+                buscaInput.select();
+                showToast('🔍 Buscar por nome (F1)', 'info');
+            }
+        }
+
         // ============================================================
         // VERSÃO - SINCRONIZADA COM BACKEND
         // ============================================================
@@ -861,171 +1050,8 @@
             usuario_id:null,nome:'',cargo:'',db_id:null,servidor_id:null,nome_loja:'',cnpj:'',cnpj_dados:{},caixa_aberto:false,
             itens:[],subtotal:0,total:0,produtos:[],clientes:[],periodo:'hoje',searchIndex:-1,_resultados:[],produtoSelecionado:null,plano_ativo:true,
             ultimaVenda:null,
-            // Controle do F1
-            f1Estado: 0, // 0=codigo, 1=busca, 2=modal, 3=cupom
-            cupomEscolha: 'imprimir' // 'imprimir' ou 'nao'
+            cupomEscolha: 'imprimir'
         };
-
-        // ============================================================
-        // ATALHO F1 - A TECLA MÁGICA
-        // ============================================================
-        document.addEventListener('keydown', function(e) {
-            const modalPagamentoAberto = document.getElementById('paymentModal').classList.contains('active');
-            const modalCupomAberto = document.getElementById('cupomModal').classList.contains('active');
-            
-            // ===== BLOQUEAR TODAS AS TECLAS F (menos F1) =====
-            if (e.key >= 'F2' && e.key <= 'F12') {
-                e.preventDefault();
-                e.stopPropagation();
-                return;
-            }
-            
-            // ===== BLOQUEAR F5 (recarregar página) =====
-            if (e.key === 'F5' || (e.ctrlKey && (e.key === 'r' || e.key === 'R'))) {
-                e.preventDefault();
-                e.stopPropagation();
-                return;
-            }
-            
-            // ===== BLOQUEAR ENTER =====
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                e.stopPropagation();
-                return;
-            }
-            
-            // ===== ESC - Fechar modais =====
-            if (e.key === 'Escape') {
-                if (modalPagamentoAberto) {
-                    e.preventDefault();
-                    fecharPagamento();
-                    return;
-                }
-                if (modalCupomAberto) {
-                    e.preventDefault();
-                    fecharCupom();
-                    return;
-                }
-                if (document.getElementById('modalPix').classList.contains('active')) {
-                    e.preventDefault();
-                    fecharModalPix();
-                    return;
-                }
-                if (document.getElementById('modalCliente').classList.contains('active')) {
-                    e.preventDefault();
-                    fecharModalCliente();
-                    return;
-                }
-                if (document.getElementById('searchResults').classList.contains('active')) {
-                    document.getElementById('searchResults').classList.remove('active');
-                    document.getElementById('buscaProdutoInput').value = '';
-                    document.getElementById('codigoInput').focus();
-                }
-                return;
-            }
-            
-            // ===== SETAS ↑↓ no modal de pagamento =====
-            if (modalPagamentoAberto && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
-                e.preventDefault();
-                const metodos = document.querySelectorAll('#paymentMethods button');
-                if (metodos.length === 0) return;
-                
-                let currentIndex = -1;
-                metodos.forEach((el, i) => { if (el.classList.contains('active')) currentIndex = i; });
-                
-                if (e.key === 'ArrowDown') {
-                    const nextIndex = (currentIndex + 1) % metodos.length;
-                    selecionarMetodo(metodos[nextIndex].dataset.metodo);
-                    metodos[nextIndex].focus();
-                } else if (e.key === 'ArrowUp') {
-                    const prevIndex = (currentIndex - 1 + metodos.length) % metodos.length;
-                    selecionarMetodo(metodos[prevIndex].dataset.metodo);
-                    metodos[prevIndex].focus();
-                }
-                return;
-            }
-            
-            // ===== SETAS ↑↓ no cupom =====
-            if (modalCupomAberto && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
-                e.preventDefault();
-                const opts = document.querySelectorAll('#cupomOptions button');
-                if (opts.length === 0) return;
-                
-                let currentIndex = -1;
-                opts.forEach((el, i) => { if (el.classList.contains('active')) currentIndex = i; });
-                
-                if (currentIndex === -1) currentIndex = 0;
-                
-                if (e.key === 'ArrowDown') {
-                    const nextIndex = (currentIndex + 1) % opts.length;
-                    cupomEscolher(opts[nextIndex].id === 'cupomOptImprimir' ? 'imprimir' : 'nao');
-                    opts[nextIndex].focus();
-                } else if (e.key === 'ArrowUp') {
-                    const prevIndex = (currentIndex - 1 + opts.length) % opts.length;
-                    cupomEscolher(opts[prevIndex].id === 'cupomOptImprimir' ? 'imprimir' : 'nao');
-                    opts[prevIndex].focus();
-                }
-                return;
-            }
-            
-            // ===== F1 - A TECLA MÁGICA =====
-            if (e.key === 'F1') {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                // --- SE MODAL DE CUPOM ESTIVER ABERTO ---
-                if (modalCupomAberto) {
-                    if (state.cupomEscolha === 'imprimir') {
-                        imprimirCupom();
-                    } else {
-                        fecharCupomSemImprimir();
-                    }
-                    return;
-                }
-                
-                // --- SE MODAL DE PAGAMENTO ESTIVER ABERTO ---
-                if (modalPagamentoAberto) {
-                    confirmarPagamento(false);
-                    return;
-                }
-                
-                // --- SE NENHUM MODAL ESTIVER ABERTO ---
-                
-                // Verificar se há itens no carrinho
-                if (state.itens.length > 0) {
-                    // Se tem itens, verifica se caixa está aberto e plano ativo
-                    if (!state.caixa_aberto) {
-                        showToast('🔒 Caixa fechado! Abra o caixa primeiro.', 'warning');
-                        return;
-                    }
-                    if (!state.plano_ativo) {
-                        showToast('⚠️ Plano expirado!', 'warning');
-                        return;
-                    }
-                    // Abrir modal de pagamento
-                    abrirPagamento();
-                    return;
-                }
-                
-                // Se não tem itens, alterna entre código de barras e busca
-                const codigoInput = document.getElementById('codigoInput');
-                const buscaInput = document.getElementById('buscaProdutoInput');
-                
-                // Se o foco está no código ou em nenhum lugar, foca no código
-                if (document.activeElement !== buscaInput || state.f1Estado === 0) {
-                    codigoInput.focus();
-                    codigoInput.select();
-                    state.f1Estado = 1;
-                    showToast('🔍 Código de barras (F1)', 'info');
-                } else {
-                    // Foca na busca
-                    buscaInput.focus();
-                    buscaInput.select();
-                    state.f1Estado = 0;
-                    showToast('🔍 Buscar por nome (F1)', 'info');
-                }
-            }
-        });
 
         // ============================================================
         // FUNÇÕES DO CUPOM
@@ -1462,7 +1488,6 @@
                 troco: ultimoCupomData.troco || 0
             };
             
-            // Tentar imprimir via API
             fetch('/api/imprimir/cupom', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1824,8 +1849,8 @@
         });
 
         console.log('🏪 PDV Inteligente v' + SISTEMA_VERSAO);
-        console.log('⌨️ ATALHOS:');
-        console.log('  F1 → Tudo!');
+        console.log('⌨️ ATALHO ÚNICO:');
+        console.log('  F1 → Tudo! (foco, finalizar, confirmar)');
         console.log('  ↑↓ → Navegar (modais)');
         console.log('  ESC → Fechar modais');
     </script>
