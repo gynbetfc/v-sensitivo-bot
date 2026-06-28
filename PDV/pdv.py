@@ -1,10 +1,11 @@
-# main.py - PDV INTELIGENTE v9.0.0 - VERSÃO COMPLETA E ESTÁVEL
+# main.py - SMART PDV v9.0.2 - VERSÃO COMPLETA E ESTÁVEL
 """
-PDV INTELIGENTE v9.0.0
+SMART PDV v9.0.2
 - Sistema completo de Ponto de Venda
-- F1 = Focar código de barras | F2 = Focar busca por nome | F5 = Finalizar venda
+- F1 = TECLA MESTRE (foco, busca, finalizar, confirmar)
+- F2 a F12 = TOTALMENTE BLOQUEADAS
 - Modal com navegação vertical (↑↓)
-- F1 no modal = Finalizar sem impressão | F2 no modal = Finalizar com impressão
+- F1 no modal = Finalizar | F1 no cupom = Escolher opção
 - Impressão profissional com ESC/POS (corte automático)
 - Dashboard com todos os métodos de pagamento
 - Busca inteligente de produtos por código de barras
@@ -72,7 +73,7 @@ app.config['SESSION_COOKIE_SECURE'] = False
 CORS(app, origins=["*"], supports_credentials=True)
 
 # ===== VERSÃO (SINCRONIZADA COM FRONTEND) =====
-VERSION = "9.0.0"
+VERSION = "9.0.2"
 
 # ===== CONFIGURAÇÕES DE LOG =====
 logging.basicConfig(
@@ -552,7 +553,7 @@ def buscar_produto_por_codigo_barras(codigo_barras):
     try:
         url = f"https://world.openfoodfacts.org/api/v0/product/{codigo_limpo}.json"
         response = requests.get(url, timeout=10, headers={
-            "User-Agent": "PDV-Inteligente/9.0"
+            "User-Agent": "SMART-PDV/9.0"
         })
         
         if response.status_code == 200:
@@ -877,6 +878,15 @@ def get_versao():
         "servidor_id": SERVIDOR_ID
     })
 
+@app.route('/api/baixar_html', methods=['GET'])
+def baixar_html_manual():
+    try:
+        if baixar_html_github():
+            return jsonify({"success": True, "message": "HTML baixado com sucesso!"})
+        return jsonify({"success": False, "error": "Falha ao baixar HTML"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
 @app.route('/api/imprimir/cupom', methods=['POST'])
 def imprimir_cupom_route():
     try:
@@ -915,13 +925,92 @@ def index():
     try:
         return render_template('index.html')
     except Exception as e:
-        return """
+        return f"""
         <!DOCTYPE html>
         <html>
-        <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>PDV Inteligente - Erro</title>
-        <style>body{font-family:Arial,sans-serif;background:#0f0f1a;color:#fff;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;padding:20px}.container{background:#16162e;border-radius:12px;padding:40px;max-width:500px;text-align:center;border:1px solid #2a2a4a}h1{color:#ef4444}p{color:#a0a0c0}button{background:#22c55e;color:#fff;border:0;padding:12px 24px;border-radius:8px;font-size:16px;cursor:pointer;margin-top:16px}button:hover{background:#16a34a}</style>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>SMART PDV</title>
+            <style>
+                *{{margin:0;padding:0;box-sizing:border-box}}
+                body{{font-family:Arial,sans-serif;background:#0f0f1a;color:#fff;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:20px}}
+                .container{{background:#16162e;border-radius:12px;padding:40px;max-width:500px;text-align:center;border:1px solid #2a2a4a}}
+                .logo{{font-size:48px;display:block;margin-bottom:8px}}
+                h1{{font-size:24px;margin-bottom:8px}}
+                p{{color:#a0a0c0;margin-bottom:16px}}
+                .steps{{text-align:left;background:#0f0f1a;padding:16px;border-radius:8px;font-size:13px;color:#a0a0c0;margin-bottom:16px}}
+                .steps code{{color:#22c55e;background:rgba(34,197,94,.1);padding:2px 8px;border-radius:4px}}
+                .btn-group{{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}}
+                button{{padding:12px 24px;border:0;border-radius:8px;font-size:16px;cursor:pointer;transition:all .3s;font-weight:600}}
+                .btn-primary{{background:#22c55e;color:#fff}}
+                .btn-primary:hover{{background:#16a34a}}
+                .btn-secondary{{background:#3b82f6;color:#fff}}
+                .btn-secondary:hover{{background:#2563eb}}
+                .btn-danger{{background:#ef4444;color:#fff}}
+                .btn-danger:hover{{background:#dc2626}}
+                .error-detail{{margin-top:12px;font-size:12px;color:#6a6a8a;word-break:break-all;padding:8px;background:#0f0f1a;border-radius:6px}}
+            </style>
         </head>
-        <body><div class="container"><h1>❌ Erro ao carregar o PDV</h1><p>O arquivo index.html não foi encontrado.</p><button onclick="location.reload()">🔄 Tentar novamente</button></div></body>
+        <body>
+            <div class="container">
+                <span class="logo">🏪</span>
+                <h1>SMART PDV</h1>
+                <p>O arquivo <strong>index.html</strong> não foi encontrado.</p>
+                <div class="steps">
+                    <strong>📥 Como resolver:</strong><br><br>
+                    1. Verifique sua conexão com a internet<br>
+                    2. Clique em <strong>"Baixar HTML"</strong> abaixo<br>
+                    3. Aguarde o download automático<br>
+                    4. Recarregue a página
+                </div>
+                <div class="btn-group">
+                    <button class="btn-primary" onclick="baixarHTML()">📥 Baixar HTML</button>
+                    <button class="btn-secondary" onclick="location.reload()">🔄 Recarregar</button>
+                    <button class="btn-danger" onclick="reiniciarServidor()">🔁 Reiniciar</button>
+                </div>
+                <div class="error-detail" id="errorDetail">Erro: {str(e)}</div>
+            </div>
+            <script>
+                async function baixarHTML() {{
+                    const btn = document.querySelector('.btn-primary');
+                    btn.textContent = '⏳ Baixando...';
+                    btn.disabled = true;
+                    try {{
+                        const res = await fetch('/api/baixar_html');
+                        const data = await res.json();
+                        if (data.success) {{
+                            btn.textContent = '✅ Baixado!';
+                            btn.style.background = '#22c55e';
+                            setTimeout(() => location.reload(), 1500);
+                        }} else {{
+                            btn.textContent = '❌ Erro: ' + data.error;
+                            btn.style.background = '#ef4444';
+                        }}
+                    }} catch(e) {{
+                        btn.textContent = '❌ Erro de conexão';
+                        btn.style.background = '#ef4444';
+                    }}
+                }}
+                async function reiniciarServidor() {{
+                    const btn = document.querySelector('.btn-danger');
+                    btn.textContent = '⏳ Reiniciando...';
+                    btn.disabled = true;
+                    try {{
+                        const res = await fetch('/api/reiniciar', {{method: 'POST'}});
+                        const data = await res.json();
+                        if (data.success) {{
+                            btn.textContent = '✅ Reiniciado!';
+                            setTimeout(() => location.reload(), 2000);
+                        }} else {{
+                            btn.textContent = '❌ Erro: ' + data.error;
+                        }}
+                    }} catch(e) {{
+                        btn.textContent = '❌ Erro de conexão';
+                    }}
+                }}
+            </script>
+        </body>
         </html>
         """
 
@@ -1989,7 +2078,7 @@ def criar_pix():
         }
         payment_data = {
             "transaction_amount": float(plano['preco']),
-            "description": f"PDV Inteligente - {plano['nome']}",
+            "description": f"SMART PDV - {plano['nome']}",
             "payment_method_id": "pix",
             "payer": {
                 "email": "cliente@pdv.com",
@@ -2351,7 +2440,7 @@ def buscar_cnpj(cnpj):
 
         for url in apis:
             try:
-                response = requests.get(url, timeout=12, headers={"User-Agent": "PDV-Inteligente/9.0"})
+                response = requests.get(url, timeout=12, headers={"User-Agent": "SMART-PDV/9.0"})
                 if response.status_code != 200:
                     ultimo_erro = f"Fonte respondeu status {response.status_code}"
                     continue
@@ -2498,6 +2587,17 @@ def sincronizar():
 def get_servidor_id():
     return jsonify({"success": True, "servidor_id": SERVIDOR_ID, "versao": VERSION})
 
+@app.route('/api/reiniciar', methods=['POST'])
+def reiniciar_servidor():
+    try:
+        logger.info("🔄 Reiniciando servidor...")
+        import subprocess
+        import sys
+        subprocess.Popen([sys.executable, sys.argv[0]])
+        return jsonify({"success": True, "message": "Servidor reiniciando..."})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
 # ============================================================
 # HEALTH CHECK
 # ============================================================
@@ -2590,7 +2690,7 @@ def verificar_dependencias():
 
 if __name__ == '__main__':
     print("=" * 60)
-    print(f"🏪 PDV INTELIGENTE v{VERSION} - VERSÃO COMPLETA")
+    print(f"🏪 SMART PDV v{VERSION} - VERSÃO COMPLETA")
     print("=" * 60)
     
     if not verificar_dependencias():
@@ -2615,13 +2715,11 @@ if __name__ == '__main__':
         print("🖨️ Modo de simulação de impressão")
     
     print("=" * 60)
-    print("⌨️ ATALHOS DO PDV:")
-    print("  F1 → Focar código de barras")
-    print("  F2 → Focar busca por nome")
-    print("  F5 → Finalizar venda")
-    print("  F1 (modal) → Finalizar sem impressão")
-    print("  F2 (modal) → Finalizar com impressão")
-    print("  ↑↓ (modal) → Navegar métodos")
+    print("⌨️ TECLA MESTRE:")
+    print("  F1 → Tudo! (foco, busca, finalizar, confirmar)")
+    print("  F2 a F12 → TOTALMENTE BLOQUEADAS")
+    print("  ↑/↓ → Navegar entre opções (modais)")
+    print("  ENTER → Confirmar (modais)")
     print("  ESC → Fechar modais")
     print("=" * 60)
 
