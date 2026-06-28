@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>PDV Inteligente v9.0.1</title>
+    <title>SMART PDV v9.0.2</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
@@ -66,6 +66,7 @@
         .header .user .btn-sair:hover{background:rgba(255,255,255,.1);color:#fff}
         .header .atalhos-indicador{font-size:9px;color:var(--text-muted);background:var(--bg-primary);padding:2px 10px;border-radius:10px;display:flex;gap:6px;align-items:center}
         .header .atalhos-indicador kbd{background:var(--border-color);padding:1px 6px;border-radius:3px;font-size:8px;color:var(--text-secondary)}
+        .header .atalhos-indicador .destaque{color:var(--green);font-weight:700}
         .menu-toggle{display:none;background:0;border:0;color:#fff;font-size:22px;cursor:pointer}
         .nav{background:var(--bg-card);padding:6px 16px;display:flex;gap:4px;border-bottom:1px solid var(--border-color);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:nowrap}
         .nav::-webkit-scrollbar{display:none}
@@ -152,6 +153,7 @@
         .payment-modal .payment-actions .btn-confirmar:disabled{opacity:.4;cursor:not-allowed}
         .payment-modal .atalhos-info{font-size:11px;color:var(--text-muted);text-align:center;margin-top:12px;padding:8px;background:var(--bg-primary);border-radius:6px}
         .payment-modal .atalhos-info kbd{background:var(--border-color);padding:2px 8px;border-radius:4px;font-size:10px;color:var(--text-secondary);border:1px solid var(--border-color)}
+        .payment-modal .atalhos-info .destaque{color:var(--green);font-weight:700}
         .clientes-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
         .clientes-actions input{flex:1;padding:8px 12px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-primary);color:#fff;font-size:13px;min-width:150px}
         .clientes-actions input:focus{outline:0;border-color:var(--green)}
@@ -314,6 +316,7 @@
         .cupom-modal .cupom-options button i{margin-right:10px}
         .cupom-modal .f1-hint{color:var(--text-muted);font-size:11px;text-align:center;padding:8px;background:var(--bg-primary);border-radius:6px;margin-top:12px}
         .cupom-modal .f1-hint kbd{background:var(--border-color);padding:2px 10px;border-radius:4px;font-size:10px;color:var(--text-secondary);border:1px solid var(--border-color)}
+        .cupom-modal .f1-hint .destaque{color:var(--green);font-weight:700}
         @media print{.cupom-modal .btn-close-cupom,.cupom-modal .cupom-options{display:none!important}.cupom-modal .cupom-box{box-shadow:none;border:1px solid #ccc}}
         @media print{body *{visibility:hidden}.cupom-box,.cupom-box *{visibility:visible}.cupom-box{position:absolute;left:0;top:0;width:100%;max-width:100%;border:none;box-shadow:none;padding:10px;font-size:12px}.cupom-box .cupom-header{font-size:14px}.cupom-box .cupom-linha{font-size:11px;padding:2px 0}.cupom-box .cupom-total{font-size:14px}.cupom-box .btn-close-cupom,.cupom-box .cupom-options{display:none!important}}
         @media(max-width:1024px){.pdv-grid,.chart-row,.config-grid,.estoque-grid{grid-template-columns:1fr}.payment-modal .payment-methods{flex-direction:column}}
@@ -322,6 +325,7 @@
         .text-center{text-align:center}.text-muted{color:var(--text-muted)}.mt-8{margin-top:8px}.mt-16{margin-top:16px}.mb-8{margin-bottom:8px}.mb-16{margin-bottom:16px}.flex{display:flex}.flex-center{display:flex;align-items:center;justify-content:center}.gap-8{gap:8px}.w-full{width:100%}.loading-spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--border-color);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
         .f1-hint{color:var(--text-muted);font-size:11px;text-align:center;padding:8px;background:var(--bg-primary);border-radius:6px;margin-top:6px}
         .f1-hint kbd{background:var(--border-color);padding:2px 10px;border-radius:4px;font-size:10px;color:var(--text-secondary);border:1px solid var(--border-color)}
+        .f1-hint .destaque{color:var(--green);font-weight:700}
     </style>
 </head>
 <body>
@@ -361,7 +365,7 @@
                 <button class="btn-cancelar" onclick="fecharPagamento()">Cancelar</button>
             </div>
             <div class="atalhos-info">
-                <kbd>↑</kbd> <kbd>↓</kbd> Navegar &nbsp;|&nbsp; <kbd>ENTER</kbd> Confirmar &nbsp;|&nbsp; <kbd>ESC</kbd> Fechar
+                <kbd>↑</kbd> <kbd>↓</kbd> Navegar &nbsp;|&nbsp; <kbd class="destaque">F1</kbd> <span class="destaque">Confirmar</span> &nbsp;|&nbsp; <kbd>ESC</kbd> Fechar
             </div>
         </div>
     </div>
@@ -369,7 +373,7 @@
         <div class="cupom-box" id="cupomContent">
             <button class="btn-close-cupom" onclick="fecharCupom()">×</button>
             <div id="cupomPrintArea">
-                <div class="cupom-header">🏪 <span id="cupomLojaNome">PDV Inteligente</span><br><span style="font-size:12px;color:#6b7280;" id="cupomData">--</span></div>
+                <div class="cupom-header">🏪 <span id="cupomLojaNome">SMART PDV</span><br><span style="font-size:12px;color:#6b7280;" id="cupomData">--</span></div>
                 <div id="cupomDadosCnpj" style="font-size:11px;color:#555;text-align:center;margin-bottom:8px;"></div>
                 <div id="cupomItens"></div>
                 <div class="cupom-linha"><span>Subtotal</span><span id="cupomSubtotal">R$ 0,00</span></div>
@@ -386,13 +390,13 @@
                 <button id="cupomOptImprimir" class="active" onclick="cupomEscolher('imprimir')"><i class="fas fa-print"></i> 🖨️ Imprimir Cupom</button>
                 <button id="cupomOptNaoImprimir" onclick="cupomEscolher('nao')"><i class="fas fa-times"></i> ❌ Não Imprimir</button>
             </div>
-            <div class="f1-hint"><kbd>↑</kbd> <kbd>↓</kbd> Escolher &nbsp;|&nbsp; <kbd>ENTER</kbd> Confirmar &nbsp;|&nbsp; <kbd>ESC</kbd> Fechar</div>
+            <div class="f1-hint"><kbd>↑</kbd> <kbd>↓</kbd> Escolher &nbsp;|&nbsp; <kbd class="destaque">F1</kbd> <span class="destaque">Confirmar</span> &nbsp;|&nbsp; <kbd>ESC</kbd> Fechar</div>
         </div>
     </div>
     <div class="auth-page" id="authPage">
         <div class="auth-box" id="authBox">
             <span class="logo">🏪</span>
-            <h1 id="authTitle">PDV Inteligente</h1>
+            <h1 id="authTitle">SMART PDV</h1>
             <p class="sub" id="authSub">Entre na sua conta</p>
             <div class="msg" id="authMsg"></div>
             <div id="loginForm">
@@ -423,7 +427,7 @@
     </div>
     <div class="app" id="app">
         <header class="header">
-            <div class="logo">🏪 <span>PDV</span> Inteligente <span class="version" id="versaoHeader">v9.0.1</span></div>
+            <div class="logo">🏪 <span>SMART</span> PDV <span class="version" id="versaoHeader">v9.0.2</span></div>
             <button class="menu-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
             <div class="user">
                 <div class="avatar" id="userAvatar">A</div>
@@ -432,7 +436,7 @@
                 <span class="db-id" id="dbIdDisplay" onclick="copiarId()" title="Clique para copiar o ID">📋 ID: ---</span>
                 <span id="lojaNomeDisplay" style="font-size:11px;color:var(--text-muted);">🏪 Loja</span>
                 <span class="status-caixa fechado" id="statusCaixa">🔒 Fechado</span>
-                <span class="atalhos-indicador"><kbd>F1</kbd>⚡<kbd>F2</kbd>🔍<kbd>F5</kbd>💰</span>
+                <span class="atalhos-indicador"><kbd class="destaque">F1</kbd> ⚡ Mestre</span>
                 <button class="btn-sair" onclick="fazerLogout()">Sair</button>
             </div>
         </header>
@@ -461,7 +465,7 @@
                         <div class="input-group"><label>Preço Unitário (R$)</label><input type="text" id="precoProduto" readonly placeholder="0,00"></div>
                         <div class="status-msg" id="statusMsg">Aguardando produto...</div>
                         <button class="btn-finalizar" id="btnFinalizar" onclick="abrirPagamento()" disabled><i class="fas fa-check-circle"></i> FINALIZAR VENDA</button>
-                        <div class="f1-hint"><kbd>F1</kbd> Código <kbd>F2</kbd> Busca <kbd>F5</kbd> Finalizar</div>
+                        <div class="f1-hint"><kbd class="destaque">F1</kbd> <span class="destaque">⚡ Mestre</span> (foco / finalizar / confirmar)</div>
                     </div>
                     <div class="card">
                         <h3><i class="fas fa-shopping-bag" style="color:var(--blue);"></i> Carrinho</h3>
@@ -568,7 +572,7 @@
                         <div id="dadosCnpjConfig" style="display:none;background:var(--bg-primary);padding:10px;border-radius:8px;margin-bottom:10px;font-size:12px;color:var(--text-secondary);"></div>
                         <button class="btn btn-primary" onclick="salvarNomeLoja()" style="margin-top:10px;"><i class="fas fa-save"></i> Salvar</button>
                         <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-color);">
-                            <p style="font-size:12px;color:var(--text-secondary);"><strong>Versão:</strong> <span id="versaoSistema">9.0.1</span></p>
+                            <p style="font-size:12px;color:var(--text-secondary);"><strong>Versão:</strong> <span id="versaoSistema">9.0.2</span></p>
                             <p style="font-size:12px;color:var(--text-secondary);"><strong>ID do Banco:</strong> <span id="dbIdConfig" style="font-family:monospace;cursor:pointer;" onclick="copiarId()">---</span></p>
                             <p style="font-size:12px;color:var(--text-secondary);"><strong>Servidor:</strong> <span id="servidorIdConfig" style="font-family:monospace;">---</span></p>
                         </div>
@@ -579,41 +583,21 @@
     </div>
     <script>
         // ============================================================
-        // BLOQUEIO TOTAL DE TECLAS (CORRIGIDO)
+        // BLOQUEIO TOTAL DE TECLAS (F1 = TECLA MESTRE, F2-F12 BLOQUEADAS)
         // ============================================================
         document.addEventListener('keydown', function(e) {
-            // ===== BLOQUEAR F1 a F12 =====
-            if (e.key >= 'F1' && e.key <= 'F12') {
+            // ===== BLOQUEAR TODAS AS TECLAS F2 a F12 =====
+            if (e.key >= 'F2' && e.key <= 'F12') {
                 e.preventDefault();
                 e.stopPropagation();
-                
-                // F1 - Focar código / Confirmar
-                if (e.key === 'F1') {
-                    processarF1();
-                }
-                // F2 - Focar busca por nome
-                else if (e.key === 'F2') {
-                    const buscaInput = document.getElementById('buscaProdutoInput');
-                    buscaInput.focus();
-                    buscaInput.select();
-                    showToast('🔍 Busca por nome ativada', 'info');
-                }
-                // F5 - Finalizar venda
-                else if (e.key === 'F5') {
-                    if (state.itens.length > 0) {
-                        if (!state.caixa_aberto) {
-                            showToast('🔒 Caixa fechado! Abra o caixa primeiro.', 'warning');
-                            return;
-                        }
-                        if (!state.plano_ativo) {
-                            showToast('⚠️ Plano expirado!', 'warning');
-                            return;
-                        }
-                        abrirPagamento();
-                    } else {
-                        showToast('🛒 Carrinho vazio!', 'warning');
-                    }
-                }
+                return;
+            }
+            
+            // ===== F1 - TECLA MESTRE =====
+            if (e.key === 'F1') {
+                e.preventDefault();
+                e.stopPropagation();
+                processarF1();
                 return;
             }
             
@@ -631,7 +615,7 @@
                 return;
             }
             
-            // ===== BLOQUEAR F12 (DevTools) =====
+            // ===== BLOQUEAR F12 (DevTools) - redundante =====
             if (e.key === 'F12') {
                 e.preventDefault();
                 e.stopPropagation();
@@ -752,7 +736,7 @@
         });
 
         // ============================================================
-        // PROCESSAR F1 - A TECLA MÁGICA
+        // PROCESSAR F1 - TECLA MESTRE
         // ============================================================
         function processarF1() {
             const modalPagamentoAberto = document.getElementById('paymentModal').classList.contains('active');
@@ -794,22 +778,34 @@
                 return;
             }
             
-            // Se não tem itens, alterna entre código de barras e busca
-            if (document.activeElement !== buscaInput) {
+            // Se não tem itens, alterna entre código de barras e busca (TAB)
+            // Se o foco está no código ou em nenhum lugar, foca no código
+            if (document.activeElement !== buscaInput && document.activeElement !== codigoInput) {
+                codigoInput.focus();
+                codigoInput.select();
+                showToast('🔍 Código de barras (F1)', 'info');
+            } else if (document.activeElement === codigoInput) {
+                // Estava no código, vai para a busca
+                buscaInput.focus();
+                buscaInput.select();
+                showToast('🔍 Buscar por nome (F1)', 'info');
+            } else if (document.activeElement === buscaInput) {
+                // Estava na busca, volta para o código
                 codigoInput.focus();
                 codigoInput.select();
                 showToast('🔍 Código de barras (F1)', 'info');
             } else {
-                buscaInput.focus();
-                buscaInput.select();
-                showToast('🔍 Buscar por nome (F1)', 'info');
+                // Fallback: foca no código
+                codigoInput.focus();
+                codigoInput.select();
+                showToast('🔍 Código de barras (F1)', 'info');
             }
         }
 
         // ============================================================
         // VERSÃO - SINCRONIZADA COM BACKEND
         // ============================================================
-        let SISTEMA_VERSAO = '9.0.1';
+        let SISTEMA_VERSAO = '9.0.2';
         
         fetch('/api/versao')
             .then(r => r.json())
@@ -852,7 +848,7 @@
         function toggleAuth(mode){
             const login=document.getElementById('loginForm'),register=document.getElementById('registerForm'),title=document.getElementById('authTitle'),sub=document.getElementById('authSub');
             if(mode==='register'){login.style.display='none';register.style.display='block';title.textContent='Criar Conta';sub.textContent='Comece agora mesmo';}
-            else{login.style.display='block';register.style.display='none';title.textContent='PDV Inteligente';sub.textContent='Entre na sua conta';}
+            else{login.style.display='block';register.style.display='none';title.textContent='SMART PDV';sub.textContent='Entre na sua conta';}
             document.getElementById('authMsg').className='msg';document.getElementById('authMsg').textContent='';
         }
 
@@ -1480,7 +1476,7 @@
 
         function mostrarCupom(venda){
             const dadosCnpj=state.cnpj_dados||{};
-            const nomeLoja=state.nome_loja||'PDV Inteligente';
+            const nomeLoja=state.nome_loja||'SMART PDV';
             const cnpj=state.cnpj||'';
             document.getElementById('cupomLojaNome').textContent=nomeLoja;
             document.getElementById('cupomData').textContent=new Date(venda.data_hora).toLocaleString();
@@ -1537,7 +1533,7 @@
                 metodo: ultimoCupomData.metodo,
                 cliente: ultimoCupomData.cliente || 'Consumidor',
                 usuario: state.nome || '',
-                nome_loja: state.nome_loja || 'PDV Inteligente',
+                nome_loja: state.nome_loja || 'SMART PDV',
                 cnpj: state.cnpj || '',
                 recebido: ultimoCupomData.recebido || 0,
                 troco: ultimoCupomData.troco || 0
@@ -1923,11 +1919,10 @@
             setTimeout(()=>document.getElementById('codigoInput').focus(),500);
         });
 
-        console.log('🏪 PDV Inteligente v' + SISTEMA_VERSAO);
-        console.log('⌨️ ATALHOS:');
-        console.log('  F1 → Código de barras / Confirmar');
-        console.log('  F2 → Busca por nome');
-        console.log('  F5 → Finalizar venda');
+        console.log('🏪 SMART PDV v' + SISTEMA_VERSAO);
+        console.log('⌨️ TECLA MESTRE:');
+        console.log('  F1 → Tudo! (foco, busca, finalizar, confirmar)');
+        console.log('  F2 a F12 → TOTALMENTE BLOQUEADAS');
         console.log('  ↑↓ → Navegar (modais)');
         console.log('  ENTER → Confirmar (modais)');
         console.log('  ESC → Fechar modais');
