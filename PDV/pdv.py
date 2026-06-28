@@ -3090,7 +3090,10 @@ def imprimir_cupom_route():
             return jsonify({"success": False, "error": "Não autenticado"}), 401
         
         dados = request.json or {}
-        
+
+        # cnpj_dados enviado pelo frontend (state.cnpj_dados já populado no browser)
+        cnpj_dados_frontend = dados.get('cnpj_dados') or {}
+
         with get_db_context() as conn:
             cursor = conn.execute("SELECT nome_loja, cnpj, cnpj_dados FROM users WHERE db_id=? LIMIT 1", (db_id,))
             loja = cursor.fetchone()
@@ -3098,10 +3101,16 @@ def imprimir_cupom_route():
                 dados['nome_loja'] = loja[0]
                 dados['cnpj'] = loja[1] or ''
                 try:
-                    dados['cnpj_dados'] = json.loads(loja[2]) if loja[2] else {}
+                    cnpj_dados_db = json.loads(loja[2]) if loja[2] else {}
                 except:
-                    dados['cnpj_dados'] = {}
-        
+                    cnpj_dados_db = {}
+                # Mescla: frontend como base, banco completa campos não-vazios
+                merged = {**cnpj_dados_frontend}
+                for k, v in cnpj_dados_db.items():
+                    if v not in (None, '', {}, []):
+                        merged[k] = v
+                dados['cnpj_dados'] = merged
+
         dados['usuario'] = session.get('nome', '')
         
         resultado = imprimir_cupom(dados)
