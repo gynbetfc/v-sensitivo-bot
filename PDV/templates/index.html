@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>SMART PDV v9.0.4</title>
+    <title>SMART PDV v9.0.5</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
@@ -131,6 +131,9 @@
         .payment-modal .total-display{text-align:center;padding:8px;background:var(--bg-primary);border-radius:8px;margin-bottom:10px}
         .payment-modal .total-display .label{font-size:10px;color:var(--text-secondary);text-transform:uppercase}
         .payment-modal .total-display .value{font-size:22px;font-weight:700;color:var(--green)}
+        .payment-modal .total-display .troco-display{margin-top:4px;display:none}
+        .payment-modal .total-display .troco-display .label{font-size:10px;color:var(--text-secondary);text-transform:uppercase}
+        .payment-modal .total-display .troco-display .value{font-size:18px;color:var(--green)}
         .payment-modal .cliente-input{margin-bottom:8px}
         .payment-modal .cliente-input input{width:100%;padding:6px 10px;border:1px solid var(--border-color);border-radius:8px;font-size:12px;background:var(--bg-primary);color:#fff;transition:var(--transition)}
         .payment-modal .cliente-input input:focus{outline:0;border-color:var(--green)}
@@ -331,7 +334,7 @@
 </head>
 <body>
     <div class="toast-container" id="toastContainer"></div>
-    
+
     <div class="modal-overlay" id="modalPix">
         <div class="modal">
             <div class="modal-header"><h3>💳 Pagamento PIX</h3><button class="close" onclick="fecharModalPix()">×</button></div>
@@ -351,7 +354,14 @@
     <div class="payment-modal" id="paymentModal">
         <div class="modal">
             <div class="modal-header"><h3>💳 Finalizar Venda</h3><button class="close" onclick="fecharPagamento()">×</button></div>
-            <div class="total-display"><div class="label">TOTAL DA VENDA</div><div class="value" id="paymentTotal">R$ 0,00</div></div>
+            <div class="total-display">
+                <div class="label">TOTAL DA VENDA</div>
+                <div class="value" id="paymentTotal">R$ 0,00</div>
+                <div id="paymentTrocoDisplay" style="margin-top:6px;font-size:14px;color:var(--text-secondary);display:none;">
+                    <div class="label" style="font-size:11px;">TROCO</div>
+                    <div class="value" style="font-size:20px;color:var(--green);" id="paymentTroco">R$ 0,00</div>
+                </div>
+            </div>
             <div class="cliente-input"><input type="text" id="clientePagamento" placeholder="Nome do cliente (opcional)"></div>
             <div class="payment-methods" id="paymentMethods">
                 <button class="active" data-metodo="Dinheiro" onclick="selecionarMetodo('Dinheiro')"><i class="fas fa-money-bill-wave"></i> Dinheiro</button>
@@ -428,7 +438,7 @@
     </div>
     <div class="app" id="app">
         <header class="header">
-            <div class="logo">🏪 <span>SMART</span> PDV <span class="version" id="versaoHeader">v9.0.4</span></div>
+            <div class="logo">🏪 <span>SMART</span> PDV <span class="version" id="versaoHeader">v9.0.5</span></div>
             <button class="menu-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
             <div class="user">
                 <div class="avatar" id="userAvatar">A</div>
@@ -437,7 +447,7 @@
                 <span class="db-id" id="dbIdDisplay" onclick="copiarId()" title="Clique para copiar o ID">📋 ID: ---</span>
                 <span id="lojaNomeDisplay" style="font-size:11px;color:var(--text-muted);">🏪 Loja</span>
                 <span class="status-caixa fechado" id="statusCaixa">🔒 Fechado</span>
-                <span class="status-sincronizacao" id="statusSincronizacao"><i class="fas fa-cloud"></i> Sincronizado</span>
+                <span class="status-sincronizacao" id="statusSincronizacao"><i class="fas fa-cloud" style="color:var(--green);"></i> Online</span>
                 <span class="atalhos-indicador"><kbd class="destaque">F1</kbd> ⚡ Mestre</span>
                 <button class="btn-sair" onclick="fazerLogout()">Sair</button>
             </div>
@@ -512,7 +522,6 @@
                     <div class="stat-card"><div class="value blue" id="totalVendas">0</div><div class="label">Vendas</div></div>
                     <div class="stat-card"><div class="value purple" id="mediaVenda">R$ 0,00</div><div class="label">Ticket Médio</div></div>
                     <div class="stat-card"><div class="value orange" id="totalItens">0</div><div class="label">Itens</div></div>
-                    <div class="stat-card"><div class="value" id="pendentesSincronizacao" style="color:var(--green);">0</div><div class="label">📤 Pendentes Sinc.</div></div>
                 </div>
                 <div class="chart-row">
                     <div class="chart-box"><h4><i class="fas fa-credit-card"></i> Métodos</h4><div id="metodosContainer"><p style="color:var(--text-secondary);font-size:13px;">Carregando...</p></div></div>
@@ -575,7 +584,7 @@
                         <div id="dadosCnpjConfig" style="display:none;background:var(--bg-primary);padding:10px;border-radius:8px;margin-bottom:10px;font-size:12px;color:var(--text-secondary);"></div>
                         <button class="btn btn-primary" onclick="salvarNomeLoja()" style="margin-top:10px;"><i class="fas fa-save"></i> Salvar</button>
                         <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-color);">
-                            <p style="font-size:12px;color:var(--text-secondary);"><strong>Versão:</strong> <span id="versaoSistema">9.0.4</span></p>
+                            <p style="font-size:12px;color:var(--text-secondary);"><strong>Versão:</strong> <span id="versaoSistema">9.0.5</span></p>
                             <p style="font-size:12px;color:var(--text-secondary);"><strong>ID do Banco:</strong> <span id="dbIdConfig" style="font-family:monospace;cursor:pointer;" onclick="copiarId()">---</span></p>
                             <p style="font-size:12px;color:var(--text-secondary);"><strong>Servidor:</strong> <span id="servidorIdConfig" style="font-family:monospace;">---</span></p>
                         </div>
@@ -600,15 +609,15 @@
             }
             lastToastMessage = message;
             lastToastTime = now;
-            
+
             const container = document.getElementById('toastContainer');
             if (!container) return;
-            
+
             const titles = { success: '✅ Sucesso!', error: '❌ Erro!', warning: '⚠️ Atenção!', info: 'ℹ️ Informação' };
             const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
             const finalTitle = title || titles[type] || 'Info';
             const icon = icons[type] || 'ℹ️';
-            
+
             const toast = document.createElement('div');
             toast.className = 'toast toast-' + type;
             toast.innerHTML = `
@@ -620,7 +629,7 @@
                 <button class="toast-close" onclick="this.parentElement.remove()">✕</button>
             `;
             container.appendChild(toast);
-            
+
             const timeoutId = setTimeout(() => {
                 if (toast.parentElement) {
                     toast.classList.add('toast-hide');
@@ -631,9 +640,9 @@
                 const index = toastTimeouts.indexOf(timeoutId);
                 if (index > -1) toastTimeouts.splice(index, 1);
             }, 5000);
-            
+
             toastTimeouts.push(timeoutId);
-            
+
             toast.addEventListener('click', function(e) {
                 if (e.target.classList.contains('toast-close')) return;
                 if (toast.parentElement) {
@@ -654,36 +663,36 @@
                 e.stopPropagation();
                 return;
             }
-            
+
             if (e.key === 'F1') {
                 e.preventDefault();
                 e.stopPropagation();
                 processarF1();
                 return;
             }
-            
+
             if (e.key === 'F5' || (e.ctrlKey && (e.key === 'r' || e.key === 'R'))) {
                 e.preventDefault();
                 e.stopPropagation();
                 return;
             }
-            
+
             if (e.ctrlKey && e.shiftKey && (e.key === 'i' || e.key === 'I')) {
                 e.preventDefault();
                 e.stopPropagation();
                 return;
             }
-            
+
             if (e.key === 'F12') {
                 e.preventDefault();
                 e.stopPropagation();
                 return;
             }
-            
+
             const modalPagamentoAberto = document.getElementById('paymentModal').classList.contains('active');
             const modalCupomAberto = document.getElementById('cupomModal').classList.contains('active');
             const modalPixAberto = document.getElementById('modalPix').classList.contains('active');
-            
+
             if (e.key === 'Enter') {
                 if (modalPagamentoAberto) {
                     e.preventDefault();
@@ -715,7 +724,7 @@
                 e.stopPropagation();
                 return;
             }
-            
+
             if (e.key === 'Escape') {
                 if (modalPagamentoAberto) {
                     e.preventDefault();
@@ -744,7 +753,7 @@
                 }
                 return;
             }
-            
+
             if (modalPagamentoAberto && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
                 e.preventDefault();
                 const metodos = document.querySelectorAll('#paymentMethods button');
@@ -762,7 +771,7 @@
                 }
                 return;
             }
-            
+
             if (modalCupomAberto && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
                 e.preventDefault();
                 const opts = document.querySelectorAll('#cupomOptions button');
@@ -795,7 +804,7 @@
             const modalCupomAberto = document.getElementById('cupomModal').classList.contains('active');
             const codigoInput = document.getElementById('codigoInput');
             const buscaInput = document.getElementById('buscaProdutoInput');
-            
+
             if (modalCupomAberto) {
                 if (state.cupomEscolha === 'imprimir') {
                     imprimirCupom();
@@ -804,12 +813,12 @@
                 }
                 return;
             }
-            
+
             if (modalPagamentoAberto) {
                 confirmarPagamento();
                 return;
             }
-            
+
             if (state.itens.length > 0) {
                 if (!state.caixa_aberto) {
                     showToast('🔒 Caixa fechado! Abra o caixa primeiro.', 'warning');
@@ -822,7 +831,7 @@
                 abrirPagamento();
                 return;
             }
-            
+
             if (document.activeElement !== buscaInput && document.activeElement !== codigoInput) {
                 codigoInput.focus();
                 codigoInput.select();
@@ -841,8 +850,8 @@
         // ============================================================
         // VERSÃO - SINCRONIZADA COM BACKEND
         // ============================================================
-        let SISTEMA_VERSAO = '9.0.4';
-        
+        let SISTEMA_VERSAO = '9.0.5';
+
         fetch('/api/versao')
             .then(r => r.json())
             .then(data => {
@@ -854,6 +863,33 @@
                 }
             })
             .catch(() => {});
+
+        // ============================================================
+        // VERIFICAR SINCRONIZAÇÃO
+        // ============================================================
+        async function verificarSincronizacao() {
+            try {
+                const res = await fetch('/api/health');
+                const data = await res.json();
+                const statusEl = document.getElementById('statusSincronizacao');
+
+                if (statusEl) {
+                    if (data.firebase_status === 'ok') {
+                        statusEl.innerHTML = `<i class="fas fa-cloud" style="color:var(--green);"></i> Online`;
+                        statusEl.style.color = 'var(--green)';
+                    } else {
+                        statusEl.innerHTML = `<i class="fas fa-cloud-upload-alt" style="color:var(--orange);"></i> Offline`;
+                        statusEl.style.color = 'var(--orange)';
+                    }
+                }
+            } catch (e) {
+                const statusEl = document.getElementById('statusSincronizacao');
+                if (statusEl) {
+                    statusEl.innerHTML = `<i class="fas fa-cloud-upload-alt" style="color:var(--orange);"></i> Offline`;
+                    statusEl.style.color = 'var(--orange)';
+                }
+            }
+        }
 
         // ============================================================
         // COPIAR ID
@@ -882,7 +918,7 @@
             const senha=document.getElementById('registerSenha').value.trim();
             const cnpj=document.getElementById('registerCnpj').value.trim();
             const msg=document.getElementById('authMsg');
-            
+
             if(!nome||!email||!senha){
                 msg.className='msg error';
                 msg.textContent='⚠️ Preencha todos os campos!';
@@ -893,11 +929,11 @@
                 msg.textContent='⚠️ Senha deve ter pelo menos 4 caracteres!';
                 return;
             }
-            
+
             msg.className='msg';
             msg.textContent='⏳ Criando conta...';
             msg.style.display='block';
-            
+
             try{
                 const res=await fetch('/api/auth/register',{
                     method:'POST',
@@ -913,7 +949,7 @@
                     })
                 });
                 const data=await res.json();
-                
+
                 if(data.success){
                     msg.className='msg success';
                     msg.textContent='✅ Conta criada!';
@@ -938,17 +974,17 @@
             const email=document.getElementById('loginEmail').value.trim();
             const senha=document.getElementById('loginSenha').value.trim();
             const msg=document.getElementById('authMsg');
-            
+
             if(!email||!senha){
                 msg.className='msg error';
                 msg.textContent='⚠️ Preencha todos os campos!';
                 return;
             }
-            
+
             msg.className='msg';
             msg.textContent='⏳ Entrando...';
             msg.style.display='block';
-            
+
             try{
                 const res=await fetch('/api/auth/login',{
                     method:'POST',
@@ -961,7 +997,7 @@
                     })
                 });
                 const data=await res.json();
-                
+
                 if(data.success){
                     state.usuario_id = data.id || data.usuario_id;
                     state.nome = data.nome || 'Usuário';
@@ -972,7 +1008,7 @@
                     state.cnpj = data.cnpj || '';
                     state.cnpj_dados = data.cnpj_dados || {};
                     state.plano_ativo = data.plano_ativo !== false;
-                    
+
                     document.getElementById('authPage').classList.add('hidden');
                     document.getElementById('app').classList.add('active');
                     document.getElementById('userName').textContent=data.nome;
@@ -984,16 +1020,16 @@
                     document.getElementById('servidorIdConfig').textContent=data.servidor_id||'---';
                     document.getElementById('lojaNomeConfig').value=state.nome_loja;
                     document.getElementById('lojaCnpjConfig').value=state.cnpj;
-                    
+
                     if(!state.plano_ativo){
                         document.getElementById('planoExpiradoAviso').style.display='flex';
                     }else{
                         document.getElementById('planoExpiradoAviso').style.display='none';
                     }
-                    
+
                     if(window._syncInterval)clearInterval(window._syncInterval);
                     window._syncInterval=setInterval(()=>{sincronizarAgora();},180000);
-                    
+
                     await Promise.all([
                         carregarProdutos(),
                         carregarClientes(),
@@ -1004,15 +1040,17 @@
                         carregarResumoCaixa(),
                         carregarDashboard('hoje')
                     ]);
-                    
+
                     if(state.cnpj){
                         setTimeout(()=>{buscarDadosCNPJ(state.cnpj);},500);
                     }
-                    
+
                     if (!boasVindasMostrada) {
                         showToast('✅ Bem-vindo, '+data.nome+'!','success');
                         boasVindasMostrada = true;
                     }
+                    
+                    verificarSincronizacao();
                 }else{
                     msg.className='msg error';
                     msg.textContent='❌ '+(data.error||'Email ou senha inválidos');
@@ -1079,7 +1117,7 @@
                     state.cnpj=data.cnpj||'';
                     state.cnpj_dados=data.cnpj_dados||{};
                     state.plano_ativo=data.plano_ativo!==false;
-                    
+
                     document.getElementById('authPage').classList.add('hidden');
                     document.getElementById('app').classList.add('active');
                     document.getElementById('userName').textContent=data.nome;
@@ -1091,16 +1129,16 @@
                     document.getElementById('servidorIdConfig').textContent=data.servidor_id||'---';
                     document.getElementById('lojaNomeConfig').value=state.nome_loja;
                     document.getElementById('lojaCnpjConfig').value=state.cnpj;
-                    
+
                     if(!state.plano_ativo){
                         document.getElementById('planoExpiradoAviso').style.display='flex';
                     }else{
                         document.getElementById('planoExpiradoAviso').style.display='none';
                     }
-                    
+
                     if(window._syncInterval)clearInterval(window._syncInterval);
                     window._syncInterval=setInterval(()=>{sincronizarAgora();},180000);
-                    
+
                     await Promise.all([
                         carregarProdutos(),
                         carregarClientes(),
@@ -1111,45 +1149,14 @@
                         carregarResumoCaixa(),
                         carregarDashboard('hoje')
                     ]);
-                    
+
                     if(state.cnpj){
                         setTimeout(()=>{buscarDadosCNPJ(state.cnpj);},500);
                     }
+                    
+                    verificarSincronizacao();
                 }
             }catch(e){}
-        }
-
-        // ============================================================
-        // VERIFICAR DADOS PENDENTES
-        // ============================================================
-        async function verificarPendentes() {
-            try {
-                const res = await fetch('/api/vendas');
-                const data = await res.json();
-                if (data.success) {
-                    const vendas = data.vendas || [];
-                    const pendentes = vendas.filter(v => !v.sincronizado_em).length;
-                    
-                    const badge = document.getElementById('pendentesSincronizacao');
-                    if (badge) {
-                        badge.textContent = pendentes;
-                        badge.style.color = pendentes > 0 ? 'var(--orange)' : 'var(--green)';
-                    }
-                    
-                    const statusEl = document.getElementById('statusSincronizacao');
-                    if (statusEl) {
-                        if (pendentes > 0) {
-                            statusEl.innerHTML = `<i class="fas fa-cloud-upload-alt" style="color:var(--orange);"></i> ${pendentes} pendente(s)`;
-                            statusEl.style.color = 'var(--orange)';
-                            statusEl.title = `${pendentes} venda(s) aguardando sincronização`;
-                        } else {
-                            statusEl.innerHTML = `<i class="fas fa-cloud" style="color:var(--green);"></i> Sincronizado`;
-                            statusEl.style.color = 'var(--green)';
-                            statusEl.title = 'Todos os dados estão sincronizados';
-                        }
-                    }
-                }
-            } catch (e) {}
         }
 
         // ============================================================
@@ -1169,7 +1176,7 @@
             state.cupomEscolha = opcao;
             const optImprimir = document.getElementById('cupomOptImprimir');
             const optNao = document.getElementById('cupomOptNaoImprimir');
-            
+
             if (opcao === 'imprimir') {
                 optImprimir.classList.add('active');
                 optNao.classList.remove('active');
@@ -1491,7 +1498,7 @@
                     document.getElementById('totalVendas').textContent=s.total_vendas;
                     document.getElementById('mediaVenda').textContent='R$ '+s.media.toFixed(2);
                     document.getElementById('totalItens').textContent=s.total_itens||0;
-                    
+
                     const metodos=s.metodos||{};
                     const total=Object.values(metodos).reduce((a,b)=>a+b,0)||1;
                     const cores={'Dinheiro':'#22c55e','PIX':'#3b82f6','Cartão':'#8b5cf6','Fiado':'#ef4444','Débito':'#8b5cf6','Crédito':'#8b5cf6'};
@@ -1504,7 +1511,7 @@
                         }
                     }
                     container.innerHTML=html||'<p style="color:var(--text-secondary);">Nenhuma venda</p>';
-                    
+
                     const vendasList=document.getElementById('vendasList');
                     const vendas=s.vendas||[];
                     if(vendas.length===0){
@@ -1585,7 +1592,7 @@
                 showToast('⚠️ Nenhum cupom para imprimir!', 'warning');
                 return;
             }
-            
+
             const dadosImpressao = {
                 venda_id: ultimaVendaId || ultimoCupomData.id,
                 data_hora: ultimoCupomData.data_hora,
@@ -1602,7 +1609,7 @@
                 recebido: ultimoCupomData.recebido || 0,
                 troco: ultimoCupomData.troco || 0
             };
-            
+
             fetch('/api/imprimir/cupom', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1614,7 +1621,6 @@
                     showToast('🖨️ Cupom enviado para impressora!', 'success');
                     fecharCupom();
                 } else {
-                    // Não-Windows ou sem impressora: usa print do navegador
                     fecharCupom();
                     setTimeout(() => window.print(), 150);
                 }
@@ -1705,7 +1711,7 @@
                 if(!silencioso) showToast('❌ Erro ao verificar!','error');
             }
         }
-        
+
         async function carregarStatusLoja(){
             try{
                 const res=await fetch('/api/plano/status');
@@ -1715,24 +1721,24 @@
                     if(data.expirado){document.getElementById('planoExpiradoAviso').style.display='flex';}
                     else{document.getElementById('planoExpiradoAviso').style.display='none';}
                     const statusDiv=document.getElementById('statusLoja');
-                    
+
                     let produtosText = '';
                     if (data.limite_produtos === -1) {
                         produtosText = '♾️ Ilimitado';
                     } else {
                         produtosText = data.produtos_atuais + ' / ' + data.limite_produtos;
                     }
-                    
+
                     let progressBar = '';
                     if (data.limite_produtos !== -1 && data.limite_produtos > 0) {
                         const percent = Math.min(100, (data.produtos_atuais / data.limite_produtos) * 100);
                         let color = 'var(--green)';
                         if (percent > 80) color = 'var(--orange)';
                         if (percent > 95) color = 'var(--red)';
-                        
+
                         progressBar = '<div style="margin-top: 6px; background: var(--bg-primary); border-radius: 10px; height: 8px; overflow: hidden;"><div style="width: ' + percent + '%; height: 100%; background: ' + color + '; border-radius: 10px; transition: width 0.5s;"></div></div><div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">' + percent.toFixed(0) + '% utilizado</div>';
                     }
-                    
+
                     statusDiv.innerHTML='<h4 style="font-size:14px;margin-bottom:10px;"><i class="fas fa-info-circle"></i> Status</h4><div class="info-grid"><div class="info-item"><div class="label">Plano</div><div class="value">'+(data.plano?data.plano.nome:'Nenhum')+'</div></div><div class="info-item"><div class="label">Expira em</div><div class="value '+(data.expirado?'expirado':'ativo')+'">'+(data.expira_em?new Date(data.expira_em).toLocaleDateString():'N/A')+' '+(data.dias_restantes>0?'('+data.dias_restantes.toFixed(1)+' dias)':'')+'</div></div><div class="info-item"><div class="label">Status</div><div class="value '+(data.expirado?'expirado':'ativo')+'">'+(data.expirado?'⚠️ Expirado':'✅ Ativo')+'</div></div><div class="info-item"><div class="label">👥 Usuários</div><div class="value" style="color: var(--blue);">'+(data.usuarios_atuais||0)+' / '+(data.usuarios_limite||1)+'</div></div><div class="info-item" style="grid-column: span 2;"><div class="label">📦 Produtos no Estoque</div><div class="value" style="color: '+(data.limite_produtos===-1?'var(--purple)':data.produtos_restantes<10?'var(--orange)':'var(--green)')+';">'+produtosText+(data.limite_produtos===-1?' ♾️':data.produtos_restantes>0?' ('+data.produtos_restantes+' restantes)':' ⚠️')+'</div>'+progressBar+'</div></div>';
                 }
             }catch(e){}
@@ -1799,36 +1805,35 @@
         let metodoAtivo = 'Dinheiro';
 
         function abrirPagamento(){
-            console.log('🔍 abrirPagamento chamado!');
-            
             if (!state.plano_ativo) {
                 showToast('⚠️ Plano expirado!', 'warning');
                 return;
             }
-            
+
             if (state.itens.length === 0) {
                 showToast('🛒 Carrinho vazio!', 'warning');
                 return;
             }
-            
+
             if (!state.caixa_aberto) {
                 showToast('🔒 Caixa fechado!', 'warning');
                 return;
             }
-            
+
             const desconto = parseFloat(document.getElementById('descontoInput').value.replace(',', '.')) || 0;
             const subtotal = state.subtotal || 0;
             const total = Math.max(0, subtotal - desconto);
             state.total = total;
-            
-            console.log('📊 Abrindo pagamento - Total:', total);
-            
+
             document.getElementById('paymentTotal').textContent = 'R$ ' + total.toFixed(2);
+            document.getElementById('paymentTrocoDisplay').style.display = 'none';
+            document.getElementById('paymentTroco').textContent = 'R$ 0,00';
+
             document.getElementById('paymentModal').classList.add('active');
             document.getElementById('clientePagamento').value = '';
             metodoAtivo = 'Dinheiro';
             selecionarMetodo('Dinheiro');
-            
+
             setTimeout(() => {
                 const primeiro = document.querySelector('#paymentMethods button');
                 if (primeiro) primeiro.focus();
@@ -1847,9 +1852,16 @@
                 b.classList.toggle('active',b.dataset.metodo===metodo);
             });
             const container=document.getElementById('paymentInputs');
+            const trocoDisplay = document.getElementById('paymentTrocoDisplay');
+            const trocoValor = document.getElementById('paymentTroco');
+            trocoDisplay.style.display = 'none';
+
             if(metodo==='Fiado'){
                 container.innerHTML='<div style="padding:10px;background:var(--bg-primary);border-radius:8px;text-align:center;color:var(--text-secondary);margin-bottom:8px;font-size:13px;"><i class="fas fa-handshake" style="font-size:20px;display:block;margin-bottom:6px;"></i>Venda fiada - o valor será adicionado à dívida do cliente</div><div class="payment-input"><span class="label">Cliente</span><input type="text" id="fiadoCliente" placeholder="Nome do cliente" style="flex:1;padding:6px 8px;border:none;background:transparent;color:#fff;font-size:14px;outline:none;"></div>';
                 document.getElementById('btnConfirmarPagamento').disabled = false;
+                trocoDisplay.style.display = 'block';
+                trocoValor.textContent = 'R$ 0,00';
+                trocoValor.style.color = 'var(--text-secondary)';
                 return;
             }
             if(metodo==='Dinheiro'){
@@ -1860,9 +1872,27 @@
                     const val=parseFloat(this.value.replace(',','.'))||0;
                     const resto=state.total-val;
                     const label=this.parentElement.querySelector('.remaining');
-                    if(resto>0){label.textContent='Falta: R$ '+resto.toFixed(2);label.style.color='var(--orange)';}
-                    else if(resto<0){label.textContent='Troco: R$ '+Math.abs(resto).toFixed(2);label.style.color='var(--green)';}
-                    else{label.textContent='✅ Valor exato!';label.style.color='var(--green)';}
+                    const trocoValor = document.getElementById('paymentTroco');
+                    const trocoDisplay = document.getElementById('paymentTrocoDisplay');
+
+                    if(resto>0){
+                        label.textContent='Falta: R$ '+resto.toFixed(2);
+                        label.style.color='var(--orange)';
+                        trocoDisplay.style.display = 'none';
+                    } else if(resto<0){
+                        const troco = Math.abs(resto);
+                        label.textContent='Troco: R$ '+troco.toFixed(2);
+                        label.style.color='var(--green)';
+                        trocoDisplay.style.display = 'block';
+                        trocoValor.textContent = 'R$ '+troco.toFixed(2);
+                        trocoValor.style.color = 'var(--green)';
+                    } else {
+                        label.textContent='✅ Valor exato!';
+                        label.style.color='var(--green)';
+                        trocoDisplay.style.display = 'block';
+                        trocoValor.textContent = 'R$ 0,00';
+                        trocoValor.style.color = 'var(--text-secondary)';
+                    }
                 });
                 document.getElementById('btnConfirmarPagamento').disabled = false;
                 return;
@@ -1874,39 +1904,51 @@
                 const val=parseFloat(this.value.replace(',','.'))||0;
                 const resto=state.total-val;
                 const label=this.parentElement.querySelector('.remaining');
-                if(resto>0){label.textContent='Falta: R$ '+resto.toFixed(2);label.style.color='var(--orange)';}
-                else if(resto<0){label.textContent='Excedente: R$ '+Math.abs(resto).toFixed(2);label.style.color='var(--red)';}
-                else{label.textContent='✅ Valor exato!';label.style.color='var(--green)';}
+                const trocoValor = document.getElementById('paymentTroco');
+                const trocoDisplay = document.getElementById('paymentTrocoDisplay');
+
+                if(resto>0){
+                    label.textContent='Falta: R$ '+resto.toFixed(2);
+                    label.style.color='var(--orange)';
+                    trocoDisplay.style.display = 'none';
+                } else if(resto<0){
+                    const troco = Math.abs(resto);
+                    label.textContent='Excedente: R$ '+troco.toFixed(2);
+                    label.style.color='var(--red)';
+                    trocoDisplay.style.display = 'none';
+                } else {
+                    label.textContent='✅ Valor exato!';
+                    label.style.color='var(--green)';
+                    trocoDisplay.style.display = 'block';
+                    trocoValor.textContent = 'R$ 0,00';
+                    trocoValor.style.color = 'var(--text-secondary)';
+                }
             });
             document.getElementById('btnConfirmarPagamento').disabled = false;
         }
 
         function confirmarPagamento(){
-            console.log('🔍 confirmarPagamento chamado!');
-            
             if (!state.plano_ativo) {
                 showToast('⚠️ Plano expirado!', 'warning');
                 return;
             }
-            
+
             if (state.itens.length === 0) {
                 showToast('🛒 Carrinho vazio!', 'warning');
                 return;
             }
-            
+
             const desconto = parseFloat(document.getElementById('descontoInput').value.replace(',', '.')) || 0;
             const subtotal = state.subtotal || 0;
             const total = Math.max(0, subtotal - desconto);
             state.total = total;
-            
-            console.log('📊 Subtotal:', subtotal, 'Desconto:', desconto, 'Total:', total);
-            
+
             const cliente = document.getElementById('clientePagamento')?.value.trim() || '';
             let totalPago = 0;
             let metodo = metodoAtivo;
             let troco = 0;
             let clienteFinal = cliente;
-            
+
             if (metodo === 'Fiado') {
                 const nomeCliente = document.getElementById('fiadoCliente')?.value.trim();
                 if (!nomeCliente) {
@@ -1932,7 +1974,7 @@
                 totalPago = val;
                 troco = val - total;
             }
-            
+
             const venda = {
                 subtotal: state.subtotal,
                 desconto: desconto,
@@ -1949,40 +1991,33 @@
                 })),
                 cliente: clienteFinal
             };
-            
-            console.log('📤 Enviando venda:', venda);
-            
+
             const btn = document.getElementById('btnConfirmarPagamento');
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
-            
+
             fetch('/api/vendas', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(venda)
             })
-            .then(r => {
-                console.log('📥 Resposta recebida, status:', r.status);
-                return r.json();
-            })
+            .then(r => r.json())
             .then(data => {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-check"></i> Confirmar';
-                
-                console.log('📥 Dados da resposta:', data);
-                
+
                 if (data.success) {
                     let msg = '✅ Venda finalizada!\nTotal: R$ ' + total.toFixed(2) + '\nMétodo: ' + metodo;
                     if (troco > 0) msg += '\nTroco: R$ ' + troco.toFixed(2);
                     showToast(msg, 'success');
-                    
+
                     venda.id = data.id;
                     venda.data_hora = data.data_hora || new Date().toISOString();
                     venda.recebido = totalPago;
                     venda.troco = troco;
                     ultimoCupomData = venda;
                     ultimaVendaId = data.id;
-                    
+
                     fecharPagamento();
                     state.itens = [];
                     atualizarCarrinho();
@@ -1994,18 +2029,16 @@
                     document.getElementById('codigoInput').focus();
                     carregarDashboard(state.periodo);
                     carregarResumoCaixa();
-                    
+
                     mostrarCupom(venda);
                 } else {
                     showToast('❌ Erro: ' + (data.error || 'Erro desconhecido'), 'error');
-                    console.error('❌ Erro na venda:', data);
                 }
             })
             .catch(e => {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-check"></i> Confirmar';
                 showToast('❌ Erro ao registrar venda: ' + e.message, 'error');
-                console.error('❌ Erro ao registrar venda:', e);
             });
         }
 
@@ -2023,8 +2056,8 @@
         setInterval(()=>{
             if(document.getElementById('panelDashboard').classList.contains('active'))carregarDashboard(state.periodo);
             if(document.getElementById('panelCaixa').classList.contains('active'))carregarResumoCaixa();
-            verificarPendentes();
-        },30000);
+            verificarSincronizacao();
+        },60000);
 
         // ============================================================
         // DOM CONTENT LOADED - INICIAR
@@ -2032,7 +2065,7 @@
         document.addEventListener('DOMContentLoaded',()=>{
             document.getElementById('versaoSistema').textContent = SISTEMA_VERSAO;
             document.getElementById('versaoHeader').textContent = 'v' + SISTEMA_VERSAO;
-            
+
             fetch('/api/servidor/id')
                 .then(r => r.json())
                 .then(data => {
@@ -2049,11 +2082,11 @@
                     }
                 })
                 .catch(()=>{});
-            
+
             verificarSessao();
             setTimeout(() => {
                 document.getElementById('codigoInput').focus();
-                verificarPendentes();
+                verificarSincronizacao();
             }, 500);
         });
 
@@ -2070,11 +2103,11 @@
         console.log('  - Funciona de qualquer lugar');
         console.log('🔄 SINCRONIZAÇÃO AUTOMÁTICA:');
         console.log('  - A cada mudança no banco de dados');
-        console.log('  - Status no header e Dashboard');
+        console.log('  - Status no header (Online/Offline)');
         console.log('🛡️ PROTEÇÃO CONTRA MÚLTIPLAS CONTAS:');
         console.log('  - Limite de 2 contas sem CNPJ por dispositivo');
         console.log('  - Bloqueio após plano expirar (sem CNPJ)');
-        console.log('✅ VENDAS INSTANTÂNEAS: sem delay de 3 segundos');
+        console.log('✅ VENDAS INSTANTÂNEAS: sem delay');
     </script>
 </body>
 </html>
