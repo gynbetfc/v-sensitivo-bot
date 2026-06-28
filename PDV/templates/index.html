@@ -123,37 +123,37 @@
         .cart-summary .row input:focus{outline:0;border-color:var(--green)}
         .payment-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);z-index:9999;justify-content:center;align-items:center;padding:20px}
         .payment-modal.active{display:flex}
-        .payment-modal .modal{background:var(--bg-card);border-radius:var(--radius);padding:32px;max-width:420px;width:100%;border:1px solid var(--border-color);max-height:90vh;overflow-y:auto;animation:fadeUp .4s ease}
-        .payment-modal .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
-        .payment-modal .modal-header h3{font-size:20px;font-weight:700;display:flex;align-items:center;gap:8px}
-        .payment-modal .modal-header .close{background:0;border:0;font-size:24px;cursor:pointer;color:var(--text-secondary);transition:var(--transition)}
+        .payment-modal .modal{background:var(--bg-card);border-radius:var(--radius);padding:20px;max-width:380px;width:100%;border:1px solid var(--border-color);max-height:85vh;overflow-y:auto;animation:fadeUp .4s ease}
+        .payment-modal .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+        .payment-modal .modal-header h3{font-size:17px;font-weight:700;display:flex;align-items:center;gap:8px}
+        .payment-modal .modal-header .close{background:0;border:0;font-size:22px;cursor:pointer;color:var(--text-secondary);transition:var(--transition)}
         .payment-modal .modal-header .close:hover{color:#fff}
-        .payment-modal .total-display{text-align:center;padding:16px;background:var(--bg-primary);border-radius:10px;margin-bottom:20px}
-        .payment-modal .total-display .label{font-size:12px;color:var(--text-secondary);text-transform:uppercase}
-        .payment-modal .total-display .value{font-size:36px;font-weight:700;color:var(--green)}
-        .payment-modal .cliente-input{margin-bottom:16px}
-        .payment-modal .cliente-input input{width:100%;padding:10px 12px;border:1px solid var(--border-color);border-radius:8px;font-size:14px;background:var(--bg-primary);color:#fff;transition:var(--transition)}
+        .payment-modal .total-display{text-align:center;padding:12px;background:var(--bg-primary);border-radius:10px;margin-bottom:14px}
+        .payment-modal .total-display .label{font-size:11px;color:var(--text-secondary);text-transform:uppercase}
+        .payment-modal .total-display .value{font-size:28px;font-weight:700;color:var(--green)}
+        .payment-modal .cliente-input{margin-bottom:12px}
+        .payment-modal .cliente-input input{width:100%;padding:8px 12px;border:1px solid var(--border-color);border-radius:8px;font-size:13px;background:var(--bg-primary);color:#fff;transition:var(--transition)}
         .payment-modal .cliente-input input:focus{outline:0;border-color:var(--green)}
         .payment-modal .cliente-input input::placeholder{color:var(--text-muted)}
-        .payment-modal .payment-methods{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
-        .payment-modal .payment-methods button{padding:12px 16px;border:2px solid var(--border-color);border-radius:8px;background:var(--bg-primary);color:var(--text-secondary);cursor:pointer;transition:var(--transition);font-weight:600;font-size:14px;font-family:inherit;text-align:left;display:flex;align-items:center;gap:10px}
+        .payment-modal .payment-methods{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+        .payment-modal .payment-methods button{padding:8px 14px;border:2px solid var(--border-color);border-radius:8px;background:var(--bg-primary);color:var(--text-secondary);cursor:pointer;transition:var(--transition);font-weight:600;font-size:13px;font-family:inherit;text-align:left;display:flex;align-items:center;gap:8px}
         .payment-modal .payment-methods button:hover{border-color:var(--green);color:#fff;background:rgba(34,197,94,.05)}
         .payment-modal .payment-methods button.active{border-color:var(--green);background:rgba(34,197,94,.15);color:var(--green)}
-        .payment-modal .payment-methods button i{width:20px;text-align:center}
-        .payment-modal .payment-input{display:flex;align-items:center;gap:12px;margin-bottom:10px;padding:8px 12px;background:var(--bg-primary);border-radius:8px;border:1px solid var(--border-color)}
-        .payment-modal .payment-input .label{font-size:13px;color:var(--text-secondary);min-width:60px;font-weight:600}
-        .payment-modal .payment-input input{flex:1;padding:8px 10px;border:0;background:0;color:#fff;font-size:16px;font-weight:600;text-align:right;outline:0}
+        .payment-modal .payment-methods button i{width:18px;text-align:center}
+        .payment-modal .payment-input{display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:6px 10px;background:var(--bg-primary);border-radius:8px;border:1px solid var(--border-color)}
+        .payment-modal .payment-input .label{font-size:12px;color:var(--text-secondary);min-width:50px;font-weight:600}
+        .payment-modal .payment-input input{flex:1;padding:6px 8px;border:0;background:0;color:#fff;font-size:15px;font-weight:600;text-align:right;outline:0}
         .payment-modal .payment-input input::placeholder{color:var(--text-muted);font-weight:400}
-        .payment-modal .payment-input .remaining{font-size:12px;color:var(--text-muted);min-width:80px;text-align:right}
-        .payment-modal .payment-actions{display:flex;gap:10px;margin-top:16px}
-        .payment-modal .payment-actions button{flex:1;padding:12px;border:0;border-radius:8px;font-weight:600;cursor:pointer;transition:var(--transition);font-size:14px}
+        .payment-modal .payment-input .remaining{font-size:11px;color:var(--text-muted);min-width:70px;text-align:right}
+        .payment-modal .payment-actions{display:flex;gap:8px;margin-top:12px}
+        .payment-modal .payment-actions button{flex:1;padding:10px;border:0;border-radius:8px;font-weight:600;cursor:pointer;transition:var(--transition);font-size:13px}
         .payment-modal .payment-actions .btn-confirmar{background:var(--green);color:#fff}
         .payment-modal .payment-actions .btn-confirmar:hover{background:var(--green-dark)}
         .payment-modal .payment-actions .btn-cancelar{background:0;color:var(--text-secondary);border:1px solid var(--border-color)}
         .payment-modal .payment-actions .btn-cancelar:hover{background:rgba(255,255,255,.05)}
         .payment-modal .payment-actions .btn-confirmar:disabled{opacity:.4;cursor:not-allowed}
-        .payment-modal .atalhos-info{font-size:11px;color:var(--text-muted);text-align:center;margin-top:12px;padding:8px;background:var(--bg-primary);border-radius:6px}
-        .payment-modal .atalhos-info kbd{background:var(--border-color);padding:2px 8px;border-radius:4px;font-size:10px;color:var(--text-secondary);border:1px solid var(--border-color)}
+        .payment-modal .atalhos-info{font-size:10px;color:var(--text-muted);text-align:center;margin-top:10px;padding:6px;background:var(--bg-primary);border-radius:6px}
+        .payment-modal .atalhos-info kbd{background:var(--border-color);padding:1px 6px;border-radius:3px;font-size:9px;color:var(--text-secondary);border:1px solid var(--border-color)}
         .payment-modal .atalhos-info .destaque{color:var(--green);font-weight:700}
         .clientes-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
         .clientes-actions input{flex:1;padding:8px 12px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-primary);color:#fff;font-size:13px;min-width:150px}
@@ -621,7 +621,6 @@
             `;
             container.appendChild(toast);
             
-            // CADA TOAST TEM SEU PRÓPRIO TIMEOUT
             const timeoutId = setTimeout(() => {
                 if (toast.parentElement) {
                     toast.classList.add('toast-hide');
@@ -635,7 +634,6 @@
             
             toastTimeouts.push(timeoutId);
             
-            // FECHAR AO CLICAR NO TOAST
             toast.addEventListener('click', function(e) {
                 if (e.target.classList.contains('toast-close')) return;
                 if (toast.parentElement) {
@@ -1795,20 +1793,41 @@
         let metodoAtivo = 'Dinheiro';
 
         function abrirPagamento(){
-            if(!state.plano_ativo){showToast('⚠️ Plano expirado!','warning');return;}
-            if(state.itens.length===0){showToast('🛒 Carrinho vazio!','warning');return;}
-            if(!state.caixa_aberto){showToast('🔒 Caixa fechado!','warning');return;}
+            console.log('🔍 abrirPagamento chamado!');
             
-            document.getElementById('paymentTotal').textContent='R$ '+state.total.toFixed(2);
+            if (!state.plano_ativo) {
+                showToast('⚠️ Plano expirado!', 'warning');
+                return;
+            }
+            
+            if (state.itens.length === 0) {
+                showToast('🛒 Carrinho vazio!', 'warning');
+                return;
+            }
+            
+            if (!state.caixa_aberto) {
+                showToast('🔒 Caixa fechado!', 'warning');
+                return;
+            }
+            
+            const desconto = parseFloat(document.getElementById('descontoInput').value.replace(',', '.')) || 0;
+            const subtotal = state.subtotal || 0;
+            const total = Math.max(0, subtotal - desconto);
+            state.total = total;
+            
+            console.log('📊 Abrindo pagamento - Total:', total);
+            
+            document.getElementById('paymentTotal').textContent = 'R$ ' + total.toFixed(2);
             document.getElementById('paymentModal').classList.add('active');
-            document.getElementById('clientePagamento').value='';
-            metodoAtivo='Dinheiro';
+            document.getElementById('clientePagamento').value = '';
+            metodoAtivo = 'Dinheiro';
             selecionarMetodo('Dinheiro');
-            setTimeout(()=>{
-                const primeiro=document.querySelector('#paymentMethods button');
-                if(primeiro)primeiro.focus();
+            
+            setTimeout(() => {
+                const primeiro = document.querySelector('#paymentMethods button');
+                if (primeiro) primeiro.focus();
                 document.getElementById('btnConfirmarPagamento').disabled = false;
-            },100);
+            }, 100);
         }
 
         function fecharPagamento(){
@@ -1823,7 +1842,7 @@
             });
             const container=document.getElementById('paymentInputs');
             if(metodo==='Fiado'){
-                container.innerHTML='<div style="padding:12px;background:var(--bg-primary);border-radius:8px;text-align:center;color:var(--text-secondary);margin-bottom:10px;"><i class="fas fa-handshake" style="font-size:24px;display:block;margin-bottom:8px;"></i>Venda fiada - o valor será adicionado à dívida do cliente</div><div class="payment-input"><span class="label">Cliente</span><input type="text" id="fiadoCliente" placeholder="Nome do cliente" style="flex:1;padding:8px;border:none;background:transparent;color:#fff;font-size:14px;outline:none;"></div>';
+                container.innerHTML='<div style="padding:10px;background:var(--bg-primary);border-radius:8px;text-align:center;color:var(--text-secondary);margin-bottom:8px;font-size:13px;"><i class="fas fa-handshake" style="font-size:20px;display:block;margin-bottom:6px;"></i>Venda fiada - o valor será adicionado à dívida do cliente</div><div class="payment-input"><span class="label">Cliente</span><input type="text" id="fiadoCliente" placeholder="Nome do cliente" style="flex:1;padding:6px 8px;border:none;background:transparent;color:#fff;font-size:14px;outline:none;"></div>';
                 document.getElementById('btnConfirmarPagamento').disabled = false;
                 return;
             }
@@ -1857,82 +1876,139 @@
         }
 
         function confirmarPagamento(){
-            if(!state.plano_ativo){showToast('⚠️ Plano expirado!','warning');return;}
-            if(state.itens.length===0){showToast('🛒 Carrinho vazio!','warning');return;}
+            console.log('🔍 confirmarPagamento chamado!');
             
-            const cliente=document.getElementById('clientePagamento')?.value.trim()||'';
-            let totalPago=0,metodo=metodoAtivo,troco=0;
-            
-            if(metodo==='Fiado'){
-                const nomeCliente=document.getElementById('fiadoCliente')?.value.trim();
-                if(!nomeCliente){showToast('⚠️ Informe o nome do cliente!','warning');return;}
-                totalPago=state.total;
-            } else if(metodo==='Dinheiro'){
-                const val=parseFloat(document.getElementById('dinheiroValor')?.value.replace(',','.')||0);
-                if(val<state.total){showToast('⚠️ Valor insuficiente!','warning');return;}
-                totalPago=val;
-                troco=val-state.total;
-            } else {
-                const val=parseFloat(document.getElementById('valorPago')?.value.replace(',','.')||0);
-                if(val<state.total){showToast('⚠️ Valor insuficiente!','warning');return;}
-                totalPago=val;
-                troco=val-state.total;
+            if (!state.plano_ativo) {
+                showToast('⚠️ Plano expirado!', 'warning');
+                return;
             }
             
-            const venda={
-                subtotal:state.subtotal,
-                desconto:parseFloat(document.getElementById('descontoInput').value.replace(',','.'))||0,
-                total:state.total,
-                metodo:metodo,
-                recebido:totalPago,
-                troco:troco,
-                itens:state.itens.map(i=>({codigo:i.codigo||'AVULSO',nome:i.nome,quantidade:i.quantidade,preco_unitario:i.preco,total:i.preco*i.quantidade})),
-                cliente:cliente
+            if (state.itens.length === 0) {
+                showToast('🛒 Carrinho vazio!', 'warning');
+                return;
+            }
+            
+            const desconto = parseFloat(document.getElementById('descontoInput').value.replace(',', '.')) || 0;
+            const subtotal = state.subtotal || 0;
+            const total = Math.max(0, subtotal - desconto);
+            state.total = total;
+            
+            console.log('📊 Subtotal:', subtotal, 'Desconto:', desconto, 'Total:', total);
+            
+            const cliente = document.getElementById('clientePagamento')?.value.trim() || '';
+            let totalPago = 0;
+            let metodo = metodoAtivo;
+            let troco = 0;
+            
+            if (metodo === 'Fiado') {
+                const nomeCliente = document.getElementById('fiadoCliente')?.value.trim();
+                if (!nomeCliente) {
+                    showToast('⚠️ Informe o nome do cliente!', 'warning');
+                    return;
+                }
+                totalPago = total;
+                venda.cliente = nomeCliente;
+            } else if (metodo === 'Dinheiro') {
+                const val = parseFloat(document.getElementById('dinheiroValor')?.value.replace(',', '.') || 0);
+                if (val < total) {
+                    showToast('⚠️ Valor insuficiente!', 'warning');
+                    return;
+                }
+                totalPago = val;
+                troco = val - total;
+            } else {
+                const val = parseFloat(document.getElementById('valorPago')?.value.replace(',', '.') || 0);
+                if (val < total) {
+                    showToast('⚠️ Valor insuficiente!', 'warning');
+                    return;
+                }
+                totalPago = val;
+                troco = val - total;
+            }
+            
+            const venda = {
+                subtotal: state.subtotal,
+                desconto: desconto,
+                total: total,
+                metodo: metodo,
+                recebido: totalPago,
+                troco: troco,
+                itens: state.itens.map(i => ({
+                    codigo: i.codigo || 'AVULSO',
+                    nome: i.nome,
+                    quantidade: i.quantidade,
+                    preco_unitario: i.preco,
+                    total: i.preco * i.quantidade
+                })),
+                cliente: cliente
             };
-            if(metodo==='Fiado'){venda.cliente=document.getElementById('fiadoCliente')?.value.trim()||cliente;if(!venda.cliente){showToast('⚠️ Nome do cliente obrigatório para fiado!','warning');return;}}
+            
+            if (metodo === 'Fiado') {
+                const fiadoCliente = document.getElementById('fiadoCliente')?.value.trim();
+                if (!fiadoCliente) {
+                    showToast('⚠️ Nome do cliente obrigatório para fiado!', 'warning');
+                    return;
+                }
+                venda.cliente = fiadoCliente;
+            }
+            
+            console.log('📤 Enviando venda:', venda);
             
             const btn = document.getElementById('btnConfirmarPagamento');
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
             
-            fetch('/api/vendas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(venda)})
-                .then(r=>r.json())
-                .then(data=>{
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-check"></i> Confirmar';
+            fetch('/api/vendas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(venda)
+            })
+            .then(r => {
+                console.log('📥 Resposta recebida, status:', r.status);
+                return r.json();
+            })
+            .then(data => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check"></i> Confirmar';
+                
+                console.log('📥 Dados da resposta:', data);
+                
+                if (data.success) {
+                    let msg = '✅ Venda finalizada!\nTotal: R$ ' + total.toFixed(2) + '\nMétodo: ' + metodo;
+                    if (troco > 0) msg += '\nTroco: R$ ' + troco.toFixed(2);
+                    showToast(msg, 'success');
                     
-                    if(data.success){
-                        let msg='✅ Venda finalizada!\nTotal: R$ '+state.total.toFixed(2)+'\nMétodo: '+metodo;
-                        if(troco>0)msg+='\nTroco: R$ '+troco.toFixed(2);
-                        showToast(msg,'success');
-                        
-                        venda.id=data.id;
-                        venda.data_hora=data.data_hora || new Date().toISOString();
-                        venda.recebido = totalPago;
-                        venda.troco = troco;
-                        ultimoCupomData = venda;
-                        ultimaVendaId = data.id;
-                        
-                        fecharPagamento();
-                        state.itens=[];atualizarCarrinho();
-                        document.getElementById('descontoInput').value='0,00';
-                        document.getElementById('nomeProduto').value='';
-                        document.getElementById('precoProduto').value='';
-                        document.getElementById('statusMsg').textContent='Aguardando produto...';
-                        document.getElementById('statusMsg').className='status-msg';
-                        document.getElementById('codigoInput').focus();
-                        carregarDashboard(state.periodo);carregarResumoCaixa();
-                        
-                        mostrarCupom(venda);
-                    }else{
-                        showToast('❌ Erro: '+data.error,'error');
-                    }
-                })
-                .catch(e=>{
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-check"></i> Confirmar';
-                    showToast('❌ Erro ao registrar venda!','error');
-                });
+                    venda.id = data.id;
+                    venda.data_hora = data.data_hora || new Date().toISOString();
+                    venda.recebido = totalPago;
+                    venda.troco = troco;
+                    ultimoCupomData = venda;
+                    ultimaVendaId = data.id;
+                    
+                    fecharPagamento();
+                    state.itens = [];
+                    atualizarCarrinho();
+                    document.getElementById('descontoInput').value = '0,00';
+                    document.getElementById('nomeProduto').value = '';
+                    document.getElementById('precoProduto').value = '';
+                    document.getElementById('statusMsg').textContent = 'Aguardando produto...';
+                    document.getElementById('statusMsg').className = 'status-msg';
+                    document.getElementById('codigoInput').focus();
+                    carregarDashboard(state.periodo);
+                    carregarResumoCaixa();
+                    
+                    mostrarCupom(venda);
+                } else {
+                    showToast('❌ Erro: ' + (data.error || 'Erro desconhecido'), 'error');
+                    console.error('❌ Erro na venda:', data);
+                }
+            })
+            .catch(e => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check"></i> Confirmar';
+                showToast('❌ Erro ao registrar venda: ' + e.message, 'error');
+                console.error('❌ Erro ao registrar venda:', e);
+            });
         }
 
         // ============================================================
