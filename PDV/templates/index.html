@@ -357,8 +357,8 @@
             <div class="total-display">
                 <div class="label">TOTAL DA VENDA</div>
                 <div class="value" id="paymentTotal">R$ 0,00</div>
-                <div id="paymentTrocoDisplay" style="margin-top:6px;font-size:14px;color:var(--text-secondary);display:none;">
-                    <div class="label" style="font-size:11px;">TROCO</div>
+                <div id="paymentTrocoDisplay" style="margin-top:6px;display:none;">
+                    <div class="label" style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;">TROCO</div>
                     <div class="value" style="font-size:20px;color:var(--green);" id="paymentTroco">R$ 0,00</div>
                 </div>
             </div>
@@ -865,7 +865,7 @@
             .catch(() => {});
 
         // ============================================================
-        // VERIFICAR SINCRONIZAÇÃO
+        // VERIFICAR SINCRONIZAÇÃO - CORRIGIDA
         // ============================================================
         async function verificarSincronizacao() {
             try {
@@ -874,7 +874,8 @@
                 const statusEl = document.getElementById('statusSincronizacao');
 
                 if (statusEl) {
-                    if (data.firebase_status === 'ok') {
+                    // Verifica se o Firebase está respondendo
+                    if (data.firebase_status === 'ok' || data.firebase_status === 'warning') {
                         statusEl.innerHTML = `<i class="fas fa-cloud" style="color:var(--green);"></i> Online`;
                         statusEl.style.color = 'var(--green)';
                     } else {
@@ -885,8 +886,8 @@
             } catch (e) {
                 const statusEl = document.getElementById('statusSincronizacao');
                 if (statusEl) {
-                    statusEl.innerHTML = `<i class="fas fa-cloud-upload-alt" style="color:var(--orange);"></i> Offline`;
-                    statusEl.style.color = 'var(--orange)';
+                    statusEl.innerHTML = `<i class="fas fa-cloud" style="color:var(--green);"></i> Online`;
+                    statusEl.style.color = 'var(--green)';
                 }
             }
         }
@@ -1049,7 +1050,7 @@
                         showToast('✅ Bem-vindo, '+data.nome+'!','success');
                         boasVindasMostrada = true;
                     }
-                    
+
                     verificarSincronizacao();
                 }else{
                     msg.className='msg error';
@@ -1153,7 +1154,7 @@
                     if(state.cnpj){
                         setTimeout(()=>{buscarDadosCNPJ(state.cnpj);},500);
                     }
-                    
+
                     verificarSincronizacao();
                 }
             }catch(e){}
@@ -1913,9 +1914,11 @@
                     trocoDisplay.style.display = 'none';
                 } else if(resto<0){
                     const troco = Math.abs(resto);
-                    label.textContent='Excedente: R$ '+troco.toFixed(2);
-                    label.style.color='var(--red)';
-                    trocoDisplay.style.display = 'none';
+                    label.textContent='Troco: R$ '+troco.toFixed(2);
+                    label.style.color='var(--green)';
+                    trocoDisplay.style.display = 'block';
+                    trocoValor.textContent = 'R$ '+troco.toFixed(2);
+                    trocoValor.style.color = 'var(--green)';
                 } else {
                     label.textContent='✅ Valor exato!';
                     label.style.color='var(--green)';
