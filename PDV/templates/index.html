@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>SMART PDV v9.0.3</title>
+    <title>SMART PDV v9.0.4</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
@@ -284,8 +284,6 @@
         .config-grid .btn-primary:hover{background:var(--green-dark)}
         .config-grid .btn-danger{background:var(--red)}
         .config-grid .btn-danger:hover{background:#dc2626}
-        .config-grid .btn-sync{background:var(--blue);color:#fff}
-        .config-grid .btn-sync:hover{background:#2563eb}
         .usuarios-lista{max-height:250px;overflow-y:auto}
         .usuario-item{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.03)}
         .usuario-item .info{font-size:13px}
@@ -430,7 +428,7 @@
     </div>
     <div class="app" id="app">
         <header class="header">
-            <div class="logo">🏪 <span>SMART</span> PDV <span class="version" id="versaoHeader">v9.0.3</span></div>
+            <div class="logo">🏪 <span>SMART</span> PDV <span class="version" id="versaoHeader">v9.0.4</span></div>
             <button class="menu-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
             <div class="user">
                 <div class="avatar" id="userAvatar">A</div>
@@ -575,10 +573,9 @@
                         <div class="input-group"><label>Nome da Loja</label><input type="text" id="lojaNomeConfig" placeholder="Nome da loja"></div>
                         <div class="input-group"><label>CNPJ</label><input type="text" id="lojaCnpjConfig" placeholder="00.000.000/0000-00" onchange="buscarDadosCNPJ(this.value)"></div>
                         <div id="dadosCnpjConfig" style="display:none;background:var(--bg-primary);padding:10px;border-radius:8px;margin-bottom:10px;font-size:12px;color:var(--text-secondary);"></div>
-                        <button class="btn btn-sync" onclick="sincronizarManual()" style="margin-top:10px;"><i class="fas fa-sync"></i> Sincronizar Agora</button>
                         <button class="btn btn-primary" onclick="salvarNomeLoja()" style="margin-top:10px;"><i class="fas fa-save"></i> Salvar</button>
                         <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-color);">
-                            <p style="font-size:12px;color:var(--text-secondary);"><strong>Versão:</strong> <span id="versaoSistema">9.0.3</span></p>
+                            <p style="font-size:12px;color:var(--text-secondary);"><strong>Versão:</strong> <span id="versaoSistema">9.0.4</span></p>
                             <p style="font-size:12px;color:var(--text-secondary);"><strong>ID do Banco:</strong> <span id="dbIdConfig" style="font-family:monospace;cursor:pointer;" onclick="copiarId()">---</span></p>
                             <p style="font-size:12px;color:var(--text-secondary);"><strong>Servidor:</strong> <span id="servidorIdConfig" style="font-family:monospace;">---</span></p>
                         </div>
@@ -815,26 +812,23 @@
             if (document.activeElement !== buscaInput && document.activeElement !== codigoInput) {
                 codigoInput.focus();
                 codigoInput.select();
-                showToast('🔍 Código de barras (F1)', 'info');
+                // Não mostra toast ao focar
             } else if (document.activeElement === codigoInput) {
                 buscaInput.focus();
                 buscaInput.select();
-                showToast('🔍 Buscar por nome (F1)', 'info');
             } else if (document.activeElement === buscaInput) {
                 codigoInput.focus();
                 codigoInput.select();
-                showToast('🔍 Código de barras (F1)', 'info');
             } else {
                 codigoInput.focus();
                 codigoInput.select();
-                showToast('🔍 Código de barras (F1)', 'info');
             }
         }
 
         // ============================================================
         // VERSÃO - SINCRONIZADA COM BACKEND
         // ============================================================
-        let SISTEMA_VERSAO = '9.0.3';
+        let SISTEMA_VERSAO = '9.0.4';
         
         fetch('/api/versao')
             .then(r => r.json())
@@ -1002,7 +996,6 @@
                         setTimeout(()=>{buscarDadosCNPJ(state.cnpj);},500);
                     }
                     
-                    // Boas-vindas apenas uma vez
                     if (!boasVindasMostrada) {
                         showToast('✅ Bem-vindo, '+data.nome+'!','success');
                         boasVindasMostrada = true;
@@ -1111,41 +1104,6 @@
                     }
                 }
             }catch(e){}
-        }
-
-        // ============================================================
-        // SINCRONIZAÇÃO MANUAL
-        // ============================================================
-        async function sincronizarManual() {
-            if (!state.plano_ativo) {
-                showToast('⚠️ Plano expirado!', 'warning');
-                return;
-            }
-            
-            showToast('🔄 Sincronizando dados...', 'info');
-            
-            try {
-                const res = await fetch('/api/sincronizar', { method: 'POST' });
-                const data = await res.json();
-                
-                if (data.success) {
-                    let msg = '✅ Dados sincronizados!';
-                    if (data.produtos_adicionados > 0) msg += ` ${data.produtos_adicionados} produtos adicionados.`;
-                    if (data.produtos_atualizados > 0) msg += ` ${data.produtos_atualizados} produtos atualizados.`;
-                    if (data.clientes_adicionados > 0) msg += ` ${data.clientes_adicionados} clientes adicionados.`;
-                    if (data.vendas_adicionadas > 0) msg += ` ${data.vendas_adicionadas} vendas adicionadas.`;
-                    showToast(msg, 'success');
-                    
-                    await verificarPendentes();
-                    await carregarProdutos();
-                    await carregarClientes();
-                    await carregarDashboard(state.periodo);
-                } else {
-                    showToast('❌ Erro na sincronização: ' + (data.error || 'desconhecido'), 'error');
-                }
-            } catch (e) {
-                showToast('❌ Erro ao sincronizar: ' + e.message, 'error');
-            }
         }
 
         // ============================================================
@@ -1569,18 +1527,18 @@
             document.getElementById('cupomData').textContent=new Date(venda.data_hora).toLocaleString();
             let cnpjHtml='';
             if(cnpj){
-                cnpjHtml+='<div style="font-size:11px;color:#555;margin-bottom:6px;"><strong>CNPJ:</strong> '+cnpj+'</div>';
+                cnpjHtml+='<div style="font-size:11px;color:#555;margin-bottom:6px;"><strong>CNPJ:</strong> '+formatarCnpj(cnpj)+'</div>';
                 if(dadosCnpj.razao_social)cnpjHtml+='<div style="font-size:11px;color:#555;margin-bottom:3px;"><strong>Razão Social:</strong> '+dadosCnpj.razao_social+'</div>';
                 if(dadosCnpj.nome_fantasia)cnpjHtml+='<div style="font-size:11px;color:#555;margin-bottom:3px;"><strong>Nome Fantasia:</strong> '+dadosCnpj.nome_fantasia+'</div>';
+                if(dadosCnpj.data_abertura)cnpjHtml+='<div style="font-size:11px;color:#555;margin-bottom:3px;"><strong>Data de Abertura:</strong> '+dadosCnpj.data_abertura+'</div>';
+                if(dadosCnpj.porte)cnpjHtml+='<div style="font-size:11px;color:#555;margin-bottom:3px;"><strong>Porte:</strong> '+dadosCnpj.porte+'</div>';
+                if(dadosCnpj.natureza_juridica)cnpjHtml+='<div style="font-size:11px;color:#555;margin-bottom:3px;"><strong>Natureza Jurídica:</strong> '+dadosCnpj.natureza_juridica+'</div>';
+                if(dadosCnpj.cnae_descricao)cnpjHtml+='<div style="font-size:11px;color:#555;margin-bottom:3px;"><strong>Atividade:</strong> '+dadosCnpj.cnae_descricao+'</div>';
                 if(dadosCnpj.logradouro||dadosCnpj.municipio){
                     let end=dadosCnpj.logradouro||'';if(dadosCnpj.numero)end+=', '+dadosCnpj.numero;if(dadosCnpj.bairro)end+=' - '+dadosCnpj.bairro;if(dadosCnpj.municipio)end+=', '+dadosCnpj.municipio;if(dadosCnpj.uf)end+=' - '+dadosCnpj.uf;if(end)cnpjHtml+='<div style="font-size:11px;color:#555;margin-bottom:3px;"><strong>Endereço:</strong> '+end+'</div>';
                 }
                 if(dadosCnpj.telefone)cnpjHtml+='<div style="font-size:11px;color:#555;margin-bottom:3px;"><strong>Telefone:</strong> '+dadosCnpj.telefone+'</div>';
                 if(dadosCnpj.email)cnpjHtml+='<div style="font-size:11px;color:#555;margin-bottom:3px;"><strong>Email:</strong> '+dadosCnpj.email+'</div>';
-                if(dadosCnpj.cnae_descricao)cnpjHtml+='<div style="font-size:11px;color:#555;margin-bottom:3px;"><strong>Atividade:</strong> '+dadosCnpj.cnae_descricao+'</div>';
-                if(dadosCnpj.porte)cnpjHtml+='<div style="font-size:11px;color:#555;margin-bottom:3px;"><strong>Porte:</strong> '+dadosCnpj.porte+'</div>';
-                if(dadosCnpj.natureza_juridica)cnpjHtml+='<div style="font-size:11px;color:#555;margin-bottom:3px;"><strong>Natureza Jurídica:</strong> '+dadosCnpj.natureza_juridica+'</div>';
-                if(dadosCnpj.data_abertura)cnpjHtml+='<div style="font-size:11px;color:#555;margin-bottom:3px;"><strong>Data de Abertura:</strong> '+dadosCnpj.data_abertura+'</div>';
             }
             document.getElementById('cupomDadosCnpj').innerHTML=cnpjHtml;
             document.getElementById('cupomItens').innerHTML=venda.itens.map(i=>'<div class="cupom-linha"><span>'+i.nome+' ('+i.quantidade+'x)</span><span>R$ '+(i.preco_unitario*i.quantidade).toFixed(2)+'</span></div>').join('');
@@ -1600,6 +1558,11 @@
             document.getElementById('cupomOptImprimir').classList.add('active');
             document.getElementById('cupomOptNaoImprimir').classList.remove('active');
             setTimeout(()=>{document.getElementById('cupomOptImprimir').focus();},100);
+        }
+
+        function formatarCnpj(cnpj){
+            if(!cnpj || cnpj.length !== 14) return cnpj;
+            return cnpj.substring(0,2)+'.'+cnpj.substring(2,5)+'.'+cnpj.substring(5,8)+'/'+cnpj.substring(8,12)+'-'+cnpj.substring(12,14);
         }
 
         function fecharCupom(){document.getElementById('cupomModal').classList.remove('active');}
@@ -1622,6 +1585,7 @@
                 usuario: state.nome || '',
                 nome_loja: state.nome_loja || 'SMART PDV',
                 cnpj: state.cnpj || '',
+                cnpj_dados: state.cnpj_dados || {},
                 recebido: ultimoCupomData.recebido || 0,
                 troco: ultimoCupomData.troco || 0
             };
@@ -1963,7 +1927,7 @@
         }
 
         // ============================================================
-        // SINCRONIZAR
+        // SINCRONIZAR (AUTOMÁTICA - NÃO PRECISA DE BOTÃO)
         // ============================================================
         function sincronizarAgora(){
             if(!state.plano_ativo)return;
@@ -2017,10 +1981,12 @@
         console.log('  ↑↓ → Navegar (modais)');
         console.log('  ENTER → Confirmar (modais)');
         console.log('  ESC → Fechar modais');
-        console.log('🔄 SINCRONIZAÇÃO:');
-        console.log('  - Sincronização automática a cada 3 min');
-        console.log('  - Pendentes mostrados no Dashboard');
-        console.log('  - Sincronização manual no Config');
+        console.log('🔄 SINCRONIZAÇÃO AUTOMÁTICA:');
+        console.log('  - A cada mudança no banco de dados');
+        console.log('  - Status no header e Dashboard');
+        console.log('🛡️ PROTEÇÃO CONTRA MÚLTIPLAS CONTAS:');
+        console.log('  - Limite de 2 contas sem CNPJ por dispositivo');
+        console.log('  - Bloqueio após plano expirar (sem CNPJ)');
     </script>
 </body>
 </html>
