@@ -586,9 +586,8 @@
     </div>
     <script>
         // ============================================================
-        // TOAST COM PREVENÇÃO DE DUPLICAÇÃO - CORRIGIDO
+        // TOAST COM PREVENÇÃO DE DUPLICAÇÃO
         // ============================================================
-        let toastTimeout = null;
         let lastToastMessage = '';
         let lastToastTime = 0;
         let boasVindasMostrada = false;
@@ -601,11 +600,6 @@
             }
             lastToastMessage = message;
             lastToastTime = now;
-            
-            if (toastTimeout) {
-                clearTimeout(toastTimeout);
-                toastTimeout = null;
-            }
             
             const container = document.getElementById('toastContainer');
             if (!container) return;
@@ -934,7 +928,7 @@
         }
 
         // ============================================================
-        // FAZER LOGIN
+        // FAZER LOGIN (VERIFICA FIREBASE PRIMEIRO)
         // ============================================================
         async function fazerLogin(){
             const email=document.getElementById('loginEmail').value.trim();
@@ -1122,7 +1116,7 @@
         }
 
         // ============================================================
-        // VERIFICAR DADOS PENDENTES - CORRIGIDO
+        // VERIFICAR DADOS PENDENTES
         // ============================================================
         async function verificarPendentes() {
             try {
@@ -1996,6 +1990,10 @@
         console.log('  ↑↓ → Navegar (modais)');
         console.log('  ENTER → Confirmar (modais)');
         console.log('  ESC → Fechar modais');
+        console.log('🔄 LOGIN COM FIREBASE:');
+        console.log('  - Busca usuário no Firebase primeiro');
+        console.log('  - Sincroniza dados automaticamente');
+        console.log('  - Funciona de qualquer lugar');
         console.log('🔄 SINCRONIZAÇÃO AUTOMÁTICA:');
         console.log('  - A cada mudança no banco de dados');
         console.log('  - Status no header e Dashboard');
