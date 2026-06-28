@@ -586,12 +586,13 @@
     </div>
     <script>
         // ============================================================
-        // TOAST COM PREVENÇÃO DE DUPLICAÇÃO
+        // TOAST COM PREVENÇÃO DE DUPLICAÇÃO - CORRIGIDO
         // ============================================================
         let toastTimeout = null;
         let lastToastMessage = '';
         let lastToastTime = 0;
         let boasVindasMostrada = false;
+        let toastTimeouts = [];
 
         function showToast(message, type = 'info', title = null) {
             const now = Date.now();
@@ -626,15 +627,30 @@
             `;
             container.appendChild(toast);
             
-            toastTimeout = setTimeout(() => {
+            // CADA TOAST TEM SEU PRÓPRIO TIMEOUT
+            const timeoutId = setTimeout(() => {
                 if (toast.parentElement) {
                     toast.classList.add('toast-hide');
                     setTimeout(() => {
                         if (toast.parentElement) toast.remove();
-                        toastTimeout = null;
                     }, 500);
                 }
+                const index = toastTimeouts.indexOf(timeoutId);
+                if (index > -1) toastTimeouts.splice(index, 1);
             }, 5000);
+            
+            toastTimeouts.push(timeoutId);
+            
+            // FECHAR AO CLICAR NO TOAST
+            toast.addEventListener('click', function(e) {
+                if (e.target.classList.contains('toast-close')) return;
+                if (toast.parentElement) {
+                    toast.classList.add('toast-hide');
+                    setTimeout(() => {
+                        if (toast.parentElement) toast.remove();
+                    }, 500);
+                }
+            });
         }
 
         // ============================================================
@@ -812,7 +828,6 @@
             if (document.activeElement !== buscaInput && document.activeElement !== codigoInput) {
                 codigoInput.focus();
                 codigoInput.select();
-                // Não mostra toast ao focar
             } else if (document.activeElement === codigoInput) {
                 buscaInput.focus();
                 buscaInput.select();
@@ -1107,7 +1122,7 @@
         }
 
         // ============================================================
-        // VERIFICAR DADOS PENDENTES
+        // VERIFICAR DADOS PENDENTES - CORRIGIDO
         // ============================================================
         async function verificarPendentes() {
             try {
@@ -1128,7 +1143,7 @@
                         if (pendentes > 0) {
                             statusEl.innerHTML = `<i class="fas fa-cloud-upload-alt" style="color:var(--orange);"></i> ${pendentes} pendente(s)`;
                             statusEl.style.color = 'var(--orange)';
-                            statusEl.title = `${pendentes} item(ns) aguardando sincronização`;
+                            statusEl.title = `${pendentes} venda(s) aguardando sincronização`;
                         } else {
                             statusEl.innerHTML = `<i class="fas fa-cloud" style="color:var(--green);"></i> Sincronizado`;
                             statusEl.style.color = 'var(--green)';
@@ -1987,6 +2002,7 @@
         console.log('🛡️ PROTEÇÃO CONTRA MÚLTIPLAS CONTAS:');
         console.log('  - Limite de 2 contas sem CNPJ por dispositivo');
         console.log('  - Bloqueio após plano expirar (sem CNPJ)');
+        console.log('✅ VENDAS INSTANTÂNEAS: sem delay de 3 segundos');
     </script>
 </body>
 </html>
