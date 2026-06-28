@@ -1031,6 +1031,10 @@
                     if(window._syncInterval)clearInterval(window._syncInterval);
                     window._syncInterval=setInterval(()=>{sincronizarAgora();},180000);
 
+                    // Aguarda sincronização com Firebase antes de carregar dados locais
+                    // Garante que PC virgem receba todos os dados do Firebase primeiro
+                    try { await fetch('/api/sincronizar', { method: 'POST' }); } catch(e) {}
+
                     await Promise.all([
                         carregarProdutos(),
                         carregarClientes(),
@@ -1139,6 +1143,9 @@
 
                     if(window._syncInterval)clearInterval(window._syncInterval);
                     window._syncInterval=setInterval(()=>{sincronizarAgora();},180000);
+
+                    // Aguarda sincronização com Firebase antes de carregar dados locais
+                    try { await fetch('/api/sincronizar', { method: 'POST' }); } catch(e) {}
 
                     await Promise.all([
                         carregarProdutos(),
