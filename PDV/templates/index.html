@@ -686,6 +686,10 @@ function copiarId(){const id=state.db_id||document.getElementById('dbIdConfig').
 // ============================================================
 // NAVEGAÇÃO NO CUPOM - SETAS, ENTER, F1
 // ============================================================
+
+
+// Substitua a função navegarCupom e o evento keydown por esta versão:
+
 function navegarCupom(direcao) {
     const botoes = document.querySelectorAll('.cupom-opt');
     if (!botoes.length) return;
@@ -697,8 +701,43 @@ function navegarCupom(direcao) {
     } else if (direcao === 'anterior') {
         idx = (idx - 1 + botoes.length) % botoes.length;
     }
-    botoes[idx].click();
+    // Remove active de todos e adiciona no selecionado
+    botoes.forEach(b => b.classList.remove('active'));
+    botoes[idx].classList.add('active');
+    // Atualiza a escolha
+    const opcao = botoes[idx].id === 'cupomOptImprimir' ? 'imprimir' : 'nao';
+    state.cupomEscolha = opcao;
 }
+
+// No evento keydown, na parte do modalCupom, substitua por:
+if (modalCupom) {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.key === 'ArrowDown') {
+            navegarCupom('proximo');
+        } else {
+            navegarCupom('anterior');
+        }
+        return;
+    }
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        const ativo = document.querySelector('.cupom-opt.active');
+        if (ativo) ativo.click();
+        return;
+    }
+    if (e.key === 'F1') {
+        e.preventDefault();
+        e.stopPropagation();
+        const ativo = document.querySelector('.cupom-opt.active');
+        if (ativo) ativo.click();
+        return;
+    }
+}
+
+
 
 // ============================================================
 // TECLAS GLOBAIS
