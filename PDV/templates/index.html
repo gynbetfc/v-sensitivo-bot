@@ -107,39 +107,39 @@
 
         .payment-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);z-index:9999;justify-content:center;align-items:center;padding:8px}
         .payment-modal.active{display:flex}
-        .payment-modal .modal{background:var(--bg-card);border-radius:var(--radius);padding:14px;max-width:340px;width:100%;border:1px solid var(--border-color);max-height:98vh;overflow-y:auto;animation:fadeUp .4s ease}
-        .payment-modal .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-        .payment-modal .modal-header h3{font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px}
-        .payment-modal .modal-header .close{background:0;border:0;font-size:20px;cursor:pointer;color:var(--text-secondary);transition:var(--transition)}.payment-modal .modal-header .close:hover{color:#fff}
-        .payment-modal .total-display{text-align:center;padding:8px;background:var(--bg-primary);border-radius:8px;margin-bottom:10px}
-        .payment-modal .total-display .label{font-size:10px;color:var(--text-secondary);text-transform:uppercase}
-        .payment-modal .total-display .value{font-size:22px;font-weight:700;color:var(--green)}
-        .payment-modal .total-display .troco-display{margin-top:4px;display:none}
-        .payment-modal .total-display .troco-display .label{font-size:10px;color:var(--text-secondary);text-transform:uppercase}
-        .payment-modal .total-display .troco-display .value{font-size:18px;color:var(--green)}
-        .payment-modal .cliente-input{margin-bottom:8px}
-        .payment-modal .cliente-input input{width:100%;padding:6px 10px;border:1px solid var(--border-color);border-radius:8px;font-size:12px;background:var(--bg-primary);color:#fff;transition:var(--transition)}
+        .payment-modal .modal{background:var(--bg-card);border-radius:var(--radius);padding:20px;max-width:420px;width:100%;border:1px solid var(--border-color);max-height:98vh;overflow-y:auto;animation:fadeUp .4s ease}
+        .payment-modal .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+        .payment-modal .modal-header h3{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px}
+        .payment-modal .modal-header .close{background:0;border:0;font-size:22px;cursor:pointer;color:var(--text-secondary);transition:var(--transition)}.payment-modal .modal-header .close:hover{color:#fff}
+        .payment-modal .total-display{text-align:center;padding:12px;background:var(--bg-primary);border-radius:8px;margin-bottom:12px}
+        .payment-modal .total-display .label{font-size:11px;color:var(--text-secondary);text-transform:uppercase}
+        .payment-modal .total-display .value{font-size:28px;font-weight:700;color:var(--green)}
+        .payment-modal .total-display .troco-display{margin-top:6px;display:none}
+        .payment-modal .total-display .troco-display .label{font-size:11px;color:var(--text-secondary);text-transform:uppercase}
+        .payment-modal .total-display .troco-display .value{font-size:22px;color:var(--green)}
+        .payment-modal .cliente-input{margin-bottom:10px}
+        .payment-modal .cliente-input input{width:100%;padding:8px 12px;border:1px solid var(--border-color);border-radius:8px;font-size:14px;background:var(--bg-primary);color:#fff;transition:var(--transition)}
         .payment-modal .cliente-input input:focus{outline:0;border-color:var(--green)}
         .payment-modal .cliente-input input::placeholder{color:var(--text-muted)}
-        .payment-modal .payment-methods{display:flex;flex-direction:column;gap:4px;margin-bottom:8px}
-        .payment-modal .payment-methods button{padding:6px 10px;border:2px solid var(--border-color);border-radius:6px;background:var(--bg-primary);color:var(--text-secondary);cursor:pointer;transition:var(--transition);font-weight:600;font-size:12px;font-family:inherit;text-align:left;display:flex;align-items:center;gap:6px}
+        .payment-modal .payment-methods{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+        .payment-modal .payment-methods button{flex:1;min-width:70px;padding:8px 12px;border:2px solid var(--border-color);border-radius:8px;background:var(--bg-primary);color:var(--text-secondary);cursor:pointer;transition:var(--transition);font-weight:600;font-size:12px;font-family:inherit;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px}
         .payment-modal .payment-methods button:hover{border-color:var(--green);color:#fff;background:rgba(34,197,94,.05)}
         .payment-modal .payment-methods button.active{border-color:var(--green);background:rgba(34,197,94,.15);color:var(--green)}
-        .payment-modal .payment-methods button i{width:16px;text-align:center}
-        .payment-modal .payment-input{display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:5px 8px;background:var(--bg-primary);border-radius:6px;border:1px solid var(--border-color)}
-        .payment-modal .payment-input .label{font-size:11px;color:var(--text-secondary);min-width:46px;font-weight:600}
-        .payment-modal .payment-input input{flex:1;padding:4px 6px;border:0;background:0;color:#fff;font-size:14px;font-weight:600;text-align:right;outline:0}
+        .payment-modal .payment-methods button i{font-size:14px}
+        .payment-modal .payment-input{display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:8px 12px;background:var(--bg-primary);border-radius:8px;border:1px solid var(--border-color)}
+        .payment-modal .payment-input .label{font-size:12px;color:var(--text-secondary);min-width:60px;font-weight:600}
+        .payment-modal .payment-input input{flex:1;padding:6px 8px;border:0;background:0;color:#fff;font-size:18px;font-weight:700;text-align:right;outline:0}
         .payment-modal .payment-input input::placeholder{color:var(--text-muted);font-weight:400}
-        .payment-modal .payment-input .remaining{font-size:10px;color:var(--text-muted);min-width:66px;text-align:right}
-        .payment-modal .payment-actions{display:flex;gap:6px;margin-top:8px}
-        .payment-modal .payment-actions button{flex:1;padding:8px;border:0;border-radius:8px;font-weight:600;cursor:pointer;transition:var(--transition);font-size:12px}
+        .payment-modal .payment-input .remaining{font-size:12px;color:var(--text-muted);min-width:80px;text-align:right}
+        .payment-modal .payment-actions{display:flex;gap:8px;margin-top:12px}
+        .payment-modal .payment-actions button{flex:1;padding:10px;border:0;border-radius:8px;font-weight:600;cursor:pointer;transition:var(--transition);font-size:14px}
         .payment-modal .payment-actions .btn-confirmar{background:var(--green);color:#fff}
         .payment-modal .payment-actions .btn-confirmar:hover{background:var(--green-dark)}
         .payment-modal .payment-actions .btn-cancelar{background:0;color:var(--text-secondary);border:1px solid var(--border-color)}
         .payment-modal .payment-actions .btn-cancelar:hover{background:rgba(255,255,255,.05)}
         .payment-modal .payment-actions .btn-confirmar:disabled{opacity:.4;cursor:not-allowed}
-        .payment-modal .atalhos-info{font-size:9px;color:var(--text-muted);text-align:center;margin-top:6px;padding:4px;background:var(--bg-primary);border-radius:6px}
-        .payment-modal .atalhos-info kbd{background:var(--border-color);padding:1px 5px;border-radius:3px;font-size:8px;color:var(--text-secondary);border:1px solid var(--border-color)}
+        .payment-modal .atalhos-info{font-size:10px;color:var(--text-muted);text-align:center;margin-top:8px;padding:6px;background:var(--bg-primary);border-radius:6px}
+        .payment-modal .atalhos-info kbd{background:var(--border-color);padding:1px 6px;border-radius:3px;font-size:8px;color:var(--text-secondary);border:1px solid var(--border-color)}
         .payment-modal .atalhos-info .destaque{color:var(--green);font-weight:700}
 
         .clientes-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
@@ -233,11 +233,11 @@
 
         .cupom-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);backdrop-filter:blur(10px);z-index:9999;justify-content:center;align-items:center;padding:12px}
         .cupom-modal.active{display:flex}
-        .cupom-container{background:#fff;border-radius:8px;padding:0;max-width:340px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.5);animation:fadeUp .3s ease;display:flex;flex-direction:column}
+        .cupom-container{background:#fff;border-radius:8px;padding:0;max-width:360px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.5);animation:fadeUp .3s ease;display:flex;flex-direction:column}
         .cupom-header-ui{background:var(--bg-card);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-radius:8px 8px 0 0;border-bottom:1px solid var(--border-color)}
         .cupom-header-ui h3{font-size:13px;font-weight:700;color:#fff;display:flex;align-items:center;gap:6px}
-        .cupom-header-ui .close{background:0;border:0;color:var(--text-secondary);font-size:18px;cursor:pointer}.cupom-header-ui .close:hover{color:#fff}
-        .cupom-preview{padding:16px;font-family:'Courier New',monospace;font-size:11px;color:#222;background:#fff;flex:1}
+        .cupom-header-ui .close{background:0;border:0;color:var(--text-secondary);font-size:18px;cursor:pointer;transition:var(--transition)}.cupom-header-ui .close:hover{color:#fff}
+        .cupom-preview{padding:16px;font-family:'Courier New',monospace;font-size:11px;color:#222;background:#fff;flex:1;max-height:400px;overflow-y:auto}
         .cupom-loja{text-align:center;font-size:14px;font-weight:700;margin-bottom:2px}
         .cupom-dados-cnpj{margin-bottom:6px}
         .cupom-divider{border:none;border-top:1px dashed #999;margin:6px 0}
@@ -380,12 +380,37 @@
 
         .pix-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);z-index:9999;justify-content:center;align-items:center;padding:12px}
         .pix-modal.active{display:flex}
-        .pix-modal .modal{background:var(--bg-card);border-radius:var(--radius);padding:20px;max-width:360px;width:100%;border:1px solid var(--border-color);animation:fadeUp .3s ease;text-align:center}
+        .pix-modal .modal{background:var(--bg-card);border-radius:var(--radius);padding:20px;max-width:380px;width:100%;border:1px solid var(--border-color);animation:fadeUp .3s ease;text-align:center}
         .pix-info .valor{font-size:28px;font-weight:700;color:var(--green);margin-bottom:8px}
         .pix-info .chave{background:var(--bg-primary);border:1px dashed var(--green);border-radius:8px;padding:10px 14px;font-family:monospace;font-size:11px;cursor:pointer;margin:12px 0;word-break:break-all;color:var(--text-secondary);transition:var(--transition)}
         .pix-info .chave:hover{background:rgba(34,197,94,.1);color:#fff}
         .btn-verificar{padding:10px 24px;background:var(--blue);color:#fff;border:0;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;margin:8px 4px;transition:var(--transition)}.btn-verificar:hover{background:#2563eb}
         .btn-cancelar{padding:10px 24px;background:transparent;color:var(--text-secondary);border:1px solid var(--border-color);border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;margin:8px 4px;transition:var(--transition)}.btn-cancelar:hover{background:rgba(255,255,255,.05);color:#fff}
+
+        /* BARRA PROGRESSIVA DO PLANO */
+        .progress-bar-container {
+            width: 100%;
+            background: var(--bg-primary);
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+            margin: 8px 0;
+            border: 1px solid var(--border-color);
+        }
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            color: #fff;
+        }
+        .progress-bar-fill.verde { background: var(--green); }
+        .progress-bar-fill.amarelo { background: var(--orange); }
+        .progress-bar-fill.vermelho { background: var(--red); }
 
         @media print{
             body > *:not(#cupomPrintArea){display:none !important}
@@ -398,6 +423,7 @@
             .pdv-grid{grid-template-columns:1fr}.estoque-grid{grid-template-columns:1fr}.chart-row{grid-template-columns:1fr}.config-grid{grid-template-columns:1fr}.stat-cards{grid-template-columns:repeat(2,1fr)}
             body{padding:4px}
             .auth-box{padding:24px 16px}
+            .payment-modal .modal{max-width:100%;margin:8px;padding:16px}
         }
         @media(max-width:480px){.stat-cards{grid-template-columns:repeat(2,1fr)}}
     </style>
@@ -433,7 +459,6 @@
         <div class="form-group"><label>Nome completo</label><input type="text" id="registerNome" placeholder="Seu nome"></div>
         <div class="form-group"><label>Email</label><input type="email" id="registerEmail" placeholder="seu@email.com"></div>
         <div class="form-group"><label>Senha</label><input type="password" id="registerSenha" placeholder="Mínimo 4 caracteres"></div>
-        <div class="form-group"><label>Nome da Loja</label><input type="text" id="registerLojaNome" placeholder="Nome da sua loja"></div>
         <div class="form-group">
             <label>CNPJ (opcional)</label>
             <input type="text" id="registerCnpj" placeholder="00.000.000/0000-00" oninput="formatarCnpjInput(this)" onchange="buscarDadosCNPJ(this.value)">
@@ -565,10 +590,10 @@
                     <div class="input-group">
                         <label>Código de Barras 🔍</label>
                         <div style="display:flex;gap:8px;">
-                            <input type="text" id="prodCodigo" placeholder="Digite ou leia o código" style="flex:1;" autocomplete="off">
+                            <input type="text" id="prodCodigo" placeholder="Digite ou leia o código" style="flex:1;" autocomplete="off" oninput="buscarProdutoAutomatico(this.value)">
                             <button id="btnBuscarCodigo" onclick="buscarProdutoPorCodigo()" style="padding:8px 16px;background:var(--blue);color:#fff;border:0;border-radius:8px;cursor:pointer;white-space:nowrap;font-size:13px;font-weight:600;">🔍 Buscar</button>
                         </div>
-                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">💡 Escaneie e aguarde — Enter dispara a busca automaticamente</div>
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">💡 Escaneie e aguarde — Busca automática ao digitar</div>
                     </div>
                     <div class="input-group"><label>Nome</label><input type="text" id="prodNome" placeholder="Nome do produto"></div>
                     <div class="input-group"><label>Preço (R$)</label><input type="text" id="prodPreco" placeholder="0,00"></div>
@@ -788,7 +813,7 @@ let boasVindasMostrada = false;
 let metodoAtivo = 'Dinheiro';
 
 // ============================================================
-// PLANO - VERIFICAÇÃO E AVISOS (CASADO COM O BACKEND)
+// PLANO - VERIFICAÇÃO E AVISOS
 // ============================================================
 
 let planoAtivo = true;
@@ -797,18 +822,12 @@ let avisoMostrado = false;
 
 async function verificarStatusPlano() {
     try {
-        const res = await fetch('/api/plano/status', {
-            credentials: 'include'
-        });
+        const res = await fetch('/api/plano/status', { credentials: 'include' });
         const data = await res.json();
-        
         if (data.success) {
-            // O backend retorna: ativo, dias_restantes, expirado, precisa_aviso, dias_para_aviso
             planoAtivo = data.ativo || false;
             diasRestantes = data.dias_restantes || 0;
-            
             atualizarStatusPlanoUI(data);
-            
             if (!data.ativo) {
                 bloquearAbas(true);
                 mostrarAvisoExpirado();
@@ -829,24 +848,15 @@ function atualizarStatusPlanoUI(data) {
     const dias = data.dias_restantes || 0;
     const ativo = data.ativo;
     const precisaAviso = data.precisa_aviso;
-    
     const tabPlanos = document.querySelector('[data-tab="planos"]');
     if (tabPlanos) {
         let badge = tabPlanos.querySelector('.badge');
         if (!ativo) {
-            if (!badge) {
-                badge = document.createElement('span');
-                badge.className = 'badge';
-                tabPlanos.appendChild(badge);
-            }
+            if (!badge) { badge = document.createElement('span'); badge.className = 'badge'; tabPlanos.appendChild(badge); }
             badge.textContent = '🔴 EXPIRADO';
             badge.style.background = 'var(--red)';
         } else if (precisaAviso) {
-            if (!badge) {
-                badge = document.createElement('span');
-                badge.className = 'badge';
-                tabPlanos.appendChild(badge);
-            }
+            if (!badge) { badge = document.createElement('span'); badge.className = 'badge'; tabPlanos.appendChild(badge); }
             badge.textContent = `⚠️ ${Math.ceil(dias)}d`;
             badge.style.background = 'var(--orange)';
         } else {
@@ -860,10 +870,7 @@ function mostrarAvisoRenovacao(dias) {
     if (aviso) {
         aviso.style.display = 'flex';
         aviso.style.background = 'var(--orange)';
-        aviso.innerHTML = `
-            ⚠️ Seu plano expira em <strong>${Math.ceil(dias)} dias</strong>! 
-            <a onclick="trocarTab('planos')">Renovar agora →</a>
-        `;
+        aviso.innerHTML = `⚠️ Seu plano expira em <strong>${Math.ceil(dias)} dias</strong>! <a onclick="trocarTab('planos')">Renovar agora →</a>`;
     }
     if (!avisoMostrado) {
         showToast(`⚠️ Seu plano expira em ${Math.ceil(dias)} dias! Renove para não ser bloqueado.`, 'warning');
@@ -876,18 +883,13 @@ function mostrarAvisoExpirado() {
     if (aviso) {
         aviso.style.display = 'flex';
         aviso.style.background = 'var(--red)';
-        aviso.innerHTML = `
-            🔴 Plano EXPIRADO! 
-            <a onclick="trocarTab('planos')">Renovar agora →</a>
-        `;
+        aviso.innerHTML = `🔴 Plano EXPIRADO! <a onclick="trocarTab('planos')">Renovar agora →</a>`;
     }
 }
 
 function ocultarAvisos() {
     const aviso = document.getElementById('planoExpiradoAviso');
-    if (aviso) {
-        aviso.style.display = 'none';
-    }
+    if (aviso) aviso.style.display = 'none';
     avisoMostrado = false;
 }
 
@@ -900,12 +902,10 @@ function bloquearAbas(bloquear) {
             btn.style.cursor = 'pointer';
             return;
         }
-        
         if (bloquear) {
             btn.style.opacity = '0.4';
             btn.style.cursor = 'not-allowed';
             btn.style.pointerEvents = 'none';
-            
             const painelAtivo = document.querySelector('.panel.active');
             if (painelAtivo && painelAtivo.id !== 'panelPlanos') {
                 trocarTab('planos');
@@ -958,11 +958,8 @@ function navegarCupom(direcao) {
     let idx = -1;
     botoes.forEach((b, i) => { if (b.classList.contains('active')) idx = i; });
     if (idx === -1) idx = 0;
-    if (direcao === 'proximo') {
-        idx = (idx + 1) % botoes.length;
-    } else if (direcao === 'anterior') {
-        idx = (idx - 1 + botoes.length) % botoes.length;
-    }
+    if (direcao === 'proximo') { idx = (idx + 1) % botoes.length; }
+    else if (direcao === 'anterior') { idx = (idx - 1 + botoes.length) % botoes.length; }
     botoes.forEach(b => b.classList.remove('active'));
     botoes[idx].classList.add('active');
     const opcao = botoes[idx].id === 'cupomOptImprimir' ? 'imprimir' : 'nao';
@@ -984,7 +981,6 @@ document.addEventListener('keydown',function(e){
     const modalCli=document.getElementById('modalCliente').classList.contains('active');
     const modalPgtoCliente=document.getElementById('modalClientePagamento').classList.contains('active');
 
-    // ESC
     if(e.key==='Escape'){
         e.preventDefault();
         if(modalPgto){fecharPagamento();return;}
@@ -997,7 +993,6 @@ document.addEventListener('keydown',function(e){
         return;
     }
 
-    // ENTER
     if(e.key==='Enter'){
         if(modalPgto){e.preventDefault();confirmarPagamento();return;}
         if(modalCupom){e.preventDefault();const ativo=document.querySelector('.cupom-opt.active');if(ativo) ativo.click();return;}
@@ -1009,7 +1004,6 @@ document.addEventListener('keydown',function(e){
         return;
     }
 
-    // SETAS NO CUPOM
     if(modalCupom && (e.key==='ArrowDown' || e.key==='ArrowUp')){
         e.preventDefault();
         e.stopPropagation();
@@ -1017,7 +1011,6 @@ document.addEventListener('keydown',function(e){
         return;
     }
 
-    // SETAS NO PAGAMENTO
     if(modalPgto&&(e.key==='ArrowUp'||e.key==='ArrowDown')){
         e.preventDefault();
         const metodos=document.querySelectorAll('#paymentMethods button');if(!metodos.length)return;
@@ -1053,20 +1046,9 @@ function processarF1(){
     }
 
     if(document.activeElement === ci || document.activeElement === bi || document.activeElement === document.body){
-        if(state.f1Cycle === 0){
-            ci.focus();
-            ci.select();
-            state.f1Cycle = 1;
-        } else if(state.f1Cycle === 1){
-            bi.focus();
-            bi.select();
-            state.f1Cycle = 0;
-        }
-    } else {
-        ci.focus();
-        ci.select();
-        state.f1Cycle = 1;
-    }
+        if(state.f1Cycle === 0){ci.focus();ci.select();state.f1Cycle=1;}
+        else if(state.f1Cycle === 1){bi.focus();bi.select();state.f1Cycle=0;}
+    } else {ci.focus();ci.select();state.f1Cycle=1;}
 }
 
 // ============================================================
@@ -1079,14 +1061,10 @@ async function fazerLogin(){
     const email=document.getElementById('loginEmail').value.trim();
     const senha=document.getElementById('loginSenha').value;
     const msg=document.getElementById('authMsg');
-    msg.className='msg';
-    msg.style.display='none';
+    msg.className='msg';msg.style.display='none';
     if(!email||!senha){msg.className='msg error';msg.textContent='Preencha email e senha.';msg.style.display='block';return;}
     try{
-        const res=await fetch('/api/auth/login',{
-            method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
-            body:JSON.stringify({email,senha})
-        });
+        const res=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({email,senha})});
         const data=await res.json();
         if(data.success){
             state.db_id=data.db_id;state.usuario_id=data.id;state.nome=data.nome;state.cargo=data.cargo;
@@ -1102,7 +1080,6 @@ async function fazerLogin(){
             carregarStatusCaixa();
             carregarDash('hoje');
             carregarLojaInfo();
-            // Verifica plano após login
             setTimeout(verificarStatusPlano, 500);
             showToast('👋 Bem-vindo, '+data.nome+'!','success');
         }else{
@@ -1117,23 +1094,16 @@ async function fazerRegistro(){
     const nome=document.getElementById('registerNome').value.trim();
     const email=document.getElementById('registerEmail').value.trim();
     const senha=document.getElementById('registerSenha').value;
-    const nome_loja=document.getElementById('registerLojaNome').value.trim();
     const cnpj=document.getElementById('registerCnpj').value.replace(/\D/g,'');
+    const cnpjDados = JSON.parse(document.getElementById('dadosCnpjRegistro').dataset.dados||'{}');
+    const nome_loja = cnpjDados.razao_social || cnpjDados.nome_fantasia || 'Minha Loja';
     if(!nome||!email||!senha){msg.className='msg error';msg.textContent='Preencha todos os campos obrigatórios.';msg.style.display='block';return;}
     if(senha.length<4){msg.className='msg error';msg.textContent='Senha deve ter pelo menos 4 caracteres.';msg.style.display='block';return;}
     try{
-        const res=await fetch('/api/auth/register',{
-            method:'POST',headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({nome,email,senha,nome_loja,cnpj,cnpj_dados:{}})
-        });
+        const res=await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,email,senha,nome_loja,cnpj,cnpj_dados:cnpjDados})});
         const data=await res.json();
-        if(data.success){
-            msg.className='msg success';msg.textContent='Conta criada! Faça login.';msg.style.display='block';
-            mostrarLogin();
-            document.getElementById('loginEmail').value=email;
-        }else{
-            msg.className='msg error';msg.textContent=data.error||'Erro ao criar conta.';msg.style.display='block';
-        }
+        if(data.success){msg.className='msg success';msg.textContent='Conta criada! Faça login.';msg.style.display='block';mostrarLogin();document.getElementById('loginEmail').value=email;}
+        else{msg.className='msg error';msg.textContent=data.error||'Erro ao criar conta.';msg.style.display='block';}
     }catch(e){msg.className='msg error';msg.textContent='Erro de conexão.';msg.style.display='block';}
 }
 
@@ -1158,23 +1128,19 @@ async function fazerLogout(){
 }
 
 // ============================================================
-// TROCAR ABA (COM VERIFICAÇÃO DE PLANO)
+// TROCAR ABA
 // ============================================================
 function trocarTab(nome){
     if (!planoAtivo && nome !== 'planos') {
         showToast('🔴 Plano expirado! Acesse a aba Planos para renovar.', 'error');
         return;
     }
-    
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
-    
     const panel = document.getElementById('panel' + nome.charAt(0).toUpperCase() + nome.slice(1));
     if (panel) panel.classList.add('active');
-    
     const btn = document.querySelector(`[data-tab="${nome}"]`);
     if (btn) btn.classList.add('active');
-    
     if(nome==='clientes') carregarClientes();
     if(nome==='estoque') carregarProdutos();
     if(nome==='dashboard') carregarDash(state.periodo);
@@ -1239,18 +1205,10 @@ async function salvarProduto(){
     const categoria=document.getElementById('prodCategoria').value.trim()||'Geral';
     if(!codigo||!nome){showToast('❌ Código e nome são obrigatórios.','error');return;}
     try{
-        const res=await fetch('/api/produtos',{
-            method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
-            body:JSON.stringify({codigo,nome,preco,estoque,categoria})
-        });
+        const res=await fetch('/api/produtos',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({codigo,nome,preco,estoque,categoria})});
         const data=await res.json();
-        if(data.success){
-            showToast('✅ Produto salvo!','success');
-            limparCamposProduto();
-            carregarProdutos();
-        }else{
-            showToast('❌ '+data.error,'error');
-        }
+        if(data.success){showToast('✅ Produto salvo!','success');limparCamposProduto();carregarProdutos();}
+        else{showToast('❌ '+data.error,'error');}
     }catch(e){showToast('❌ Erro ao salvar','error');}
 }
 
@@ -1264,6 +1222,16 @@ async function excluirProdutoSelecionado(){
         if(data.success){showToast('✅ Produto excluído!','success');limparCamposProduto();carregarProdutos();}
         else showToast('❌ '+data.error,'error');
     }catch(e){showToast('❌ Erro ao excluir','error');}
+}
+
+// BUSCA AUTOMÁTICA POR CÓDIGO DE BARRAS
+let timeoutBuscaCodigo = null;
+function buscarProdutoAutomatico(codigo){
+    clearTimeout(timeoutBuscaCodigo);
+    if(codigo.length < 8) return;
+    timeoutBuscaCodigo = setTimeout(() => {
+        buscarProdutoPorCodigo();
+    }, 500);
 }
 
 async function buscarProdutoPorCodigo(){
@@ -1324,39 +1292,23 @@ function pagarDivida(id, nome, divida){
     document.getElementById('pagClienteValor').value=divida.toFixed(2);
     document.getElementById('pagClienteValor').dataset.clienteId=id;
     document.getElementById('modalClientePagamento').classList.add('active');
-    setTimeout(()=>{
-        document.getElementById('pagClienteValor').focus();
-        document.getElementById('pagClienteValor').select();
-    },100);
+    setTimeout(()=>{document.getElementById('pagClienteValor').focus();document.getElementById('pagClienteValor').select();},100);
 }
 
-function fecharModalPagamentoCliente(){
-    document.getElementById('modalClientePagamento').classList.remove('active');
-}
+function fecharModalPagamentoCliente(){document.getElementById('modalClientePagamento').classList.remove('active');}
 
 async function confirmarPagamentoCliente(){
     const clienteId=document.getElementById('pagClienteValor').dataset.clienteId;
     const valorInput=document.getElementById('pagClienteValor');
     const metodo=document.getElementById('pagClienteMetodo').value;
-    
     let valor=valorInput.value.replace(/[^0-9,.]/g,'').replace(',','.');
     valor=parseFloat(valor)||0;
-    
     if(valor<=0){showToast('❌ Valor inválido! Digite um valor maior que zero.','error');return;}
-    
     try{
-        const res=await fetch(`/api/clientes/${clienteId}/pagar`,{
-            method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
-            body:JSON.stringify({valor,metodo})
-        });
+        const res=await fetch(`/api/clientes/${clienteId}/pagar`,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({valor,metodo})});
         const data=await res.json();
-        if(data.success){
-            showToast(`✅ Pagamento de R$ ${valor.toFixed(2)} registrado!`,'success');
-            fecharModalPagamentoCliente();
-            carregarClientes();
-        }else{
-            showToast('❌ '+(data.error||'Erro ao registrar pagamento'),'error');
-        }
+        if(data.success){showToast(`✅ Pagamento de R$ ${valor.toFixed(2)} registrado!`,'success');fecharModalPagamentoCliente();carregarClientes();}
+        else{showToast('❌ '+(data.error||'Erro ao registrar pagamento'),'error');}
     }catch(e){showToast('❌ Erro ao processar pagamento','error');}
 }
 
@@ -1385,10 +1337,7 @@ async function salvarCliente(){
     const email=document.getElementById('clienteEmail').value.trim();
     if(!nome){showToast('❌ Nome é obrigatório.','error');return;}
     try{
-        const res=await fetch('/api/clientes',{
-            method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
-            body:JSON.stringify({nome,telefone,email})
-        });
+        const res=await fetch('/api/clientes',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({nome,telefone,email})});
         const data=await res.json();
         if(data.success){showToast('✅ Cliente salvo!','success');fecharModalCliente();carregarClientes();}
         else showToast('❌ '+data.error,'error');
@@ -1399,11 +1348,7 @@ async function salvarCliente(){
 // VENDAS / PDV
 // ============================================================
 document.getElementById('codigoInput').addEventListener('keydown',function(e){
-    if(e.key==='Enter'){
-        e.preventDefault();
-        const codigo=this.value.trim();
-        if(codigo) buscarProdutoPorCodigoVenda(codigo);
-    }
+    if(e.key==='Enter'){e.preventDefault();const codigo=this.value.trim();if(codigo) buscarProdutoPorCodigoVenda(codigo);}
 });
 
 document.getElementById('buscaProdutoInput').addEventListener('input',function(){
@@ -1431,25 +1376,9 @@ document.getElementById('buscaProdutoInput').addEventListener('keydown',function
     if(!results.classList.contains('active'))return;
     const items=results.querySelectorAll('.result-item');
     if(!items.length)return;
-    if(e.key==='ArrowDown'){
-        e.preventDefault();
-        const next=Math.min(state.searchIndex+1,items.length-1);
-        items.forEach((el,i)=>el.classList.toggle('active',i===next));
-        state.searchIndex=next;
-    }else if(e.key==='ArrowUp'){
-        e.preventDefault();
-        const prev=Math.max(state.searchIndex-1,0);
-        items.forEach((el,i)=>el.classList.toggle('active',i===prev));
-        state.searchIndex=prev;
-    }else if(e.key==='Enter'){
-        e.preventDefault();
-        const active=results.querySelector('.result-item.active');
-        if(active&&active.dataset.codigo){
-            selecionarProdutoPorCodigo(active.dataset.codigo);
-            this.value='';
-            results.classList.remove('active');
-        }
-    }
+    if(e.key==='ArrowDown'){e.preventDefault();const next=Math.min(state.searchIndex+1,items.length-1);items.forEach((el,i)=>el.classList.toggle('active',i===next));state.searchIndex=next;}
+    else if(e.key==='ArrowUp'){e.preventDefault();const prev=Math.max(state.searchIndex-1,0);items.forEach((el,i)=>el.classList.toggle('active',i===prev));state.searchIndex=prev;}
+    else if(e.key==='Enter'){e.preventDefault();const active=results.querySelector('.result-item.active');if(active&&active.dataset.codigo){selecionarProdutoPorCodigo(active.dataset.codigo);this.value='';results.classList.remove('active');}}
 });
 
 function selecionarProdutoPorCodigo(codigo){
@@ -1466,18 +1395,8 @@ async function buscarProdutoPorCodigoVenda(codigo){
     try{
         const res=await fetch(`/api/produto/buscar/${encodeURIComponent(codigo)}`,{credentials:'include'});
         const data=await res.json();
-        if(data.success&&data.dados){
-            const nome=data.dados.nome||codigo;
-            const preco=0;
-            const categoria=data.dados.categoria||'Geral';
-            showToast(`ℹ️ Produto "${nome}" não cadastrado. Cadastre no estoque.`,'info');
-            document.getElementById('codigoInput').value='';
-            document.getElementById('codigoInput').focus();
-        }else{
-            showToast('⚠️ Produto não encontrado','warning');
-            document.getElementById('codigoInput').value='';
-            document.getElementById('codigoInput').focus();
-        }
+        if(data.success&&data.dados){const nome=data.dados.nome||codigo;showToast(`ℹ️ Produto "${nome}" não cadastrado. Cadastre no estoque.`,'info');document.getElementById('codigoInput').value='';document.getElementById('codigoInput').focus();}
+        else{showToast('⚠️ Produto não encontrado','warning');document.getElementById('codigoInput').value='';document.getElementById('codigoInput').focus();}
     }catch(e){showToast('❌ Erro na busca','error');}
 }
 
@@ -1487,27 +1406,16 @@ function adicionarAoCarrinho(produto){
         item.quantidade++;
         item.total=item.quantidade*item.preco_unitario;
     }else{
-        state.itens.push({
-            codigo:produto.codigo,
-            nome:produto.nome,
-            preco_unitario:produto.preco,
-            quantidade:1,
-            total:produto.preco,
-            categoria:produto.categoria||'Geral'
-        });
+        state.itens.push({codigo:produto.codigo,nome:produto.nome,preco_unitario:produto.preco,quantidade:1,total:produto.preco,categoria:produto.categoria||'Geral'});
     }
     atualizarCarrinho();
     showToast(`➕ ${produto.nome} adicionado!`,'success');
 }
 
-function removerItem(index){
-    state.itens.splice(index,1);
-    atualizarCarrinho();
-}
+function removerItem(index){state.itens.splice(index,1);atualizarCarrinho();}
 
 function mudarQuantidade(index,delta){
-    const item=state.itens[index];
-    if(!item)return;
+    const item=state.itens[index];if(!item)return;
     const nova=item.quantidade+delta;
     if(nova<=0){removerItem(index);return;}
     item.quantidade=nova;
@@ -1529,11 +1437,7 @@ function atualizarCarrinho(){
     state.itens.forEach((item,i)=>{
         html+=`<tr>
             <td>${item.nome}</td>
-            <td class="qty">
-                <button onclick="mudarQuantidade(${i},-1)">−</button>
-                ${item.quantidade}
-                <button onclick="mudarQuantidade(${i},1)">+</button>
-            </td>
+            <td class="qty"><button onclick="mudarQuantidade(${i},-1)">−</button>${item.quantidade}<button onclick="mudarQuantidade(${i},1)">+</button></td>
             <td class="price">R$ ${item.preco_unitario.toFixed(2)}</td>
             <td class="total-item">R$ ${item.total.toFixed(2)}</td>
             <td><button class="btn-remove" onclick="removerItem(${i})">✕</button></td>
@@ -1562,7 +1466,16 @@ function abrirPagamento(){
     document.getElementById('btnConfirmarPagamento').disabled=false;
     selecionarMetodo('Dinheiro');
     document.getElementById('paymentModal').classList.add('active');
-    document.getElementById('clientePagamento').focus();
+    // Foco automático no campo de recebido se for Dinheiro
+    setTimeout(()=>{
+        if(metodoAtivo==='Dinheiro'){
+            document.getElementById('valorRecebido').focus();
+        } else if(metodoAtivo==='Fiado'){
+            document.getElementById('clientePagamento').focus();
+        } else {
+            document.getElementById('clientePagamento').focus();
+        }
+    }, 300);
 }
 
 function fecharPagamento(){document.getElementById('paymentModal').classList.remove('active');}
@@ -1570,9 +1483,18 @@ function fecharPagamento(){document.getElementById('paymentModal').classList.rem
 function selecionarMetodo(metodo){
     metodoAtivo=metodo;
     document.querySelectorAll('#paymentMethods button').forEach(b=>b.classList.toggle('active',b.dataset.metodo===metodo));
-    document.getElementById('recebidoContainer').style.display=(metodo==='Fiado'||metodo==='PIX'||metodo==='Cartão'||metodo==='Débito')?'none':'flex';
-    if(metodo==='Fiado'){document.getElementById('trocoLabel').textContent='Fiado - cliente será cadastrado';}
+    const isFiado = metodo==='Fiado';
+    const isPIX = metodo==='PIX';
+    const isCartao = metodo==='Cartão'||metodo==='Débito';
+    document.getElementById('recebidoContainer').style.display=(isFiado||isPIX||isCartao)?'none':'flex';
+    if(isFiado){document.getElementById('trocoLabel').textContent='Fiado - cliente obrigatório';}
     else{document.getElementById('trocoLabel').textContent='Troco: R$ 0,00';}
+    // Foco automático
+    setTimeout(()=>{
+        if(isFiado){document.getElementById('clientePagamento').focus();}
+        else if(!isPIX&&!isCartao){document.getElementById('valorRecebido').focus();}
+        else{document.getElementById('clientePagamento').focus();}
+    }, 100);
 }
 
 function calcularTroco(){
@@ -1586,7 +1508,19 @@ function calcularTroco(){
 
 async function confirmarPagamento(){
     const metodo=document.querySelector('#paymentMethods .active')?.dataset.metodo||'Dinheiro';
-    const cliente=document.getElementById('clientePagamento').value.trim()||'';
+    let cliente=document.getElementById('clientePagamento').value.trim()||'';
+    
+    // FIADO: obriga nome do cliente
+    if(metodo==='Fiado'){
+        if(!cliente){
+            showToast('❌ Nome do cliente é obrigatório para fiado!','error');
+            document.getElementById('clientePagamento').focus();
+            document.getElementById('clientePagamento').style.borderColor='var(--red)';
+            setTimeout(()=>{document.getElementById('clientePagamento').style.borderColor='';},3000);
+            return;
+        }
+    }
+    
     const recebido=parseFloat(document.getElementById('valorRecebido').value)||0;
     const troco=Math.max(0,recebido-state.total);
     
@@ -1597,19 +1531,11 @@ async function confirmarPagamento(){
     
     document.getElementById('btnConfirmarPagamento').disabled=true;
     try{
-        const res=await fetch('/api/vendas',{
-            method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
-            body:JSON.stringify({
-                itens:state.itens,
-                subtotal:state.subtotal,
-                desconto:parseFloat(document.getElementById('descontoInput').value.replace(',','.'))||0,
-                total:state.total,
-                metodo,
-                cliente,
-                recebido,
-                troco
-            })
-        });
+        const res=await fetch('/api/vendas',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({
+            itens:state.itens,subtotal:state.subtotal,
+            desconto:parseFloat(document.getElementById('descontoInput').value.replace(',','.'))||0,
+            total:state.total,metodo,cliente,recebido,troco
+        })});
         const data=await res.json();
         if(data.success){
             ultimaVendaId=data.id;
@@ -1670,70 +1596,53 @@ function mostrarCupom(dados){
     state.cupomEscolha='imprimir';
     document.querySelectorAll('.cupom-opt').forEach(b=>b.classList.remove('active'));
     document.getElementById('cupomOptImprimir').classList.add('active');
-    
     document.getElementById('cupomModal').classList.add('active');
 }
 
 function cupomEscolher(opcao){state.cupomEscolha=opcao;}
-
 function fecharCupomSemImprimir(){document.getElementById('cupomModal').classList.remove('active');}
-
 function fecharCupom(){document.getElementById('cupomModal').classList.remove('active');}
 
-function imprimirCupom(){
-    const dados=ultimoCupomData;
-    if(!dados){showToast('❌ Dados do cupom não encontrados','error');return;}
-    try{
-        fetch('/api/imprimir/cupom',{
-            method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
-            body:JSON.stringify(dados)
-        }).then(res=>res.json()).then(data=>{
-            if(data.success){showToast('🖨️ Cupom enviado para impressão!','success');}
-            else{showToast('⚠️ Falha na impressão: '+data.error,'warning');}
-        }).catch(()=>{});
-    }catch(e){}
-    document.getElementById('cupomPrintArea').innerHTML=gerarTextoCupom(dados);
-    setTimeout(()=>{
-        window.print();
-        setTimeout(()=>{document.getElementById('cupomPrintArea').innerHTML='';},1000);
-    },300);
+async function imprimirCupom(){
+    const dados = ultimoCupomData;
+    if (!dados) { showToast('❌ Dados do cupom não encontrados', 'error'); return; }
+    
+    showToast('🖨️ Enviando para impressão...', 'info');
+    try {
+        const res = await fetch('/api/imprimir/cupom', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(dados)
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast('🖨️ Cupom impresso com sucesso!', 'success');
+        } else {
+            showToast('❌ Falha na impressão: ' + (data.error || 'Erro desconhecido'), 'error');
+        }
+    } catch (e) {
+        showToast('❌ Erro ao enviar para impressão', 'error');
+    }
     document.getElementById('cupomModal').classList.remove('active');
 }
 
-function gerarTextoCupom(dados){
-    const L=48;
-    let lines=[];
-    lines.push('='.repeat(L));
-    lines.push((dados.nome_loja||'MINHA LOJA').center(L));
-    if(dados.cnpj) lines.push(('CNPJ: '+formatarCnpj(dados.cnpj)).center(L));
-    const cnpjDados=dados.cnpj_dados||{};
-    if(cnpjDados.razao_social) lines.push(cnpjDados.razao_social.substring(0,46).center(L));
-    lines.push('-'.repeat(L));
-    lines.push('CUPOM NÃO FISCAL'.center(L));
-    lines.push(('Data: '+(dados.data_hora||new Date().toLocaleString('pt-BR'))).center(L));
-    if(ultimaVendaId) lines.push(('Venda: #'+ultimaVendaId).center(L));
-    lines.push('='.repeat(L));
-    lines.push('');
-    lines.push('ITEM'.ljust(3)+'DESCRIÇÃO'.ljust(25)+'QTD'.rjust(4)+'TOTAL'.rjust(16));
-    lines.push('-'.repeat(L));
-    dados.itens.forEach((item,i)=>{
-        const nome=item.nome.substring(0,22);
-        lines.push(String(i+1).ljust(3)+nome.ljust(25)+String(item.quantidade).rjust(4)+('R$ '+item.total.toFixed(2)).rjust(16));
-    });
-    lines.push('-'.repeat(L));
-    lines.push(('SUBTOTAL:'.ljust(32)+'R$ '+dados.subtotal.toFixed(2)).rjust(L));
-    if(dados.desconto>0) lines.push(('DESCONTO:'.ljust(32)+'R$ '+dados.desconto.toFixed(2)).rjust(L));
-    lines.push(('TOTAL:'.ljust(32)+'R$ '+dados.total.toFixed(2)).rjust(L));
-    lines.push('-'.repeat(L));
-    lines.push(('PAGAMENTO: '+(dados.metodo||'Dinheiro')).center(L));
-    if(dados.recebido>0) lines.push(('RECEBIDO: R$ '+dados.recebido.toFixed(2)).center(L));
-    if(dados.troco>0) lines.push(('TROCO: R$ '+dados.troco.toFixed(2)).center(L));
-    if(dados.cliente) lines.push(('CLIENTE: '+dados.cliente).center(L));
-    lines.push('='.repeat(L));
-    lines.push('');
-    lines.push('VOLTE SEMPRE!'.center(L));
-    lines.push('='.repeat(L));
-    return lines.join('\n')+'\n\n';
+async function imprimirCupomAntigo(vendaId){
+    if(!vendaId) return;
+    showToast('🔄 Buscando dados da venda...', 'info');
+    try{
+        const res=await fetch(`/api/vendas/${vendaId}/cupom`,{credentials:'include'});
+        const data=await res.json();
+        if(data.success && data.dados){
+            ultimoCupomData = data.dados;
+            ultimaVendaId = vendaId;
+            mostrarCupom(data.dados);
+        }else{
+            showToast('❌ '+ (data.error || 'Erro ao buscar cupom'), 'error');
+        }
+    }catch(e){
+        showToast('❌ Erro ao buscar cupom', 'error');
+    }
 }
 
 // ============================================================
@@ -1785,10 +1694,7 @@ async function toggleCaixa(){
             else showToast('❌ '+data.error,'error');
         }else{
             const valor=parseFloat(document.getElementById('valorAbertura').value)||0;
-            const res=await fetch('/api/caixa/abrir',{
-                method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
-                body:JSON.stringify({valor})
-            });
+            const res=await fetch('/api/caixa/abrir',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({valor})});
             const data=await res.json();
             if(data.success){showToast('✅ Caixa aberto!','success');}
             else showToast('❌ '+data.error,'error');
@@ -1803,9 +1709,7 @@ async function carregarResumoCaixa(){
         const data=await res.json();
         if(data.success&&data.metodos&&data.metodos.length>0){
             let html='';
-            data.metodos.forEach(m=>{
-                html+=`<tr><td>${m.metodo}</td><td style="text-align:right;">${m.quantidade}</td><td style="text-align:right;">R$ ${m.total.toFixed(2)}</td></tr>`;
-            });
+            data.metodos.forEach(m=>{html+=`<tr><td>${m.metodo}</td><td style="text-align:right;">${m.quantidade}</td><td style="text-align:right;">R$ ${m.total.toFixed(2)}</td></tr>`;});
             html+=`<tr class="total-row"><td><strong>TOTAL</strong></td><td style="text-align:right;">${data.total_vendas||0}</td><td style="text-align:right;">R$ ${(data.total_geral||0).toFixed(2)}</td></tr>`;
             document.getElementById('tabelaResumoCaixa').innerHTML=html;
         }else{
@@ -1843,16 +1747,10 @@ async function carregarDash(periodo){
                 let i=0;
                 for(const [metodo,valor] of Object.entries(metodos)){
                     const pct=total>0?(valor/total*100):0;
-                    html+=`<div class="method-bar">
-                        <span class="label">${metodo}</span>
-                        <div class="track"><div class="fill" style="width:${pct}%;background:${cores[i%cores.length]};">${pct.toFixed(0)}%</div></div>
-                        <span style="font-size:12px;font-weight:600;min-width:60px;text-align:right;">R$ ${valor.toFixed(2)}</span>
-                    </div>`;
+                    html+=`<div class="method-bar"><span class="label">${metodo}</span><div class="track"><div class="fill" style="width:${pct}%;background:${cores[i%cores.length]};">${pct.toFixed(0)}%</div></div><span style="font-size:12px;font-weight:600;min-width:60px;text-align:right;">R$ ${valor.toFixed(2)}</span></div>`;
                     i++;
                 }
-            }else{
-                html='<p style="color:var(--text-muted);font-size:13px;">Nenhuma venda no período</p>';
-            }
+            }else{html='<p style="color:var(--text-muted);font-size:13px;">Nenhuma venda no período</p>';}
             document.getElementById('metodosContainer').innerHTML=html;
             
             const vendas=s.vendas||[];
@@ -1867,11 +1765,10 @@ async function carregarDash(periodo){
                         <span class="metodo ${cls}">${metodo}</span>
                         <span class="valor">R$ ${v.total.toFixed(2)}</span>
                         <div class="produtos-detalhe">${(v.itens||[]).map(i=>`${i.nome}(${i.quantidade})`).join(', ')}</div>
+                        <button class="btn-imprimir-venda" onclick="imprimirCupomAntigo(${v.id})"><i class="fas fa-print"></i></button>
                     </div>`;
                 });
-            }else{
-                vHtml='<p style="color:var(--text-muted);font-size:13px;">Nenhuma venda no período</p>';
-            }
+            }else{vHtml='<p style="color:var(--text-muted);font-size:13px;">Nenhuma venda no período</p>';}
             document.getElementById('vendasList').innerHTML=vHtml;
         }
     }catch(e){console.error(e);}
@@ -1912,14 +1809,29 @@ async function carregarStatusConta(){
             const status=document.getElementById('statusLoja');
             const ativo=data.ativo!==false;
             const dias=data.dias_restantes||0;
+            const percentual=data.percentual_produtos||0;
+            const corBarra = percentual >= 90 ? 'vermelho' : percentual >= 70 ? 'amarelo' : 'verde';
+            const limiteProdutos = data.limite_produtos === -1 ? '∞' : data.limite_produtos;
+            
             status.innerHTML=`
                 <h4 style="font-size:14px;margin-bottom:10px;"><i class="fas fa-info-circle"></i> Status da Conta</h4>
                 <div class="info-grid">
                     <div class="info-item"><div class="label">Plano</div><div class="value">${data.plano?.nome||'—'}</div></div>
                     <div class="info-item"><div class="label">Status</div><div class="value ${ativo?'ativo':'expirado'}">${ativo?'✅ Ativo':'🔴 Expirado'}</div></div>
                     <div class="info-item"><div class="label">Dias Restantes</div><div class="value ${dias<=3?'expirado':'ativo'}">${dias.toFixed(1)} dias</div></div>
-                    <div class="info-item"><div class="label">Produtos</div><div class="value">${data.produtos_atuais||0}/${data.limite_produtos===-1?'∞':data.limite_produtos}</div></div>
+                    <div class="info-item"><div class="label">Produtos</div><div class="value">${data.produtos_atuais||0}/${limiteProdutos}</div></div>
                     <div class="info-item"><div class="label">Usuários</div><div class="value">${data.usuarios_atuais||0}/${data.usuarios_limite||1}</div></div>
+                </div>
+                <div style="margin-top:12px;">
+                    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);">
+                        <span>Produtos usados: ${data.produtos_atuais||0}</span>
+                        <span>${data.limite_produtos===-1?'Ilimitado':data.limite_produtos}</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill ${corBarra}" style="width:${Math.min(100, percentual)}%;">
+                            ${data.limite_produtos===-1 ? '∞' : `${Math.min(100, Math.round(percentual))}%`}
+                        </div>
+                    </div>
                 </div>
                 ${data.expirado?'<div style="margin-top:12px;padding:12px;background:rgba(239,68,68,.15);border-radius:8px;text-align:center;color:var(--red);">🔴 Seu plano expirou! <a onclick="trocarTab(\'planos\')" style="color:var(--green);cursor:pointer;font-weight:700;">Renovar agora →</a></div>':''}
                 ${!data.expirado && data.dias_restantes<=3 ? `<div style="margin-top:12px;padding:12px;background:rgba(245,158,11,.15);border-radius:8px;text-align:center;color:var(--orange);">⚠️ Seu plano expira em ${Math.ceil(dias)} dias! <a onclick="trocarTab(\'planos\')" style="color:var(--green);cursor:pointer;font-weight:700;">Renovar →</a></div>` : ''}
@@ -1931,10 +1843,7 @@ async function carregarStatusConta(){
 async function assinarPlano(planoId){
     try{
         showToast('🔄 Gerando pagamento...','info');
-        const res=await fetch('/api/pix/criar',{
-            method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
-            body:JSON.stringify({plano_id:planoId})
-        });
+        const res=await fetch('/api/pix/criar',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({plano_id:planoId})});
         const data=await res.json();
         if(data.success){
             document.getElementById('pixContent').innerHTML=`
@@ -1949,31 +1858,18 @@ async function assinarPlano(planoId){
                 </div>
             `;
             document.getElementById('modalPix').classList.add('active');
-        }else{
-            showToast('❌ '+data.error,'error');
-        }
+        }else{showToast('❌ '+data.error,'error');}
     }catch(e){showToast('❌ Erro ao gerar PIX','error');}
 }
 
-function copiarPix(codigo){
-    navigator.clipboard.writeText(codigo).then(()=>showToast('✅ Código PIX copiado!','success')).catch(()=>prompt('Copie o código:',codigo));
-}
+function copiarPix(codigo){navigator.clipboard.writeText(codigo).then(()=>showToast('✅ Código PIX copiado!','success')).catch(()=>prompt('Copie o código:',codigo));}
 
 async function verificarPix(pixId){
     try{
-        const res=await fetch('/api/pix/verificar',{
-            method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
-            body:JSON.stringify({pix_id:pixId})
-        });
+        const res=await fetch('/api/pix/verificar',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({pix_id:pixId})});
         const data=await res.json();
-        if(data.pago){
-            showToast('✅ Pagamento confirmado! Plano renovado!','success');
-            fecharModalPix();
-            carregarPlanos();
-            verificarStatusPlano();
-        }else{
-            showToast('⏳ Pagamento ainda não confirmado... Aguarde.','warning');
-        }
+        if(data.pago){showToast('✅ Pagamento confirmado! Plano renovado!','success');fecharModalPix();carregarPlanos();verificarStatusPlano();}
+        else{showToast('⏳ Pagamento ainda não confirmado... Aguarde.','warning');}
     }catch(e){showToast('❌ Erro ao verificar','error');}
 }
 
@@ -1992,10 +1888,7 @@ async function carregarUsuarios(){
             let html='';
             data.usuarios.forEach(u=>{
                 const isAtivo=u.online||u.session_id;
-                html+=`<div class="usuario-item">
-                    <span>${u.nome} <span class="cargo">${u.cargo||'Funcionario'}</span> ${isAtivo?'🟢':''}</span>
-                    <button class="btn-delete" onclick="excluirUsuario('${u.id}')">🗑️</button>
-                </div>`;
+                html+=`<div class="usuario-item"><span>${u.nome} <span class="cargo">${u.cargo||'Funcionario'}</span> ${isAtivo?'🟢':''}</span><button class="btn-delete" onclick="excluirUsuario('${u.id}')">🗑️</button></div>`;
             });
             lista.innerHTML=html;
         }
@@ -2009,10 +1902,7 @@ async function cadastrarUsuario(){
     const cargo=document.getElementById('novoUserCargo').value;
     if(!nome||!email||!senha){showToast('❌ Preencha todos os campos','error');return;}
     try{
-        const res=await fetch('/api/usuarios',{
-            method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
-            body:JSON.stringify({nome,email,senha,cargo})
-        });
+        const res=await fetch('/api/usuarios',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({nome,email,senha,cargo})});
         const data=await res.json();
         if(data.success){showToast('✅ Usuário criado!','success');document.getElementById('novoUserNome').value='';document.getElementById('novoUserEmail').value='';document.getElementById('novoUserSenha').value='';carregarUsuarios();}
         else showToast('❌ '+data.error,'error');
@@ -2039,6 +1929,28 @@ async function carregarLojaInfo(){
         if(data.success){
             document.getElementById('lojaNomeConfig').value=data.nome_loja||'';
             document.getElementById('lojaCnpjConfig').value=data.cnpj?formatarCnpj(data.cnpj):'';
+            // Mostra os dados da empresa
+            const cnpjDados = data.cnpj_dados || {};
+            const divDados = document.getElementById('dadosCnpjConfig');
+            if(cnpjDados.razao_social || cnpjDados.nome_fantasia){
+                let html = '<strong>Dados da Empresa:</strong><br>';
+                if(cnpjDados.razao_social) html+=`Razão Social: ${cnpjDados.razao_social}<br>`;
+                if(cnpjDados.nome_fantasia) html+=`Nome Fantasia: ${cnpjDados.nome_fantasia}<br>`;
+                if(cnpjDados.logradouro){
+                    let end=cnpjDados.logradouro;
+                    if(cnpjDados.numero) end+=`, ${cnpjDados.numero}`;
+                    if(cnpjDados.bairro) end+=` - ${cnpjDados.bairro}`;
+                    if(cnpjDados.municipio) end+=`, ${cnpjDados.municipio}`;
+                    if(cnpjDados.uf) end+=`/${cnpjDados.uf}`;
+                    html+=`Endereço: ${end}<br>`;
+                }
+                if(cnpjDados.telefone) html+=`Telefone: ${cnpjDados.telefone}<br>`;
+                divDados.innerHTML = html;
+                divDados.style.display = 'block';
+                divDados.dataset.dados = JSON.stringify(cnpjDados);
+            } else {
+                divDados.style.display = 'none';
+            }
         }
     }catch(e){console.error(e);}
 }
@@ -2050,17 +1962,10 @@ async function salvarNomeLoja(){
     try{cnpj_dados=JSON.parse(document.getElementById('dadosCnpjConfig').dataset.dados||'{}');}catch(e){}
     if(!nome){showToast('❌ Nome da loja é obrigatório.','error');return;}
     try{
-        const res=await fetch('/api/loja/nome',{
-            method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
-            body:JSON.stringify({nome,cnpj,cnpj_dados})
-        });
+        const res=await fetch('/api/loja/nome',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({nome,cnpj,cnpj_dados})});
         const data=await res.json();
-        if(data.success){
-            showToast('✅ Informações salvas!','success');
-            state.nome_loja=nome;
-            state.cnpj=cnpj;
-            document.getElementById('lojaNomeDisplay').textContent='🏪 '+nome;
-        }else showToast('❌ '+data.error,'error');
+        if(data.success){showToast('✅ Informações salvas!','success');state.nome_loja=nome;state.cnpj=cnpj;document.getElementById('lojaNomeDisplay').textContent='🏪 '+nome;}
+        else showToast('❌ '+data.error,'error');
     }catch(e){showToast('❌ Erro ao salvar','error');}
 }
 
@@ -2088,9 +1993,11 @@ async function buscarDadosCNPJ(cnpj){
             el.innerHTML=html;
             el.style.display='block';
             el.dataset.dados=JSON.stringify(d);
-        }else{
-            el.style.display='none';
-        }
+            // Se for o registro, preenche o nome da loja automaticamente
+            if(el.id === 'dadosCnpjRegistro'){
+                // O nome da loja será enviado no registro
+            }
+        }else{el.style.display='none';}
     }catch(e){el.style.display='none';}
 }
 
@@ -2106,9 +2013,7 @@ async function sincronizarAgora(show){
             if(show) showToast('✅ Sincronizado!','success');
             document.getElementById('statusSincronizacao').textContent='✅ Online';
             document.getElementById('statusSincronizacao').style.background='rgba(34,197,94,.15)';
-            carregarProdutos();
-            carregarClientes();
-            carregarDash(state.periodo);
+            carregarProdutos();carregarClientes();carregarDash(state.periodo);
         }else{
             if(show) showToast('⚠️ Falha na sincronização','warning');
             document.getElementById('statusSincronizacao').textContent='⚠️ Offline';
@@ -2125,18 +2030,12 @@ async function sincronizarAgora(show){
 // INICIALIZAÇÃO
 // ============================================================
 document.addEventListener('DOMContentLoaded',function(){
-    // Verifica se já está logado
     fetch('/api/auth/status',{credentials:'include'})
         .then(res=>res.json())
         .then(data=>{
             if(data.logged_in){
-                state.db_id=data.db_id;
-                state.usuario_id=data.usuario_id;
-                state.nome=data.nome;
-                state.cargo=data.cargo;
-                state.nome_loja=data.nome_loja||'Minha Loja';
-                state.cnpj=data.cnpj||'';
-                state.cnpj_dados=data.cnpj_dados||{};
+                state.db_id=data.db_id;state.usuario_id=data.usuario_id;state.nome=data.nome;state.cargo=data.cargo;
+                state.nome_loja=data.nome_loja||'Minha Loja';state.cnpj=data.cnpj||'';state.cnpj_dados=data.cnpj_dados||{};
                 state.plano_ativo=data.plano_ativo!==false;
                 document.getElementById('authPage').classList.add('hidden');
                 document.getElementById('app').classList.add('active');
@@ -2160,7 +2059,6 @@ document.addEventListener('DOMContentLoaded',function(){
         });
 });
 
-// Polyfill para String.center
 if(!String.prototype.center){
     String.prototype.center=function(len){
         const pad=Math.max(0,len-this.length);
@@ -2173,4 +2071,4 @@ console.log('🏪 SMART PDV v10.1.0 carregado!');
 console.log('📌 Use F1 para navegação rápida');
 </script>
 </body>
-            </html>
+                                                                                                   </html>
