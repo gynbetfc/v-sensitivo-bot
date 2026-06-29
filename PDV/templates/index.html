@@ -602,6 +602,28 @@
     </div>
 </div>
 
+<!-- Modal Pagar Dívida -->
+<div class="payment-modal" id="modalPagarDivida">
+    <div class="modal" style="max-width:320px;">
+        <div class="modal-header">
+            <h3><i class="fas fa-hand-holding-usd" style="color:var(--green);"></i> Registrar Pagamento</h3>
+            <button class="close" onclick="fecharModalPagarDivida()">×</button>
+        </div>
+        <div class="total-display">
+            <div class="label">Cliente</div>
+            <div style="font-size:15px;font-weight:600;color:#fff;margin-top:2px;" id="pagarDividaNome">—</div>
+        </div>
+        <div class="payment-input" style="margin-top:10px;">
+            <span class="label">R$</span>
+            <input type="number" id="pagarDividaValor" placeholder="0,00" min="0.01" step="0.01" style="font-size:16px;" onkeydown="if(event.key==='Enter')confirmarPagarDivida()">
+        </div>
+        <div class="payment-actions" style="margin-top:10px;">
+            <button class="btn-confirmar" onclick="confirmarPagarDivida()" style="padding:10px;border-radius:8px;font-weight:600;font-size:14px;background:var(--green);color:#fff;border:none;cursor:pointer;flex:1;">✅ Confirmar</button>
+            <button onclick="fecharModalPagarDivida()" style="padding:10px;border-radius:8px;font-size:14px;background:var(--bg-primary);color:var(--text-secondary);border:1px solid var(--border-color);cursor:pointer;flex:1;">Cancelar</button>
+        </div>
+    </div>
+</div>
+
 <script>
 // ============================================================
 // VERSÃO
@@ -1168,15 +1190,28 @@ async function salvarCliente(){
         else showToast('❌ Erro: '+data.error,'error');
     }catch(e){showToast('❌ Erro ao salvar!','error');}
 }
-async function pagarDivida(id,nome){
-    const valor=prompt('Valor pago por '+nome+' (R$):');if(!valor)return;
-    const v=parseFloat(valor.replace(',','.'));if(isNaN(v)||v<=0){showToast('⚠️ Valor inválido!','warning');return;}
-    try{
-        const res=await fetch('/api/clientes/'+id+'/pagar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({valor:v})});
-        const data=await res.json();
-        if(data.success){showToast('✅ Pagamento registrado!','success');carregarClientes();}
-        else showToast('❌ Erro: '+data.error,'error');
-    }catch(e){showToast('❌ Erro!','error');}
+let _pagarDividaId = null;
+function pagarDivida(id, nome) {
+    _pagarDividaId = id;
+    document.getElementById('pagarDividaNome').textContent = nome;
+    document.getElementById('pagarDividaValor').value = '';
+    document.getElementById('modalPagarDivida').classList.add('active');
+    setTimeout(() => document.getElementById('pagarDividaValor').focus(), 100);
+}
+function fecharModalPagarDivida() {
+    document.getElementById('modalPagarDivida').classList.remove('active');
+    _pagarDividaId = null;
+}
+async function confirmarPagarDivida() {
+    const v = parseFloat(document.getElementById('pagarDividaValor').value);
+    if (!v || v <= 0) { showToast('⚠️ Digite um valor válido!', 'warning'); return; }
+    fecharModalPagarDivida();
+    try {
+        const res = await fetch('/api/clientes/' + _pagarDividaId + '/pagar', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({valor:v})});
+        const data = await res.json();
+        if (data.success) { showToast('✅ Pagamento registrado!', 'success'); carregarClientes(); }
+        else showToast('❌ Erro: ' + data.error, 'error');
+    } catch(e) { showToast('❌ Erro!', 'error'); }
 }
 async function excluirCliente(id){
     if(!confirm('Excluir este cliente?'))return;
