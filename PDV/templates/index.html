@@ -258,8 +258,9 @@
         .cupom-linha{display:flex;justify-content:space-between;padding:1px 0;font-size:11px}
         .cupom-total-linha{display:flex;justify-content:space-between;padding:2px 0;font-size:13px;font-weight:700;border-top:1px dashed #999;margin-top:4px}
         .cupom-rodape{text-align:center;font-size:10px;color:#666;margin-top:6px}
-        .cupom-acoes{display:flex;gap:8px;padding:10px 14px;background:var(--bg-card);border-radius:0 0 8px 8px;border-top:1px solid var(--border-color)}
-        .cupom-opt{flex:1;padding:10px 8px;border:2px solid var(--border-color);border-radius:8px;background:var(--bg-primary);color:var(--text-secondary);cursor:pointer;font-weight:600;font-size:12px;font-family:inherit;text-align:center;transition:var(--transition);display:flex;align-items:center;justify-content:center;gap:6px}
+        /* BOTÕES DO CUPOM - UM EMBAIXO DO OUTRO */
+        .cupom-acoes{display:flex;flex-direction:column;gap:6px;padding:10px 14px;background:var(--bg-card);border-radius:0 0 8px 8px;border-top:1px solid var(--border-color)}
+        .cupom-opt{width:100%;padding:10px 8px;border:2px solid var(--border-color);border-radius:8px;background:var(--bg-primary);color:var(--text-secondary);cursor:pointer;font-weight:600;font-size:12px;font-family:inherit;text-align:center;transition:var(--transition);display:flex;align-items:center;justify-content:center;gap:6px}
         .cupom-opt:hover{border-color:var(--green);color:#fff;background:rgba(34,197,94,.1)}
         .cupom-opt.active{border-color:var(--green);background:rgba(34,197,94,.2);color:var(--green)}
 
@@ -569,7 +570,7 @@
     </div>
 </div>
 
-<!-- MODAL CUPOM -->
+<!-- MODAL CUPOM - CORRIGIDO: BOTÕES VERTICAIS + NAVEGAÇÃO POR SETAS -->
 <div class="cupom-modal" id="cupomModal">
     <div class="cupom-container">
         <div class="cupom-header-ui">
@@ -599,6 +600,7 @@
             <hr class="cupom-divider">
             <div class="cupom-rodape">VOLTE SEMPRE! ★ OBRIGADO!</div>
         </div>
+        <!-- BOTÕES VERTICAIS -->
         <div class="cupom-acoes">
             <button class="cupom-opt active" id="cupomOptImprimir" onclick="cupomEscolher('imprimir');imprimirCupom()">
                 <i class="fas fa-print"></i> Imprimir
@@ -682,6 +684,23 @@ function formatarCnpjInput(el){let v=el.value.replace(/\D/g,'').substring(0,14);
 function copiarId(){const id=state.db_id||document.getElementById('dbIdConfig').textContent;if(!id||id==='---')return;navigator.clipboard.writeText(id).then(()=>showToast('📋 ID copiado: '+id,'success')).catch(()=>showToast('ID: '+id,'info'));}
 
 // ============================================================
+// NAVEGAÇÃO NO CUPOM - SETAS, ENTER, F1
+// ============================================================
+function navegarCupom(direcao) {
+    const botoes = document.querySelectorAll('.cupom-opt');
+    if (!botoes.length) return;
+    let idx = -1;
+    botoes.forEach((b, i) => { if (b.classList.contains('active')) idx = i; });
+    if (idx === -1) idx = 0;
+    if (direcao === 'proximo') {
+        idx = (idx + 1) % botoes.length;
+    } else if (direcao === 'anterior') {
+        idx = (idx - 1 + botoes.length) % botoes.length;
+    }
+    botoes[idx].click();
+}
+
+// ============================================================
 // TECLAS GLOBAIS
 // ============================================================
 document.addEventListener('keydown',function(e){
@@ -695,6 +714,7 @@ document.addEventListener('keydown',function(e){
     const modalPix=document.getElementById('modalPix').classList.contains('active');
     const modalCli=document.getElementById('modalCliente').classList.contains('active');
 
+    // ESC
     if(e.key==='Escape'){
         e.preventDefault();
         if(modalPgto){fecharPagamento();return;}
@@ -706,17 +726,34 @@ document.addEventListener('keydown',function(e){
         return;
     }
 
+    // ENTER
     if(e.key==='Enter'){
         if(modalPgto){e.preventDefault();confirmarPagamento();return;}
-        if(modalCupom){e.preventDefault();if(state.cupomEscolha==='imprimir')imprimirCupom();else fecharCupomSemImprimir();return;}
-        // Não bloqueia Enter em inputs normais
-        const active=document.activeElement;
-        if(active&&(active.id==='prodCodigo')){return;} // deixa o listener do prodCodigo tratar
+        if(modalCupom){
+            e.preventDefault();
+            const ativo = document.querySelector('.cupom-opt.active');
+            if(ativo) ativo.click();
+            return;
+        }
+        const active=document.getElementById('activeElement');
+        if(active&&(active.id==='prodCodigo')){return;}
         if(active&&(active.tagName==='INPUT'||active.tagName==='SELECT'||active.tagName==='TEXTAREA'))return;
         e.preventDefault();
         return;
     }
 
+    // SETAS NO CUPOM
+    if(modalCupom && (e.key==='ArrowDown' || e.key==='ArrowUp')){
+        e.preventDefault();
+        if(e.key==='ArrowDown'){
+            navegarCupom('proximo');
+        } else {
+            navegarCupom('anterior');
+        }
+        return;
+    }
+
+    // SETAS NO PAGAMENTO
     if(modalPgto&&(e.key==='ArrowUp'||e.key==='ArrowDown')){
         e.preventDefault();
         const metodos=document.querySelectorAll('#paymentMethods button');if(!metodos.length)return;
@@ -730,7 +767,11 @@ document.addEventListener('keydown',function(e){
 function processarF1(){
     const modalPgto=document.getElementById('paymentModal').classList.contains('active');
     const modalCupom=document.getElementById('cupomModal').classList.contains('active');
-    if(modalCupom){imprimirCupom();return;}
+    if(modalCupom){
+        const ativo = document.querySelector('.cupom-opt.active');
+        if(ativo) ativo.click();
+        return;
+    }
     if(modalPgto){confirmarPagamento();return;}
     if(state.itens.length>0&&state.caixa_aberto){abrirPagamento();return;}
     const ci=document.getElementById('codigoInput');const bi=document.getElementById('buscaProdutoInput');
@@ -1057,7 +1098,6 @@ function limparCamposProduto(){state.produtoSelecionado=null;['prodCodigo','prod
 
 // ============================================================
 // BUSCAR PRODUTO POR CÓDIGO DE BARRAS (ESTOQUE)
-// Enter no campo prodCodigo dispara busca automática
 // ============================================================
 document.getElementById('prodCodigo').addEventListener('keydown',function(e){
     if(e.key==='Enter'){
@@ -1179,12 +1219,10 @@ async function carregarResumoCaixa(){
 }
 
 // ============================================================
-// DASHBOARD - FILTROS CORRIGIDOS
+// DASHBOARD
 // ============================================================
 function filtrarDashboard(btn, periodo){
-    // Remover active de todos
     document.querySelectorAll('.btn-filtro').forEach(b=>b.classList.remove('active'));
-    // Adicionar active no clicado
     btn.classList.add('active');
     state.periodo=periodo;
     carregarDashboard(periodo);
@@ -1343,7 +1381,6 @@ function mostrarCupom(venda){
     document.getElementById('cupomOptNaoImprimir').classList.remove('active');
     ultimoCupomData=venda;ultimaVendaId=venda.id;
     document.getElementById('cupomModal').classList.add('active');
-    // Foco no botão imprimir para Enter funcionar
     setTimeout(()=>document.getElementById('cupomOptImprimir').focus(),100);
 }
 
@@ -1374,7 +1411,6 @@ async function imprimirCupom(){
         troco:ultimoCupomData.troco||0
     };
 
-    // Tenta impressora física (ESC/POS)
     try{
         const res=await fetch('/api/imprimir/cupom',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(dados)});
         const data=await res.json();
@@ -1384,7 +1420,6 @@ async function imprimirCupom(){
         }
     }catch(e){}
 
-    // Fallback: imprime via browser com CSS
     try{
         const res2=await fetch('/api/imprimir/texto',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(dados)});
         const data2=await res2.json();
@@ -1394,7 +1429,6 @@ async function imprimirCupom(){
         }
     }catch(e){}
 
-    // Último fallback: imprime o cupom visual
     _imprimirCupomVisual(dados);
     fecharCupom();
 }
