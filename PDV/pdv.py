@@ -167,7 +167,7 @@ CHAVE_SECRETA_PLANO: str = "hs7sudjsjfirijf839djd"
 # Crie uma conta grátis em https://openrouteservice.org/dev/#/signup
 # e cole sua chave aqui (ou use a variável de ambiente ORS_API_KEY).
 # ============================================================
-ORS_API_KEY: str = os.environ.get("ORS_API_KEY", "")
+ORS_API_KEY: str = os.environ.get("ORS_API_KEY", "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjRjOTIzMTNkZDI4YjRmYjRhMzNmMzY0YjkxYTY1NGM1IiwiaCI6Im11cm11cjY0In0=")
 
 # ============================================================
 # PLANOS REVISADOS
@@ -910,9 +910,43 @@ def precisa_aviso_renovacao(db_id: str) -> Tuple[bool, float]:
 # ============================================================
 _CACHE_GEOCODE: Dict[str, Dict] = {}
 
+def _normalizar_endereco(endereco: str) -> str:
+    """Expande abreviações comuns de endereços brasileiros para melhorar o geocoding."""
+    import re as _re
+    e = ' ' + endereco + ' '
+    substituicoes = {
+        r'\bJD\b': 'Jardim', r'\bJ\.\b': 'Jardim',
+        r'\bST\b': 'Setor', r'\bST\.\b': 'Setor',
+        r'\bAV\b': 'Avenida', r'\bAV\.\b': 'Avenida',
+        r'\bR\b': 'Rua', r'\bR\.\b': 'Rua',
+        r'\bPÇA\b': 'Praça', r'\bPC\b': 'Praça',
+        r'\bRES\b': 'Residencial', r'\bCJ\b': 'Conjunto',
+        r'\bQD\b': 'Quadra', r'\bLT\b': 'Lote', r'\bBL\b': 'Bloco',
+        r'\bVL\b': 'Vila', r'\bPQ\b': 'Parque',
+    }
+    for padrao, valor in substituicoes.items():
+        e = _re.sub(padrao, valor, e, flags=_re.IGNORECASE)
+    return e.strip()
+
+def _consultar_geocode(texto: str) -> Optional[Dict]:
+    try:
+        url = "https://api.openrouteservice.org/geocode/search"
+        params = {"api_key": ORS_API_KEY, "text": texto, "boundary.country": "BR", "size": 1}
+        resp = requests.get(url, params=params, timeout=8)
+        if resp.status_code == 200:
+            features = resp.json().get('features', [])
+            if features:
+                coord = features[0]['geometry']['coordinates']  # [lng, lat]
+                return {"lng": coord[0], "lat": coord[1],
+                    "label": features[0].get('properties', {}).get('label', texto)}
+        return None
+    except Exception as e:
+        logger.error(f"❌ Erro no geocoding: {e}")
+        return None
+
 def geocodificar_endereco(endereco: str) -> Optional[Dict]:
     """Converte um endereço em texto para coordenadas (lat/lng).
-    Usa OpenRouteService (Pelias). Resultado fica em cache para não repetir chamadas."""
+    Tenta variações do endereço (original, normalizado, sem número) até uma funcionar."""
     if not endereco or not endereco.strip():
         return None
     chave_cache = endereco.strip().lower()
@@ -921,24 +955,32 @@ def geocodificar_endereco(endereco: str) -> Optional[Dict]:
     if not ORS_API_KEY:
         logger.warning("⚠️ ORS_API_KEY não configurada - geocoding indisponível")
         return None
-    try:
-        url = "https://api.openrouteservice.org/geocode/search"
-        params = {"api_key": ORS_API_KEY, "text": endereco, "boundary.country": "BR", "size": 1}
-        resp = requests.get(url, params=params, timeout=8)
-        if resp.status_code == 200:
-            data = resp.json()
-            features = data.get('features', [])
-            if features:
-                coord = features[0]['geometry']['coordinates']  # [lng, lat]
-                resultado = {"lng": coord[0], "lat": coord[1],
-                    "label": features[0].get('properties', {}).get('label', endereco)}
-                _CACHE_GEOCODE[chave_cache] = resultado
-                return resultado
-        logger.warning(f"⚠️ Geocoding sem resultado para: {endereco}")
-        return None
-    except Exception as e:
-        logger.error(f"❌ Erro no geocoding: {e}")
-        return None
+
+    # Monta variações para tentar, da mais específica para a mais genérica
+    norm = _normalizar_endereco(endereco)
+    tentativas = []
+    for base in [endereco.strip(), norm]:
+        if base and base not in tentativas:
+            tentativas.append(base)
+        # versão com "Brasil" ao final
+        com_br = base + ', Brasil'
+        if com_br not in tentativas:
+            tentativas.append(com_br)
+    # versão sem o número (alguns endereços só batem pela rua/bairro)
+    import re as _re
+    sem_numero = _re.sub(r',?\s*\d{2,5}\s*-?\s*', ' ', norm).strip()
+    if sem_numero and sem_numero not in tentativas:
+        tentativas.append(sem_numero + ', Brasil')
+
+    for texto in tentativas:
+        resultado = _consultar_geocode(texto)
+        if resultado:
+            _CACHE_GEOCODE[chave_cache] = resultado
+            logger.info(f"📍 Endereço localizado: {resultado.get('label')}")
+            return resultado
+
+    logger.warning(f"⚠️ Geocoding sem resultado para: {endereco}")
+    return None
 
 def calcular_distancia_rua(lat1: float, lng1: float, lat2: float, lng2: float) -> Optional[float]:
     """Distância real de rua (km) entre dois pontos, via OpenRouteService Directions."""
