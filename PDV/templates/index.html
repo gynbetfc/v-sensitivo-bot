@@ -70,6 +70,27 @@
         .plano-expirado-aviso a{color:#fff;font-weight:700;text-decoration:underline;cursor:pointer}
         .content{padding:16px}
         .panel{display:none;animation:fadeUp .3s ease}.panel.active{display:block}
+        .subtabs{display:flex;gap:6px;margin-bottom:16px;border-bottom:1px solid var(--border-color);padding-bottom:0}
+        .subtab-btn{padding:10px 20px;border:0;background:0;cursor:pointer;font-weight:600;font-size:13px;color:var(--text-secondary);border-bottom:2px solid transparent;transition:var(--transition);display:flex;align-items:center;gap:6px;margin-bottom:-1px}
+        .subtab-btn:hover{color:#fff}
+        .subtab-btn.active{color:var(--green);border-bottom-color:var(--green)}
+        .subtab-btn .lock{font-size:10px;opacity:.7}
+        .subpanel{display:none;animation:fadeUp .3s ease}.subpanel.active{display:block}
+        .kit-item-row{display:flex;align-items:center;gap:8px;padding:8px;background:var(--bg-primary);border-radius:8px;margin-bottom:6px;font-size:13px}
+        .kit-item-row .kit-item-nome{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .kit-item-row .kit-item-preco-orig{font-size:11px;color:var(--text-muted);text-decoration:line-through}
+        .kit-item-row input.kit-item-preco{width:70px;padding:4px 6px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-card);color:var(--green);font-weight:600;font-size:12px;text-align:right}
+        .kit-item-row input.kit-item-preco:focus{outline:0;border-color:var(--green)}
+        .kit-item-row .kit-item-remove{background:0;border:0;color:var(--red);cursor:pointer;font-size:14px;padding:2px 6px}
+        .kit-card{background:var(--bg-primary);border-radius:8px;padding:12px;margin-bottom:8px;border:1px solid var(--border-color)}
+        .kit-card .kit-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+        .kit-card .kit-card-nome{font-weight:700;font-size:14px;color:#fff}
+        .kit-card .kit-card-preco{font-weight:700;color:var(--green);font-size:15px}
+        .kit-card .kit-card-itens{font-size:12px;color:var(--text-secondary);line-height:1.6}
+        .kit-card .kit-card-acoes{display:flex;gap:6px;margin-top:8px}
+        .kit-card .kit-card-acoes button{padding:4px 12px;border:0;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600}
+        .kit-card .btn-kit-editar{background:rgba(59,130,246,.15);color:var(--blue)}
+        .kit-card .btn-kit-excluir{background:rgba(239,68,68,.15);color:var(--red)}
         .card{background:var(--bg-card);border-radius:var(--radius);padding:20px;border:1px solid var(--border-color);transition:var(--transition)}
         .card:hover{border-color:rgba(34,197,94,.2)}
         .card h3{font-size:16px;margin-bottom:14px;display:flex;align-items:center;gap:8px;color:#fff}
@@ -633,6 +654,12 @@
 
         <!-- PANEL ESTOQUE -->
         <div class="panel" id="panelEstoque">
+            <div class="subtabs">
+                <button class="subtab-btn active" data-subtab="produtos" onclick="trocarSubAbaEstoque('produtos')"><i class="fas fa-box"></i> Produtos</button>
+                <button class="subtab-btn" data-subtab="kits" id="subtabKitsBtn" onclick="trocarSubAbaEstoque('kits')"><i class="fas fa-layer-group"></i> Kit/Combo</button>
+            </div>
+
+            <div class="subpanel active" id="subpanelProdutos">
             <div class="estoque-grid">
                 <div class="card">
                     <h3><i class="fas fa-plus-circle" style="color:var(--green);"></i> Produto <button class="btn-excluir-produto" onclick="excluirProdutoSelecionado()">🗑️ Excluir</button></h3>
@@ -671,6 +698,41 @@
                             <thead><tr><th>Código</th><th>Nome</th><th style="text-align:right;">Preço</th><th style="text-align:right;">Custo</th><th style="text-align:center;">Margem</th><th style="text-align:center;">Est.</th></tr></thead>
                             <tbody id="tabelaEstoque"></tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+            <div class="subpanel" id="subpanelKits">
+                <div class="estoque-grid">
+                    <div class="card">
+                        <h3><i class="fas fa-layer-group" style="color:var(--purple);"></i> Montar Kit/Combo</h3>
+                        <div class="input-group"><label>Nome do Kit</label><input type="text" id="kitNome" placeholder="Ex: Combo Balada"></div>
+                        <div class="input-group">
+                            <label>Adicionar item ao kit</label>
+                            <input type="text" id="kitBuscaProduto" placeholder="Buscar produto por nome..." autocomplete="off" oninput="buscarProdutoKit(this.value)">
+                            <div class="search-results" id="kitSearchResults" style="position:relative;"></div>
+                        </div>
+                        <div id="kitItensContainer" style="margin:10px 0;">
+                            <p style="font-size:12px;color:var(--text-muted);text-align:center;padding:10px;">Nenhum item adicionado ainda</p>
+                        </div>
+                        <div style="border-top:1px solid var(--border-color);padding-top:10px;margin-top:6px;">
+                            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:4px;">
+                                <span>Soma dos itens (avulso):</span><span id="kitSomaAvulso">R$ 0,00</span>
+                            </div>
+                            <div class="input-group" style="margin-top:8px;">
+                                <label style="color:var(--green);">Preço do Kit (R$)</label>
+                                <input type="text" id="kitPreco" placeholder="0,00" style="font-weight:700;font-size:16px;color:var(--green);">
+                            </div>
+                        </div>
+                        <button class="btn-salvar" onclick="salvarKit()" style="background:var(--purple);"><i class="fas fa-save"></i> Salvar Kit</button>
+                        <button class="btn-limpar" onclick="limparKit()">Limpar</button>
+                    </div>
+                    <div class="card">
+                        <h3><i class="fas fa-list"></i> Kits Cadastrados</h3>
+                        <div class="estoque-wrapper" id="kitsListaContainer">
+                            <p style="font-size:13px;color:var(--text-muted);text-align:center;padding:20px;">Carregando...</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -898,6 +960,18 @@ function atualizarPermissoesUI() {
     } else {
         btnFiado.style.display = 'none';
     }
+
+    // Kit/Combo (sub-aba do estoque)
+    const subtabKits = document.getElementById('subtabKitsBtn');
+    if (subtabKits) {
+        if (temPermissao('kit_combo')) {
+            subtabKits.style.opacity = '1';
+            subtabKits.innerHTML = '<i class="fas fa-layer-group"></i> Kit/Combo';
+        } else {
+            subtabKits.style.opacity = '0.6';
+            subtabKits.innerHTML = '<i class="fas fa-layer-group"></i> Kit/Combo <span class="lock">🔒</span>';
+        }
+    }
 }
 
 // ============================================================
@@ -919,7 +993,11 @@ async function verificarStatusPlano() {
             else if (data.precisa_aviso) { mostrarAvisoRenovacao(data.dias_para_aviso || data.dias_restantes); bloquearAbas(false); }
             else { bloquearAbas(false); ocultarAvisos(); }
         }
-    } catch (e) { console.error('Erro ao verificar plano:', e); }
+    } catch (e) {
+        // Falha de rede/servidor offline: NÃO bloqueia o PDV. O plano é validado pelo token local no backend;
+        // um erro de conexão aqui não significa plano inativo. Mantém o último estado conhecido.
+        console.warn('Não foi possível verificar o plano agora (offline?). Mantendo estado atual.', e);
+    }
 }
 
 function atualizarStatusPlanoUI(data) {
@@ -1286,6 +1364,173 @@ function limparCamposProduto(){
     document.getElementById('prodCategoria').value='Geral';
     state.produtoSelecionado=null;
     document.getElementById('prodCodigo').focus();
+}
+
+// ============================================================
+// KIT / COMBO
+// ============================================================
+let kitItensAtuais = [];
+let kitEditandoId = null;
+
+function trocarSubAbaEstoque(sub){
+    if(sub==='kits' && !temPermissao('kit_combo')){
+        showToast('🔒 Kit/Combo disponível a partir do plano Standard. Faça upgrade!','warning');
+        return;
+    }
+    document.querySelectorAll('.subtab-btn').forEach(b=>b.classList.toggle('active',b.dataset.subtab===sub));
+    document.getElementById('subpanelProdutos').classList.toggle('active',sub==='produtos');
+    document.getElementById('subpanelKits').classList.toggle('active',sub==='kits');
+    if(sub==='kits'){ carregarProdutosParaKit(); carregarKits(); }
+}
+
+async function carregarProdutosParaKit(){
+    // Garante a lista completa de produtos (sem filtro de busca) para montar o kit
+    try{
+        const res=await fetch('/api/produtos',{credentials:'include'});
+        const data=await res.json();
+        if(data.success) state.produtos=data.produtos||[];
+    }catch(e){}
+}
+
+function buscarProdutoKit(termo){
+    const container=document.getElementById('kitSearchResults');
+    termo=(termo||'').trim().toLowerCase();
+    if(!termo){container.classList.remove('active');container.innerHTML='';return;}
+    const resultados=(state.produtos||[]).filter(p=>
+        p.nome.toLowerCase().includes(termo)||(p.codigo||'').toLowerCase().includes(termo)).slice(0,8);
+    if(resultados.length===0){container.classList.remove('active');container.innerHTML='';return;}
+    container.innerHTML=resultados.map(p=>
+        `<div class="result-item" onclick="adicionarItemKit('${p.codigo}')">
+            <span>${p.nome}</span><span style="color:var(--green);">R$ ${(p.preco||0).toFixed(2)}</span>
+        </div>`).join('');
+    container.classList.add('active');
+}
+
+function adicionarItemKit(codigo){
+    const p=(state.produtos||[]).find(x=>x.codigo===codigo);
+    if(!p){showToast('❌ Produto não encontrado','error');return;}
+    if(kitItensAtuais.find(i=>i.codigo===codigo)){showToast('⚠️ Item já está no kit','warning');return;}
+    kitItensAtuais.push({
+        codigo:p.codigo,
+        nome:p.nome,
+        preco_original:p.preco||0,
+        preco_combo:p.preco||0
+    });
+    document.getElementById('kitBuscaProduto').value='';
+    document.getElementById('kitSearchResults').classList.remove('active');
+    document.getElementById('kitSearchResults').innerHTML='';
+    renderizarItensKit();
+}
+
+function removerItemKit(codigo){
+    kitItensAtuais=kitItensAtuais.filter(i=>i.codigo!==codigo);
+    renderizarItensKit();
+}
+
+function alterarPrecoItemKit(codigo,valor){
+    const item=kitItensAtuais.find(i=>i.codigo===codigo);
+    if(!item)return;
+    let v=parseFloat(String(valor).replace(',','.'))||0;
+    item.preco_combo=v;
+    atualizarSomaKit();
+}
+
+function renderizarItensKit(){
+    const container=document.getElementById('kitItensContainer');
+    if(kitItensAtuais.length===0){
+        container.innerHTML='<p style="font-size:12px;color:var(--text-muted);text-align:center;padding:10px;">Nenhum item adicionado ainda</p>';
+        atualizarSomaKit();return;
+    }
+    container.innerHTML=kitItensAtuais.map(i=>
+        `<div class="kit-item-row">
+            <div class="kit-item-nome">${i.nome}<br><span class="kit-item-preco-orig">R$ ${i.preco_original.toFixed(2)}</span></div>
+            <input type="text" class="kit-item-preco" value="${i.preco_combo.toFixed(2).replace('.',',')}" onchange="alterarPrecoItemKit('${i.codigo}',this.value)" onfocus="this.select()">
+            <button class="kit-item-remove" onclick="removerItemKit('${i.codigo}')">✕</button>
+        </div>`).join('');
+    atualizarSomaKit();
+}
+
+function atualizarSomaKit(){
+    const soma=kitItensAtuais.reduce((acc,i)=>acc+(i.preco_combo||0),0);
+    document.getElementById('kitSomaAvulso').textContent='R$ '+soma.toFixed(2);
+}
+
+async function salvarKit(){
+    const nome=document.getElementById('kitNome').value.trim();
+    const preco=parseFloat(document.getElementById('kitPreco').value.replace(',','.'))||0;
+    if(!nome){showToast('⚠️ Digite o nome do kit','warning');return;}
+    if(kitItensAtuais.length===0){showToast('⚠️ Adicione pelo menos um item','warning');return;}
+    if(preco<=0){showToast('⚠️ Defina o preço do kit','warning');return;}
+    const payload={nome,preco,itens:kitItensAtuais};
+    if(kitEditandoId)payload.id=kitEditandoId;
+    try{
+        const res=await fetch('/api/kits',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify(payload)});
+        const data=await res.json();
+        if(data.success){showToast('✅ Kit salvo com sucesso!','success');limparKit();carregarKits();}
+        else showToast('❌ '+(data.error||'Erro ao salvar kit'),'error');
+    }catch(e){showToast('❌ Erro ao salvar kit','error');}
+}
+
+function limparKit(){
+    kitItensAtuais=[];
+    kitEditandoId=null;
+    document.getElementById('kitNome').value='';
+    document.getElementById('kitPreco').value='';
+    document.getElementById('kitBuscaProduto').value='';
+    renderizarItensKit();
+}
+
+async function carregarKits(){
+    if(!temPermissao('kit_combo'))return;
+    const container=document.getElementById('kitsListaContainer');
+    try{
+        const res=await fetch('/api/kits',{credentials:'include'});
+        const data=await res.json();
+        if(data.success){
+            if(!data.kits||data.kits.length===0){
+                container.innerHTML='<p style="font-size:13px;color:var(--text-muted);text-align:center;padding:20px;">Nenhum kit cadastrado ainda</p>';
+                return;
+            }
+            container.innerHTML=data.kits.map(k=>{
+                const itensTxt=(k.itens||[]).map(i=>`${i.nome} (R$ ${(i.preco_combo||0).toFixed(2)})`).join(' + ');
+                return `<div class="kit-card">
+                    <div class="kit-card-header">
+                        <span class="kit-card-nome">📦 ${k.nome}</span>
+                        <span class="kit-card-preco">R$ ${(k.preco||0).toFixed(2)}</span>
+                    </div>
+                    <div class="kit-card-itens">${itensTxt}</div>
+                    <div class="kit-card-acoes">
+                        <button class="btn-kit-editar" onclick='editarKit(${JSON.stringify(JSON.stringify(k))})'>✏️ Editar</button>
+                        <button class="btn-kit-excluir" onclick="excluirKit('${k.id}')">🗑️ Excluir</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+    }catch(e){container.innerHTML='<p style="font-size:13px;color:var(--red);text-align:center;padding:20px;">Erro ao carregar kits</p>';}
+}
+
+function editarKit(kitJson){
+    const k=typeof kitJson==='string'?JSON.parse(kitJson):kitJson;
+    kitEditandoId=k.id;
+    kitItensAtuais=(k.itens||[]).map(i=>({
+        codigo:i.codigo,nome:i.nome,
+        preco_original:i.preco_original||i.preco_combo||0,
+        preco_combo:i.preco_combo||0
+    }));
+    document.getElementById('kitNome').value=k.nome;
+    document.getElementById('kitPreco').value=(k.preco||0).toFixed(2).replace('.',',');
+    renderizarItensKit();
+    showToast('✏️ Editando kit: '+k.nome,'info');
+}
+
+async function excluirKit(id){
+    if(!confirm('Excluir este kit?'))return;
+    try{
+        const res=await fetch('/api/kits/'+id,{method:'DELETE',credentials:'include'});
+        const data=await res.json();
+        if(data.success){showToast('✅ Kit excluído!','success');carregarKits();}
+        else showToast('❌ '+(data.error||'Erro'),'error');
+    }catch(e){showToast('❌ Erro ao excluir kit','error');}
 }
 
 async function salvarProduto(){
