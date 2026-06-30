@@ -1275,12 +1275,18 @@ function atualizarHeader(){
 
 async function fazerLogout(){
     try{
-        await fetch('/api/auth/logout',{method:'POST',credentials:'include'});
-        document.getElementById('app').classList.remove('active');
-        document.getElementById('authPage').classList.remove('hidden');
-        document.getElementById('loginSenha').value='';
-        showToast('👋 Até logo!','info');
-    }catch(e){showToast('Erro ao sair','error');}
+        await fetch('/api/auth/logout',{method:'POST',credentials:'include',cache:'no-store'});
+    }catch(e){}
+    // Limpa o estado local independentemente da resposta do servidor
+    state.db_id=null;state.usuario_id=null;state.nome='';state.cargo='';
+    state.permissoes={clientes:false,dashboard:false,busca_estoque:false,margem:false,fiado:false,kit_combo:false};
+    state.itens=[];state.produtos=[];state.kits=[];state.clientes=[];
+    document.getElementById('app').classList.remove('active');
+    document.getElementById('authPage').classList.remove('hidden');
+    const senha=document.getElementById('loginSenha');if(senha)senha.value='';
+    showToast('👋 Até logo!','info');
+    // Recarrega a página limpa para garantir que nada de logado permaneça em cache/memória
+    setTimeout(()=>{ window.location.reload(); }, 300);
 }
 
 // ============================================================
@@ -2423,7 +2429,7 @@ async function sincronizarAgora(show){
 // INICIALIZAÇÃO
 // ============================================================
 document.addEventListener('DOMContentLoaded',function(){
-    fetch('/api/auth/status',{credentials:'include'})
+    fetch('/api/auth/status',{credentials:'include',cache:'no-store'})
         .then(res=>res.json())
         .then(data=>{
             if(data.logged_in){
