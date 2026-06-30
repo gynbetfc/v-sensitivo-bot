@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>SMART PDV v10.2.0</title>
+    <title>SMART PDV v10.3.0</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
@@ -407,7 +407,6 @@
         .progress-bar-fill.amarelo { background: var(--orange); }
         .progress-bar-fill.vermelho { background: var(--red); }
 
-        /* PERMISSÃO NEGADA */
         .permissao-negada {
             display: none;
             text-align: center;
@@ -417,6 +416,16 @@
         .permissao-negada .icon { font-size: 64px; margin-bottom: 16px; }
         .permissao-negada h3 { color: var(--text-primary); margin-bottom: 8px; }
         .permissao-negada p { font-size: 14px; }
+
+        .badge-teste {
+            background: var(--orange);
+            color: #fff;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 10px;
+            border-radius: 10px;
+            margin-left: 6px;
+        }
 
         @media print{
             body > *:not(#cupomPrintArea){display:none !important}
@@ -459,7 +468,7 @@
     <div class="auth-box" id="registerBox" style="display:none">
         <span class="logo">✨</span>
         <h1>Criar Conta</h1>
-        <p class="sub">7 dias grátis para testar</p>
+        <p class="sub">15 dias de teste grátis!</p>
         <div class="msg" id="registerMsg"></div>
         <div class="form-group"><label>Nome completo</label><input type="text" id="registerNome" placeholder="Seu nome"></div>
         <div class="form-group"><label>Email</label><input type="email" id="registerEmail" placeholder="seu@email.com"></div>
@@ -477,7 +486,7 @@
 
 <div class="app" id="app">
     <div class="header">
-        <div class="logo">🏪 <span>SMART</span> PDV <span class="version" id="versaoHeader">v10.2.0</span></div>
+        <div class="logo">🏪 <span>SMART</span> PDV <span class="version" id="versaoHeader">v10.3.0</span></div>
         <div class="user">
             <div class="avatar" id="userAvatar">U</div>
             <div>
@@ -609,16 +618,13 @@
             <div class="estoque-grid">
                 <div class="card">
                     <h3><i class="fas fa-plus-circle" style="color:var(--green);"></i> Produto <button class="btn-excluir-produto" onclick="excluirProdutoSelecionado()">🗑️ Excluir</button></h3>
-                    <div class="input-group" id="buscaEstoqueGrupo">
+                    <div class="input-group">
                         <label>Código de Barras 🔍</label>
-                        <div style="display:flex;gap:8px;">
-                            <input type="text" id="prodCodigo" placeholder="Digite ou leia o código" style="flex:1;" autocomplete="off" oninput="buscarProdutoAutomatico(this.value)">
-                            <button id="btnBuscarCodigo" onclick="buscarProdutoPorCodigo()" style="padding:8px 16px;background:var(--blue);color:#fff;border:0;border-radius:8px;cursor:pointer;white-space:nowrap;font-size:13px;font-weight:600;">🔍 Buscar</button>
-                        </div>
-                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">💡 Escaneie e aguarde — Busca automática ao digitar</div>
+                        <input type="text" id="prodCodigo" placeholder="Digite ou leia o código" style="flex:1;" autocomplete="off" oninput="buscarProdutoAutomatico(this.value)">
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">💡 Digite o código para busca automática</div>
                     </div>
-                    <div class="permissao-negada" id="buscaEstoquePermissaoNegada" style="display:none;padding:16px;">
-                        <p style="color:var(--text-secondary);">🔒 Busca inteligente não disponível no seu plano</p>
+                    <div class="permissao-negada" id="buscaEstoquePermissaoNegada" style="display:none;padding:8px;background:rgba(255,255,255,.05);border-radius:6px;margin-bottom:8px;">
+                        <p style="font-size:12px;color:var(--text-muted);">🔒 Busca inteligente não disponível no seu plano</p>
                     </div>
                     <div class="input-group"><label>Nome</label><input type="text" id="prodNome" placeholder="Nome do produto"></div>
                     <div class="input-group"><label>Preço (R$)</label><input type="text" id="prodPreco" placeholder="0,00" oninput="calcularMargem()"></div>
@@ -684,7 +690,7 @@
                     <div id="dadosCnpjConfig" style="display:none;background:var(--bg-primary);padding:10px;border-radius:8px;margin-bottom:10px;font-size:12px;color:var(--text-secondary);"></div>
                     <button class="btn btn-primary" onclick="salvarNomeLoja()" style="margin-top:10px;"><i class="fas fa-save"></i> Salvar</button>
                     <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border-color);">
-                        <p style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;"><strong>Versão:</strong> <span id="versaoSistema">10.2.0</span></p>
+                        <p style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;"><strong>Versão:</strong> <span id="versaoSistema">10.3.0</span></p>
                         <p style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;"><strong>ID do Banco:</strong> <span id="dbIdConfig" style="font-family:monospace;cursor:pointer;color:var(--green);" onclick="copiarId()">---</span></p>
                         <p style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;"><strong>Servidor:</strong> <span id="servidorIdConfig" style="font-family:monospace;">---</span></p>
                     </div>
@@ -710,7 +716,7 @@
             <button data-metodo="PIX" onclick="selecionarMetodo('PIX')"><i class="fas fa-qrcode"></i> PIX</button>
             <button data-metodo="Cartão" onclick="selecionarMetodo('Cartão')"><i class="fas fa-credit-card"></i> Cartão</button>
             <button data-metodo="Débito" onclick="selecionarMetodo('Débito')"><i class="fas fa-credit-card"></i> Débito</button>
-            <button data-metodo="Fiado" onclick="selecionarMetodo('Fiado')"><i class="fas fa-handshake"></i> Fiado</button>
+            <button data-metodo="Fiado" onclick="selecionarMetodo('Fiado')" id="btnFiado"><i class="fas fa-handshake"></i> Fiado</button>
         </div>
         <div class="payment-input" id="recebidoContainer">
             <span class="label">Recebido</span>
@@ -792,7 +798,7 @@
 // ============================================================
 // VERSÃO
 // ============================================================
-let SISTEMA_VERSAO = '10.2.0';
+let SISTEMA_VERSAO = '10.3.0';
 
 // ============================================================
 // ESTADO GLOBAL
@@ -804,7 +810,7 @@ const state = {
     periodo:'hoje',searchIndex:-1,_resultados:[],
     produtoSelecionado:null,plano_ativo:true,ultimaVenda:null,
     cupomEscolha:'imprimir',f1Cycle:0,
-    permissoes:{clientes:false,dashboard:false,busca_estoque:false,margem:false}
+    permissoes:{clientes:false,dashboard:false,busca_estoque:false,margem:false,fiado:false}
 };
 
 let ultimoCupomData = null;
@@ -841,14 +847,11 @@ function atualizarPermissoesUI() {
         dashboardNegado.style.display = 'block';
     }
 
-    // Busca Estoque
-    const buscaEstoqueGrupo = document.getElementById('buscaEstoqueGrupo');
+    // Busca Estoque - apenas oculta o botão, mantém o campo
     const buscaEstoqueNegado = document.getElementById('buscaEstoquePermissaoNegada');
     if (temPermissao('busca_estoque')) {
-        buscaEstoqueGrupo.style.display = 'block';
         buscaEstoqueNegado.style.display = 'none';
     } else {
-        buscaEstoqueGrupo.style.display = 'none';
         buscaEstoqueNegado.style.display = 'block';
     }
 
@@ -868,6 +871,14 @@ function atualizarPermissoesUI() {
         margemGrupo3.style.display = 'none';
         margemNegado.style.display = 'block';
     }
+
+    // Fiado
+    const btnFiado = document.getElementById('btnFiado');
+    if (temPermissao('fiado')) {
+        btnFiado.style.display = 'flex';
+    } else {
+        btnFiado.style.display = 'none';
+    }
 }
 
 // ============================================================
@@ -882,7 +893,7 @@ async function verificarStatusPlano() {
         if (data.success) {
             planoAtivo = data.ativo || false;
             diasRestantes = data.dias_restantes || 0;
-            state.permissoes = data.permissoes || {clientes:false,dashboard:false,busca_estoque:false,margem:false};
+            state.permissoes = data.permissoes || {clientes:false,dashboard:false,busca_estoque:false,margem:false,fiado:false};
             atualizarPermissoesUI();
             atualizarStatusPlanoUI(data);
             if (!data.ativo) { bloquearAbas(true); mostrarAvisoExpirado(); }
@@ -1102,7 +1113,7 @@ async function fazerLogin(){
             state.db_id=data.db_id;state.usuario_id=data.id;state.nome=data.nome;state.cargo=data.cargo;
             state.nome_loja=data.nome_loja||'Minha Loja';state.cnpj=data.cnpj||'';state.cnpj_dados=data.cnpj_dados||{};
             state.plano_ativo=data.plano_ativo!==false;
-            state.permissoes=data.permissoes||{clientes:false,dashboard:false,busca_estoque:false,margem:false};
+            state.permissoes=data.permissoes||{clientes:false,dashboard:false,busca_estoque:false,margem:false,fiado:false};
             document.getElementById('authPage').classList.add('hidden');
             document.getElementById('app').classList.add('active');
             atualizarHeader();
@@ -1131,7 +1142,7 @@ async function fazerRegistro(){
     try{
         const res=await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,email,senha,nome_loja,cnpj,cnpj_dados:cnpjDados})});
         const data=await res.json();
-        if(data.success){msg.className='msg success';msg.textContent='Conta criada! Faça login.';msg.style.display='block';mostrarLogin();document.getElementById('loginEmail').value=email;}
+        if(data.success){msg.className='msg success';msg.textContent='Conta criada! 15 dias de teste grátis!';msg.style.display='block';mostrarLogin();document.getElementById('loginEmail').value=email;}
         else{msg.className='msg error';msg.textContent=data.error||'Erro ao criar conta.';msg.style.display='block';}
     }catch(e){msg.className='msg error';msg.textContent='Erro de conexão.';msg.style.display='block';}
 }
@@ -1165,7 +1176,6 @@ function trocarTab(nome){
         return;
     }
     
-    // Verifica permissões
     if (nome === 'clientes' && !temPermissao('clientes')) {
         showToast('🔒 Seu plano não permite acesso a Clientes.', 'warning');
         return;
@@ -1187,7 +1197,6 @@ function trocarTab(nome){
     if(nome==='caixa') carregarStatusCaixa();
     if(nome==='planos') {carregarPlanos(); verificarStatusPlano();}
     
-    // Atualiza permissões UI
     atualizarPermissoesUI();
 }
 
@@ -1528,6 +1537,13 @@ function calcularTroco(){
 async function confirmarPagamento(){
     const metodo=document.querySelector('#paymentMethods .active')?.dataset.metodo||'Dinheiro';
     let cliente=document.getElementById('clientePagamento').value.trim()||'';
+    
+    // VERIFICA PERMISSÃO DE FIADO
+    if(metodo==='Fiado' && !temPermissao('fiado')){
+        showToast('🔒 Seu plano não permite vendas a fiado.','warning');
+        return;
+    }
+    
     if(metodo==='Fiado' && !cliente){
         showToast('❌ Nome do cliente é obrigatório para fiado!','error');
         document.getElementById('clientePagamento').focus();
@@ -1629,9 +1645,16 @@ async function imprimirCupomAntigo(vendaId){
     try{
         const res=await fetch(`/api/vendas/${vendaId}/cupom`,{credentials:'include'});
         const data=await res.json();
-        if(data.success && data.dados){ultimoCupomData=data.dados;ultimaVendaId=vendaId;mostrarCupom(data.dados);}
-        else{showToast('❌ '+ (data.error || 'Erro ao buscar cupom'), 'error');}
-    }catch(e){showToast('❌ Erro ao buscar cupom', 'error');}
+        if(data.success && data.dados){
+            ultimoCupomData=data.dados;
+            ultimaVendaId=vendaId;
+            mostrarCupom(data.dados);
+        }else{
+            showToast('❌ '+ (data.error || 'Erro ao buscar cupom'), 'error');
+        }
+    }catch(e){
+        showToast('❌ Erro ao buscar cupom: ' + (e.message || 'Erro desconhecido'), 'error');
+    }
 }
 
 // ============================================================
@@ -1764,15 +1787,18 @@ async function carregarPlanos(){
                 if(permissoes.dashboard) perms.push('📊 Dashboard');
                 if(permissoes.busca_estoque) perms.push('🔍 Busca Estoque');
                 if(permissoes.margem) perms.push('💰 Margem');
+                if(permissoes.fiado) perms.push('📝 Fiado');
                 const permsText = perms.length ? perms.join(' • ') : 'Vendas e Caixa';
+                const isTeste = p.is_teste || false;
+                const badgeTeste = isTeste ? '<span class="badge-teste">🎁 TESTE</span>' : '';
                 html+=`<div class="plano-card">
-                    <div class="plano-teste">${p.dias} dias</div>
-                    <div class="nome">${p.nome}</div>
-                    <div class="preco">R$ ${p.preco.toFixed(2)} <small>/mês</small></div>
+                    ${isTeste ? '<div class="plano-teste">15 dias grátis</div>' : `<div class="plano-teste">${p.dias} dias</div>`}
+                    <div class="nome">${p.nome} ${badgeTeste}</div>
+                    <div class="preco">${p.preco === 0 ? 'GRÁTIS' : `R$ ${p.preco.toFixed(2)}`} ${p.preco > 0 ? '<small>/mês</small>' : ''}</div>
                     <div class="desc">${p.usuarios} usuário${p.usuarios>1?'s':''}</div>
                     <div class="detalhes"><span class="limite-produtos">📦 ${produtos} produtos</span></div>
                     <div style="font-size:10px;color:var(--text-muted);margin:6px 0;">${permsText}</div>
-                    <button class="btn-assinar" onclick="assinarPlano(${p.id})">💳 Assinar</button>
+                    ${p.preco > 0 ? `<button class="btn-assinar" onclick="assinarPlano(${p.id})">💳 Assinar</button>` : `<button class="btn-assinar" onclick="assinarPlano(${p.id})" style="background:var(--orange);">🎁 Iniciar Teste</button>`}
                 </div>`;
             });
             grid.innerHTML=html;
@@ -1796,9 +1822,12 @@ async function carregarStatusConta(){
             if(permissoes.dashboard) permsText.push('📊 Dashboard');
             if(permissoes.busca_estoque) permsText.push('🔍 Busca Estoque');
             if(permissoes.margem) permsText.push('💰 Margem');
+            if(permissoes.fiado) permsText.push('📝 Fiado');
             const permsDisplay = permsText.length ? permsText.join(' • ') : 'Vendas e Caixa';
+            const isTeste = data.is_teste || false;
+            const testeBadge = isTeste ? '<span class="badge-teste">🎁 TESTE ATIVO</span>' : '';
             status.innerHTML=`
-                <h4 style="font-size:14px;margin-bottom:10px;"><i class="fas fa-info-circle"></i> Status da Conta</h4>
+                <h4 style="font-size:14px;margin-bottom:10px;"><i class="fas fa-info-circle"></i> Status da Conta ${testeBadge}</h4>
                 <div class="info-grid">
                     <div class="info-item"><div class="label">Plano</div><div class="value">${data.plano?.nome||'—'}</div></div>
                     <div class="info-item"><div class="label">Status</div><div class="value ${ativo?'ativo':'expirado'}">${ativo?'✅ Ativo':'🔴 Expirado'}</div></div>
@@ -1833,11 +1862,11 @@ async function assinarPlano(planoId){
         if(data.success){
             document.getElementById('pixContent').innerHTML=`
                 <div class="pix-info">
-                    <div class="valor">R$ ${data.valor.toFixed(2)}</div>
+                    <div class="valor">${data.valor === 0 ? 'GRÁTIS' : 'R$ '+data.valor.toFixed(2)}</div>
                     <p style="color:var(--text-secondary);font-size:13px;">${data.plano.nome}</p>
                     ${data.qr_code_base64 ? `<img src="data:image/png;base64,${data.qr_code_base64}" style="max-width:200px;border-radius:8px;background:#fff;padding:10px;margin:8px 0;">` : ''}
-                    <div class="chave" onclick="copiarPix('${data.qr_code}')">📋 Clique para copiar o código PIX</div>
-                    <div style="font-size:11px;color:var(--text-muted);word-break:break-all;background:var(--bg-primary);padding:8px;border-radius:6px;">${data.qr_code}</div>
+                    ${data.qr_code ? `<div class="chave" onclick="copiarPix('${data.qr_code}')">📋 Clique para copiar o código PIX</div>
+                    <div style="font-size:11px;color:var(--text-muted);word-break:break-all;background:var(--bg-primary);padding:8px;border-radius:6px;">${data.qr_code}</div>` : ''}
                     <button class="btn-verificar" onclick="verificarPix('${data.pix_id}')">✅ Verificar Pagamento</button>
                     <button class="btn-cancelar" onclick="fecharModalPix()">Fechar</button>
                 </div>
@@ -2015,7 +2044,7 @@ document.addEventListener('DOMContentLoaded',function(){
                 state.db_id=data.db_id;state.usuario_id=data.usuario_id;state.nome=data.nome;state.cargo=data.cargo;
                 state.nome_loja=data.nome_loja||'Minha Loja';state.cnpj=data.cnpj||'';state.cnpj_dados=data.cnpj_dados||{};
                 state.plano_ativo=data.plano_ativo!==false;
-                state.permissoes=data.permissoes||{clientes:false,dashboard:false,busca_estoque:false,margem:false};
+                state.permissoes=data.permissoes||{clientes:false,dashboard:false,busca_estoque:false,margem:false,fiado:false};
                 document.getElementById('authPage').classList.add('hidden');
                 document.getElementById('app').classList.add('active');
                 atualizarHeader();
@@ -2042,10 +2071,11 @@ if(!String.prototype.center){
     };
 }
 
-console.log('🏪 SMART PDV v10.2.0 carregado!');
+console.log('🏪 SMART PDV v10.3.0 carregado!');
 console.log('📌 Use F1 para navegação rápida');
 console.log('💰 Lucro líquido ativado!');
 console.log('🔒 Permissões por plano ativadas!');
+console.log('🎁 15 dias de teste grátis!');
 </script>
 </body>
 </html>
