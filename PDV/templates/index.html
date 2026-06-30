@@ -247,6 +247,21 @@
         .plano-card .desc{font-size:13px;color:var(--text-secondary);margin-bottom:4px}
         .plano-card .detalhes{font-size:12px;color:var(--text-muted);margin-bottom:12px}
         .plano-card .limite-produtos{display:block;margin-top:4px;font-size:11px;color:var(--green)}
+        .plano-card .plano-features{text-align:left;margin:10px 0 14px;display:flex;flex-direction:column;gap:4px}
+        .plano-card .feat-line{font-size:11px;color:var(--text-secondary);padding:3px 8px;background:rgba(255,255,255,.03);border-radius:5px;border-left:2px solid var(--green)}
+        .food-switch{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary);cursor:pointer}
+        .food-switch input{width:18px;height:18px;accent-color:var(--green);cursor:pointer}
+        .food-pedido{background:var(--bg-primary);border:1px solid var(--border-color);border-radius:10px;padding:14px;margin-bottom:10px}
+        .food-pedido .fp-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+        .food-pedido .fp-status{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
+        .food-pedido .fp-itens{font-size:12px;color:var(--text-secondary);line-height:1.6;margin:6px 0}
+        .food-pedido .fp-total{font-weight:700;color:var(--green);font-size:15px}
+        .food-pedido .fp-acoes{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+        .food-pedido .fp-acoes button{padding:6px 14px;border:0;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600}
+        .st-novo,.st-aguardando_pix,.st-aguardando_pagamento{background:rgba(245,158,11,.15);color:var(--orange)}
+        .st-em_preparo{background:rgba(59,130,246,.15);color:var(--blue)}
+        .st-pronto,.st-finalizado{background:rgba(34,197,94,.15);color:var(--green)}
+        .st-cancelado{background:rgba(239,68,68,.15);color:var(--red)}
         .plano-card .btn-assinar{padding:10px 20px;background:var(--green);color:#fff;border:0;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;transition:var(--transition);width:100%}
         .plano-card .btn-assinar:hover{background:var(--green-dark)}
         .plano-teste{position:absolute;top:10px;right:10px;background:var(--orange);color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px}
@@ -547,6 +562,7 @@
         <button data-tab="caixa" onclick="trocarTab('caixa')"><i class="fas fa-box"></i> Caixa</button>
         <button data-tab="dashboard" onclick="trocarTab('dashboard')"><i class="fas fa-chart-bar"></i> Dashboard</button>
         <button data-tab="estoque" onclick="trocarTab('estoque')"><i class="fas fa-boxes"></i> Estoque</button>
+        <button data-tab="food" id="tabFoodBtn" onclick="trocarTab('food')" style="display:none;"><i class="fas fa-utensils"></i> Pedidos Online</button>
         <button data-tab="planos" onclick="trocarTab('planos')"><i class="fas fa-crown"></i> Planos</button>
         <button data-tab="config" onclick="trocarTab('config')"><i class="fas fa-cog"></i> Config</button>
     </nav>
@@ -657,7 +673,7 @@
         <div class="panel" id="panelEstoque">
             <div class="subtabs">
                 <button class="subtab-btn active" data-subtab="produtos" onclick="trocarSubAbaEstoque('produtos')"><i class="fas fa-box"></i> Produtos</button>
-                <button class="subtab-btn" data-subtab="kits" id="subtabKitsBtn" onclick="trocarSubAbaEstoque('kits')"><i class="fas fa-layer-group"></i> Kit/Combo</button>
+                <button class="subtab-btn" data-subtab="kits" id="subtabKitsBtn" onclick="trocarSubAbaEstoque('kits')"><i class="fas fa-layer-group"></i> Kit/Combo/Promoção</button>
             </div>
 
             <div class="subpanel active" id="subpanelProdutos">
@@ -707,7 +723,7 @@
             <div class="subpanel" id="subpanelKits">
                 <div class="estoque-grid">
                     <div class="card">
-                        <h3><i class="fas fa-layer-group" style="color:var(--purple);"></i> Montar Kit/Combo</h3>
+                        <h3><i class="fas fa-layer-group" style="color:var(--purple);"></i> Montar Kit/Combo/Promoção</h3>
                         <div class="input-group"><label>Nome do Kit</label><input type="text" id="kitNome" placeholder="Ex: Combo Balada"></div>
                         <div class="input-group">
                             <label>Adicionar item ao kit</label>
@@ -756,6 +772,57 @@
             </div>
             <div class="planos-grid" id="planosGrid"></div>
             <div class="loja-status" id="statusLoja"><h4 style="font-size:14px;margin-bottom:10px;"><i class="fas fa-info-circle"></i> Status da Conta</h4><p style="color:var(--text-secondary);">Carregando...</p></div>
+        </div>
+
+        <!-- PANEL PEDIDOS ONLINE (SMART FOOD) -->
+        <div class="panel" id="panelFood">
+            <div class="subtabs">
+                <button class="subtab-btn active" data-foodtab="pedidos" onclick="trocarSubAbaFood('pedidos')"><i class="fas fa-receipt"></i> Pedidos</button>
+                <button class="subtab-btn" data-foodtab="config" onclick="trocarSubAbaFood('config')"><i class="fas fa-sliders-h"></i> Configurações</button>
+            </div>
+
+            <div class="subpanel active" id="foodPedidos">
+                <div class="card">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                        <h3><i class="fas fa-receipt" style="color:var(--orange);"></i> Pedidos Recebidos</h3>
+                        <button class="btn-limpar" style="width:auto;padding:6px 14px;" onclick="carregarPedidosFood()">🔄 Atualizar</button>
+                    </div>
+                    <div id="foodPedidosLista"><p style="color:var(--text-muted);text-align:center;padding:20px;">Carregando...</p></div>
+                </div>
+            </div>
+
+            <div class="subpanel" id="foodConfig">
+                <div class="card">
+                    <h3><i class="fas fa-store" style="color:var(--green);"></i> Configurações da Loja Online</h3>
+                    <div style="display:flex;gap:16px;flex-wrap:wrap;margin:12px 0;">
+                        <label class="food-switch"><input type="checkbox" id="foodAtivo"> <span>Aceitar pedidos online</span></label>
+                        <label class="food-switch"><input type="checkbox" id="foodAberto"> <span>Loja aberta agora</span></label>
+                    </div>
+                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:14px;padding:8px;background:rgba(255,255,255,.03);border-radius:6px;">
+                        💡 Sua loja só aparece no site quando: <b>plano Empresarial</b> + <b>aceitar pedidos</b> + <b>loja aberta</b> + <b>caixa aberto</b> + <b>online</b>.
+                    </div>
+                    <h4 style="font-size:13px;margin:14px 0 8px;color:var(--text-secondary);">Tipos de pedido aceitos</h4>
+                    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
+                        <label class="food-switch"><input type="checkbox" id="foodEntrega" checked> <span>🛵 Entrega</span></label>
+                        <label class="food-switch"><input type="checkbox" id="foodRetirada" checked> <span>🏪 Retirada</span></label>
+                        <label class="food-switch"><input type="checkbox" id="foodMesa"> <span>🍽️ Mesa</span></label>
+                    </div>
+                    <h4 style="font-size:13px;margin:14px 0 8px;color:var(--text-secondary);">Entrega e frete</h4>
+                    <div class="input-group"><label>Endereço da loja (para calcular distância)</label><input type="text" id="foodEndereco" placeholder="Rua, número, bairro, cidade"></div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                        <div class="input-group"><label>Valor por km (R$)</label><input type="text" id="foodValorKm" placeholder="2,00"></div>
+                        <div class="input-group"><label>Frete mínimo (R$)</label><input type="text" id="foodFreteMin" placeholder="5,00"></div>
+                        <div class="input-group"><label>Raio máximo (km)</label><input type="text" id="foodRaioMax" placeholder="10"></div>
+                        <div class="input-group"><label>Tempo de preparo (min)</label><input type="text" id="foodPreparo" placeholder="30"></div>
+                    </div>
+                    <h4 style="font-size:13px;margin:14px 0 8px;color:var(--text-secondary);">Pagamento</h4>
+                    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
+                        <label class="food-switch"><input type="checkbox" id="foodPix" checked> <span>💠 PIX online</span></label>
+                        <label class="food-switch"><input type="checkbox" id="foodPagEntrega" checked> <span>💵 Pagar na entrega/retirada</span></label>
+                    </div>
+                    <button class="btn-salvar" onclick="salvarConfigFood()"><i class="fas fa-save"></i> Salvar Configurações</button>
+                </div>
+            </div>
         </div>
 
         <!-- PANEL CONFIG -->
@@ -898,7 +965,7 @@ const state = {
     periodo:'hoje',searchIndex:-1,_resultados:[],
     produtoSelecionado:null,plano_ativo:true,ultimaVenda:null,
     cupomEscolha:'imprimir',f1Cycle:0,
-    permissoes:{clientes:false,dashboard:false,busca_estoque:false,margem:false,fiado:false,kit_combo:false}
+    permissoes:{clientes:false,dashboard:false,busca_estoque:false,margem:false,fiado:false,kit_combo:false,pedidos_online:false}
 };
 
 let ultimoCupomData = null;
@@ -973,11 +1040,17 @@ function atualizarPermissoesUI() {
     if (subtabKits) {
         if (temPermissao('kit_combo')) {
             subtabKits.style.opacity = '1';
-            subtabKits.innerHTML = '<i class="fas fa-layer-group"></i> Kit/Combo';
+            subtabKits.innerHTML = '<i class="fas fa-layer-group"></i> Kit/Combo/Promoção';
         } else {
             subtabKits.style.opacity = '0.6';
-            subtabKits.innerHTML = '<i class="fas fa-layer-group"></i> Kit/Combo <span class="lock">🔒</span>';
+            subtabKits.innerHTML = '<i class="fas fa-layer-group"></i> Kit/Combo/Promoção <span class="lock">🔒</span>';
         }
+    }
+
+    // Pedidos Online (aba só aparece no plano Empresarial)
+    const tabFood = document.getElementById('tabFoodBtn');
+    if (tabFood) {
+        tabFood.style.display = temPermissao('pedidos_online') ? 'flex' : 'none';
     }
 }
 
@@ -1306,6 +1379,10 @@ function trocarTab(nome){
         showToast('🔒 Seu plano não permite acesso ao Dashboard.', 'warning');
         return;
     }
+    if (nome === 'food' && !temPermissao('pedidos_online')) {
+        showToast('🔒 Pedidos Online disponível apenas no plano Empresarial.', 'warning');
+        return;
+    }
     
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
@@ -1319,6 +1396,7 @@ function trocarTab(nome){
     if(nome==='dashboard') carregarDash(state.periodo);
     if(nome==='caixa') carregarStatusCaixa();
     if(nome==='planos') {carregarPlanos(); verificarStatusPlano();}
+    if(nome==='food') {carregarPedidosFood(); carregarConfigFood();}
     
     atualizarPermissoesUI();
 }
@@ -1592,6 +1670,141 @@ async function excluirKit(id){
         if(data.success){showToast('✅ Kit excluído!','success');carregarKits();carregarKitsParaVenda();}
         else showToast('❌ '+(data.error||'Erro'),'error');
     }catch(e){showToast('❌ Erro ao excluir kit','error');}
+}
+
+// ============================================================
+// PEDIDOS ONLINE (SMART FOOD)
+// ============================================================
+function trocarSubAbaFood(sub){
+    document.querySelectorAll('[data-foodtab]').forEach(b=>b.classList.toggle('active',b.dataset.foodtab===sub));
+    document.getElementById('foodPedidos').classList.toggle('active',sub==='pedidos');
+    document.getElementById('foodConfig').classList.toggle('active',sub==='config');
+    if(sub==='pedidos')carregarPedidosFood();
+    if(sub==='config')carregarConfigFood();
+}
+
+async function carregarConfigFood(){
+    try{
+        const res=await fetch('/api/food/config',{credentials:'include'});
+        const data=await res.json();
+        if(data.success){
+            const c=data.config;
+            document.getElementById('foodAtivo').checked=c.ativo;
+            document.getElementById('foodAberto').checked=c.aberto;
+            document.getElementById('foodEntrega').checked=c.aceita_entrega;
+            document.getElementById('foodRetirada').checked=c.aceita_retirada;
+            document.getElementById('foodMesa').checked=c.aceita_mesa;
+            document.getElementById('foodEndereco').value=c.endereco_loja||'';
+            document.getElementById('foodValorKm').value=(c.valor_km||2).toFixed(2).replace('.',',');
+            document.getElementById('foodFreteMin').value=(c.frete_minimo||5).toFixed(2).replace('.',',');
+            document.getElementById('foodRaioMax').value=c.raio_max_km||10;
+            document.getElementById('foodPreparo').value=c.tempo_preparo_min||30;
+            document.getElementById('foodPix').checked=c.pix_habilitado;
+            document.getElementById('foodPagEntrega').checked=c.pagamento_na_entrega;
+        }
+    }catch(e){}
+}
+
+async function salvarConfigFood(){
+    const payload={
+        ativo:document.getElementById('foodAtivo').checked,
+        aberto:document.getElementById('foodAberto').checked,
+        aceita_entrega:document.getElementById('foodEntrega').checked,
+        aceita_retirada:document.getElementById('foodRetirada').checked,
+        aceita_mesa:document.getElementById('foodMesa').checked,
+        endereco_loja:document.getElementById('foodEndereco').value.trim(),
+        valor_km:parseFloat(document.getElementById('foodValorKm').value.replace(',','.'))||2,
+        frete_minimo:parseFloat(document.getElementById('foodFreteMin').value.replace(',','.'))||5,
+        raio_max_km:parseFloat(document.getElementById('foodRaioMax').value.replace(',','.'))||10,
+        tempo_preparo_min:parseInt(document.getElementById('foodPreparo').value)||30,
+        pix_habilitado:document.getElementById('foodPix').checked,
+        pagamento_na_entrega:document.getElementById('foodPagEntrega').checked,
+        recalcular_coord:true
+    };
+    try{
+        const res=await fetch('/api/food/config',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify(payload)});
+        const data=await res.json();
+        if(data.success){
+            if(payload.endereco_loja && !data.coord_ok)
+                showToast('⚠️ Config salva, mas não consegui localizar o endereço no mapa. Verifique o endereço.','warning');
+            else showToast('✅ Configurações salvas!','success');
+        }else showToast('❌ '+(data.error||'Erro'),'error');
+    }catch(e){showToast('❌ Erro ao salvar','error');}
+}
+
+const FOOD_STATUS_LABEL={novo:'Novo',aguardando_pix:'Aguardando PIX',aguardando_pagamento:'Aguardando pagamento',em_preparo:'Em preparo',pronto:'Pronto',finalizado:'Finalizado',cancelado:'Cancelado'};
+
+async function carregarPedidosFood(){
+    if(!temPermissao('pedidos_online'))return;
+    const cont=document.getElementById('foodPedidosLista');
+    try{
+        const res=await fetch('/api/food/pedidos',{credentials:'include'});
+        const data=await res.json();
+        if(data.success){
+            if(!data.pedidos||data.pedidos.length===0){
+                cont.innerHTML='<p style="color:var(--text-muted);text-align:center;padding:20px;">Nenhum pedido ainda</p>';return;
+            }
+            cont.innerHTML=data.pedidos.map(p=>{
+                const itensTxt=(p.itens||[]).map(i=>`${i.qtd||1}x ${i.nome}`).join(', ');
+                const tipoIcon=p.tipo==='entrega'?'🛵 Entrega':p.tipo==='retirada'?'🏪 Retirada':'🍽️ Mesa '+(p.mesa||'');
+                const pagTxt=p.pagamento==='pix'?(p.pago?'💠 PIX (pago)':'💠 PIX (aguardando)'):'💵 Na entrega';
+                let acoes='';
+                if(p.status==='novo'||p.status==='aguardando_confirmacao')
+                    acoes=`<button style="background:rgba(34,197,94,.15);color:var(--green);" onclick="acaoPedidoFood('${p.id}','aceitar')">✅ Aceitar</button><button style="background:rgba(239,68,68,.15);color:var(--red);" onclick="acaoPedidoFood('${p.id}','recusar')">❌ Recusar</button>`;
+                else if(p.status==='em_preparo')
+                    acoes=`<button style="background:rgba(34,197,94,.15);color:var(--green);" onclick="acaoPedidoFood('${p.id}','pronto')">📦 Pronto</button>`;
+                else if(p.status==='pronto')
+                    acoes=`<button style="background:rgba(34,197,94,.15);color:var(--green);" onclick="acaoPedidoFood('${p.id}','finalizar')">✔️ Finalizar</button>`;
+                acoes+=`<button style="background:rgba(59,130,246,.15);color:var(--blue);" onclick="imprimirPedidoFood('${p.id}')">🖨️ Imprimir</button>`;
+                acoes+=`<button style="background:rgba(139,92,246,.15);color:var(--purple);" onclick="abrirChatPedido('${p.id}','${(p.cliente_nome||'').replace(/'/g,'')}')">💬 Chat</button>`;
+                return `<div class="food-pedido">
+                    <div class="fp-head">
+                        <div><b>${p.cliente_nome||'Cliente'}</b> <span style="font-size:11px;color:var(--text-muted);">${tipoIcon}</span></div>
+                        <span class="fp-status st-${p.status}">${FOOD_STATUS_LABEL[p.status]||p.status}</span>
+                    </div>
+                    <div class="fp-itens">${itensTxt}</div>
+                    ${p.cliente_endereco?`<div style="font-size:11px;color:var(--text-muted);">📍 ${p.cliente_endereco} ${p.distancia_km?`(${p.distancia_km} km)`:''}</div>`:''}
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
+                        <span style="font-size:11px;color:var(--text-muted);">${pagTxt}${p.frete?` • frete R$ ${p.frete.toFixed(2)}`:''}</span>
+                        <span class="fp-total">R$ ${(p.total||0).toFixed(2)}</span>
+                    </div>
+                    <div class="fp-acoes">${acoes}</div>
+                </div>`;
+            }).join('');
+        }
+    }catch(e){cont.innerHTML='<p style="color:var(--red);text-align:center;padding:20px;">Erro ao carregar pedidos</p>';}
+}
+
+async function acaoPedidoFood(id,acao){
+    if(acao==='recusar'&&!confirm('Recusar este pedido?'))return;
+    try{
+        const res=await fetch('/api/food/pedidos/'+id+'/acao',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({acao})});
+        const data=await res.json();
+        if(data.success){showToast('✅ Pedido atualizado','success');carregarPedidosFood();}
+        else showToast('❌ '+(data.error||'Erro'),'error');
+    }catch(e){showToast('❌ Erro','error');}
+}
+
+async function imprimirPedidoFood(id){
+    try{
+        const res=await fetch('/api/food/pedidos/'+id+'/imprimir',{method:'POST',credentials:'include'});
+        const data=await res.json();
+        if(data.success)showToast('🖨️ Enviado para impressão','success');
+        else showToast('❌ Erro ao imprimir','error');
+    }catch(e){showToast('❌ Erro','error');}
+}
+
+let chatPedidoAtual=null;
+async function abrirChatPedido(id,nome){
+    chatPedidoAtual=id;
+    const msg=prompt('💬 Chat com '+(nome||'cliente')+'\n\nDigite sua mensagem:');
+    if(!msg||!msg.trim())return;
+    try{
+        const res=await fetch('/api/food/chat/'+id,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({mensagem:msg.trim()})});
+        const data=await res.json();
+        if(data.success)showToast('💬 Mensagem enviada','success');
+        else showToast('❌ '+(data.error||'Erro'),'error');
+    }catch(e){showToast('❌ Erro ao enviar','error');}
 }
 
 async function salvarProduto(){
@@ -2169,13 +2382,15 @@ async function carregarPlanos(){
             data.planos.forEach(p=>{
                 const produtos=p.produtos===-1?'Ilimitado':p.produtos;
                 const permissoes = p.permissoes || {};
-                let perms = [];
+                let perms = ['🛒 Vendas e Caixa'];
                 if(permissoes.clientes) perms.push('👥 Clientes');
+                if(permissoes.fiado) perms.push('📝 Fiado');
+                if(permissoes.kit_combo) perms.push('📦 Kit/Combo/Promoção');
                 if(permissoes.dashboard) perms.push('📊 Dashboard');
                 if(permissoes.busca_estoque) perms.push('🔍 Busca Estoque');
-                if(permissoes.margem) perms.push('💰 Margem');
-                if(permissoes.fiado) perms.push('📝 Fiado');
-                const permsText = perms.length ? perms.join(' • ') : 'Vendas e Caixa';
+                if(permissoes.margem) perms.push('💰 Margem de Lucro');
+                if(permissoes.pedidos_online) perms.push('🍔 Pedidos Online (SMART FOOD)');
+                const permsText = perms.join(' • ');
                 const isTeste = p.is_teste || false;
                 const badgeTeste = isTeste ? '<span class="badge-teste">🎁 TESTE</span>' : '';
                 html+=`<div class="plano-card">
@@ -2184,7 +2399,7 @@ async function carregarPlanos(){
                     <div class="preco">${p.preco === 0 ? 'GRÁTIS' : `R$ ${p.preco.toFixed(2)}`} ${p.preco > 0 ? '<small>/mês</small>' : ''}</div>
                     <div class="desc">${p.usuarios} usuário${p.usuarios>1?'s':''}</div>
                     <div class="detalhes"><span class="limite-produtos">📦 ${produtos} produtos</span></div>
-                    <div style="font-size:10px;color:var(--text-muted);margin:6px 0;">${permsText}</div>
+                    <div class="plano-features">${perms.map(f=>`<div class="feat-line">${f}</div>`).join('')}</div>
                     ${p.preco > 0 ? `<button class="btn-assinar" onclick="assinarPlano(${p.id})">💳 Assinar</button>` : `<button class="btn-assinar" onclick="assinarPlano(${p.id})" style="background:var(--orange);">🎁 Iniciar Teste</button>`}
                 </div>`;
             });
