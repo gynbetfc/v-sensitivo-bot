@@ -95,15 +95,15 @@
         .cart-table{width:100%;border-collapse:collapse;font-size:12px}
         .cart-table th{text-align:left;padding:6px 4px;border-bottom:1px solid var(--border-color);font-weight:600;color:var(--text-secondary);font-size:10px;text-transform:uppercase}
         .cart-table td{padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.03)}
-        .cart-table .qty{text-align:center;min-width:60px}
-        .cart-table .qty input{width:40px;padding:2px 0;border:1px solid var(--border-color);border-radius:4px;background:var(--bg-primary);color:#fff;text-align:center;font-size:12px;font-weight:600}
-        .cart-table .qty input:focus{outline:0;border-color:var(--green)}
-        .cart-table .qty button{background:0;border:0;cursor:pointer;font-size:14px;color:var(--text-secondary);padding:0 4px}
-        .cart-table .qty button:hover{color:#fff}
-        .cart-table .price{text-align:right}
-        .cart-table .total-item{text-align:right;font-weight:600}
-        .cart-table .btn-remove{background:0;border:0;color:var(--red);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px}
-        .cart-table .btn-remove:hover{background:rgba(239,68,68,.1)}
+        .cart-table .qty{text-align:center}.cart-table .qty button{background:0;border:0;cursor:pointer;font-size:14px;color:var(--text-secondary);padding:0 4px}.cart-table .qty button:hover{color:#fff}
+        .cart-table .qty-input{width:34px;text-align:center;background:transparent;border:1px solid transparent;border-radius:4px;color:#fff;font-size:12px;padding:2px 0;font-family:inherit}
+        .cart-table .qty-input:hover{border-color:var(--border-color)}
+        .cart-table .qty-input:focus{outline:0;border-color:var(--green);background:var(--bg-primary)}
+        .cart-table .price{text-align:right}.cart-table .total-item{text-align:right;font-weight:600}
+        .cart-table .total-input{width:64px;text-align:right;background:transparent;border:1px solid transparent;border-radius:4px;color:var(--text-primary);font-size:12px;font-weight:600;padding:2px 4px;font-family:inherit}
+        .cart-table .total-input:hover{border-color:var(--border-color)}
+        .cart-table .total-input:focus{outline:0;border-color:var(--green);background:var(--bg-primary)}
+        .cart-table .btn-remove{background:0;border:0;color:var(--red);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px}.cart-table .btn-remove:hover{background:rgba(239,68,68,.1)}
         .empty-cart{text-align:center;color:var(--text-muted);padding:24px 0;font-size:13px}
         .cart-summary{margin-top:12px;padding-top:12px;border-top:1px solid var(--border-color)}
         .cart-summary .row{display:flex;justify-content:space-between;padding:3px 0;font-size:13px;align-items:center}
@@ -433,36 +433,6 @@
             margin-left: 6px;
         }
 
-        .login-loading {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(8px);
-            z-index: 999999;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-        }
-        .login-loading.active { display: flex; }
-        .login-loading .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid var(--border-color);
-            border-top-color: var(--green);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-        .login-loading p {
-            margin-top: 16px;
-            color: var(--text-secondary);
-            font-size: 14px;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
         @media print{
             body > *:not(#cupomPrintArea){display:none !important}
             #cupomPrintArea{display:block !important;position:fixed;top:0;left:0;width:100%;background:#fff;padding:10px;font-family:'Courier New',monospace;font-size:11px;color:#000}
@@ -483,12 +453,6 @@
 <div id="toastContainer" class="toast-container"></div>
 <div id="cupomPrintArea"></div>
 
-<!-- LOGIN LOADING -->
-<div class="login-loading" id="loginLoading">
-    <div class="spinner"></div>
-    <p>🔄 Entrando no SMART PDV...</p>
-</div>
-
 <div class="auth-page" id="authPage">
     <div class="auth-box" id="loginBox">
         <span class="logo">🏪</span>
@@ -503,7 +467,7 @@
             <label>Senha</label>
             <input type="password" id="loginSenha" placeholder="••••••••" autocomplete="current-password">
         </div>
-        <button class="btn-primary" onclick="fazerLogin()"><i class="fas fa-sign-in-alt"></i> Entrar</button>
+        <button class="btn-primary" id="btnLoginEntrar" onclick="fazerLogin()"><i class="fas fa-sign-in-alt"></i> Entrar</button>
         <div class="auth-link">Não tem conta? <span onclick="mostrarRegistro()">Criar conta grátis</span></div>
     </div>
 
@@ -521,7 +485,7 @@
             <div class="hint">Com CNPJ: sem limite de contas + dados da empresa no cupom</div>
         </div>
         <div id="dadosCnpjRegistro" style="display:none;background:var(--bg-primary);padding:10px;border-radius:8px;margin-bottom:10px;font-size:12px;color:var(--text-secondary);"></div>
-        <button class="btn-primary" onclick="fazerRegistro()"><i class="fas fa-user-plus"></i> Criar Conta</button>
+        <button class="btn-primary" id="btnRegistroCriar" onclick="fazerRegistro()"><i class="fas fa-user-plus"></i> Criar Conta</button>
         <div class="auth-link">Já tem conta? <span onclick="mostrarLogin()">Fazer login</span></div>
     </div>
 </div>
@@ -785,7 +749,6 @@
             <div class="cupom-titulo">CUPOM NÃO FISCAL</div>
             <div style="text-align:center;font-size:10px;color:#555;margin-bottom:4px;" id="cupomData"></div>
             <div style="text-align:center;font-size:10px;color:#555;margin-bottom:6px;" id="cupomVendaIdLine"></div>
-            <div style="text-align:center;font-size:10px;color:#555;margin-bottom:4px;" id="cupomOperador"></div>
             <hr class="cupom-divider">
             <div style="display:flex;justify-content:space-between;font-size:10px;font-weight:700;color:#555;margin-bottom:3px;"><span>ITEM / QTD</span><span>TOTAL</span></div>
             <div id="cupomItens"></div>
@@ -799,7 +762,7 @@
             <div class="cupom-linha" id="cupomRecebidoLinha"><span>Recebido</span><span id="cupomRecebido"></span></div>
             <div class="cupom-linha" id="cupomTrocoLinha"><span>Troco</span><span id="cupomTroco"></span></div>
             <div class="cupom-linha"><span>Cliente</span><span id="cupomCliente"></span></div>
-            <div class="cupom-linha"><span>Operador</span><span id="cupomOperadorLinha"></span></div>
+            <div class="cupom-linha"><span>Operador</span><span id="cupomOperador"></span></div>
             <hr class="cupom-divider">
             <div class="cupom-rodape">VOLTE SEMPRE! ★ OBRIGADO!</div>
         </div>
@@ -869,6 +832,7 @@ function temPermissao(permissao) {
 }
 
 function atualizarPermissoesUI() {
+    // Clientes
     const clientesConteudo = document.getElementById('clientesConteudo');
     const clientesNegado = document.getElementById('clientesPermissaoNegada');
     if (temPermissao('clientes')) {
@@ -879,6 +843,7 @@ function atualizarPermissoesUI() {
         clientesNegado.style.display = 'block';
     }
 
+    // Dashboard
     const dashboardConteudo = document.querySelector('.dashboard-conteudo');
     const dashboardNegado = document.getElementById('dashboardPermissaoNegada');
     if (temPermissao('dashboard')) {
@@ -889,6 +854,7 @@ function atualizarPermissoesUI() {
         dashboardNegado.style.display = 'block';
     }
 
+    // Busca Estoque - apenas oculta o botão, mantém o campo
     const buscaEstoqueNegado = document.getElementById('buscaEstoquePermissaoNegada');
     if (temPermissao('busca_estoque')) {
         buscaEstoqueNegado.style.display = 'none';
@@ -896,6 +862,7 @@ function atualizarPermissoesUI() {
         buscaEstoqueNegado.style.display = 'block';
     }
 
+    // Margem
     const margemGrupo = document.getElementById('margemGrupo');
     const margemGrupo2 = document.getElementById('margemGrupo2');
     const margemGrupo3 = document.getElementById('margemGrupo3');
@@ -912,6 +879,7 @@ function atualizarPermissoesUI() {
         margemNegado.style.display = 'block';
     }
 
+    // Fiado
     const btnFiado = document.getElementById('btnFiado');
     if (temPermissao('fiado')) {
         btnFiado.style.display = 'flex';
@@ -1052,19 +1020,6 @@ function navegarCupom(direcao) {
 }
 
 // ============================================================
-// QUANTIDADE EDITÁVEL NO CARRINHO
-// ============================================================
-function alterarQuantidadeInput(index, input) {
-    let valor = parseInt(input.value) || 1;
-    if (valor < 1) valor = 1;
-    const item = state.itens[index];
-    if (!item) return;
-    item.quantidade = valor;
-    item.total = valor * item.preco_unitario;
-    atualizarCarrinho();
-}
-
-// ============================================================
 // TECLAS GLOBAIS
 // ============================================================
 document.addEventListener('keydown',function(e){
@@ -1156,19 +1111,14 @@ async function fazerLogin(){
     const email=document.getElementById('loginEmail').value.trim();
     const senha=document.getElementById('loginSenha').value;
     const msg=document.getElementById('authMsg');
+    const btn=document.getElementById('btnLoginEntrar');
     msg.className='msg';msg.style.display='none';
     if(!email||!senha){msg.className='msg error';msg.textContent='Preencha email e senha.';msg.style.display='block';return;}
-    
-    // Mostra tela de loading
-    document.getElementById('loginLoading').classList.add('active');
-    
+    const btnHtmlOriginal=btn.innerHTML;
+    btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Entrando...';
     try{
         const res=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({email,senha})});
         const data=await res.json();
-        
-        // Remove loading
-        document.getElementById('loginLoading').classList.remove('active');
-        
         if(data.success){
             state.db_id=data.db_id;state.usuario_id=data.id;state.nome=data.nome;state.cargo=data.cargo;
             state.nome_loja=data.nome_loja||'Minha Loja';state.cnpj=data.cnpj||'';state.cnpj_dados=data.cnpj_dados||{};
@@ -1185,10 +1135,8 @@ async function fazerLogin(){
         }else{
             msg.className='msg error';msg.textContent=data.error||'Erro ao fazer login.';msg.style.display='block';
         }
-    }catch(e){
-        document.getElementById('loginLoading').classList.remove('active');
-        msg.className='msg error';msg.textContent='Erro de conexão.';msg.style.display='block';
-    }
+    }catch(e){msg.className='msg error';msg.textContent='Erro de conexão.';msg.style.display='block';}
+    finally{btn.disabled=false;btn.innerHTML=btnHtmlOriginal;}
 }
 
 async function fazerRegistro(){
@@ -1202,12 +1150,16 @@ async function fazerRegistro(){
     const nome_loja = cnpjDados.razao_social || cnpjDados.nome_fantasia || 'Minha Loja';
     if(!nome||!email||!senha){msg.className='msg error';msg.textContent='Preencha todos os campos obrigatórios.';msg.style.display='block';return;}
     if(senha.length<4){msg.className='msg error';msg.textContent='Senha deve ter pelo menos 4 caracteres.';msg.style.display='block';return;}
+    const btn=document.getElementById('btnRegistroCriar');
+    const btnHtmlOriginal=btn.innerHTML;
+    btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Criando conta...';
     try{
         const res=await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,email,senha,nome_loja,cnpj,cnpj_dados:cnpjDados})});
         const data=await res.json();
         if(data.success){msg.className='msg success';msg.textContent='Conta criada! 15 dias de teste grátis!';msg.style.display='block';mostrarLogin();document.getElementById('loginEmail').value=email;}
         else{msg.className='msg error';msg.textContent=data.error||'Erro ao criar conta.';msg.style.display='block';}
     }catch(e){msg.className='msg error';msg.textContent='Erro de conexão.';msg.style.display='block';}
+    finally{btn.disabled=false;btn.innerHTML=btnHtmlOriginal;}
 }
 
 function atualizarHeader(){
@@ -1370,10 +1322,6 @@ async function buscarProdutoPorCodigo(){
             document.getElementById('prodNome').value=data.dados.nome||'';
             document.getElementById('prodCategoria').value=data.dados.categoria||'Geral';
             document.getElementById('prodCodigo').value=data.dados.gtin||codigo;
-            if(data.dados.imagem){
-                // Mostra a imagem se disponível
-                showToast('📷 Imagem disponível!','info');
-            }
             showToast('✅ Dados preenchidos!','success');
         }else{showToast('⚠️ Produto não encontrado. Cadastre manualmente.','warning');}
     }catch(e){showToast('❌ Erro na busca','error');}
@@ -1535,6 +1483,24 @@ function mudarQuantidade(index,delta){
     item.quantidade=nova;item.total=nova*item.preco_unitario;atualizarCarrinho();
 }
 
+function definirQuantidade(index,valor){
+    const item=state.itens[index];if(!item)return;
+    let nova=parseFloat(String(valor).replace(',','.'));
+    if(isNaN(nova)||nova<=0){removerItem(index);return;}
+    item.quantidade=nova;item.total=nova*item.preco_unitario;atualizarCarrinho();
+}
+
+function definirValorTotal(index,valor){
+    const item=state.itens[index];if(!item)return;
+    let novoTotal=parseFloat(String(valor).replace('R$','').trim().replace(',','.'));
+    if(isNaN(novoTotal)||novoTotal<=0){removerItem(index);return;}
+    if(!item.preco_unitario||item.preco_unitario<=0){atualizarCarrinho();return;}
+    const novaQtd=novoTotal/item.preco_unitario;
+    item.quantidade=Math.round(novaQtd*1000)/1000;
+    item.total=item.quantidade*item.preco_unitario;
+    atualizarCarrinho();
+}
+
 function atualizarCarrinho(){
     const tbody=document.getElementById('cartBody');
     if(state.itens.length===0){
@@ -1548,13 +1514,9 @@ function atualizarCarrinho(){
     state.itens.forEach((item,i)=>{
         html+=`<tr>
             <td>${item.nome}</td>
-            <td class="qty">
-                <button onclick="mudarQuantidade(${i},-1)">−</button>
-                <input type="number" value="${item.quantidade}" min="1" step="1" onchange="alterarQuantidadeInput(${i}, this)" onclick="this.select()">
-                <button onclick="mudarQuantidade(${i},1)">+</button>
-            </td>
+            <td class="qty"><button onclick="mudarQuantidade(${i},-1)">−</button><input type="text" class="qty-input" value="${item.quantidade}" onchange="definirQuantidade(${i},this.value)" onkeydown="if(event.key==='Enter'){this.blur();}" onfocus="this.select()"><button onclick="mudarQuantidade(${i},1)">+</button></td>
             <td class="price">R$ ${item.preco_unitario.toFixed(2)}</td>
-            <td class="total-item">R$ ${item.total.toFixed(2)}</td>
+            <td class="total-item"><input type="text" class="total-input" value="${item.total.toFixed(2).replace('.',',')}" onchange="definirValorTotal(${i},this.value)" onkeydown="if(event.key==='Enter'){this.blur();}" onfocus="this.select()"></td>
             <td><button class="btn-remove" onclick="removerItem(${i})">✕</button></td>
         </tr>`;
     });
@@ -1609,6 +1571,7 @@ async function confirmarPagamento(){
     const metodo=document.querySelector('#paymentMethods .active')?.dataset.metodo||'Dinheiro';
     let cliente=document.getElementById('clientePagamento').value.trim()||'';
     
+    // VERIFICA PERMISSÃO DE FIADO
     if(metodo==='Fiado' && !temPermissao('fiado')){
         showToast('🔒 Seu plano não permite vendas a fiado.','warning');
         return;
@@ -1668,8 +1631,6 @@ function mostrarCupom(dados){
     document.getElementById('cupomDadosCnpj').innerHTML=cnpjHtml;
     document.getElementById('cupomData').textContent=dados.data_hora||new Date().toLocaleString('pt-BR');
     document.getElementById('cupomVendaIdLine').textContent='Venda: #'+ultimaVendaId;
-    document.getElementById('cupomOperador').textContent='Operador: '+(dados.usuario||'');
-    document.getElementById('cupomOperadorLinha').textContent=dados.usuario||'';
     
     let itensHtml='';
     dados.itens.forEach(i=>{
@@ -1686,6 +1647,7 @@ function mostrarCupom(dados){
     document.getElementById('cupomRecebido').textContent=dados.recebido?'R$ '+dados.recebido.toFixed(2):'—';
     document.getElementById('cupomTroco').textContent=dados.troco?'R$ '+dados.troco.toFixed(2):'—';
     document.getElementById('cupomCliente').textContent=dados.cliente||'—';
+    document.getElementById('cupomOperador').textContent=dados.usuario||'—';
     document.getElementById('cupomLucroLinha').style.display=(dados.lucro_total||0)>0?'flex':'none';
     
     state.cupomEscolha='imprimir';
@@ -1718,17 +1680,9 @@ async function imprimirCupomAntigo(vendaId){
         const res=await fetch(`/api/vendas/${vendaId}/cupom`,{credentials:'include'});
         const data=await res.json();
         if(data.success && data.dados){
-            // Garante que os números estejam corretos
-            const d = data.dados;
-            d.subtotal = parseFloat(d.subtotal) || 0;
-            d.desconto = parseFloat(d.desconto) || 0;
-            d.total = parseFloat(d.total) || 0;
-            d.lucro_total = parseFloat(d.lucro_total) || 0;
-            d.recebido = parseFloat(d.recebido) || 0;
-            d.troco = parseFloat(d.troco) || 0;
-            ultimoCupomData = d;
-            ultimaVendaId = vendaId;
-            mostrarCupom(d);
+            ultimoCupomData=data.dados;
+            ultimaVendaId=vendaId;
+            mostrarCupom(data.dados);
         }else{
             showToast('❌ '+ (data.error || 'Erro ao buscar cupom'), 'error');
         }
@@ -1871,17 +1825,14 @@ async function carregarPlanos(){
                 const permsText = perms.length ? perms.join(' • ') : 'Vendas e Caixa';
                 const isTeste = p.is_teste || false;
                 const badgeTeste = isTeste ? '<span class="badge-teste">🎁 TESTE</span>' : '';
-                const precoText = p.preco === 0 ? 'GRÁTIS' : `R$ ${p.preco.toFixed(2)}`;
-                const precoSmall = p.preco > 0 ? '<small>/mês</small>' : '';
                 html+=`<div class="plano-card">
                     ${isTeste ? '<div class="plano-teste">15 dias grátis</div>' : `<div class="plano-teste">${p.dias} dias</div>`}
                     <div class="nome">${p.nome} ${badgeTeste}</div>
-                    <div class="preco">${precoText} ${precoSmall}</div>
+                    <div class="preco">${p.preco === 0 ? 'GRÁTIS' : `R$ ${p.preco.toFixed(2)}`} ${p.preco > 0 ? '<small>/mês</small>' : ''}</div>
                     <div class="desc">${p.usuarios} usuário${p.usuarios>1?'s':''}</div>
                     <div class="detalhes"><span class="limite-produtos">📦 ${produtos} produtos</span></div>
                     <div style="font-size:10px;color:var(--text-muted);margin:6px 0;">${permsText}</div>
-                    ${p.preco === 0 ? `<button class="btn-assinar" onclick="assinarPlano(${p.id})" style="background:var(--orange);">🎁 Ativar Teste</button>` :
-                    `<button class="btn-assinar" onclick="assinarPlano(${p.id})">💳 Assinar</button>`}
+                    ${p.preco > 0 ? `<button class="btn-assinar" onclick="assinarPlano(${p.id})">💳 Assinar</button>` : `<button class="btn-assinar" onclick="assinarPlano(${p.id})" style="background:var(--orange);">🎁 Iniciar Teste</button>`}
                 </div>`;
             });
             grid.innerHTML=html;
@@ -1943,15 +1894,14 @@ async function assinarPlano(planoId){
         const res=await fetch('/api/pix/criar',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({plano_id:planoId})});
         const data=await res.json();
         if(data.success){
-            if(data.is_teste){
-                showToast('✅ Plano de teste ativado com sucesso! 15 dias grátis!', 'success');
-                carregarPlanos();
-                verificarStatusPlano();
+            if(data.gratis){
+                showToast('✅ Plano de teste ativado! 15 dias grátis.','success');
+                carregarPlanos();verificarStatusPlano();
                 return;
             }
             document.getElementById('pixContent').innerHTML=`
                 <div class="pix-info">
-                    <div class="valor">R$ ${data.valor.toFixed(2)}</div>
+                    <div class="valor">${data.valor === 0 ? 'GRÁTIS' : 'R$ '+data.valor.toFixed(2)}</div>
                     <p style="color:var(--text-secondary);font-size:13px;">${data.plano.nome}</p>
                     ${data.qr_code_base64 ? `<img src="data:image/png;base64,${data.qr_code_base64}" style="max-width:200px;border-radius:8px;background:#fff;padding:10px;margin:8px 0;">` : ''}
                     ${data.qr_code ? `<div class="chave" onclick="copiarPix('${data.qr_code}')">📋 Clique para copiar o código PIX</div>
@@ -2165,7 +2115,6 @@ console.log('📌 Use F1 para navegação rápida');
 console.log('💰 Lucro líquido ativado!');
 console.log('🔒 Permissões por plano ativadas!');
 console.log('🎁 15 dias de teste grátis!');
-console.log('📷 Busca com Bluesoft (Cosmos) ativada!');
 </script>
 </body>
 </html>
