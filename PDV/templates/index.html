@@ -121,8 +121,8 @@
         .payment-modal .cliente-input input{width:100%;padding:8px 12px;border:1px solid var(--border-color);border-radius:8px;font-size:14px;background:var(--bg-primary);color:#fff;transition:var(--transition)}
         .payment-modal .cliente-input input:focus{outline:0;border-color:var(--green)}
         .payment-modal .cliente-input input::placeholder{color:var(--text-muted)}
-        .payment-modal .payment-methods{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
-        .payment-modal .payment-methods button{flex:1;min-width:70px;padding:8px 12px;border:2px solid var(--border-color);border-radius:8px;background:var(--bg-primary);color:var(--text-secondary);cursor:pointer;transition:var(--transition);font-weight:600;font-size:12px;font-family:inherit;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px}
+        .payment-modal .payment-methods{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+        .payment-modal .payment-methods button{padding:8px 12px;border:2px solid var(--border-color);border-radius:8px;background:var(--bg-primary);color:var(--text-secondary);cursor:pointer;transition:var(--transition);font-weight:600;font-size:12px;font-family:inherit;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;width:100%}
         .payment-modal .payment-methods button:hover{border-color:var(--green);color:#fff;background:rgba(34,197,94,.05)}
         .payment-modal .payment-methods button.active{border-color:var(--green);background:rgba(34,197,94,.15);color:var(--green)}
         .payment-modal .payment-methods button i{font-size:14px}
@@ -407,6 +407,17 @@
         .progress-bar-fill.amarelo { background: var(--orange); }
         .progress-bar-fill.vermelho { background: var(--red); }
 
+        /* PERMISSÃO NEGADA */
+        .permissao-negada {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+        .permissao-negada .icon { font-size: 64px; margin-bottom: 16px; }
+        .permissao-negada h3 { color: var(--text-primary); margin-bottom: 8px; }
+        .permissao-negada p { font-size: 14px; }
+
         @media print{
             body > *:not(#cupomPrintArea){display:none !important}
             #cupomPrintArea{display:block !important;position:fixed;top:0;left:0;width:100%;background:#fff;padding:10px;font-family:'Courier New',monospace;font-size:11px;color:#000}
@@ -529,9 +540,15 @@
             </div>
         </div>
 
-        <!-- PANEL CLIENTES -->
+        <!-- PANEL CLIENTES COM PERMISSÃO -->
         <div class="panel" id="panelClientes">
-            <div class="card">
+            <div class="permissao-negada" id="clientesPermissaoNegada">
+                <div class="icon">🔒</div>
+                <h3>Plano não permite acesso a Clientes</h3>
+                <p>Atualize seu plano para acessar esta funcionalidade.</p>
+                <button onclick="trocarTab('planos')" style="margin-top:16px;padding:10px 24px;background:var(--green);color:#fff;border:0;border-radius:8px;cursor:pointer;font-weight:600;">Ver Planos</button>
+            </div>
+            <div class="card" id="clientesConteudo">
                 <h3><i class="fas fa-users" style="color:var(--blue);"></i> Clientes</h3>
                 <div class="clientes-actions">
                     <input type="text" id="buscaCliente" placeholder="Buscar cliente..." oninput="carregarClientes()">
@@ -559,23 +576,31 @@
             </div>
         </div>
 
-        <!-- PANEL DASHBOARD -->
+        <!-- PANEL DASHBOARD COM PERMISSÃO -->
         <div class="panel" id="panelDashboard">
-            <div class="filtros-dashboard">
-                <button class="btn-filtro active" data-periodo="hoje" onclick="filtrarDashboard(this,'hoje')"><i class="fas fa-sun"></i> Hoje</button>
-                <button class="btn-filtro" data-periodo="semana" onclick="filtrarDashboard(this,'semana')"><i class="fas fa-calendar-week"></i> Semana</button>
-                <button class="btn-filtro" data-periodo="mes" onclick="filtrarDashboard(this,'mes')"><i class="fas fa-calendar-alt"></i> Mês</button>
+            <div class="permissao-negada" id="dashboardPermissaoNegada">
+                <div class="icon">🔒</div>
+                <h3>Plano não permite acesso ao Dashboard</h3>
+                <p>Atualize seu plano para acessar esta funcionalidade.</p>
+                <button onclick="trocarTab('planos')" style="margin-top:16px;padding:10px 24px;background:var(--green);color:#fff;border:0;border-radius:8px;cursor:pointer;font-weight:600;">Ver Planos</button>
             </div>
-            <div class="stat-cards">
-                <div class="stat-card"><div class="icon">💰</div><div class="value" id="statTotal">R$ 0,00</div><div class="label">Total do Período</div></div>
-                <div class="stat-card"><div class="icon">🛒</div><div class="value" id="statVendas">0</div><div class="label">Vendas</div></div>
-                <div class="stat-card"><div class="icon">📦</div><div class="value" id="statItens">0</div><div class="label">Itens Vendidos</div></div>
-                <div class="stat-card"><div class="icon">📈</div><div class="value" id="statMedia">R$ 0,00</div><div class="label">Ticket Médio</div></div>
-                <div class="stat-card"><div class="icon">💎</div><div class="value lucro-value" id="statLucro">R$ 0,00</div><div class="label">💰 Lucro Líquido</div></div>
-            </div>
-            <div class="chart-row">
-                <div class="chart-box"><h4><i class="fas fa-credit-card"></i> Métodos de Pagamento</h4><div id="metodosContainer"><p style="color:var(--text-secondary);font-size:13px;">Carregando...</p></div></div>
-                <div class="chart-box"><h4><i class="fas fa-clock"></i> Últimas Vendas</h4><div class="vendas-list" id="vendasList"><p style="color:var(--text-secondary);font-size:13px;">Carregando...</p></div></div>
+            <div class="dashboard-conteudo">
+                <div class="filtros-dashboard">
+                    <button class="btn-filtro active" data-periodo="hoje" onclick="filtrarDashboard(this,'hoje')"><i class="fas fa-sun"></i> Hoje</button>
+                    <button class="btn-filtro" data-periodo="semana" onclick="filtrarDashboard(this,'semana')"><i class="fas fa-calendar-week"></i> Semana</button>
+                    <button class="btn-filtro" data-periodo="mes" onclick="filtrarDashboard(this,'mes')"><i class="fas fa-calendar-alt"></i> Mês</button>
+                </div>
+                <div class="stat-cards">
+                    <div class="stat-card"><div class="icon">💰</div><div class="value" id="statTotal">R$ 0,00</div><div class="label">Total do Período</div></div>
+                    <div class="stat-card"><div class="icon">🛒</div><div class="value" id="statVendas">0</div><div class="label">Vendas</div></div>
+                    <div class="stat-card"><div class="icon">📦</div><div class="value" id="statItens">0</div><div class="label">Itens Vendidos</div></div>
+                    <div class="stat-card"><div class="icon">📈</div><div class="value" id="statMedia">R$ 0,00</div><div class="label">Ticket Médio</div></div>
+                    <div class="stat-card"><div class="icon">💎</div><div class="value lucro-value" id="statLucro">R$ 0,00</div><div class="label">💰 Lucro Líquido</div></div>
+                </div>
+                <div class="chart-row">
+                    <div class="chart-box"><h4><i class="fas fa-credit-card"></i> Métodos de Pagamento</h4><div id="metodosContainer"><p style="color:var(--text-secondary);font-size:13px;">Carregando...</p></div></div>
+                    <div class="chart-box"><h4><i class="fas fa-clock"></i> Últimas Vendas</h4><div class="vendas-list" id="vendasList"><p style="color:var(--text-secondary);font-size:13px;">Carregando...</p></div></div>
+                </div>
             </div>
         </div>
 
@@ -584,7 +609,7 @@
             <div class="estoque-grid">
                 <div class="card">
                     <h3><i class="fas fa-plus-circle" style="color:var(--green);"></i> Produto <button class="btn-excluir-produto" onclick="excluirProdutoSelecionado()">🗑️ Excluir</button></h3>
-                    <div class="input-group">
+                    <div class="input-group" id="buscaEstoqueGrupo">
                         <label>Código de Barras 🔍</label>
                         <div style="display:flex;gap:8px;">
                             <input type="text" id="prodCodigo" placeholder="Digite ou leia o código" style="flex:1;" autocomplete="off" oninput="buscarProdutoAutomatico(this.value)">
@@ -592,11 +617,23 @@
                         </div>
                         <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">💡 Escaneie e aguarde — Busca automática ao digitar</div>
                     </div>
+                    <div class="permissao-negada" id="buscaEstoquePermissaoNegada" style="display:none;padding:16px;">
+                        <p style="color:var(--text-secondary);">🔒 Busca inteligente não disponível no seu plano</p>
+                    </div>
                     <div class="input-group"><label>Nome</label><input type="text" id="prodNome" placeholder="Nome do produto"></div>
                     <div class="input-group"><label>Preço (R$)</label><input type="text" id="prodPreco" placeholder="0,00" oninput="calcularMargem()"></div>
-                    <div class="input-group"><label>Custo (R$)</label><input type="text" id="prodCusto" placeholder="0,00" oninput="calcularMargem()"></div>
-                    <div class="input-group"><label>Margem (%)</label><input type="text" id="prodMargem" placeholder="0,00" readonly style="font-weight:700;color:var(--gold);"></div>
-                    <div class="input-group"><label>Lucro (R$)</label><input type="text" id="prodLucro" placeholder="0,00" readonly style="font-weight:700;color:var(--green);"></div>
+                    <div class="input-group" id="margemGrupo">
+                        <label>Custo (R$)</label><input type="text" id="prodCusto" placeholder="0,00" oninput="calcularMargem()">
+                    </div>
+                    <div class="input-group" id="margemGrupo2">
+                        <label>Margem (%)</label><input type="text" id="prodMargem" placeholder="0,00" readonly style="font-weight:700;color:var(--gold);">
+                    </div>
+                    <div class="input-group" id="margemGrupo3">
+                        <label>Lucro (R$)</label><input type="text" id="prodLucro" placeholder="0,00" readonly style="font-weight:700;color:var(--green);">
+                    </div>
+                    <div class="permissao-negada" id="margemPermissaoNegada" style="display:none;padding:8px;margin-bottom:10px;background:rgba(255,255,255,.05);border-radius:6px;">
+                        <p style="font-size:12px;color:var(--text-muted);">📊 Margem de lucro não disponível no seu plano</p>
+                    </div>
                     <div class="input-group"><label>Estoque</label><input type="number" id="prodEstoque" value="0"></div>
                     <div class="input-group"><label>Categoria</label><input type="text" id="prodCategoria" placeholder="Geral"></div>
                     <button class="btn-salvar" onclick="salvarProduto()"><i class="fas fa-save"></i> Salvar Produto</button>
@@ -766,12 +803,72 @@ const state = {
     itens:[],subtotal:0,total:0,produtos:[],clientes:[],
     periodo:'hoje',searchIndex:-1,_resultados:[],
     produtoSelecionado:null,plano_ativo:true,ultimaVenda:null,
-    cupomEscolha:'imprimir',f1Cycle:0
+    cupomEscolha:'imprimir',f1Cycle:0,
+    permissoes:{clientes:false,dashboard:false,busca_estoque:false,margem:false}
 };
 
 let ultimoCupomData = null;
 let ultimaVendaId = null;
 let metodoAtivo = 'Dinheiro';
+
+// ============================================================
+// PERMISSÕES
+// ============================================================
+function temPermissao(permissao) {
+    return state.permissoes && state.permissoes[permissao] === true;
+}
+
+function atualizarPermissoesUI() {
+    // Clientes
+    const clientesConteudo = document.getElementById('clientesConteudo');
+    const clientesNegado = document.getElementById('clientesPermissaoNegada');
+    if (temPermissao('clientes')) {
+        clientesConteudo.style.display = 'block';
+        clientesNegado.style.display = 'none';
+    } else {
+        clientesConteudo.style.display = 'none';
+        clientesNegado.style.display = 'block';
+    }
+
+    // Dashboard
+    const dashboardConteudo = document.querySelector('.dashboard-conteudo');
+    const dashboardNegado = document.getElementById('dashboardPermissaoNegada');
+    if (temPermissao('dashboard')) {
+        dashboardConteudo.style.display = 'block';
+        dashboardNegado.style.display = 'none';
+    } else {
+        dashboardConteudo.style.display = 'none';
+        dashboardNegado.style.display = 'block';
+    }
+
+    // Busca Estoque
+    const buscaEstoqueGrupo = document.getElementById('buscaEstoqueGrupo');
+    const buscaEstoqueNegado = document.getElementById('buscaEstoquePermissaoNegada');
+    if (temPermissao('busca_estoque')) {
+        buscaEstoqueGrupo.style.display = 'block';
+        buscaEstoqueNegado.style.display = 'none';
+    } else {
+        buscaEstoqueGrupo.style.display = 'none';
+        buscaEstoqueNegado.style.display = 'block';
+    }
+
+    // Margem
+    const margemGrupo = document.getElementById('margemGrupo');
+    const margemGrupo2 = document.getElementById('margemGrupo2');
+    const margemGrupo3 = document.getElementById('margemGrupo3');
+    const margemNegado = document.getElementById('margemPermissaoNegada');
+    if (temPermissao('margem')) {
+        margemGrupo.style.display = 'block';
+        margemGrupo2.style.display = 'block';
+        margemGrupo3.style.display = 'block';
+        margemNegado.style.display = 'none';
+    } else {
+        margemGrupo.style.display = 'none';
+        margemGrupo2.style.display = 'none';
+        margemGrupo3.style.display = 'none';
+        margemNegado.style.display = 'block';
+    }
+}
 
 // ============================================================
 // PLANO - VERIFICAÇÃO E AVISOS
@@ -785,6 +882,8 @@ async function verificarStatusPlano() {
         if (data.success) {
             planoAtivo = data.ativo || false;
             diasRestantes = data.dias_restantes || 0;
+            state.permissoes = data.permissoes || {clientes:false,dashboard:false,busca_estoque:false,margem:false};
+            atualizarPermissoesUI();
             atualizarStatusPlanoUI(data);
             if (!data.ativo) { bloquearAbas(true); mostrarAvisoExpirado(); }
             else if (data.precisa_aviso) { mostrarAvisoRenovacao(data.dias_para_aviso || data.dias_restantes); bloquearAbas(false); }
@@ -868,6 +967,11 @@ function copiarId(){const id=state.db_id||document.getElementById('dbIdConfig').
 // MARGEM E LUCRO
 // ============================================================
 function calcularMargem() {
+    if (!temPermissao('margem')) {
+        document.getElementById('prodMargem').value = '0,00%';
+        document.getElementById('prodLucro').value = 'R$ 0,00';
+        return;
+    }
     const preco = parseFloat(document.getElementById('prodPreco').value.replace(',','.')) || 0;
     const custo = parseFloat(document.getElementById('prodCusto').value.replace(',','.')) || 0;
     if (preco > 0 && custo >= 0) {
@@ -998,11 +1102,13 @@ async function fazerLogin(){
             state.db_id=data.db_id;state.usuario_id=data.id;state.nome=data.nome;state.cargo=data.cargo;
             state.nome_loja=data.nome_loja||'Minha Loja';state.cnpj=data.cnpj||'';state.cnpj_dados=data.cnpj_dados||{};
             state.plano_ativo=data.plano_ativo!==false;
+            state.permissoes=data.permissoes||{clientes:false,dashboard:false,busca_estoque:false,margem:false};
             document.getElementById('authPage').classList.add('hidden');
             document.getElementById('app').classList.add('active');
             atualizarHeader();
             carregarPlanos();carregarProdutos();carregarClientes();carregarUsuarios();
             carregarStatusCaixa();carregarDash('hoje');carregarLojaInfo();
+            atualizarPermissoesUI();
             setTimeout(verificarStatusPlano, 500);
             showToast('👋 Bem-vindo, '+data.nome+'!','success');
         }else{
@@ -1054,7 +1160,21 @@ async function fazerLogout(){
 // TROCAR ABA
 // ============================================================
 function trocarTab(nome){
-    if (!planoAtivo && nome !== 'planos') { showToast('🔴 Plano expirado! Acesse a aba Planos para renovar.', 'error'); return; }
+    if (!planoAtivo && nome !== 'planos') {
+        showToast('🔴 Plano expirado! Acesse a aba Planos para renovar.', 'error');
+        return;
+    }
+    
+    // Verifica permissões
+    if (nome === 'clientes' && !temPermissao('clientes')) {
+        showToast('🔒 Seu plano não permite acesso a Clientes.', 'warning');
+        return;
+    }
+    if (nome === 'dashboard' && !temPermissao('dashboard')) {
+        showToast('🔒 Seu plano não permite acesso ao Dashboard.', 'warning');
+        return;
+    }
+    
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
     const panel = document.getElementById('panel' + nome.charAt(0).toUpperCase() + nome.slice(1));
@@ -1066,6 +1186,9 @@ function trocarTab(nome){
     if(nome==='dashboard') carregarDash(state.periodo);
     if(nome==='caixa') carregarStatusCaixa();
     if(nome==='planos') {carregarPlanos(); verificarStatusPlano();}
+    
+    // Atualiza permissões UI
+    atualizarPermissoesUI();
 }
 
 // ============================================================
@@ -1129,7 +1252,7 @@ async function salvarProduto(){
     const codigo=document.getElementById('prodCodigo').value.trim();
     const nome=document.getElementById('prodNome').value.trim();
     const preco=parseFloat(document.getElementById('prodPreco').value.replace(',','.'))||0;
-    const custo=parseFloat(document.getElementById('prodCusto').value.replace(',','.'))||0;
+    const custo=temPermissao('margem') ? (parseFloat(document.getElementById('prodCusto').value.replace(',','.'))||0) : 0;
     const estoque=parseInt(document.getElementById('prodEstoque').value)||0;
     const categoria=document.getElementById('prodCategoria').value.trim()||'Geral';
     if(!codigo||!nome){showToast('❌ Código e nome são obrigatórios.','error');return;}
@@ -1155,12 +1278,17 @@ async function excluirProdutoSelecionado(){
 
 let timeoutBuscaCodigo = null;
 function buscarProdutoAutomatico(codigo){
+    if (!temPermissao('busca_estoque')) return;
     clearTimeout(timeoutBuscaCodigo);
     if(codigo.length < 8) return;
     timeoutBuscaCodigo = setTimeout(() => buscarProdutoPorCodigo(), 500);
 }
 
 async function buscarProdutoPorCodigo(){
+    if (!temPermissao('busca_estoque')) {
+        showToast('🔒 Busca inteligente não disponível no seu plano.', 'warning');
+        return;
+    }
     const codigo=document.getElementById('prodCodigo').value.trim();
     if(!codigo){showToast('⚠️ Digite um código.','warning');return;}
     try{
@@ -1179,6 +1307,7 @@ async function buscarProdutoPorCodigo(){
 // CLIENTES
 // ============================================================
 async function carregarClientes(){
+    if (!temPermissao('clientes')) return;
     try{
         const busca=document.getElementById('buscaCliente').value||'';
         const res=await fetch(`/api/clientes?busca=${encodeURIComponent(busca)}`,{credentials:'include'});
@@ -1563,11 +1692,13 @@ async function carregarResumoCaixa(){
 // DASHBOARD - COM LUCRO
 // ============================================================
 function filtrarDashboard(el,periodo){
+    if (!temPermissao('dashboard')) return;
     document.querySelectorAll('.btn-filtro').forEach(b=>b.classList.remove('active'));
     el.classList.add('active');state.periodo=periodo;carregarDash(periodo);
 }
 
 async function carregarDash(periodo){
+    if (!temPermissao('dashboard')) return;
     try{
         const res=await fetch(`/api/estatisticas?periodo=${periodo}`,{credentials:'include'});
         const data=await res.json();
@@ -1627,12 +1758,20 @@ async function carregarPlanos(){
             let html='';
             data.planos.forEach(p=>{
                 const produtos=p.produtos===-1?'Ilimitado':p.produtos;
+                const permissoes = p.permissoes || {};
+                let perms = [];
+                if(permissoes.clientes) perms.push('👥 Clientes');
+                if(permissoes.dashboard) perms.push('📊 Dashboard');
+                if(permissoes.busca_estoque) perms.push('🔍 Busca Estoque');
+                if(permissoes.margem) perms.push('💰 Margem');
+                const permsText = perms.length ? perms.join(' • ') : 'Vendas e Caixa';
                 html+=`<div class="plano-card">
                     <div class="plano-teste">${p.dias} dias</div>
                     <div class="nome">${p.nome}</div>
                     <div class="preco">R$ ${p.preco.toFixed(2)} <small>/mês</small></div>
                     <div class="desc">${p.usuarios} usuário${p.usuarios>1?'s':''}</div>
                     <div class="detalhes"><span class="limite-produtos">📦 ${produtos} produtos</span></div>
+                    <div style="font-size:10px;color:var(--text-muted);margin:6px 0;">${permsText}</div>
                     <button class="btn-assinar" onclick="assinarPlano(${p.id})">💳 Assinar</button>
                 </div>`;
             });
@@ -1651,6 +1790,13 @@ async function carregarStatusConta(){
             const ativo=data.ativo!==false, dias=data.dias_restantes||0, percentual=data.percentual_produtos||0;
             const corBarra=percentual>=90?'vermelho':percentual>=70?'amarelo':'verde';
             const limiteProdutos=data.limite_produtos===-1?'∞':data.limite_produtos;
+            const permissoes = data.permissoes || {};
+            let permsText = [];
+            if(permissoes.clientes) permsText.push('👥 Clientes');
+            if(permissoes.dashboard) permsText.push('📊 Dashboard');
+            if(permissoes.busca_estoque) permsText.push('🔍 Busca Estoque');
+            if(permissoes.margem) permsText.push('💰 Margem');
+            const permsDisplay = permsText.length ? permsText.join(' • ') : 'Vendas e Caixa';
             status.innerHTML=`
                 <h4 style="font-size:14px;margin-bottom:10px;"><i class="fas fa-info-circle"></i> Status da Conta</h4>
                 <div class="info-grid">
@@ -1659,6 +1805,7 @@ async function carregarStatusConta(){
                     <div class="info-item"><div class="label">Dias Restantes</div><div class="value ${dias<=3?'expirado':'ativo'}">${dias.toFixed(1)} dias</div></div>
                     <div class="info-item"><div class="label">Produtos</div><div class="value">${data.produtos_atuais||0}/${limiteProdutos}</div></div>
                     <div class="info-item"><div class="label">Usuários</div><div class="value">${data.usuarios_atuais||0}/${data.usuarios_limite||1}</div></div>
+                    <div class="info-item"><div class="label">Funcionalidades</div><div class="value" style="font-size:12px;">${permsDisplay}</div></div>
                 </div>
                 <div style="margin-top:12px;">
                     <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);">
@@ -1868,11 +2015,13 @@ document.addEventListener('DOMContentLoaded',function(){
                 state.db_id=data.db_id;state.usuario_id=data.usuario_id;state.nome=data.nome;state.cargo=data.cargo;
                 state.nome_loja=data.nome_loja||'Minha Loja';state.cnpj=data.cnpj||'';state.cnpj_dados=data.cnpj_dados||{};
                 state.plano_ativo=data.plano_ativo!==false;
+                state.permissoes=data.permissoes||{clientes:false,dashboard:false,busca_estoque:false,margem:false};
                 document.getElementById('authPage').classList.add('hidden');
                 document.getElementById('app').classList.add('active');
                 atualizarHeader();
                 carregarPlanos();carregarProdutos();carregarClientes();carregarUsuarios();
                 carregarStatusCaixa();carregarDash('hoje');carregarLojaInfo();
+                atualizarPermissoesUI();
                 setTimeout(verificarStatusPlano, 500);
             }else{
                 document.getElementById('authPage').classList.remove('hidden');
@@ -1896,6 +2045,7 @@ if(!String.prototype.center){
 console.log('🏪 SMART PDV v10.2.0 carregado!');
 console.log('📌 Use F1 para navegação rápida');
 console.log('💰 Lucro líquido ativado!');
+console.log('🔒 Permissões por plano ativadas!');
 </script>
 </body>
-                                                                                                </html>
+</html>
