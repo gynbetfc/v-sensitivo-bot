@@ -721,9 +721,15 @@
                             <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:4px;">
                                 <span>Soma dos itens (avulso):</span><span id="kitSomaAvulso">R$ 0,00</span>
                             </div>
+                            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:4px;">
+                                <span>Custo total (componentes):</span><span id="kitCustoTotal">R$ 0,00</span>
+                            </div>
                             <div class="input-group" style="margin-top:8px;">
                                 <label style="color:var(--green);">Preço do Kit (R$)</label>
-                                <input type="text" id="kitPreco" placeholder="0,00" style="font-weight:700;font-size:16px;color:var(--green);">
+                                <input type="text" id="kitPreco" placeholder="0,00" style="font-weight:700;font-size:16px;color:var(--green);" oninput="atualizarLucroKit()">
+                            </div>
+                            <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;margin-top:6px;padding:6px 8px;background:rgba(34,197,94,.08);border-radius:6px;">
+                                <span style="color:var(--text-secondary);">Lucro do kit:</span><span id="kitLucro" style="color:var(--green);">R$ 0,00</span>
                             </div>
                         </div>
                         <button class="btn-salvar" onclick="salvarKit()" style="background:var(--purple);"><i class="fas fa-save"></i> Salvar Kit</button>
@@ -1220,9 +1226,8 @@ async function fazerLogin(){
             document.getElementById('authPage').classList.add('hidden');
             document.getElementById('app').classList.add('active');
             atualizarHeader();
-            carregarPlanos();carregarProdutos();carregarClientes();carregarUsuarios();
+            carregarPlanos();carregarProdutos().then(()=>carregarKitsParaVenda());carregarClientes();carregarUsuarios();
             carregarStatusCaixa();carregarDash('hoje');carregarLojaInfo();
-            carregarKitsParaVenda();
             atualizarPermissoesUI();
             setTimeout(verificarStatusPlano, 500);
             showToast('👋 Bem-vindo, '+data.nome+'!','success');
@@ -1321,13 +1326,26 @@ async function carregarKitsParaVenda(){
     try{
         const res=await fetch('/api/kits',{credentials:'include'});
         const data=await res.json();
-        if(data.success) state.kits=data.kits||[];
+        if(data.success){
+            state.kits=(data.kits||[]).map(k=>{
+                // Garante que cada item tenha custo_original (kits antigos podem não ter)
+                const itens=(k.itens||[]).map(it=>{
+                    if(it.custo_original===undefined||it.custo_original===null){
+                        const p=(state.produtos||[]).find(x=>x.codigo===it.codigo);
+                        it.custo_original=p?(p.custo||0):0;
+                    }
+                    return it;
+                });
+                return {...k, itens};
+            });
+        }
     }catch(e){ state.kits=state.kits||[]; }
 }
 
 async function carregarProdutos(){
     try{
-        const busca=document.getElementById('buscaEstoque').value||'';
+        const elBusca=document.getElementById('buscaEstoque');
+        const busca=elBusca?elBusca.value||'':'';
         const res=await fetch(`/api/produtos?busca=${encodeURIComponent(busca)}`,{credentials:'include'});
         const data=await res.json();
         if(data.success){
@@ -1426,6 +1444,7 @@ function adicionarItemKit(codigo){
     kitItensAtuais.push({
         codigo:p.codigo,
         nome:p.nome,
+        custo_original:p.custo||0,
         preco_original:p.preco||0,
         preco_combo:p.preco||0
     });
@@ -1466,6 +1485,20 @@ function renderizarItensKit(){
 function atualizarSomaKit(){
     const soma=kitItensAtuais.reduce((acc,i)=>acc+(i.preco_combo||0),0);
     document.getElementById('kitSomaAvulso').textContent='R$ '+soma.toFixed(2);
+    const custo=kitItensAtuais.reduce((acc,i)=>acc+(i.custo_original||0),0);
+    const elCusto=document.getElementById('kitCustoTotal');
+    if(elCusto) elCusto.textContent='R$ '+custo.toFixed(2);
+    atualizarLucroKit();
+}
+
+function atualizarLucroKit(){
+    const custo=kitItensAtuais.reduce((acc,i)=>acc+(i.custo_original||0),0);
+    const preco=parseFloat((document.getElementById('kitPreco').value||'').replace(',','.'))||0;
+    const lucro=preco-custo;
+    const el=document.getElementById('kitLucro');
+    if(!el)return;
+    el.textContent='R$ '+lucro.toFixed(2);
+    el.style.color = lucro>0 ? 'var(--green)' : (lucro<0 ? 'var(--red)' : 'var(--text-secondary)');
 }
 
 async function salvarKit(){
@@ -1525,11 +1558,20 @@ async function carregarKits(){
 function editarKit(kitJson){
     const k=typeof kitJson==='string'?JSON.parse(kitJson):kitJson;
     kitEditandoId=k.id;
-    kitItensAtuais=(k.itens||[]).map(i=>({
-        codigo:i.codigo,nome:i.nome,
-        preco_original:i.preco_original||i.preco_combo||0,
-        preco_combo:i.preco_combo||0
-    }));
+    kitItensAtuais=(k.itens||[]).map(i=>{
+        // Recupera o custo: usa o salvo, ou busca no produto atual se faltar (kits antigos)
+        let custo=i.custo_original;
+        if(custo===undefined||custo===null){
+            const p=(state.produtos||[]).find(x=>x.codigo===i.codigo);
+            custo=p?(p.custo||0):0;
+        }
+        return {
+            codigo:i.codigo,nome:i.nome,
+            custo_original:custo||0,
+            preco_original:i.preco_original||i.preco_combo||0,
+            preco_combo:i.preco_combo||0
+        };
+    });
     document.getElementById('kitNome').value=k.nome;
     document.getElementById('kitPreco').value=(k.preco||0).toFixed(2).replace('.',',');
     renderizarItensKit();
@@ -1693,7 +1735,7 @@ document.getElementById('codigoInput').addEventListener('keydown',function(e){
 
 document.getElementById('buscaProdutoInput').addEventListener('input',function(){
     const val=this.value.trim();
-    if(val.length<2){document.getElementById('searchResults').classList.remove('active');return;}
+    if(val.length<1){document.getElementById('searchResults').classList.remove('active');return;}
     const results=document.getElementById('searchResults');
     const termo=val.toLowerCase();
     const filtrados=state.produtos.filter(p=>p.nome.toLowerCase().includes(termo)||p.codigo.includes(val));
@@ -1736,11 +1778,13 @@ function selecionarProdutoPorCodigo(codigo){
         const kitId=codigo.slice(4);
         const k=(state.kits||[]).find(x=>x.id===kitId);
         if(!k){showToast('⚠️ Kit não encontrado','warning');return;}
+        // Custo do kit = soma dos custos dos componentes (para lucro real no dashboard)
+        const custoKit=(k.itens||[]).reduce((acc,it)=>acc+(it.custo_original||0),0);
         adicionarAoCarrinho({
             codigo:'KIT:'+k.id,
             nome:'📦 '+k.nome,
             preco:k.preco||0,
-            custo:0,
+            custo:custoKit,
             estoque:9999,
             categoria:'Combo',
             is_kit:true
@@ -2005,7 +2049,7 @@ async function carregarStatusCaixa(){
         const icon=document.getElementById('caixaIcon'), status=document.getElementById('caixaStatus'), msg=document.getElementById('caixaMsg');
         const btn=document.getElementById('btnCaixa'), header=document.getElementById('statusCaixaHeader'), input=document.getElementById('valorAbertura');
         if(state.caixa_aberto){
-            icon.textContent='💰';status.textContent='Caixa Aberto';msg.textContent=`Aberto por ${data.usuario_id||'usuário'} | Total: R$ ${(data.total||0).toFixed(2)}`;
+            icon.textContent='💰';status.textContent='Caixa Aberto';msg.textContent=`Aberto por ${data.usuario_nome||data.usuario_id||'usuário'} | Total: R$ ${(data.total||0).toFixed(2)}`;
             btn.textContent='🔒 Fechar Caixa';btn.className='btn-caixa fechar';header.textContent='💰 Aberto';header.className='status-caixa aberto';
             input.style.display='none';document.getElementById('resumoCaixa').style.display='block';carregarResumoCaixa();
         }else{
