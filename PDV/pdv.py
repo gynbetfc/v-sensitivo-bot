@@ -92,12 +92,44 @@ else:
 # FLASK APP
 # ============================================================
 app: Flask = Flask(__name__, template_folder=TEMPLATES_DIR)
-app.secret_key = secrets.token_hex(32)
+
+def _obter_secret_key() -> str:
+    """Carrega uma secret_key persistente do disco; gera e salva na primeira vez.
+    Sem isso, a chave mudaria a cada restart e TODOS os logins cairiam (cookies invalidados)."""
+    caminho_chave = os.path.join(APP_DATA_DIR, 'secret.key')
+    try:
+        if os.path.exists(caminho_chave):
+            with open(caminho_chave, 'r', encoding='utf-8') as f:
+                chave = f.read().strip()
+                if chave:
+                    return chave
+        chave = secrets.token_hex(32)
+        with open(caminho_chave, 'w', encoding='utf-8') as f:
+            f.write(chave)
+        return chave
+    except Exception:
+        # Se não der pra persistir, ao menos não quebra (mas sessões não sobrevivem a restart)
+        return secrets.token_hex(32)
+
+app.secret_key = _obter_secret_key()
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_SECURE'] = False
 
 CORS(app, origins=["*"], supports_credentials=True)
+
+@app.after_request
+def _desabilitar_cache_api(response):
+    """Evita que o navegador (WebView do Termux) sirva respostas de API em cache,
+    como o /api/auth/status — o que faria o logout 'não pegar' após um refresh."""
+    try:
+        if request.path.startswith('/api/'):
+            response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
+    except Exception:
+        pass
+    return response
 
 VERSION: str = "10.3.0"
 
@@ -131,6 +163,13 @@ MERCADO_PAGO_ACCESS_TOKEN: str = os.environ.get(
 CHAVE_SECRETA_PLANO: str = "hs7sudjsjfirijf839djd"
 
 # ============================================================
+# OPENROUTESERVICE (cálculo de distância/frete - grátis, sem cartão)
+# Crie uma conta grátis em https://openrouteservice.org/dev/#/signup
+# e cole sua chave aqui (ou use a variável de ambiente ORS_API_KEY).
+# ============================================================
+ORS_API_KEY: str = os.environ.get("ORS_API_KEY", "")
+
+# ============================================================
 # PLANOS REVISADOS
 # ============================================================
 @dataclass
@@ -150,36 +189,46 @@ PLANOS: List[Plano] = [
         'dashboard': False,
         'busca_estoque': False,
         'margem': False,
-        'fiado': False
+        'fiado': False,
+        'kit_combo': False,
+        'pedidos_online': False
     }),
-    Plano(2, 3, 59.99, '⭐ STANDARD', 30, 1000, {
+    Plano(2, 3, 69.99, '⭐ STANDARD', 30, 1000, {
         'clientes': True,
         'dashboard': False,
         'busca_estoque': False,
         'margem': False,
-        'fiado': True
+        'fiado': True,
+        'kit_combo': True,
+        'pedidos_online': False
     }),
-    Plano(3, 5, 89.99, '💎 PREMIUM', 30, 5000, {
+    Plano(3, 5, 99.99, '💎 PREMIUM', 30, 5000, {
         'clientes': True,
         'dashboard': True,
         'busca_estoque': True,
         'margem': True,
-        'fiado': True
+        'fiado': True,
+        'kit_combo': True,
+        'pedidos_online': False
     }),
-    Plano(4, 10, 129.99, '👑 EMPRESARIAL', 30, -1, {
+    Plano(4, 10, 149.99, '👑 EMPRESARIAL', 30, -1, {
         'clientes': True,
         'dashboard': True,
         'busca_estoque': True,
         'margem': True,
-        'fiado': True
+        'fiado': True,
+        'kit_combo': True,
+        'pedidos_online': True
     }),
-    # Plano de TESTE (15 dias, Empresarial completo)
-    Plano(5, 1, 0.00, '🎁 TESTE', 15, -1, {
+    # Plano de TESTE (15 dias, todas as permissões liberadas, limite de 300 produtos e 1 usuário)
+    Plano(5, 1, 0.00, '🎁 TESTE', 15, 300, {
         'clientes': True,
         'dashboard': True,
         'busca_estoque': True,
         'margem': True,
-        'fiado': True
+        'fiado': True,
+        'kit_combo': True,
+        'pedidos_online': True
     }, is_teste=True),
 ]
 
@@ -231,16 +280,17 @@ def verificar_plano(f: Callable) -> Callable:
 # ============================================================
 
 def get_permissoes(db_id: str) -> Dict:
-    """Retorna as permissões do plano do usuário"""
+    """Retorna as permissões do plano (definição completa mais abaixo, offline-first)."""
+    _perm_padrao = {'clientes': False, 'dashboard': False, 'busca_estoque': False, 'margem': False, 'fiado': False, 'kit_combo': False}
     try:
-        dados = carregar_usuario_firebase(db_id)
+        dados = carregar_usuario_firebase(db_id, timeout=3)
         if not dados:
-            return {'clientes': False, 'dashboard': False, 'busca_estoque': False, 'margem': False, 'fiado': False}
+            return _perm_padrao
         plano_id = dados.get('plano', 1)
         plano = next((p for p in PLANOS if p.id == plano_id), PLANOS[0])
         return plano.permissoes
     except:
-        return {'clientes': False, 'dashboard': False, 'busca_estoque': False, 'margem': False, 'fiado': False}
+        return _perm_padrao
 
 def verificar_permissao(permissao: str):
     """Decorator para verificar permissões específicas"""
@@ -412,6 +462,89 @@ def init_db() -> None:
             )
         ''')
 
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS exclusoes (
+                tipo TEXT,
+                item_id TEXT,
+                db_id TEXT,
+                excluido_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (tipo, item_id, db_id)
+            )
+        ''')
+
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS kits (
+                id TEXT PRIMARY KEY,
+                nome TEXT,
+                preco REAL DEFAULT 0,
+                itens TEXT DEFAULT '[]',
+                db_id TEXT,
+                ativo INTEGER DEFAULT 1,
+                ultima_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                sincronizado_em TIMESTAMP
+            )
+        ''')
+
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS config_food (
+                db_id TEXT PRIMARY KEY,
+                ativo INTEGER DEFAULT 0,
+                aberto INTEGER DEFAULT 0,
+                aceita_entrega INTEGER DEFAULT 1,
+                aceita_retirada INTEGER DEFAULT 1,
+                aceita_mesa INTEGER DEFAULT 0,
+                valor_km REAL DEFAULT 2.0,
+                frete_minimo REAL DEFAULT 5.0,
+                raio_max_km REAL DEFAULT 10,
+                tempo_preparo_min INTEGER DEFAULT 30,
+                endereco_loja TEXT DEFAULT '',
+                coord_lat REAL,
+                coord_lng REAL,
+                pix_habilitado INTEGER DEFAULT 1,
+                pagamento_na_entrega INTEGER DEFAULT 1,
+                ultima_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS pedidos_online (
+                id TEXT PRIMARY KEY,
+                db_id TEXT,
+                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                status TEXT DEFAULT 'novo',
+                tipo TEXT DEFAULT 'entrega',
+                cliente_nome TEXT,
+                cliente_telefone TEXT,
+                cliente_endereco TEXT,
+                cliente_lat REAL,
+                cliente_lng REAL,
+                mesa TEXT,
+                itens TEXT DEFAULT '[]',
+                subtotal REAL DEFAULT 0,
+                frete REAL DEFAULT 0,
+                distancia_km REAL DEFAULT 0,
+                total REAL DEFAULT 0,
+                pagamento TEXT DEFAULT 'pix',
+                pix_id TEXT,
+                pix_qr TEXT,
+                pix_copia_cola TEXT,
+                pago INTEGER DEFAULT 0,
+                impresso INTEGER DEFAULT 0,
+                ultima_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS chat_pedidos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                pedido_id TEXT,
+                db_id TEXT,
+                autor TEXT,
+                mensagem TEXT,
+                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+
         # Adicionar colunas faltantes
         for tabela, colunas in {
             'users': {'sincronizado_em': 'TIMESTAMP'},
@@ -463,13 +596,13 @@ def salvar_usuario_firebase(db_id: str, dados: Dict) -> bool:
         logger.error(f"⚠️ Erro Firebase save: {e}")
         return False
 
-def carregar_usuario_firebase(db_id: str) -> Optional[Dict]:
+def carregar_usuario_firebase(db_id: str, timeout: int = 10) -> Optional[Dict]:
     if not db_id:
         return None
     try:
         key = _fb_key(db_id)
         url = f'{FB_URL}/pdv/usuarios/{key}.json'
-        response = requests.get(url, timeout=10)
+        response = requests.get(url, timeout=timeout)
         if response.status_code == 200:
             return response.json()
         return None
@@ -616,7 +749,7 @@ class PlanoSincronizado:
     def sincronizar_token(self) -> Dict:
         resultado = {'success': True, 'token_atualizado': False, 'mensagem': ''}
         try:
-            dados_fb = carregar_usuario_firebase(self.db_id)
+            dados_fb = carregar_usuario_firebase(self.db_id, timeout=4)
             token_fb = dados_fb.get('token_plano') if dados_fb else None
             token_local = None
             if os.path.exists(self.arquivo_token):
@@ -738,6 +871,31 @@ def get_info_plano_completa(db_id: str) -> Dict:
     except Exception as e:
         return {'ativo': False, 'dias_restantes': 0, 'expirado': True, 'erro': str(e)}
 
+def get_plano_id_efetivo(db_id: str) -> int:
+    """Resolve o plano_id usando o TOKEN LOCAL como fonte primária (funciona offline).
+    Só consulta o Firebase como complemento se o token local não tiver a info."""
+    # 1) Token local (offline-first)
+    try:
+        info = get_info_plano_completa(db_id)
+        pid = info.get('plano_id')
+        if pid:
+            return int(pid)
+    except Exception:
+        pass
+    # 2) Firebase (só se online e token não tinha)
+    try:
+        dados = carregar_usuario_firebase(db_id, timeout=3)
+        if dados and dados.get('plano'):
+            return int(dados.get('plano'))
+    except Exception:
+        pass
+    # 3) Fallback seguro: plano básico
+    return 1
+
+def get_plano_efetivo(db_id: str) -> 'Plano':
+    pid = get_plano_id_efetivo(db_id)
+    return next((p for p in PLANOS if p.id == pid), PLANOS[0])
+
 def precisa_aviso_renovacao(db_id: str) -> Tuple[bool, float]:
     if not db_id:
         return False, 0
@@ -747,16 +905,88 @@ def precisa_aviso_renovacao(db_id: str) -> Tuple[bool, float]:
         return True, dias
     return False, dias
 
+# ============================================================
+# CÁLCULO DE FRETE (OpenRouteService - distância real de rua)
+# ============================================================
+_CACHE_GEOCODE: Dict[str, Dict] = {}
+
+def geocodificar_endereco(endereco: str) -> Optional[Dict]:
+    """Converte um endereço em texto para coordenadas (lat/lng).
+    Usa OpenRouteService (Pelias). Resultado fica em cache para não repetir chamadas."""
+    if not endereco or not endereco.strip():
+        return None
+    chave_cache = endereco.strip().lower()
+    if chave_cache in _CACHE_GEOCODE:
+        return _CACHE_GEOCODE[chave_cache]
+    if not ORS_API_KEY:
+        logger.warning("⚠️ ORS_API_KEY não configurada - geocoding indisponível")
+        return None
+    try:
+        url = "https://api.openrouteservice.org/geocode/search"
+        params = {"api_key": ORS_API_KEY, "text": endereco, "boundary.country": "BR", "size": 1}
+        resp = requests.get(url, params=params, timeout=8)
+        if resp.status_code == 200:
+            data = resp.json()
+            features = data.get('features', [])
+            if features:
+                coord = features[0]['geometry']['coordinates']  # [lng, lat]
+                resultado = {"lng": coord[0], "lat": coord[1],
+                    "label": features[0].get('properties', {}).get('label', endereco)}
+                _CACHE_GEOCODE[chave_cache] = resultado
+                return resultado
+        logger.warning(f"⚠️ Geocoding sem resultado para: {endereco}")
+        return None
+    except Exception as e:
+        logger.error(f"❌ Erro no geocoding: {e}")
+        return None
+
+def calcular_distancia_rua(lat1: float, lng1: float, lat2: float, lng2: float) -> Optional[float]:
+    """Distância real de rua (km) entre dois pontos, via OpenRouteService Directions."""
+    if not ORS_API_KEY:
+        return None
+    try:
+        url = "https://api.openrouteservice.org/v2/directions/driving-car"
+        headers = {"Authorization": ORS_API_KEY, "Content-Type": "application/json"}
+        body = {"coordinates": [[lng1, lat1], [lng2, lat2]]}
+        resp = requests.post(url, json=body, headers=headers, timeout=8)
+        if resp.status_code == 200:
+            data = resp.json()
+            rotas = data.get('routes', [])
+            if rotas:
+                metros = rotas[0].get('summary', {}).get('distance', 0)
+                return round(metros / 1000.0, 2)
+        logger.warning(f"⚠️ Sem rota encontrada entre os pontos")
+        return None
+    except Exception as e:
+        logger.error(f"❌ Erro ao calcular distância: {e}")
+        return None
+
+def get_config_food(db_id: str) -> Dict:
+    """Retorna a configuração de pedidos online da loja (cria padrão se não existir)."""
+    padrao = {'ativo': False, 'aberto': False, 'aceita_entrega': True, 'aceita_retirada': True,
+        'aceita_mesa': False, 'valor_km': 2.0, 'frete_minimo': 5.0, 'raio_max_km': 10,
+        'tempo_preparo_min': 30, 'endereco_loja': '', 'coord_lat': None, 'coord_lng': None,
+        'pix_habilitado': True, 'pagamento_na_entrega': True}
+    try:
+        with get_db_context() as conn:
+            cur = conn.execute("SELECT ativo, aberto, aceita_entrega, aceita_retirada, aceita_mesa, valor_km, frete_minimo, raio_max_km, tempo_preparo_min, endereco_loja, coord_lat, coord_lng, pix_habilitado, pagamento_na_entrega FROM config_food WHERE db_id=?", (db_id,))
+            row = cur.fetchone()
+            if row:
+                return {'ativo': bool(row[0]), 'aberto': bool(row[1]), 'aceita_entrega': bool(row[2]),
+                    'aceita_retirada': bool(row[3]), 'aceita_mesa': bool(row[4]), 'valor_km': row[5],
+                    'frete_minimo': row[6], 'raio_max_km': row[7], 'tempo_preparo_min': row[8],
+                    'endereco_loja': row[9] or '', 'coord_lat': row[10], 'coord_lng': row[11],
+                    'pix_habilitado': bool(row[12]), 'pagamento_na_entrega': bool(row[13])}
+    except Exception as e:
+        logger.error(f"❌ Erro ao ler config_food: {e}")
+    return padrao
+
 def get_limite_produtos(db_id: str) -> int:
     try:
-        dados = carregar_usuario_firebase(db_id)
-        if not dados:
-            return 0
-        plano_id = dados.get('plano', 1)
-        plano = next((p for p in PLANOS if p.id == plano_id), PLANOS[0])
-        return plano.produtos if plano else 0
+        plano = get_plano_efetivo(db_id)
+        return plano.produtos if plano else 300
     except:
-        return 0
+        return 300
 
 def get_total_produtos(db_id: str) -> int:
     try:
@@ -784,16 +1014,13 @@ def pode_adicionar_produto(db_id: str, quantidade: int = 1) -> Tuple[bool, str]:
     return True, f"OK ({atual}/{limite})"
 
 def get_permissoes(db_id: str) -> Dict:
-    """Retorna as permissões do plano do usuário"""
+    """Retorna as permissões do plano do usuário (offline-first via token local)"""
+    _perm_padrao = {'clientes': False, 'dashboard': False, 'busca_estoque': False, 'margem': False, 'fiado': False, 'kit_combo': False}
     try:
-        dados = carregar_usuario_firebase(db_id)
-        if not dados:
-            return {'clientes': False, 'dashboard': False, 'busca_estoque': False, 'margem': False, 'fiado': False}
-        plano_id = dados.get('plano', 1)
-        plano = next((p for p in PLANOS if p.id == plano_id), PLANOS[0])
-        return plano.permissoes
+        plano = get_plano_efetivo(db_id)
+        return plano.permissoes if plano else _perm_padrao
     except:
-        return {'clientes': False, 'dashboard': False, 'busca_estoque': False, 'margem': False, 'fiado': False}
+        return _perm_padrao
 
 # ============================================================
 # FUNÇÃO DE SINCRONIZAÇÃO EM BACKGROUND
@@ -987,7 +1214,11 @@ def _merge_bidirecional_sem_duplicar(db_id: str, dados_firebase: Dict, resultado
                             logger.error(f"⚠️ Erro ao atualizar produto {codigo}: {e}")
         cursor = conn.execute("SELECT id FROM clientes WHERE db_id=?", (db_id,))
         ids_clientes_locais = {row[0] for row in cursor.fetchall()}
+        cursor = conn.execute("SELECT item_id FROM exclusoes WHERE tipo='cliente' AND db_id=?", (db_id,))
+        ids_clientes_excluidos = {row[0] for row in cursor.fetchall()}
         for id_cli, dados_cli in (dados_firebase.get('clientes') or {}).items():
+            if str(id_cli) in ids_clientes_excluidos:
+                continue
             id_int = int(id_cli) if str(id_cli).isdigit() else None
             nome_cliente = dados_cli.get('nome', '')
             if nome_cliente and id_int is None:
@@ -995,11 +1226,20 @@ def _merge_bidirecional_sem_duplicar(db_id: str, dados_firebase: Dict, resultado
                 existente = cursor2.fetchone()
                 if existente:
                     id_int = existente[0]
+            if id_int is not None and str(id_int) in ids_clientes_excluidos:
+                continue
             if id_int is not None and id_int in ids_clientes_locais:
+                firebase_ts = dados_cli.get('ultima_atualizacao')
+                cursor2 = conn.execute("SELECT ultima_atualizacao FROM clientes WHERE id=? AND db_id=?", (id_int, db_id))
+                row = cursor2.fetchone()
+                local_ts = row[0] if row else None
+                # Só sobrescreve com o dado do Firebase se ele for de fato mais recente que o local
+                if firebase_ts and local_ts and firebase_ts <= local_ts:
+                    continue
                 try:
                     conn.execute("""UPDATE clientes SET nome=?, telefone=?, email=?, divida=?, ultima_atualizacao=?
                         WHERE id=? AND db_id=?""", (dados_cli.get('nome', ''), dados_cli.get('telefone', ''),
-                        dados_cli.get('email', ''), dados_cli.get('divida', 0), get_timestamp(), id_int, db_id))
+                        dados_cli.get('email', ''), dados_cli.get('divida', 0), firebase_ts or get_timestamp(), id_int, db_id))
                 except Exception as e:
                     logger.error(f"⚠️ Erro ao atualizar cliente {id_int}: {e}")
             else:
@@ -1026,6 +1266,38 @@ def _merge_bidirecional_sem_duplicar(db_id: str, dados_firebase: Dict, resultado
                 resultado['vendas_adicionadas'] += 1
             except Exception as e:
                 logger.error(f"⚠️ Erro no merge venda {venda_id}: {e}")
+
+        # === KITS / COMBOS ===
+        cursor = conn.execute("SELECT id FROM kits WHERE db_id=?", (db_id,))
+        ids_kits_locais = {row[0] for row in cursor.fetchall()}
+        cursor = conn.execute("SELECT item_id FROM exclusoes WHERE tipo='kit' AND db_id=?", (db_id,))
+        ids_kits_excluidos = {row[0] for row in cursor.fetchall()}
+        for kit_id, dados_kit in (dados_firebase.get('kits') or {}).items():
+            if str(kit_id) in ids_kits_excluidos:
+                continue
+            itens_kit = dados_kit.get('itens', [])
+            itens_json = json.dumps(itens_kit, ensure_ascii=False) if not isinstance(itens_kit, str) else itens_kit
+            if kit_id in ids_kits_locais:
+                firebase_ts = dados_kit.get('ultima_atualizacao')
+                cursor2 = conn.execute("SELECT ultima_atualizacao FROM kits WHERE id=? AND db_id=?", (kit_id, db_id))
+                row = cursor2.fetchone()
+                local_ts = row[0] if row else None
+                if firebase_ts and local_ts and firebase_ts <= local_ts:
+                    continue
+                try:
+                    conn.execute("""UPDATE kits SET nome=?, preco=?, itens=?, ativo=?, ultima_atualizacao=?
+                        WHERE id=? AND db_id=?""", (dados_kit.get('nome', ''), dados_kit.get('preco', 0),
+                        itens_json, 1 if dados_kit.get('ativo', True) else 0, firebase_ts or get_timestamp(), kit_id, db_id))
+                except Exception as e:
+                    logger.error(f"⚠️ Erro ao atualizar kit {kit_id}: {e}")
+            else:
+                try:
+                    conn.execute("""INSERT INTO kits (id, nome, preco, itens, db_id, ativo, ultima_atualizacao)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)""", (kit_id, dados_kit.get('nome', ''), dados_kit.get('preco', 0),
+                        itens_json, db_id, 1 if dados_kit.get('ativo', True) else 0, dados_kit.get('ultima_atualizacao', get_timestamp())))
+                except Exception as e:
+                    logger.error(f"⚠️ Erro ao inserir kit {kit_id}: {e}")
+
         conn.commit()
 
 def enviar_para_firebase(db_id: str) -> bool:
@@ -1066,6 +1338,36 @@ def enviar_para_firebase(db_id: str) -> bool:
                     dados_firebase['cnpj_dados'] = json.loads(loja[2]) if loja[2] else {}
                 except:
                     dados_firebase['cnpj_dados'] = {}
+            cursor = conn.execute("SELECT id, nome, preco, itens, ativo, ultima_atualizacao FROM kits WHERE db_id=?", (db_id,))
+            kits = {}
+            for row in cursor.fetchall():
+                try:
+                    itens_kit = json.loads(row[3]) if row[3] else []
+                except:
+                    itens_kit = []
+                kits[str(row[0])] = {'nome': row[1], 'preco': row[2] or 0, 'itens': itens_kit,
+                    'ativo': bool(row[4]), 'ultima_atualizacao': row[5] or get_timestamp()}
+            dados_firebase['kits'] = kits
+
+            # Configuração de pedidos online (lida pelo site SMART FOOD)
+            cfg = get_config_food(db_id)
+            # A loja só aparece no site se: ativo + aberto + caixa aberto
+            cur_caixa = conn.execute("SELECT id FROM caixa WHERE db_id=? AND status='aberto' LIMIT 1", (db_id,))
+            caixa_aberto = cur_caixa.fetchone() is not None
+            cfg['loja_disponivel'] = bool(cfg.get('ativo') and cfg.get('aberto') and caixa_aberto)
+            # Nome e endereço da loja para exibição no site
+            cur_loja = conn.execute("SELECT nome_loja, cnpj FROM users WHERE db_id=? LIMIT 1", (db_id,))
+            row_loja = cur_loja.fetchone()
+            if row_loja:
+                cfg['nome_loja'] = row_loja[0] or ''
+            dados_firebase['config_food'] = cfg
+
+            # Status do chat (mensagens da loja para os clientes)
+            cur_chat = conn.execute("SELECT pedido_id, autor, mensagem, criado_em FROM chat_pedidos WHERE db_id=? ORDER BY id DESC LIMIT 200", (db_id,))
+            chat = {}
+            for cr in cur_chat.fetchall():
+                chat.setdefault(cr[0], []).append({'autor': cr[1], 'mensagem': cr[2], 'criado_em': cr[3]})
+            dados_firebase['chat_pedidos'] = chat
         ok = salvar_usuario_firebase(db_id, dados_firebase)
         if ok:
             logger.info(f"✅ Dados enviados para Firebase: {db_id} ({len(vendas)} vendas, {len(produtos)} produtos)")
@@ -1101,11 +1403,16 @@ def criar_usuario_firebase(db_id: str, nome: str, email: str, senha_hash: str, s
         'servidor_id': servidor_id, 'nome_loja': nome_loja, 'cnpj': cnpj,
         'cnpj_dados': cnpj_dados, 'data_cadastro': get_timestamp(),
         'plano': plano_id, 'expira_em': expira_em, 'token_plano': token,
-        'token_atualizado_em': get_timestamp(), 'produtos': {}, 'clientes': {},
+        'token_atualizado_em': get_timestamp(), 'teste_usado': True, 'produtos': {}, 'clientes': {},
         'vendas': [], 'caixa': {'status': 'fechado'}, 'config': {}
     }
     salvar_usuario_firebase(db_id, dados)
     plano.salvar_token_local(token)
+    try:
+        with get_db_context() as conn:
+            conn.execute("INSERT OR REPLACE INTO config (chave, valor) VALUES ('teste_usado', '1')")
+    except Exception as e:
+        logger.error(f"⚠️ Erro ao marcar teste usado no registro: {e}")
     return dados
 
 # ============================================================
@@ -1365,7 +1672,7 @@ def baixar_html_github() -> bool:
     try:
         caminho_html = os.path.join(TEMPLATES_DIR, "index.html")
         logger.info("🔄 Baixando HTML do GitHub...")
-        response = requests.get(HTML_URL, timeout=30)
+        response = requests.get(HTML_URL, timeout=8)
         response.raise_for_status()
         with open(caminho_html, "w", encoding="utf-8") as f:
             f.write(response.text)
@@ -1583,6 +1890,16 @@ def login():
                 "url_renovacao": "#/planos" if not plano_ativo else None
             })
 
+        # OFFLINE-FIRST: tenta autenticar com o banco LOCAL antes de consultar o Firebase.
+        # Assim o login funciona instantaneamente offline (sem esperar timeout de rede).
+        with get_db_context() as conn:
+            cursor = conn.execute("""SELECT id, nome, cargo, db_id, servidor_id, nome_loja, cnpj, cnpj_dados
+                FROM users WHERE email=? AND senha=?""", (email, senha_hash))
+            user_offline = cursor.fetchone()
+        if user_offline:
+            return _fazer_login(user_offline[3], user_offline[0], user_offline[1], user_offline[2],
+                user_offline[4], user_offline[5], user_offline[6], user_offline[7])
+
         usuario_firebase = buscar_usuario_por_email_firebase(email)
         if usuario_firebase:
             firebase_db_id = usuario_firebase.get('db_id')
@@ -1750,6 +2067,243 @@ def delete_produto(codigo: str):
         return jsonify({"success": False, "error": str(e)})
 
 # ============================================================
+# KITS / COMBOS - STANDARD PRA FRENTE
+# ============================================================
+@app.route('/api/kits')
+@verificar_permissao('kit_combo')
+@verificar_plano
+def get_kits():
+    try:
+        db_id = get_db_id()
+        with get_db_context() as conn:
+            cursor = conn.execute("SELECT id, nome, preco, itens, ativo FROM kits WHERE db_id=? ORDER BY nome", (db_id,))
+            kits = []
+            for row in cursor.fetchall():
+                try:
+                    itens = json.loads(row[3]) if row[3] else []
+                except:
+                    itens = []
+                kits.append({"id": row[0], "nome": row[1], "preco": row[2] or 0, "itens": itens, "ativo": bool(row[4])})
+        return jsonify({"success": True, "kits": kits})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/kits', methods=['POST'])
+@verificar_permissao('kit_combo')
+@verificar_plano
+def save_kit():
+    try:
+        data = request.json or {}
+        db_id = get_db_id()
+        nome = (data.get('nome') or '').strip()
+        itens = data.get('itens', [])
+        preco = data.get('preco', 0)
+        if not nome:
+            return jsonify({"success": False, "error": "Nome do kit é obrigatório"})
+        if not itens or len(itens) == 0:
+            return jsonify({"success": False, "error": "Adicione pelo menos um item ao kit"})
+        try:
+            preco = float(preco)
+        except:
+            preco = 0
+        if preco <= 0:
+            return jsonify({"success": False, "error": "Defina um preço válido para o kit"})
+
+        kit_id = data.get('id') or f"kit_{uuid.uuid4().hex[:10]}"
+        itens_json = json.dumps(itens, ensure_ascii=False)
+        with get_db_context() as conn:
+            conn.execute("""INSERT INTO kits (id, nome, preco, itens, db_id, ativo, ultima_atualizacao)
+                VALUES (?, ?, ?, ?, ?, 1, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                nome=excluded.nome, preco=excluded.preco, itens=excluded.itens,
+                ultima_atualizacao=excluded.ultima_atualizacao""",
+                (kit_id, nome, preco, itens_json, db_id, get_timestamp()))
+        sincronizar_automatico(db_id)
+        return jsonify({"success": True, "message": "Kit salvo", "id": kit_id})
+    except Exception as e:
+        logger.error(f"❌ Erro ao salvar kit: {e}")
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/kits/<kit_id>', methods=['DELETE'])
+@verificar_permissao('kit_combo')
+@verificar_plano
+def delete_kit(kit_id: str):
+    try:
+        db_id = get_db_id()
+        with get_db_context() as conn:
+            cursor_del = conn.execute("DELETE FROM kits WHERE id=? AND db_id=?", (kit_id, db_id))
+            linhas = cursor_del.rowcount
+            conn.execute("INSERT OR REPLACE INTO exclusoes (tipo, item_id, db_id, excluido_em) VALUES (?, ?, ?, ?)",
+                ('kit', str(kit_id), db_id, get_timestamp()))
+        if linhas == 0:
+            return jsonify({"success": False, "error": "Kit não encontrado"}), 404
+        sincronizar_automatico(db_id)
+        return jsonify({"success": True, "message": "Kit excluído"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+# ============================================================
+# PEDIDOS ONLINE (SMART FOOD) - EMPRESARIAL
+# ============================================================
+@app.route('/api/food/config')
+@verificar_permissao('pedidos_online')
+@verificar_plano
+def food_get_config():
+    try:
+        db_id = get_db_id()
+        return jsonify({"success": True, "config": get_config_food(db_id)})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/food/config', methods=['POST'])
+@verificar_permissao('pedidos_online')
+@verificar_plano
+def food_save_config():
+    try:
+        db_id = get_db_id()
+        d = request.json or {}
+        # Geocodifica o endereço da loja se mudou ou se não há coordenadas
+        coord_lat = d.get('coord_lat')
+        coord_lng = d.get('coord_lng')
+        endereco = (d.get('endereco_loja') or '').strip()
+        if endereco and (coord_lat is None or coord_lng is None or d.get('recalcular_coord')):
+            geo = geocodificar_endereco(endereco)
+            if geo:
+                coord_lat = geo['lat']
+                coord_lng = geo['lng']
+        with get_db_context() as conn:
+            conn.execute("""INSERT INTO config_food
+                (db_id, ativo, aberto, aceita_entrega, aceita_retirada, aceita_mesa, valor_km, frete_minimo,
+                 raio_max_km, tempo_preparo_min, endereco_loja, coord_lat, coord_lng, pix_habilitado,
+                 pagamento_na_entrega, ultima_atualizacao)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                ON CONFLICT(db_id) DO UPDATE SET
+                ativo=excluded.ativo, aberto=excluded.aberto, aceita_entrega=excluded.aceita_entrega,
+                aceita_retirada=excluded.aceita_retirada, aceita_mesa=excluded.aceita_mesa,
+                valor_km=excluded.valor_km, frete_minimo=excluded.frete_minimo, raio_max_km=excluded.raio_max_km,
+                tempo_preparo_min=excluded.tempo_preparo_min, endereco_loja=excluded.endereco_loja,
+                coord_lat=excluded.coord_lat, coord_lng=excluded.coord_lng, pix_habilitado=excluded.pix_habilitado,
+                pagamento_na_entrega=excluded.pagamento_na_entrega, ultima_atualizacao=excluded.ultima_atualizacao""",
+                (db_id, 1 if d.get('ativo') else 0, 1 if d.get('aberto') else 0,
+                 1 if d.get('aceita_entrega', True) else 0, 1 if d.get('aceita_retirada', True) else 0,
+                 1 if d.get('aceita_mesa') else 0, float(d.get('valor_km', 2.0)), float(d.get('frete_minimo', 5.0)),
+                 float(d.get('raio_max_km', 10)), int(d.get('tempo_preparo_min', 30)), endereco,
+                 coord_lat, coord_lng, 1 if d.get('pix_habilitado', True) else 0,
+                 1 if d.get('pagamento_na_entrega', True) else 0, get_timestamp()))
+        sincronizar_automatico(db_id)
+        return jsonify({"success": True, "config": get_config_food(db_id),
+            "coord_ok": coord_lat is not None})
+    except Exception as e:
+        logger.error(f"❌ Erro ao salvar config_food: {e}")
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/food/pedidos')
+@verificar_permissao('pedidos_online')
+@verificar_plano
+def food_listar_pedidos():
+    try:
+        db_id = get_db_id()
+        with get_db_context() as conn:
+            cur = conn.execute("""SELECT id, criado_em, status, tipo, cliente_nome, cliente_telefone,
+                cliente_endereco, mesa, itens, subtotal, frete, distancia_km, total, pagamento, pago, pix_qr
+                FROM pedidos_online WHERE db_id=? ORDER BY criado_em DESC LIMIT 100""", (db_id,))
+            pedidos = []
+            for r in cur.fetchall():
+                try:
+                    itens = json.loads(r[8]) if r[8] else []
+                except:
+                    itens = []
+                pedidos.append({"id": r[0], "criado_em": r[1], "status": r[2], "tipo": r[3],
+                    "cliente_nome": r[4], "cliente_telefone": r[5], "cliente_endereco": r[6], "mesa": r[7],
+                    "itens": itens, "subtotal": r[9], "frete": r[10], "distancia_km": r[11], "total": r[12],
+                    "pagamento": r[13], "pago": bool(r[14]), "tem_qr": bool(r[15])})
+        return jsonify({"success": True, "pedidos": pedidos})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/food/pedidos/<pedido_id>/acao', methods=['POST'])
+@verificar_permissao('pedidos_online')
+@verificar_plano
+def food_acao_pedido(pedido_id: str):
+    try:
+        db_id = get_db_id()
+        acao = (request.json or {}).get('acao')
+        mapa = {'aceitar': 'em_preparo', 'recusar': 'cancelado', 'pronto': 'pronto', 'finalizar': 'finalizado'}
+        if acao not in mapa:
+            return jsonify({"success": False, "error": "Ação inválida"})
+        novo_status = mapa[acao]
+        with get_db_context() as conn:
+            cur = conn.execute("UPDATE pedidos_online SET status=?, ultima_atualizacao=? WHERE id=? AND db_id=?",
+                (novo_status, get_timestamp(), pedido_id, db_id))
+            if cur.rowcount == 0:
+                return jsonify({"success": False, "error": "Pedido não encontrado"}), 404
+        # Se aceitou, imprime o cupom do pedido
+        if acao == 'aceitar':
+            _imprimir_pedido_online(pedido_id, db_id)
+        sincronizar_automatico(db_id)
+        return jsonify({"success": True, "status": novo_status})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/food/pedidos/<pedido_id>/imprimir', methods=['POST'])
+@verificar_permissao('pedidos_online')
+@verificar_plano
+def food_imprimir_pedido(pedido_id: str):
+    try:
+        db_id = get_db_id()
+        ok = _imprimir_pedido_online(pedido_id, db_id)
+        return jsonify({"success": ok})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/food/chat/<pedido_id>')
+@verificar_permissao('pedidos_online')
+@verificar_plano
+def food_get_chat(pedido_id: str):
+    try:
+        db_id = get_db_id()
+        with get_db_context() as conn:
+            cur = conn.execute("SELECT autor, mensagem, criado_em FROM chat_pedidos WHERE pedido_id=? AND db_id=? ORDER BY id ASC", (pedido_id, db_id))
+            msgs = [{"autor": r[0], "mensagem": r[1], "criado_em": r[2]} for r in cur.fetchall()]
+        return jsonify({"success": True, "mensagens": msgs})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/food/chat/<pedido_id>', methods=['POST'])
+@verificar_permissao('pedidos_online')
+@verificar_plano
+def food_enviar_chat(pedido_id: str):
+    try:
+        db_id = get_db_id()
+        msg = (request.json or {}).get('mensagem', '').strip()
+        if not msg:
+            return jsonify({"success": False, "error": "Mensagem vazia"})
+        with get_db_context() as conn:
+            conn.execute("INSERT INTO chat_pedidos (pedido_id, db_id, autor, mensagem, criado_em) VALUES (?,?,?,?,?)",
+                (pedido_id, db_id, 'loja', msg, get_timestamp()))
+        sincronizar_automatico(db_id)
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+def _imprimir_pedido_online(pedido_id: str, db_id: str) -> bool:
+    """Marca o pedido como impresso e gera o cupom (reusa a infra de impressão existente)."""
+    try:
+        with get_db_context() as conn:
+            cur = conn.execute("""SELECT id, tipo, cliente_nome, cliente_telefone, cliente_endereco, mesa,
+                itens, subtotal, frete, total, pagamento, pago FROM pedidos_online WHERE id=? AND db_id=?""",
+                (pedido_id, db_id))
+            r = cur.fetchone()
+            if not r:
+                return False
+            conn.execute("UPDATE pedidos_online SET impresso=1 WHERE id=? AND db_id=?", (pedido_id, db_id))
+        logger.info(f"🖨️ Pedido online {pedido_id} marcado para impressão")
+        return True
+    except Exception as e:
+        logger.error(f"❌ Erro ao imprimir pedido: {e}")
+        return False
+
+# ============================================================
 # CLIENTES - COM PERMISSÃO
 # ============================================================
 @app.route('/api/clientes')
@@ -1804,8 +2358,10 @@ def pagar_cliente(cliente_id: int):
         if valor <= 0:
             return jsonify({"success": False, "error": "Valor deve ser maior que zero"})
         with get_db_context() as conn:
-            conn.execute("UPDATE clientes SET divida=MAX(0, divida-?), ultima_atualizacao=? WHERE id=? AND db_id=?",
+            cursor_upd = conn.execute("UPDATE clientes SET divida=MAX(0, divida-?), ultima_atualizacao=? WHERE id=? AND db_id=?",
                 (valor, get_timestamp(), cliente_id, db_id))
+            if cursor_upd.rowcount == 0:
+                return jsonify({"success": False, "error": "Cliente não encontrado"}), 404
             cursor = conn.execute("SELECT id, nome, divida FROM clientes WHERE id=? AND db_id=?", (cliente_id, db_id))
             cliente = cursor.fetchone()
             if not cliente:
@@ -1828,7 +2384,13 @@ def delete_cliente(cliente_id: int):
             cursor = conn.execute("SELECT nome FROM clientes WHERE id=? AND db_id=?", (cliente_id, db_id))
             cliente = cursor.fetchone()
             nome_cliente = cliente['nome'] if cliente else f"ID {cliente_id}"
-            conn.execute("DELETE FROM clientes WHERE id=? AND db_id=?", (cliente_id, db_id))
+            cursor_del = conn.execute("DELETE FROM clientes WHERE id=? AND db_id=?", (cliente_id, db_id))
+            linhas_afetadas = cursor_del.rowcount
+            conn.execute("INSERT OR REPLACE INTO exclusoes (tipo, item_id, db_id, excluido_em) VALUES (?, ?, ?, ?)",
+                ('cliente', str(cliente_id), db_id, get_timestamp()))
+        if linhas_afetadas == 0:
+            logger.warning(f"⚠️ Tentativa de excluir cliente {cliente_id} não encontrado (db_id={db_id})")
+            return jsonify({"success": False, "error": "Cliente não encontrado"}), 404
         logger.info(f"✅ Cliente excluído: {nome_cliente}")
         sincronizar_automatico(db_id)
         return jsonify({"success": True, "message": f"Cliente {nome_cliente} excluído"})
@@ -1856,6 +2418,12 @@ def registrar_venda():
             try:
                 for item in itens:
                     codigo = item.get('codigo')
+                    is_kit = item.get('is_kit') or (isinstance(codigo, str) and codigo.startswith('KIT:'))
+                    # Kits têm preço próprio e não baixam estoque de componentes: pula validação de estoque,
+                    # mas MANTÉM o custo enviado (soma dos custos dos componentes) para o lucro real.
+                    if is_kit:
+                        item['custo_unitario'] = item.get('custo_unitario', item.get('custo', 0)) or 0
+                        continue
                     if codigo and codigo != 'AVULSO':
                         cursor = conn.execute("SELECT estoque, nome, custo FROM produtos WHERE codigo=? AND db_id=?", (codigo, db_id))
                         produto = cursor.fetchone()
@@ -1869,6 +2437,9 @@ def registrar_venda():
                         item['custo_unitario'] = produto[2] or 0
                 for item in itens:
                     codigo = item.get('codigo')
+                    is_kit = item.get('is_kit') or (isinstance(codigo, str) and codigo.startswith('KIT:'))
+                    if is_kit:
+                        continue
                     if codigo and codigo != 'AVULSO':
                         qtd = item.get('quantidade', 1)
                         conn.execute("UPDATE produtos SET estoque=estoque-?, ultima_atualizacao=? WHERE codigo=? AND db_id=?",
@@ -2071,8 +2642,15 @@ def caixa_status():
             cursor = conn.execute("""SELECT id, usuario_id, valor_abertura, data_abertura, total
                 FROM caixa WHERE db_id=? AND status='aberto' ORDER BY id DESC LIMIT 1""", (db_id,))
             result = cursor.fetchone()
+            nome_usuario = None
+            if result and result[1]:
+                cur2 = conn.execute("SELECT nome FROM users WHERE id=?", (result[1],))
+                row_u = cur2.fetchone()
+                if row_u:
+                    nome_usuario = row_u[0]
         if result:
             return jsonify({"aberto": True, "id": result[0], "usuario_id": result[1],
+                "usuario_nome": nome_usuario or result[1],
                 "valor_abertura": result[2], "data_abertura": result[3], "total": result[4] or 0})
         return jsonify({"aberto": False})
     except Exception as e:
@@ -2205,44 +2783,52 @@ def get_plano_status():
         db_id = get_db_id()
         if not db_id:
             return jsonify({"success": False, "error": "Não autenticado"}), 401
+        # Fonte primária: token LOCAL (funciona offline). Firebase é só complemento.
         info = get_info_plano_completa(db_id)
-        dados = carregar_usuario_firebase(db_id)
-        if dados:
+        dados = carregar_usuario_firebase(db_id, timeout=2)  # timeout curto: token local já cobre o essencial
+
+        # plano_id: tenta Firebase; se offline, usa o que está no token local; senão, 1
+        if dados and dados.get('plano'):
             plano_id = dados.get('plano', 1)
-            plano_obj = next((p for p in PLANOS if p.id == plano_id), PLANOS[0])
-            expira = dados.get('expira_em')
-            dias_restantes = info.get('dias_restantes', 0)
-            limite_produtos = plano_obj.produtos if plano_obj else 0
-            total_produtos = get_total_produtos(db_id)
-            produtos_restantes = -1 if limite_produtos == -1 else max(0, limite_produtos - total_produtos)
-            usuarios_atuais = len(get_usuarios_do_plano(db_id))
-            precisa_aviso, dias_para_aviso = precisa_aviso_renovacao(db_id)
-            percentual = 0
-            if limite_produtos != -1 and limite_produtos > 0:
-                percentual = min(100, (total_produtos / limite_produtos) * 100)
-            permissoes = plano_obj.permissoes if plano_obj else {}
-            is_teste = plano_obj.is_teste if plano_obj else False
-            return jsonify({
-                "success": True,
-                "plano": asdict(plano_obj) if plano_obj else None,
-                "expira_em": expira,
-                "dias_restantes": dias_restantes,
-                "expirado": not info.get('ativo', False),
-                "limite_produtos": limite_produtos,
-                "produtos_atuais": total_produtos,
-                "produtos_restantes": produtos_restantes,
-                "percentual_produtos": percentual,
-                "usuarios_limite": plano_obj.usuarios if plano_obj else 1,
-                "usuarios_atuais": usuarios_atuais,
-                "ativo": info.get('ativo', False),
-                "precisa_aviso": precisa_aviso,
-                "dias_para_aviso": dias_para_aviso,
-                "permissoes": permissoes,
-                "is_teste": is_teste,
-                "mensagem": info.get('mensagem', ''),
-                "url_renovacao": "#/planos"
-            })
-        return jsonify({"success": False, "error": "Dados não encontrados"})
+        else:
+            plano_id = info.get('plano_id', 1)
+        plano_obj = next((p for p in PLANOS if p.id == plano_id), PLANOS[0])
+
+        # expira: Firebase tem prioridade; offline cai pro token local
+        expira = dados.get('expira_em') if dados else info.get('expira_em')
+
+        dias_restantes = info.get('dias_restantes', 0)
+        limite_produtos = plano_obj.produtos if plano_obj else 0
+        total_produtos = get_total_produtos(db_id)
+        produtos_restantes = -1 if limite_produtos == -1 else max(0, limite_produtos - total_produtos)
+        usuarios_atuais = len(get_usuarios_do_plano(db_id))
+        precisa_aviso, dias_para_aviso = precisa_aviso_renovacao(db_id)
+        percentual = 0
+        if limite_produtos != -1 and limite_produtos > 0:
+            percentual = min(100, (total_produtos / limite_produtos) * 100)
+        permissoes = plano_obj.permissoes if plano_obj else {}
+        is_teste = plano_obj.is_teste if plano_obj else False
+        return jsonify({
+            "success": True,
+            "plano": asdict(plano_obj) if plano_obj else None,
+            "expira_em": expira,
+            "dias_restantes": dias_restantes,
+            "expirado": not info.get('ativo', False),
+            "limite_produtos": limite_produtos,
+            "produtos_atuais": total_produtos,
+            "produtos_restantes": produtos_restantes,
+            "percentual_produtos": percentual,
+            "usuarios_limite": plano_obj.usuarios if plano_obj else 1,
+            "usuarios_atuais": usuarios_atuais,
+            "ativo": info.get('ativo', False),
+            "precisa_aviso": precisa_aviso,
+            "dias_para_aviso": dias_para_aviso,
+            "permissoes": permissoes,
+            "is_teste": is_teste,
+            "offline": dados is None,
+            "mensagem": info.get('mensagem', ''),
+            "url_renovacao": "#/planos"
+        })
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
@@ -2263,33 +2849,44 @@ def criar_pix():
 
         # Plano gratuito/teste: não existe cobrança real, ativa direto sem chamar o Mercado Pago
         if plano.is_teste or plano.preco <= 0:
+            # TRAVA: o teste só pode ser ativado UMA vez por conta (evita renovação infinita)
+            if plano.is_teste:
+                ja_usou = False
+                with get_db_context() as conn:
+                    cur = conn.execute("SELECT valor FROM config WHERE chave='teste_usado'")
+                    row = cur.fetchone()
+                    if row and str(row[0]) == '1':
+                        ja_usou = True
+                if not ja_usou:
+                    dados_fb = carregar_usuario_firebase(db_id, timeout=3)
+                    if dados_fb and dados_fb.get('teste_usado'):
+                        ja_usou = True
+                if ja_usou:
+                    return jsonify({"success": False, "error": "O período de teste já foi utilizado nesta conta. Escolha um plano pago para continuar."}), 403
             pix_id = f"gratis_{uuid.uuid4().hex}"
             pagamentos_pendentes[pix_id] = {'db_id': db_id, 'plano_id': plano_id, 'valor': 0, 'pago': False,
                 'criado_em': get_timestamp(), 'expira_em': (datetime.now() + timedelta(days=plano.dias)).isoformat()}
             _confirmar_pagamento_plano(pix_id)
+            # Marca o teste como usado (local + Firebase) para impedir renovação infinita
+            if plano.is_teste:
+                try:
+                    with get_db_context() as conn:
+                        conn.execute("INSERT OR REPLACE INTO config (chave, valor) VALUES ('teste_usado', '1')")
+                    dados_fb = carregar_usuario_firebase(db_id, timeout=3) or {}
+                    dados_fb['teste_usado'] = True
+                    salvar_usuario_firebase(db_id, dados_fb)
+                except Exception as e:
+                    logger.error(f"⚠️ Erro ao marcar teste usado: {e}")
             return jsonify({"success": True, "pix_id": pix_id, "gratis": True, "valor": 0, "plano": asdict(plano)})
 
-        url = "https://api.mercadopago.com/v1/payments"
-        headers = {"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}", "Content-Type": "application/json",
-            "X-Idempotency-Key": str(uuid.uuid4())}
-        payment_data = {
-            "transaction_amount": float(plano.preco),
-            "description": f"SMART PDV - {plano.nome}",
-            "payment_method_id": "pix",
-            "payer": {"email": "cliente@pdv.com", "first_name": "Cliente", "last_name": "PDV",
-                "identification": {"type": "CPF", "number": "00000000000"}}
-        }
-        res = requests.post(url, json=payment_data, headers=headers, timeout=30)
-        res_data = res.json()
-        if res.status_code == 201 and res_data.get('id'):
-            pix_id = str(res_data['id'])
-            qr_code = res_data['point_of_interaction']['transaction_data']['qr_code']
-            qr_code_base64 = res_data['point_of_interaction']['transaction_data']['qr_code_base64']
+        resultado_pix = criar_pix_mercadopago(float(plano.preco), f"SMART PDV - {plano.nome}")
+        if resultado_pix:
+            pix_id = resultado_pix['pix_id']
             pagamentos_pendentes[pix_id] = {'db_id': db_id, 'plano_id': plano_id, 'valor': plano.preco, 'pago': False,
                 'criado_em': get_timestamp(), 'expira_em': (datetime.now() + timedelta(days=plano.dias)).isoformat()}
-            return jsonify({"success": True, "pix_id": pix_id, "qr_code": qr_code, "qr_code_base64": qr_code_base64,
-                "valor": plano.preco, "plano": asdict(plano)})
-        return jsonify({"success": False, "error": res_data.get('message', 'Erro ao gerar PIX')})
+            return jsonify({"success": True, "pix_id": pix_id, "qr_code": resultado_pix['qr_code'],
+                "qr_code_base64": resultado_pix['qr_code_base64'], "valor": plano.preco, "plano": asdict(plano)})
+        return jsonify({"success": False, "error": "Erro ao gerar PIX"})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
@@ -2312,6 +2909,46 @@ def verificar_pix():
         return jsonify({"pago": False, "status": res_data.get('status', 'pending')})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
+
+def criar_pix_mercadopago(valor: float, descricao: str) -> Optional[Dict]:
+    """Cria uma cobrança PIX no Mercado Pago para QUALQUER valor.
+    Reutilizável tanto para planos quanto para pedidos online.
+    Cada chamada usa idempotency-key único, então suporta MÚLTIPLOS PIX simultâneos."""
+    try:
+        url = "https://api.mercadopago.com/v1/payments"
+        headers = {"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}", "Content-Type": "application/json",
+            "X-Idempotency-Key": str(uuid.uuid4())}
+        payment_data = {
+            "transaction_amount": round(float(valor), 2),
+            "description": descricao,
+            "payment_method_id": "pix",
+            "payer": {"email": "cliente@pdv.com", "first_name": "Cliente", "last_name": "PDV",
+                "identification": {"type": "CPF", "number": "00000000000"}}
+        }
+        res = requests.post(url, json=payment_data, headers=headers, timeout=20)
+        res_data = res.json()
+        if res.status_code == 201 and res_data.get('id'):
+            td = res_data['point_of_interaction']['transaction_data']
+            return {"pix_id": str(res_data['id']), "qr_code": td['qr_code'],
+                "qr_code_base64": td.get('qr_code_base64', '')}
+        logger.error(f"❌ Erro MP ao criar PIX: {res_data.get('message', res_data)}")
+        return None
+    except Exception as e:
+        logger.error(f"❌ Exceção ao criar PIX: {e}")
+        return None
+
+def verificar_pagamento_mercadopago(pix_id: str) -> bool:
+    """Consulta o Mercado Pago e retorna True se o pagamento foi aprovado."""
+    try:
+        url = f"https://api.mercadopago.com/v1/payments/{pix_id}"
+        headers = {"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"}
+        res = requests.get(url, headers=headers, timeout=10)
+        if res.status_code == 200:
+            return res.json().get('status') == 'approved'
+        return False
+    except Exception as e:
+        logger.error(f"❌ Erro ao verificar pagamento: {e}")
+        return False
 
 def _confirmar_pagamento_plano(pix_id: str) -> None:
     info = pagamentos_pendentes.get(pix_id)
@@ -2347,9 +2984,7 @@ def get_usuarios():
                 u = dict(row)
                 u['online'] = bool(u['session_id'] and u['session_id'] in SESSOES_ATIVAS)
                 usuarios.append(u)
-        dados = carregar_usuario_firebase(db_id)
-        plano_id = dados.get('plano', 1) if dados else 1
-        plano = next((p for p in PLANOS if p.id == plano_id), PLANOS[0])
+        plano = get_plano_efetivo(db_id)
         return jsonify({"success": True, "usuarios": usuarios, "limite_usuarios": plano.usuarios,
             "usuarios_atuais": len(usuarios)})
     except Exception as e:
@@ -2366,11 +3001,7 @@ def criar_usuario():
         senha = data.get('senha') or ''
         if not nome or not email or not senha:
             return jsonify({"success": False, "error": "Preencha nome, email e senha"})
-        dados = carregar_usuario_firebase(db_id)
-        if not dados:
-            return jsonify({"success": False, "error": "Dados do plano não encontrados"})
-        plano_id = dados.get('plano', 1)
-        plano = next((p for p in PLANOS if p.id == plano_id), None)
+        plano = get_plano_efetivo(db_id)
         if not plano:
             return jsonify({"success": False, "error": "Plano inválido"})
         with get_db_context() as conn:
@@ -2639,6 +3270,79 @@ def _verificador_automatico_pix() -> None:
         except:
             pass
 
+def _processador_pedidos_online() -> None:
+    """Thread que processa pedidos online de TODAS as lojas com pedidos_online ativo:
+    1) baixa pedidos novos do Firebase para o banco local
+    2) cria PIX para pedidos 'aguardando_pix'
+    3) valida pagamento dos 'aguardando_pagamento' e imprime quando pago"""
+    while True:
+        _time.sleep(8)
+        try:
+            with get_db_context() as conn:
+                cur = conn.execute("SELECT DISTINCT db_id FROM config_food WHERE ativo=1")
+                lojas = [r[0] for r in cur.fetchall()]
+            for db_id in lojas:
+                try:
+                    _processar_pedidos_loja(db_id)
+                except Exception as e:
+                    logger.error(f"⚠️ Erro ao processar pedidos da loja {db_id}: {e}")
+        except Exception as e:
+            logger.error(f"⚠️ Erro no processador de pedidos: {e}")
+
+def _processar_pedidos_loja(db_id: str) -> None:
+    # 1) Baixa pedidos do Firebase para o local
+    dados = carregar_usuario_firebase(db_id, timeout=5)
+    if dados:
+        pedidos_fb = dados.get('pedidos_online') or {}
+        for pid, pd in pedidos_fb.items():
+            with get_db_context() as conn:
+                cur = conn.execute("SELECT id, status FROM pedidos_online WHERE id=? AND db_id=?", (pid, db_id))
+                existe = cur.fetchone()
+                if not existe:
+                    itens = pd.get('itens', [])
+                    itens_json = json.dumps(itens, ensure_ascii=False) if not isinstance(itens, str) else itens
+                    conn.execute("""INSERT INTO pedidos_online
+                        (id, db_id, criado_em, status, tipo, cliente_nome, cliente_telefone, cliente_endereco,
+                         cliente_lat, cliente_lng, mesa, itens, subtotal, frete, distancia_km, total, pagamento,
+                         pago, ultima_atualizacao)
+                        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                        (pid, db_id, pd.get('criado_em', get_timestamp()), pd.get('status', 'novo'),
+                         pd.get('tipo', 'entrega'), pd.get('cliente', {}).get('nome', ''),
+                         pd.get('cliente', {}).get('telefone', ''), pd.get('cliente', {}).get('endereco', ''),
+                         pd.get('cliente', {}).get('lat'), pd.get('cliente', {}).get('lng'),
+                         pd.get('mesa', ''), itens_json, pd.get('subtotal', 0), pd.get('frete', 0),
+                         pd.get('distancia_km', 0), pd.get('total', 0), pd.get('pagamento', 'pix'),
+                         0, get_timestamp()))
+    # 2) Cria PIX para pedidos aguardando
+    with get_db_context() as conn:
+        cur = conn.execute("""SELECT id, total FROM pedidos_online
+            WHERE db_id=? AND status='aguardando_pix' AND pagamento='pix' AND (pix_id IS NULL OR pix_id='')""", (db_id,))
+        novos = cur.fetchall()
+    for pid, total in novos:
+        resultado = criar_pix_mercadopago(float(total), f"Pedido {pid[:8]}")
+        if resultado:
+            with get_db_context() as conn:
+                conn.execute("""UPDATE pedidos_online SET pix_id=?, pix_qr=?, pix_copia_cola=?,
+                    status='aguardando_pagamento', ultima_atualizacao=? WHERE id=? AND db_id=?""",
+                    (resultado['pix_id'], resultado['qr_code_base64'], resultado['qr_code'], get_timestamp(), pid, db_id))
+            pagamentos_pendentes[resultado['pix_id']] = {'db_id': db_id, 'pedido_id': pid, 'tipo': 'pedido', 'pago': False}
+            sincronizar_automatico(db_id)
+    # 3) Verifica pagamento e imprime
+    with get_db_context() as conn:
+        cur = conn.execute("""SELECT id, pix_id FROM pedidos_online
+            WHERE db_id=? AND status='aguardando_pagamento' AND pago=0 AND pix_id IS NOT NULL AND pix_id!=''""", (db_id,))
+        aguardando = cur.fetchall()
+    for pid, pix_id in aguardando:
+        if verificar_pagamento_mercadopago(pix_id):
+            with get_db_context() as conn:
+                conn.execute("""UPDATE pedidos_online SET pago=1, status='em_preparo', ultima_atualizacao=?
+                    WHERE id=? AND db_id=?""", (get_timestamp(), pid, db_id))
+            _imprimir_pedido_online(pid, db_id)
+            if pix_id in pagamentos_pendentes:
+                pagamentos_pendentes[pix_id]['pago'] = True
+            sincronizar_automatico(db_id)
+            logger.info(f"✅ Pedido {pid} pago e enviado para impressão")
+
 def limpar_sessoes_inativas() -> None:
     while True:
         _time.sleep(300)
@@ -2735,10 +3439,19 @@ if __name__ == '__main__':
 
     init_db()
 
-    print("📥 Verificando HTML...")
-    baixar_html_github()
+    print("📥 Verificando HTML em segundo plano...")
+    # Download do HTML roda em THREAD para NÃO travar o boot quando offline ou rede lenta.
+    # Só atualiza o index.html local se já existir um (primeira instalação baixa de forma síncrona).
+    caminho_html_local = os.path.join(TEMPLATES_DIR, "index.html")
+    if not os.path.exists(caminho_html_local):
+        # Primeira vez: precisa do HTML para funcionar, baixa síncrono (com proteção de timeout interna)
+        baixar_html_github()
+    else:
+        # Já existe HTML local: atualiza em background sem bloquear o início do servidor
+        threading.Thread(target=baixar_html_github, daemon=True).start()
 
     threading.Thread(target=_verificador_automatico_pix, daemon=True).start()
+    threading.Thread(target=_processador_pedidos_online, daemon=True).start()
     threading.Thread(target=limpar_sessoes_inativas, daemon=True).start()
     threading.Thread(target=_sync_pendente_background, daemon=True).start()
     threading.Thread(target=sincronizar_planos_periodicamente, daemon=True).start()
