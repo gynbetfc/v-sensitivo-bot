@@ -75,7 +75,7 @@
         .subtab-btn:hover{color:#fff}
         .subtab-btn.active{color:var(--green);border-bottom-color:var(--green)}
         .subtab-btn .lock{font-size:10px;opacity:.7}
-        .subpanel{display:none;animation:fadeUp .3s ease}.subpanel.active{display:block}
+        .subpanel{display:none;animation:fadeUp .3s ease;max-width:100%;overflow-x:hidden}.subpanel.active{display:block}
         .kit-item-row{display:flex;align-items:center;gap:8px;padding:8px;background:var(--bg-primary);border-radius:8px;margin-bottom:6px;font-size:13px}
         .kit-item-row .kit-item-nome{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
         .kit-item-row .kit-item-preco-orig{font-size:11px;color:var(--text-muted);text-decoration:line-through}
@@ -223,6 +223,7 @@
         .venda-item .btn-imprimir-venda{background:var(--bg-card);border:1px solid var(--border-color);color:var(--text-secondary);padding:3px 8px;border-radius:6px;cursor:pointer;font-size:11px;transition:var(--transition)}.venda-item .btn-imprimir-venda:hover{color:var(--green);border-color:var(--green)}
 
         .estoque-grid{display:grid;grid-template-columns:1fr 1.5fr;gap:16px}
+        .estoque-grid > .card{min-width:0}
         .input-group{margin-bottom:10px}
         .input-group label{display:block;font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px}
         .input-group input,.input-group select{width:100%;padding:9px 12px;border:1px solid var(--border-color);border-radius:8px;font-size:14px;transition:var(--transition);background:var(--bg-primary);color:#fff}
@@ -231,7 +232,7 @@
         .btn-salvar:hover{background:var(--green-dark)}
         .btn-limpar{width:100%;padding:8px;background:transparent;color:var(--text-secondary);border:1px solid var(--border-color);border-radius:8px;cursor:pointer;font-size:13px;transition:var(--transition)}
         .btn-limpar:hover{background:rgba(255,255,255,.05);color:#fff}
-        .estoque-wrapper{max-height:400px;overflow-y:auto}
+        .estoque-wrapper{max-height:400px;overflow-y:auto;overflow-x:auto;max-width:100%}
         .estoque-table{width:100%;border-collapse:collapse;font-size:13px}
         .estoque-table th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--border-color);font-weight:600;color:var(--text-secondary);font-size:11px;text-transform:uppercase;position:sticky;top:0;background:var(--bg-card)}
         .estoque-table td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.03);cursor:pointer}
@@ -887,11 +888,11 @@ let SISTEMA_VERSAO = '10.3.0';
 const state = {
     usuario_id:null,nome:'',cargo:'',db_id:null,servidor_id:null,
     nome_loja:'',cnpj:'',cnpj_dados:{},caixa_aberto:false,
-    itens:[],subtotal:0,total:0,produtos:[],clientes:[],
+    itens:[],subtotal:0,total:0,produtos:[],kits:[],clientes:[],
     periodo:'hoje',searchIndex:-1,_resultados:[],
     produtoSelecionado:null,plano_ativo:true,ultimaVenda:null,
     cupomEscolha:'imprimir',f1Cycle:0,
-    permissoes:{clientes:false,dashboard:false,busca_estoque:false,margem:false,fiado:false}
+    permissoes:{clientes:false,dashboard:false,busca_estoque:false,margem:false,fiado:false,kit_combo:false}
 };
 
 let ultimoCupomData = null;
@@ -1221,6 +1222,7 @@ async function fazerLogin(){
             atualizarHeader();
             carregarPlanos();carregarProdutos();carregarClientes();carregarUsuarios();
             carregarStatusCaixa();carregarDash('hoje');carregarLojaInfo();
+            carregarKitsParaVenda();
             atualizarPermissoesUI();
             setTimeout(verificarStatusPlano, 500);
             showToast('👋 Bem-vindo, '+data.nome+'!','success');
@@ -1302,6 +1304,7 @@ function trocarTab(nome){
     if (btn) btn.classList.add('active');
     if(nome==='clientes') carregarClientes();
     if(nome==='estoque') carregarProdutos();
+    if(nome==='vendas') carregarKitsParaVenda();
     if(nome==='dashboard') carregarDash(state.periodo);
     if(nome==='caixa') carregarStatusCaixa();
     if(nome==='planos') {carregarPlanos(); verificarStatusPlano();}
@@ -1312,6 +1315,16 @@ function trocarTab(nome){
 // ============================================================
 // PRODUTOS
 // ============================================================
+async function carregarKitsParaVenda(){
+    // Carrega os kits para que apareçam na busca de vendas como itens vendíveis
+    if(!temPermissao('kit_combo')){ state.kits=[]; return; }
+    try{
+        const res=await fetch('/api/kits',{credentials:'include'});
+        const data=await res.json();
+        if(data.success) state.kits=data.kits||[];
+    }catch(e){ state.kits=state.kits||[]; }
+}
+
 async function carregarProdutos(){
     try{
         const busca=document.getElementById('buscaEstoque').value||'';
@@ -1466,7 +1479,7 @@ async function salvarKit(){
     try{
         const res=await fetch('/api/kits',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify(payload)});
         const data=await res.json();
-        if(data.success){showToast('✅ Kit salvo com sucesso!','success');limparKit();carregarKits();}
+        if(data.success){showToast('✅ Kit salvo com sucesso!','success');limparKit();carregarKits();carregarKitsParaVenda();}
         else showToast('❌ '+(data.error||'Erro ao salvar kit'),'error');
     }catch(e){showToast('❌ Erro ao salvar kit','error');}
 }
@@ -1528,7 +1541,7 @@ async function excluirKit(id){
     try{
         const res=await fetch('/api/kits/'+id,{method:'DELETE',credentials:'include'});
         const data=await res.json();
-        if(data.success){showToast('✅ Kit excluído!','success');carregarKits();}
+        if(data.success){showToast('✅ Kit excluído!','success');carregarKits();carregarKitsParaVenda();}
         else showToast('❌ '+(data.error||'Erro'),'error');
     }catch(e){showToast('❌ Erro ao excluir kit','error');}
 }
@@ -1682,12 +1695,23 @@ document.getElementById('buscaProdutoInput').addEventListener('input',function()
     const val=this.value.trim();
     if(val.length<2){document.getElementById('searchResults').classList.remove('active');return;}
     const results=document.getElementById('searchResults');
-    const filtrados=state.produtos.filter(p=>p.nome.toLowerCase().includes(val.toLowerCase())||p.codigo.includes(val));
-    if(filtrados.length===0){results.innerHTML='<div style="padding:10px;color:var(--text-muted);">Nenhum resultado</div>';results.classList.add('active');return;}
+    const termo=val.toLowerCase();
+    const filtrados=state.produtos.filter(p=>p.nome.toLowerCase().includes(termo)||p.codigo.includes(val));
+    // Kits/combos aparecem na busca como itens vendíveis (código virtual KIT:<id>)
+    const kitsFiltrados=(state.kits||[]).filter(k=>k.nome.toLowerCase().includes(termo));
+    if(filtrados.length===0 && kitsFiltrados.length===0){results.innerHTML='<div style="padding:10px;color:var(--text-muted);">Nenhum resultado</div>';results.classList.add('active');return;}
     state._resultados=filtrados;
     let html='';
+    kitsFiltrados.forEach((k,i)=>{
+        const codigoKit='KIT:'+k.id;
+        html+=`<div class="result-item" data-codigo="${codigoKit}" data-nome="${k.nome}" data-preco="${k.preco}" data-estoque="9999" onclick="selecionarProdutoPorCodigo('${codigoKit}')">
+            <span class="name">📦 ${k.nome} <span style="font-size:10px;color:var(--purple);">COMBO</span></span>
+            <span class="price">R$ ${(k.preco||0).toFixed(2)}</span>
+            <span class="stock">kit</span>
+        </div>`;
+    });
     filtrados.forEach((p,i)=>{
-        html+=`<div class="result-item ${i===0?'active':''}" data-codigo="${p.codigo}" data-nome="${p.nome}" data-preco="${p.preco}" data-estoque="${p.estoque}" onclick="selecionarProdutoPorCodigo('${p.codigo}')">
+        html+=`<div class="result-item ${(i===0&&kitsFiltrados.length===0)?'active':''}" data-codigo="${p.codigo}" data-nome="${p.nome}" data-preco="${p.preco}" data-estoque="${p.estoque}" onclick="selecionarProdutoPorCodigo('${p.codigo}')">
             <span class="name">${p.nome}</span>
             <span class="price">R$ ${p.preco.toFixed(2)}</span>
             <span class="stock">estoque: ${p.estoque}</span>
@@ -1707,6 +1731,24 @@ document.getElementById('buscaProdutoInput').addEventListener('keydown',function
 });
 
 function selecionarProdutoPorCodigo(codigo){
+    // Kit/combo: código virtual "KIT:<id>"
+    if(codigo && codigo.startsWith('KIT:')){
+        const kitId=codigo.slice(4);
+        const k=(state.kits||[]).find(x=>x.id===kitId);
+        if(!k){showToast('⚠️ Kit não encontrado','warning');return;}
+        adicionarAoCarrinho({
+            codigo:'KIT:'+k.id,
+            nome:'📦 '+k.nome,
+            preco:k.preco||0,
+            custo:0,
+            estoque:9999,
+            categoria:'Combo',
+            is_kit:true
+        });
+        document.getElementById('buscaProdutoInput').value='';
+        document.getElementById('searchResults').classList.remove('active');
+        return;
+    }
     const p=state.produtos.find(x=>x.codigo===codigo);
     if(!p){showToast('⚠️ Produto não encontrado','warning');return;}
     adicionarAoCarrinho(p);
@@ -1730,7 +1772,7 @@ function adicionarAoCarrinho(produto){
         const item=state.itens.find(i=>i.codigo===produto.codigo);
         item.quantidade++;item.total=item.quantidade*item.preco_unitario;
     }else{
-        state.itens.push({codigo:produto.codigo,nome:produto.nome,preco_unitario:produto.preco,custo_unitario:produto.custo||0,quantidade:1,total:produto.preco,categoria:produto.categoria||'Geral'});
+        state.itens.push({codigo:produto.codigo,nome:produto.nome,preco_unitario:produto.preco,custo_unitario:produto.custo||0,quantidade:1,total:produto.preco,categoria:produto.categoria||'Geral',is_kit:produto.is_kit===true});
     }
     atualizarCarrinho();showToast(`➕ ${produto.nome} adicionado!`,'success');
 }
