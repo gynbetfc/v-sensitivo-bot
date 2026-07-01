@@ -80,7 +80,7 @@
         .switch-busca input:checked + .switch-slider::before{transform:translateX(18px)}
         .switch-busca .switch-label{font-size:11px;color:var(--text-secondary);font-weight:600}
         /* Fundo do card Produto (tela de vendas): foto sempre 100%, overlay escuro controla o quanto ela aparece */
-        #cardProduto.com-bg{position:relative;background-image:var(--bg-vendas-img);background-size:cover;background-position:center;background-repeat:no-repeat;overflow:hidden;}
+        #cardProduto.com-bg{position:relative;background-image:var(--bg-vendas-img);background-size:cover;background-position:center center;background-repeat:no-repeat;overflow:hidden;min-height:320px;}
         #cardProduto.com-bg::before{content:'';position:absolute;inset:0;background:var(--bg-card, #16162e);opacity:var(--bg-vendas-op, 0.5);pointer-events:none;z-index:0;}
         #cardProduto.com-bg > *{position:relative;z-index:1;}
         .subtab-btn:hover{color:#fff}
@@ -1591,7 +1591,11 @@ async function carregarKits(){
     if(!temPermissao('kit_combo'))return;
     const container=document.getElementById('kitsListaContainer');
     try{
-        const res=await fetch('/api/kits',{credentials:'include'});
+        const res=await fetch('/api/kits',{credentials:'include',cache:'no-store'});
+        if(!res.ok){
+            container.innerHTML=`<p style="font-size:13px;color:var(--red);text-align:center;padding:20px;">Erro ao carregar kits (código ${res.status}). ${res.status===403?'Seu plano não permite kits/combos.':''}</p>`;
+            return;
+        }
         const data=await res.json();
         if(data.success){
             if(!data.kits||data.kits.length===0){
@@ -1612,8 +1616,10 @@ async function carregarKits(){
                     </div>
                 </div>`;
             }).join('');
+        }else{
+            container.innerHTML=`<p style="font-size:13px;color:var(--red);text-align:center;padding:20px;">Erro: ${data.error||'desconhecido'}</p>`;
         }
-    }catch(e){container.innerHTML='<p style="font-size:13px;color:var(--red);text-align:center;padding:20px;">Erro ao carregar kits</p>';}
+    }catch(e){container.innerHTML=`<p style="font-size:13px;color:var(--red);text-align:center;padding:20px;">Erro ao carregar kits: ${e.message||e}</p>`;}
 }
 
 function editarKit(kitJson){
