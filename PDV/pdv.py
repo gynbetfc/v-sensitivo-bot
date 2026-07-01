@@ -72,8 +72,6 @@
         .panel{display:none;animation:fadeUp .3s ease}.panel.active{display:block}
         .subtabs{display:flex;gap:6px;margin-bottom:16px;border-bottom:1px solid var(--border-color);padding-bottom:0}
         .subtab-btn{padding:10px 20px;border:0;background:0;cursor:pointer;font-weight:600;font-size:13px;color:var(--text-secondary);border-bottom:2px solid transparent;transition:var(--transition);display:flex;align-items:center;gap:6px;margin-bottom:-1px}
-        .dash-subtab{padding:6px 14px;border:1px solid var(--border-color);background:var(--bg-card);color:var(--text-secondary);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;transition:var(--transition)}
-        .dash-subtab.active{background:var(--green);color:#fff;border-color:var(--green)}
         .subtab-btn:hover{color:#fff}
         .subtab-btn.active{color:var(--green);border-bottom-color:var(--green)}
         .subtab-btn .lock{font-size:10px;opacity:.7}
@@ -251,19 +249,6 @@
         .plano-card .limite-produtos{display:block;margin-top:4px;font-size:11px;color:var(--green)}
         .plano-card .plano-features{text-align:left;margin:10px 0 14px;display:flex;flex-direction:column;gap:4px}
         .plano-card .feat-line{font-size:11px;color:var(--text-secondary);padding:3px 8px;background:rgba(255,255,255,.03);border-radius:5px;border-left:2px solid var(--green)}
-        .food-switch{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary);cursor:pointer}
-        .food-switch input{width:18px;height:18px;accent-color:var(--green);cursor:pointer}
-        .food-pedido{background:var(--bg-primary);border:1px solid var(--border-color);border-radius:10px;padding:14px;margin-bottom:10px}
-        .food-pedido .fp-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-        .food-pedido .fp-status{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
-        .food-pedido .fp-itens{font-size:12px;color:var(--text-secondary);line-height:1.6;margin:6px 0}
-        .food-pedido .fp-total{font-weight:700;color:var(--green);font-size:15px}
-        .food-pedido .fp-acoes{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
-        .food-pedido .fp-acoes button{padding:6px 14px;border:0;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600}
-        .st-novo,.st-aguardando_pix,.st-aguardando_pagamento{background:rgba(245,158,11,.15);color:var(--orange)}
-        .st-em_preparo{background:rgba(59,130,246,.15);color:var(--blue)}
-        .st-pronto,.st-finalizado{background:rgba(34,197,94,.15);color:var(--green)}
-        .st-cancelado{background:rgba(239,68,68,.15);color:var(--red)}
         .plano-card .btn-assinar{padding:10px 20px;background:var(--green);color:#fff;border:0;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;transition:var(--transition);width:100%}
         .plano-card .btn-assinar:hover{background:var(--green-dark)}
         .plano-teste{position:absolute;top:10px;right:10px;background:var(--orange);color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px}
