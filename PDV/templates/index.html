@@ -579,6 +579,8 @@
                         <input type="text" id="codigoInput" placeholder="Leia o código, ou digite código/nome..." autocomplete="off">
                         <div class="search-results" id="searchResults"></div>
                     </div>
+                    <div class="input-group"><label>Nome Produto</label><input type="text" id="nomeProduto" placeholder="—" readonly></div>
+                    <div class="input-group"><label>Preço Unit.</label><input type="text" id="precoProduto" placeholder="—" readonly></div>
                     <div class="status-msg" id="statusMsg">Aguardando produto...</div>
                 </div>
                 <div class="card">
@@ -768,7 +770,7 @@
             <div class="loja-status" id="statusLoja"><h4 style="font-size:14px;margin-bottom:10px;"><i class="fas fa-info-circle"></i> Status da Conta</h4><p style="color:var(--text-secondary);">Carregando...</p></div>
         </div>
 
-        <!-- PANEL PEDIDOS ONLINE (SMART FOOD) -->
+        <!-- PANEL PEDIDOS ONLINE (SMART DELIVERY) -->
         <div class="panel" id="panelFood">
             <div class="subtabs">
                 <button class="subtab-btn active" data-foodtab="pedidos" onclick="trocarSubAbaFood('pedidos')"><i class="fas fa-receipt"></i> Pedidos</button>
@@ -845,6 +847,18 @@
                     <div style="margin-top:12px;"><button onclick="sincronizarAgora(true)" style="width:100%;padding:8px;background:rgba(59,130,246,.15);color:var(--blue);border:1px solid var(--blue);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">🔄 Sincronizar Agora</button></div>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- CHAT MODAL (Pedidos Online) -->
+<div class="payment-modal" id="chatModal">
+    <div class="modal" style="max-width:420px;">
+        <div class="modal-header"><h3>💬 Chat com <span id="chatClienteNome">cliente</span></h3><button class="close" onclick="fecharChatPedido()">✕</button></div>
+        <div id="chatMensagens" style="max-height:340px;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--bg-primary,#0f0f1a);border-radius:10px;margin-bottom:10px;"></div>
+        <div style="display:flex;gap:8px;">
+            <input type="text" id="chatInput" placeholder="Digite sua mensagem..." style="flex:1;padding:12px;border-radius:10px;border:1px solid var(--border-color,#333);background:var(--bg-card,#1a1a2e);color:var(--text,#fff);" onkeydown="if(event.key==='Enter')enviarChatPedido()">
+            <button class="btn-salvar" style="width:auto;padding:12px 18px;" onclick="enviarChatPedido()">Enviar</button>
         </div>
     </div>
 </div>
@@ -1294,6 +1308,7 @@ async function fazerLogin(){
             carregarStatusCaixa();carregarDash('hoje');carregarLojaInfo();
             atualizarPermissoesUI();
             setTimeout(verificarStatusPlano, 500);
+            setTimeout(iniciarMonitorPedidos, 1500);
             showToast('👋 Bem-vindo, '+data.nome+'!','success');
         }else{
             msg.className='msg error';msg.textContent=data.error||'Erro ao fazer login.';msg.style.display='block';
@@ -1664,7 +1679,7 @@ async function excluirKit(id){
 }
 
 // ============================================================
-// PEDIDOS ONLINE (SMART FOOD)
+// PEDIDOS ONLINE (SMART DELIVERY)
 // ============================================================
 function trocarSubAbaFood(sub){
     document.querySelectorAll('[data-foodtab]').forEach(b=>b.classList.toggle('active',b.dataset.foodtab===sub));
@@ -1766,6 +1781,55 @@ async function carregarPedidosFood(){
     }catch(e){cont.innerHTML='<p style="color:var(--red);text-align:center;padding:20px;">Erro ao carregar pedidos</p>';}
 }
 
+// ===== Alerta sonoro de novo pedido =====
+let foodAlertInterval = null;
+
+function tocarSomPedido(){
+    try{
+        const ctx = new (window.AudioContext||window.webkitAudioContext)();
+        // Dois bips ascendentes
+        [0,0.18].forEach((delay,idx)=>{
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.type='sine';
+            osc.frequency.value = idx===0?880:1174;
+            gain.gain.setValueAtTime(0.001, ctx.currentTime+delay);
+            gain.gain.exponentialRampToValueAtTime(0.4, ctx.currentTime+delay+0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+delay+0.16);
+            osc.start(ctx.currentTime+delay);
+            osc.stop(ctx.currentTime+delay+0.18);
+        });
+    }catch(e){}
+}
+
+async function checarAlertasPedidos(){
+    if(!temPermissao('pedidos_online'))return;
+    try{
+        const res=await fetch('/api/food/alertas',{credentials:'include',cache:'no-store'});
+        const data=await res.json();
+        if(data.success && data.novos>0){
+            tocarSomPedido();
+            showToast(`🔔 ${data.novos} novo(s) pedido(s) recebido(s)!`,'success');
+            // Se estiver na aba de pedidos, atualiza a lista na hora
+            const painelFood=document.getElementById('panelFood');
+            if(painelFood && painelFood.classList.contains('active')) carregarPedidosFood();
+            // Badge no botão da aba
+            const btn=document.getElementById('tabFoodBtn');
+            if(btn && !painelFood.classList.contains('active')){
+                btn.style.color='var(--brasa,#ff5722)';
+            }
+        }
+    }catch(e){}
+}
+
+function iniciarMonitorPedidos(){
+    if(foodAlertInterval) clearInterval(foodAlertInterval);
+    if(temPermissao('pedidos_online')){
+        foodAlertInterval = setInterval(checarAlertasPedidos, 10000); // a cada 10s
+    }
+}
+
 async function acaoPedidoFood(id,acao){
     if(acao==='recusar'&&!confirm('Recusar este pedido?'))return;
     try{
@@ -1786,14 +1850,56 @@ async function imprimirPedidoFood(id){
 }
 
 let chatPedidoAtual=null;
+let chatPollInterval=null;
 async function abrirChatPedido(id,nome){
     chatPedidoAtual=id;
-    const msg=prompt('💬 Chat com '+(nome||'cliente')+'\n\nDigite sua mensagem:');
-    if(!msg||!msg.trim())return;
+    document.getElementById('chatClienteNome').textContent=nome||'cliente';
+    document.getElementById('chatModal').classList.add('active');
+    document.getElementById('chatInput').value='';
+    await carregarChatPedido();
+    // Atualiza o chat a cada 5s enquanto estiver aberto
+    if(chatPollInterval) clearInterval(chatPollInterval);
+    chatPollInterval=setInterval(carregarChatPedido,5000);
+    setTimeout(()=>document.getElementById('chatInput').focus(),100);
+}
+
+function fecharChatPedido(){
+    document.getElementById('chatModal').classList.remove('active');
+    if(chatPollInterval){clearInterval(chatPollInterval);chatPollInterval=null;}
+}
+
+async function carregarChatPedido(){
+    if(!chatPedidoAtual)return;
     try{
-        const res=await fetch('/api/food/chat/'+id,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({mensagem:msg.trim()})});
+        const res=await fetch('/api/food/chat/'+chatPedidoAtual,{credentials:'include',cache:'no-store'});
         const data=await res.json();
-        if(data.success)showToast('💬 Mensagem enviada','success');
+        const cont=document.getElementById('chatMensagens');
+        if(data.success){
+            if(!data.mensagens||!data.mensagens.length){
+                cont.innerHTML='<p style="text-align:center;color:var(--text-muted);font-size:12px;padding:20px;">Nenhuma mensagem ainda. Diga oi! 👋</p>';
+                return;
+            }
+            cont.innerHTML=data.mensagens.map(m=>{
+                const euLoja=m.autor==='loja';
+                return `<div style="align-self:${euLoja?'flex-end':'flex-start'};max-width:75%;">
+                    <div style="background:${euLoja?'var(--green,#22c55e)':'var(--bg-card,#1a1a2e)'};color:${euLoja?'#fff':'var(--text,#fff)'};padding:8px 12px;border-radius:12px;font-size:13px;border:1px solid var(--border-color,#333);">${m.mensagem}</div>
+                    <div style="font-size:9px;color:var(--text-muted);margin-top:2px;text-align:${euLoja?'right':'left'};">${euLoja?'Você':'Cliente'}</div>
+                </div>`;
+            }).join('');
+            cont.scrollTop=cont.scrollHeight;
+        }
+    }catch(e){}
+}
+
+async function enviarChatPedido(){
+    const input=document.getElementById('chatInput');
+    const msg=input.value.trim();
+    if(!msg||!chatPedidoAtual)return;
+    input.value='';
+    try{
+        const res=await fetch('/api/food/chat/'+chatPedidoAtual,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({mensagem:msg})});
+        const data=await res.json();
+        if(data.success)carregarChatPedido();
         else showToast('❌ '+(data.error||'Erro'),'error');
     }catch(e){showToast('❌ Erro ao enviar','error');}
 }
@@ -2387,7 +2493,7 @@ async function carregarPlanos(){
                 if(permissoes.dashboard) perms.push('📊 Dashboard');
                 if(permissoes.busca_estoque) perms.push('🔍 Busca Estoque');
                 if(permissoes.margem) perms.push('💰 Margem de Lucro');
-                if(permissoes.pedidos_online) perms.push('🍔 Pedidos Online (SMART FOOD)');
+                if(permissoes.pedidos_online) perms.push('🍔 Pedidos Online (SMART DELIVERY)');
                 const permsText = perms.join(' • ');
                 const isTeste = p.is_teste || false;
                 const badgeTeste = isTeste ? '<span class="badge-teste">🎁 TESTE</span>' : '';
