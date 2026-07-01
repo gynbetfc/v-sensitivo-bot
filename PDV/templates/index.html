@@ -1805,20 +1805,32 @@ function tocarSomPedido(){
 
 async function checarAlertasPedidos(){
     if(!temPermissao('pedidos_online'))return;
+    // Se a aba de pedidos está aberta, SEMPRE recarrega a lista (para status mudar em tempo real)
+    const painelFood=document.getElementById('panelFood');
+    const abaAberta = painelFood && painelFood.classList.contains('active');
+    const subPedidos = document.getElementById('foodPedidos');
+    if(abaAberta && subPedidos && subPedidos.classList.contains('active')){
+        carregarPedidosFood();
+    }
     try{
         const res=await fetch('/api/food/alertas',{credentials:'include',cache:'no-store'});
         const data=await res.json();
         if(data.success && data.novos>0){
             tocarSomPedido();
             showToast(`🔔 ${data.novos} novo(s) pedido(s) recebido(s)!`,'success');
-            // Se estiver na aba de pedidos, atualiza a lista na hora
-            const painelFood=document.getElementById('panelFood');
-            if(painelFood && painelFood.classList.contains('active')) carregarPedidosFood();
-            // Badge no botão da aba
+            if(abaAberta) carregarPedidosFood();
             const btn=document.getElementById('tabFoodBtn');
-            if(btn && !painelFood.classList.contains('active')){
-                btn.style.color='var(--brasa,#ff5722)';
-            }
+            if(btn && !abaAberta){ btn.style.color='var(--brasa,#ff5722)'; }
+        }
+        // Mensagens novas do cliente no chat
+        if(data.success && data.chat_novos>0){
+            tocarSomPedido();
+            showToast(`💬 ${data.chat_novos} nova(s) mensagem(ns) de cliente!`,'info');
+            const btn=document.getElementById('tabFoodBtn');
+            if(btn && !abaAberta){ btn.style.color='var(--purple,#8b5cf6)'; }
+            // Se o chat estiver aberto, recarrega
+            const chatModal=document.getElementById('chatModal');
+            if(chatModal && chatModal.classList.contains('active')) carregarChatPedido();
         }
     }catch(e){}
 }
@@ -1826,7 +1838,7 @@ async function checarAlertasPedidos(){
 function iniciarMonitorPedidos(){
     if(foodAlertInterval) clearInterval(foodAlertInterval);
     if(temPermissao('pedidos_online')){
-        foodAlertInterval = setInterval(checarAlertasPedidos, 10000); // a cada 10s
+        foodAlertInterval = setInterval(checarAlertasPedidos, 6000); // a cada 6s
     }
 }
 
@@ -1859,7 +1871,7 @@ async function abrirChatPedido(id,nome){
     await carregarChatPedido();
     // Atualiza o chat a cada 5s enquanto estiver aberto
     if(chatPollInterval) clearInterval(chatPollInterval);
-    chatPollInterval=setInterval(carregarChatPedido,5000);
+    chatPollInterval=setInterval(carregarChatPedido,3000);
     setTimeout(()=>document.getElementById('chatInput').focus(),100);
 }
 
