@@ -1,3507 +1,2510 @@
-# pdv7.py - SMART PDV v10.3.0 - VERSÃO COM PLANOS REVISADOS
-"""
-🏪 SMART PDV v10.3.0
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>SMART PDV v10.3.0</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230f0f1a'/%3E%3Crect x='7' y='9' width='18' height='10' rx='2' fill='none' stroke='%2322c55e' stroke-width='2'/%3E%3Crect x='10' y='12' width='12' height='4' rx='0.5' fill='%2322c55e'/%3E%3Cpath d='M9 19 L9 23 L23 23 L23 19' fill='none' stroke='%2322c55e' stroke-width='2' stroke-linecap='round'/%3E%3Ccircle cx='12' cy='25.5' r='1.4' fill='%2322c55e'/%3E%3Ccircle cx='20' cy='25.5' r='1.4' fill='%2322c55e'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--bg-primary:#0f0f1a;--bg-secondary:#1a1a2e;--bg-card:#16162e;--bg-card-hover:#1e1e3a;--text-primary:#ffffff;--text-secondary:#a0a0c0;--text-muted:#6a6a8a;--border-color:#2a2a4a;--green:#22c55e;--green-dark:#16a34a;--blue:#3b82f6;--purple:#8b5cf6;--orange:#f59e0b;--red:#ef4444;--gold:#fbbf24;--radius:12px;--shadow:0 8px 32px rgba(0,0,0,0.4);--transition:all 0.3s cubic-bezier(0.4,0,0.2,1)}
+        html,body{height:100%;min-height:100vh}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg-primary);color:var(--text-primary);display:flex;justify-content:center;align-items:flex-start;padding:16px;min-height:100vh}
+        ::-webkit-scrollbar{width:5px;height:5px}
+        ::-webkit-scrollbar-track{background:var(--bg-secondary)}
+        ::-webkit-scrollbar-thumb{background:var(--green);border-radius:10px}
 
-🔹 NOVIDADES v10.3:
-- 15 DIAS DE TESTE GRÁTIS (EMPRESARIAL COMPLETO) ✅
-- NOVOS VALORES DE PLANOS (R$ 29,99 a R$ 129,99) ✅
-- CORREÇÃO DA REIMPRESSÃO DE CUPONS ✅
-- CAMPO CÓDIGO DE BARRAS RESTAURADO ✅
-- FIADO BLOQUEADO PARA PLANOS SEM CLIENTES ✅
-- SISTEMA DE CLIENTES CORRIGIDO ✅
-"""
+        .toast-container{position:fixed;top:20px;right:20px;z-index:99999;display:flex;flex-direction:column;gap:8px;max-width:360px;pointer-events:none}
+        .toast{background:rgba(22,22,46,0.95);backdrop-filter:blur(12px);border-radius:var(--radius);padding:14px 18px;display:flex;align-items:center;gap:12px;animation:slideInRight .4s ease;border-left:4px solid;pointer-events:auto;box-shadow:var(--shadow);border:1px solid var(--border-color)}
+        .toast-hide{transform:translateX(120%);opacity:0;transition:all .5s ease}
+        .toast-success{border-left-color:var(--green)}.toast-error{border-left-color:var(--red)}.toast-warning{border-left-color:var(--orange)}.toast-info{border-left-color:var(--blue)}
+        .toast-icon{font-size:18px;flex-shrink:0}.toast-content{flex:1;min-width:0}.toast-title{font-weight:600;font-size:13px;color:#fff;margin-bottom:2px}.toast-message{font-size:12px;color:var(--text-secondary)}
+        .toast-close{cursor:pointer;color:var(--text-muted);font-size:16px;padding:0 4px;background:0;border:none;transition:var(--transition)}.toast-close:hover{color:#fff}
+        @keyframes slideInRight{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
 
-import sys
-import os
-import io
-import json
-import sqlite3
-import hashlib
-import secrets
-import requests
-import uuid
-import socket
-import threading
-import logging
-import time as _time
-from datetime import datetime, timedelta
-from contextlib import contextmanager
-from functools import wraps
-from typing import Optional, Dict, List, Any, Union, Tuple, Callable
-from dataclasses import dataclass, asdict
-from flask import Flask, request, jsonify, render_template, session
-from flask_cors import CORS
-from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-import hmac
-import base64
+        .auth-page{display:flex;justify-content:center;align-items:center;min-height:100vh;width:100%;background:var(--bg-primary);padding:20px}
+        .auth-page.hidden{display:none}
+        .auth-box{background:var(--bg-card);border-radius:var(--radius);padding:40px;width:100%;max-width:420px;border:1px solid var(--border-color);box-shadow:var(--shadow);animation:fadeUp .5s ease}
+        .auth-box .logo{text-align:center;font-size:40px;margin-bottom:8px;display:block;color:var(--green)}
+        .auth-box h1{text-align:center;font-size:24px;font-weight:700;color:#fff;margin-bottom:4px}
+        .auth-box .sub{text-align:center;color:var(--text-secondary);font-size:13px;margin-bottom:24px}
+        .auth-box .form-group{margin-bottom:14px}
+        .auth-box .form-group label{display:block;font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:4px}
+        .auth-box .form-group input{width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:8px;font-size:14px;transition:var(--transition);background:var(--bg-primary);color:#fff}
+        .auth-box .form-group input:focus{outline:0;border-color:var(--green);box-shadow:0 0 0 3px rgba(34,197,94,.15)}
+        .auth-box .form-group input::placeholder{color:var(--text-muted)}
+        .auth-box .form-group .hint{font-size:11px;color:var(--text-muted);margin-top:4px}
+        .auth-box .btn-primary{width:100%;padding:12px;background:var(--green);color:#fff;border:0;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;transition:var(--transition);margin-top:4px}
+        .auth-box .btn-primary:hover{background:var(--green-dark);transform:translateY(-1px)}.auth-box .btn-primary:active{transform:translateY(0)}
+        .auth-box .auth-link{text-align:center;font-size:13px;color:var(--text-secondary);margin-top:16px}
+        .auth-box .auth-link span{color:var(--green);cursor:pointer;font-weight:600}.auth-box .auth-link span:hover{text-decoration:underline}
+        .auth-box .msg{text-align:center;padding:10px;border-radius:8px;font-size:13px;margin-bottom:12px;display:none}
+        .auth-box .msg.success{display:block;background:rgba(34,197,94,.15);color:var(--green)}
+        .auth-box .msg.error{display:block;background:rgba(239,68,68,.15);color:var(--red)}
 
-# ============================================================
-# CORREÇÃO DE ENCODING PARA WINDOWS
-# ============================================================
-if sys.platform == 'win32':
-    try:
-        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
-    except:
-        pass
+        .app{display:none;width:100%;max-width:1440px;min-height:100vh;background:var(--bg-secondary);border-radius:var(--radius);overflow:hidden;border:1px solid var(--border-color)}
+        .app.active{display:block;animation:fadeUp .4s ease}
+        .header{background:var(--bg-card);padding:12px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;border-bottom:1px solid var(--border-color);position:sticky;top:0;z-index:100}
+        .header .logo{font-size:18px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px}
+        .header .logo span{color:var(--green)}.header .logo .version{font-size:10px;color:var(--text-muted);font-weight:400;margin-left:4px}
+        .header .user{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--text-secondary)}
+        .header .user .avatar{width:32px;height:32px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff}
+        .header .user .db-id{font-size:10px;color:var(--text-muted);background:var(--bg-primary);padding:2px 10px;border-radius:10px;font-family:monospace;cursor:pointer;transition:var(--transition)}.header .user .db-id:hover{background:var(--border-color)}
+        .header .user .status-caixa{padding:3px 14px;border-radius:20px;font-size:11px;font-weight:600}
+        .header .user .status-caixa.aberto{background:rgba(34,197,94,.2);color:var(--green)}.header .user .status-caixa.fechado{background:rgba(239,68,68,.2);color:var(--red)}
+        .header .user .status-sincronizacao{font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(34,197,94,.1);display:inline-flex;align-items:center;gap:4px}
+        .header .user .btn-sair{background:rgba(255,255,255,.05);border:1px solid var(--border-color);color:var(--text-secondary);padding:6px 14px;border-radius:8px;cursor:pointer;transition:var(--transition);font-size:12px}
+        .header .user .btn-sair:hover{background:rgba(255,255,255,.1);color:#fff}
+        .header .atalhos-indicador{font-size:9px;color:var(--text-muted);background:var(--bg-primary);padding:2px 10px;border-radius:10px;display:flex;gap:6px;align-items:center}
+        .header .atalhos-indicador kbd{background:var(--border-color);padding:1px 6px;border-radius:3px;font-size:8px;color:var(--text-secondary)}
+        .header .atalhos-indicador .destaque{color:var(--green);font-weight:700}
+        .nav{background:var(--bg-card);padding:6px 16px;display:flex;gap:4px;border-bottom:1px solid var(--border-color);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-wrap:nowrap}
+        .nav::-webkit-scrollbar{display:none}
+        .nav button{padding:8px 18px;border:0;background:0;cursor:pointer;font-weight:500;font-size:13px;border-radius:8px;transition:var(--transition);color:var(--text-secondary);white-space:nowrap;display:flex;align-items:center;gap:6px}
+        .nav button:hover{color:#fff;background:rgba(255,255,255,.05)}
+        .nav button.active{color:#fff;background:rgba(34,197,94,.15)}
+        .nav button .badge{background:var(--red);color:#fff;font-size:9px;padding:1px 8px;border-radius:10px;font-weight:700}
+        .plano-expirado-aviso{background:var(--red);color:#fff;padding:12px 20px;border-radius:8px;margin-bottom:16px;display:none;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;width:100%}
+        .plano-expirado-aviso a{color:#fff;font-weight:700;text-decoration:underline;cursor:pointer}
+        .content{padding:16px}
+        .panel{display:none;animation:fadeUp .3s ease}.panel.active{display:block}
+        .subtabs{display:flex;gap:6px;margin-bottom:16px;border-bottom:1px solid var(--border-color);padding-bottom:0}
+        .subtab-btn{padding:10px 20px;border:0;background:0;cursor:pointer;font-weight:600;font-size:13px;color:var(--text-secondary);border-bottom:2px solid transparent;transition:var(--transition);display:flex;align-items:center;gap:6px;margin-bottom:-1px}
+        .dash-subtab{padding:6px 14px;border:1px solid var(--border-color);background:var(--bg-card);color:var(--text-secondary);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;transition:var(--transition)}
+        .dash-subtab.active{background:var(--green);color:#fff;border-color:var(--green)}
+        .subtab-btn:hover{color:#fff}
+        .subtab-btn.active{color:var(--green);border-bottom-color:var(--green)}
+        .subtab-btn .lock{font-size:10px;opacity:.7}
+        .subpanel{display:none;animation:fadeUp .3s ease;max-width:100%;overflow-x:hidden}.subpanel.active{display:block}
+        .kit-item-row{display:flex;align-items:center;gap:8px;padding:8px;background:var(--bg-primary);border-radius:8px;margin-bottom:6px;font-size:13px}
+        .kit-item-row .kit-item-nome{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .kit-item-row .kit-item-preco-orig{font-size:11px;color:var(--text-muted);text-decoration:line-through}
+        .kit-item-row input.kit-item-preco{width:70px;padding:4px 6px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-card);color:var(--green);font-weight:600;font-size:12px;text-align:right}
+        .kit-item-row input.kit-item-preco:focus{outline:0;border-color:var(--green)}
+        .kit-item-row .kit-item-remove{background:0;border:0;color:var(--red);cursor:pointer;font-size:14px;padding:2px 6px}
+        .kit-card{background:var(--bg-primary);border-radius:8px;padding:12px;margin-bottom:8px;border:1px solid var(--border-color)}
+        .kit-card .kit-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+        .kit-card .kit-card-nome{font-weight:700;font-size:14px;color:#fff}
+        .kit-card .kit-card-preco{font-weight:700;color:var(--green);font-size:15px}
+        .kit-card .kit-card-itens{font-size:12px;color:var(--text-secondary);line-height:1.6}
+        .kit-card .kit-card-acoes{display:flex;gap:6px;margin-top:8px}
+        .kit-card .kit-card-acoes button{padding:4px 12px;border:0;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600}
+        .kit-card .btn-kit-editar{background:rgba(59,130,246,.15);color:var(--blue)}
+        .kit-card .btn-kit-excluir{background:rgba(239,68,68,.15);color:var(--red)}
+        .card{background:var(--bg-card);border-radius:var(--radius);padding:20px;border:1px solid var(--border-color);transition:var(--transition)}
+        .card:hover{border-color:rgba(34,197,94,.2)}
+        .card h3{font-size:16px;margin-bottom:14px;display:flex;align-items:center;gap:8px;color:#fff}
+        .card h3 .btn-excluir-produto{margin-left:auto;background:var(--red);color:#fff;border:0;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600}
+        .card h3 .btn-excluir-produto:hover{background:#dc2626}
 
-IS_WINDOWS: bool = sys.platform == 'win32'
-IS_LINUX: bool = sys.platform.startswith('linux')
-IS_TERMUX: bool = 'com.termux' in os.environ.get('PREFIX', '')
+        .pdv-grid{display:grid;grid-template-columns:1fr 1.5fr;gap:16px}
+        .pdv-grid .input-group{margin-bottom:10px}
+        .pdv-grid .input-group label{display:block;font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px}
+        .pdv-grid .input-group input{width:100%;padding:9px 12px;border:1px solid var(--border-color);border-radius:8px;font-size:14px;transition:var(--transition);background:var(--bg-primary);color:#fff}
+        .pdv-grid .input-group input:focus{outline:0;border-color:var(--green);box-shadow:0 0 0 3px rgba(34,197,94,.1)}
+        .pdv-grid .input-group input[readonly]{color:var(--text-secondary);background:var(--bg-primary);cursor:not-allowed}
+        .pdv-grid .status-msg{padding:8px 12px;border-radius:8px;font-size:12px;margin-bottom:10px;background:var(--bg-primary);color:var(--text-secondary)}
+        .pdv-grid .status-msg.success{color:var(--green);background:rgba(34,197,94,.1)}
+        .pdv-grid .status-msg.error{color:var(--red);background:rgba(239,68,68,.1)}
+        .pdv-grid .btn-finalizar{width:100%;padding:14px;background:var(--green);color:#fff;border:0;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;transition:var(--transition);margin-top:10px}
+        .pdv-grid .btn-finalizar:hover{background:var(--green-dark)}.pdv-grid .btn-finalizar:disabled{opacity:.4;cursor:not-allowed}
+        .search-results{position:absolute;top:100%;left:0;right:0;background:var(--bg-card);border:1px solid var(--border-color);border-radius:8px;max-height:200px;overflow-y:auto;z-index:50;display:none;margin-top:4px;box-shadow:var(--shadow)}
+        .search-results.active{display:block}
+        .search-results .result-item{padding:8px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.03);transition:var(--transition)}
+        .search-results .result-item:hover,.search-results .result-item.active{background:rgba(34,197,94,.1)}
+        .search-results .result-item .name{font-size:13px}.search-results .result-item .price{font-size:13px;font-weight:600;color:var(--green)}.search-results .result-item .stock{font-size:11px;color:var(--text-muted)}
 
-# ============================================================
-# PASTA DE DADOS
-# ============================================================
-def get_app_data_dir() -> str:
-    if IS_WINDOWS:
-        base = os.environ.get('APPDATA', os.path.expanduser('~'))
-        app_dir = os.path.join(base, 'SMART_PDV')
-    else:
-        app_dir = os.path.expanduser('~/.pdv')
-    os.makedirs(app_dir, exist_ok=True)
-    return app_dir
+        .cart-table{width:100%;border-collapse:collapse;font-size:12px}
+        .cart-table th{text-align:left;padding:6px 4px;border-bottom:1px solid var(--border-color);font-weight:600;color:var(--text-secondary);font-size:10px;text-transform:uppercase}
+        .cart-table td{padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.03)}
+        .cart-table .qty{text-align:center}.cart-table .qty button{background:0;border:0;cursor:pointer;font-size:14px;color:var(--text-secondary);padding:0 4px}.cart-table .qty button:hover{color:#fff}
+        .cart-table .qty-input{width:34px;text-align:center;background:transparent;border:1px solid transparent;border-radius:4px;color:#fff;font-size:12px;padding:2px 0;font-family:inherit}
+        .cart-table .qty-input:hover{border-color:var(--border-color)}
+        .cart-table .qty-input:focus{outline:0;border-color:var(--green);background:var(--bg-primary)}
+        .cart-table .price{text-align:right}.cart-table .total-item{text-align:right;font-weight:600}
+        .cart-table .total-input{width:64px;text-align:right;background:transparent;border:1px solid transparent;border-radius:4px;color:var(--text-primary);font-size:12px;font-weight:600;padding:2px 4px;font-family:inherit}
+        .cart-table .total-input:hover{border-color:var(--border-color)}
+        .cart-table .total-input:focus{outline:0;border-color:var(--green);background:var(--bg-primary)}
+        .cart-table .btn-remove{background:0;border:0;color:var(--red);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px}.cart-table .btn-remove:hover{background:rgba(239,68,68,.1)}
+        .empty-cart{text-align:center;color:var(--text-muted);padding:24px 0;font-size:13px}
+        .cart-summary{margin-top:12px;padding-top:12px;border-top:1px solid var(--border-color)}
+        .cart-summary .row{display:flex;justify-content:space-between;padding:3px 0;font-size:13px;align-items:center}
+        .cart-summary .row.total{font-size:18px;font-weight:700;color:var(--green);padding-top:6px;border-top:1px solid var(--border-color);margin-top:4px}
+        .cart-summary .row input{width:70px;padding:3px 6px;border:1px solid var(--border-color);border-radius:6px;font-size:13px;background:var(--bg-primary);color:#fff;text-align:right}
+        .cart-summary .row input:focus{outline:0;border-color:var(--green)}
 
-APP_DATA_DIR: str = get_app_data_dir()
-DB_PATH: str = os.path.join(APP_DATA_DIR, 'pdv.db')
-TEMPLATES_DIR: str = os.path.join(APP_DATA_DIR, 'templates')
-CUPONS_DIR: str = os.path.join(APP_DATA_DIR, 'cupons')
-LOG_PATH: str = os.path.join(APP_DATA_DIR, 'pdv.log')
+        .payment-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);z-index:9999;justify-content:center;align-items:center;padding:8px}
+        .payment-modal.active{display:flex}
+        .payment-modal .modal{background:var(--bg-card);border-radius:var(--radius);padding:20px;max-width:420px;width:100%;border:1px solid var(--border-color);max-height:98vh;overflow-y:auto;animation:fadeUp .4s ease}
+        .payment-modal .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+        .payment-modal .modal-header h3{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px}
+        .payment-modal .modal-header .close{background:0;border:0;font-size:22px;cursor:pointer;color:var(--text-secondary);transition:var(--transition)}.payment-modal .modal-header .close:hover{color:#fff}
+        .payment-modal .total-display{text-align:center;padding:12px;background:var(--bg-primary);border-radius:8px;margin-bottom:12px}
+        .payment-modal .total-display .label{font-size:11px;color:var(--text-secondary);text-transform:uppercase}
+        .payment-modal .total-display .value{font-size:28px;font-weight:700;color:var(--green)}
+        .payment-modal .total-display .troco-display{margin-top:6px;display:none}
+        .payment-modal .total-display .troco-display .label{font-size:11px;color:var(--text-secondary);text-transform:uppercase}
+        .payment-modal .total-display .troco-display .value{font-size:22px;color:var(--green)}
+        .payment-modal .cliente-input{margin-bottom:10px}
+        .payment-modal .cliente-input input{width:100%;padding:8px 12px;border:1px solid var(--border-color);border-radius:8px;font-size:14px;background:var(--bg-primary);color:#fff;transition:var(--transition)}
+        .payment-modal .cliente-input input:focus{outline:0;border-color:var(--green)}
+        .payment-modal .cliente-input input::placeholder{color:var(--text-muted)}
+        .payment-modal .payment-methods{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+        .payment-modal .payment-methods button{padding:8px 12px;border:2px solid var(--border-color);border-radius:8px;background:var(--bg-primary);color:var(--text-secondary);cursor:pointer;transition:var(--transition);font-weight:600;font-size:12px;font-family:inherit;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;width:100%}
+        .payment-modal .payment-methods button:hover{border-color:var(--green);color:#fff;background:rgba(34,197,94,.05)}
+        .payment-modal .payment-methods button.active{border-color:var(--green);background:rgba(34,197,94,.15);color:var(--green)}
+        .payment-modal .payment-methods button i{font-size:14px}
+        .payment-modal .payment-input{display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:8px 12px;background:var(--bg-primary);border-radius:8px;border:1px solid var(--border-color)}
+        .payment-modal .payment-input .label{font-size:12px;color:var(--text-secondary);min-width:60px;font-weight:600}
+        .payment-modal .payment-input input{flex:1;padding:6px 8px;border:0;background:0;color:#fff;font-size:18px;font-weight:700;text-align:right;outline:0}
+        .payment-modal .payment-input input::placeholder{color:var(--text-muted);font-weight:400}
+        .payment-modal .payment-input .remaining{font-size:12px;color:var(--text-muted);min-width:80px;text-align:right}
+        .payment-modal .payment-actions{display:flex;gap:8px;margin-top:12px}
+        .payment-modal .payment-actions button{flex:1;padding:10px;border:0;border-radius:8px;font-weight:600;cursor:pointer;transition:var(--transition);font-size:14px}
+        .payment-modal .payment-actions .btn-confirmar{background:var(--green);color:#fff}
+        .payment-modal .payment-actions .btn-confirmar:hover{background:var(--green-dark)}
+        .payment-modal .payment-actions .btn-cancelar{background:0;color:var(--text-secondary);border:1px solid var(--border-color)}
+        .payment-modal .payment-actions .btn-cancelar:hover{background:rgba(255,255,255,.05)}
+        .payment-modal .payment-actions .btn-confirmar:disabled{opacity:.4;cursor:not-allowed}
+        .payment-modal .atalhos-info{font-size:10px;color:var(--text-muted);text-align:center;margin-top:8px;padding:6px;background:var(--bg-primary);border-radius:6px}
+        .payment-modal .atalhos-info kbd{background:var(--border-color);padding:1px 6px;border-radius:3px;font-size:8px;color:var(--text-secondary);border:1px solid var(--border-color)}
+        .payment-modal .atalhos-info .destaque{color:var(--green);font-weight:700}
 
-os.makedirs(APP_DATA_DIR, exist_ok=True)
-os.makedirs(TEMPLATES_DIR, exist_ok=True)
-os.makedirs(CUPONS_DIR, exist_ok=True)
+        .clientes-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+        .clientes-actions input{flex:1;padding:8px 12px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-primary);color:#fff;font-size:13px;min-width:150px}
+        .clientes-actions input:focus{outline:0;border-color:var(--green)}
+        .clientes-actions button{padding:8px 16px;background:var(--green);color:#fff;border:0;border-radius:8px;cursor:pointer;font-weight:500;font-size:13px;transition:var(--transition)}
+        .clientes-actions button:hover{background:var(--green-dark)}
+        .clientes-table{width:100%;border-collapse:collapse;font-size:13px}
+        .clientes-table th{text-align:left;padding:8px 6px;border-bottom:1px solid var(--border-color);font-weight:600;color:var(--text-secondary);font-size:11px;text-transform:uppercase}
+        .clientes-table td{padding:8px 6px;border-bottom:1px solid rgba(255,255,255,.03)}
+        .clientes-table .divida{color:var(--red);font-weight:600}
+        .clientes-table .btn-pagar{padding:3px 12px;background:var(--green);color:#fff;border:0;border-radius:6px;cursor:pointer;font-size:11px}.clientes-table .btn-pagar:hover{background:var(--green-dark)}
+        .clientes-table .btn-delete{background:0;border:0;color:var(--red);cursor:pointer;font-size:14px;padding:2px 6px}.clientes-table .btn-delete:hover{background:rgba(239,68,68,.1);border-radius:4px}
 
-# ============================================================
-# IMPRESSÃO - APENAS WINDOWS
-# ============================================================
-IMPRESSAO_DISPONIVEL: bool = False
-if IS_WINDOWS:
-    try:
-        import win32print
-        import win32ui
-        IMPRESSAO_DISPONIVEL = True
-        print("🖨️ Impressão Windows ESC/POS disponível")
-    except ImportError as e:
-        print(f"⚠️ Módulos de impressão não encontrados: {e}")
-else:
-    print("⚠️ Impressão ESC/POS disponível apenas no Windows")
+        .caixa-center{text-align:center;padding:20px 10px}
+        .caixa-center .icon{font-size:48px;margin-bottom:6px}
+        .caixa-center h2{font-size:20px;margin-bottom:6px}
+        .caixa-center p{color:var(--text-secondary);font-size:13px;margin-bottom:16px}
+        .caixa-center .input-abertura{max-width:200px;margin:0 auto 12px;padding:8px 14px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-primary);color:#fff;width:100%;font-size:14px;text-align:center}
+        .caixa-center .btn-caixa{padding:10px 28px;background:var(--green);color:#fff;border:0;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;transition:var(--transition);margin:4px}
+        .caixa-center .btn-caixa:hover{background:var(--green-dark)}.caixa-center .btn-caixa.fechar{background:var(--red)}.caixa-center .btn-caixa.fechar:hover{background:#dc2626}
+        .resumo-caixa{margin-top:16px}
+        .resumo-caixa table{width:100%;border-collapse:collapse;font-size:13px}
+        .resumo-caixa th{text-align:left;padding:6px 8px;font-weight:600;color:var(--text-secondary);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border-color)}
+        .resumo-caixa td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.03)}
+        .resumo-caixa .total-row td{font-weight:700;color:var(--green);border-top:1px solid var(--border-color)}
 
-# ============================================================
-# FLASK APP
-# ============================================================
-app: Flask = Flask(__name__, template_folder=TEMPLATES_DIR)
+        .stat-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+        .stat-card{background:var(--bg-card);border-radius:var(--radius);padding:16px;border:1px solid var(--border-color);text-align:center}
+        .stat-card .icon{font-size:22px;margin-bottom:4px}
+        .stat-card .value{font-size:22px;font-weight:700;color:var(--green)}
+        .stat-card .label{font-size:11px;color:var(--text-secondary);margin-top:2px}
+        .stat-card .lucro-value{color:var(--gold)}
 
-def _obter_secret_key() -> str:
-    """Carrega uma secret_key persistente do disco; gera e salva na primeira vez.
-    Sem isso, a chave mudaria a cada restart e TODOS os logins cairiam (cookies invalidados)."""
-    caminho_chave = os.path.join(APP_DATA_DIR, 'secret.key')
-    try:
-        if os.path.exists(caminho_chave):
-            with open(caminho_chave, 'r', encoding='utf-8') as f:
-                chave = f.read().strip()
-                if chave:
-                    return chave
-        chave = secrets.token_hex(32)
-        with open(caminho_chave, 'w', encoding='utf-8') as f:
-            f.write(chave)
-        return chave
-    except Exception:
-        # Se não der pra persistir, ao menos não quebra (mas sessões não sobrevivem a restart)
-        return secrets.token_hex(32)
+        .filtros-dashboard{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+        .filtros-dashboard .btn-filtro{padding:6px 18px;border:1px solid var(--border-color);border-radius:20px;background:transparent;color:var(--text-secondary);cursor:pointer;font-size:12px;font-weight:600;transition:var(--transition);font-family:inherit}
+        .filtros-dashboard .btn-filtro:hover{border-color:var(--green);color:var(--green)}
+        .filtros-dashboard .btn-filtro.active{background:rgba(34,197,94,.15);border-color:var(--green);color:var(--green)}
+        .chart-row{display:grid;grid-template-columns:1fr 1.5fr;gap:16px}
+        .chart-box{background:var(--bg-card);border-radius:var(--radius);padding:16px;border:1px solid var(--border-color)}
+        .chart-box h4{font-size:13px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:6px;color:var(--text-secondary)}
+        .method-bar{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+        .method-bar .label{font-size:12px;min-width:70px;color:var(--text-secondary)}
+        .method-bar .track{flex:1;background:var(--bg-primary);border-radius:6px;height:20px;overflow:hidden}
+        .method-bar .fill{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:6px;font-size:10px;font-weight:600;color:#fff;transition:width .5s ease}
+        .vendas-list{display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto}
+        .venda-item{background:var(--bg-primary);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px}
+        .venda-item .metodo{padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600}
+        .venda-item .metodo.dinheiro{background:rgba(34,197,94,.2);color:var(--green)}.venda-item .metodo.pix{background:rgba(59,130,246,.2);color:var(--blue)}.venda-item .metodo.cartao{background:rgba(139,92,246,.2);color:var(--purple)}.venda-item .metodo.fiado{background:rgba(239,68,68,.2);color:var(--red)}
+        .venda-item .valor{font-weight:700;color:var(--green);margin-left:auto}
+        .venda-item .lucro-item{font-size:10px;color:var(--gold);font-weight:600}
+        .venda-item .produtos-detalhe{width:100%;font-size:11px;color:var(--text-muted);display:flex;flex-wrap:wrap;gap:4px}
+        .venda-item .btn-imprimir-venda{background:var(--bg-card);border:1px solid var(--border-color);color:var(--text-secondary);padding:3px 8px;border-radius:6px;cursor:pointer;font-size:11px;transition:var(--transition)}.venda-item .btn-imprimir-venda:hover{color:var(--green);border-color:var(--green)}
 
-app.secret_key = _obter_secret_key()
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['SESSION_COOKIE_SECURE'] = False
+        .estoque-grid{display:grid;grid-template-columns:1fr 1.5fr;gap:16px}
+        .estoque-grid > .card{min-width:0}
+        .input-group{margin-bottom:10px}
+        .input-group label{display:block;font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px}
+        .input-group input,.input-group select{width:100%;padding:9px 12px;border:1px solid var(--border-color);border-radius:8px;font-size:14px;transition:var(--transition);background:var(--bg-primary);color:#fff}
+        .input-group input:focus,.input-group select:focus{outline:0;border-color:var(--green);box-shadow:0 0 0 3px rgba(34,197,94,.1)}
+        .btn-salvar{width:100%;padding:10px;background:var(--green);color:#fff;border:0;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;transition:var(--transition);margin-bottom:8px}
+        .btn-salvar:hover{background:var(--green-dark)}
+        .btn-limpar{width:100%;padding:8px;background:transparent;color:var(--text-secondary);border:1px solid var(--border-color);border-radius:8px;cursor:pointer;font-size:13px;transition:var(--transition)}
+        .btn-limpar:hover{background:rgba(255,255,255,.05);color:#fff}
+        .estoque-wrapper{max-height:400px;overflow-y:auto;overflow-x:auto;max-width:100%}
+        .estoque-table{width:100%;border-collapse:collapse;font-size:13px}
+        .estoque-table th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--border-color);font-weight:600;color:var(--text-secondary);font-size:11px;text-transform:uppercase;position:sticky;top:0;background:var(--bg-card)}
+        .estoque-table td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.03);cursor:pointer}
+        .estoque-table tr:hover td{background:rgba(34,197,94,.05)}
+        .estoque-baixo{color:var(--red)!important;font-weight:600}.estoque-medio{color:var(--orange)!important}.estoque-alto{color:var(--green)!important}
 
-CORS(app, origins=["*"], supports_credentials=True)
+        .planos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:16px}
+        .plano-card{background:var(--bg-card);border-radius:var(--radius);padding:20px;border:2px solid var(--border-color);transition:var(--transition);position:relative;text-align:center}
+        .plano-card:hover{border-color:var(--green);transform:translateY(-2px);box-shadow:0 12px 40px rgba(34,197,94,.15)}
+        .plano-card .preco{font-size:24px;font-weight:700;color:#fff}.plano-card .preco small{font-size:13px;color:var(--text-secondary);font-weight:400}
+        .plano-card .nome{font-size:16px;font-weight:600;margin-bottom:6px;margin-top:4px}
+        .plano-card .desc{font-size:13px;color:var(--text-secondary);margin-bottom:4px}
+        .plano-card .detalhes{font-size:12px;color:var(--text-muted);margin-bottom:12px}
+        .plano-card .limite-produtos{display:block;margin-top:4px;font-size:11px;color:var(--green)}
+        .plano-card .plano-features{text-align:left;margin:10px 0 14px;display:flex;flex-direction:column;gap:4px}
+        .plano-card .feat-line{font-size:11px;color:var(--text-secondary);padding:3px 8px;background:rgba(255,255,255,.03);border-radius:5px;border-left:2px solid var(--green)}
+        .food-switch{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary);cursor:pointer}
+        .food-switch input{width:18px;height:18px;accent-color:var(--green);cursor:pointer}
+        .food-pedido{background:var(--bg-primary);border:1px solid var(--border-color);border-radius:10px;padding:14px;margin-bottom:10px}
+        .food-pedido .fp-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+        .food-pedido .fp-status{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
+        .food-pedido .fp-itens{font-size:12px;color:var(--text-secondary);line-height:1.6;margin:6px 0}
+        .food-pedido .fp-total{font-weight:700;color:var(--green);font-size:15px}
+        .food-pedido .fp-acoes{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+        .food-pedido .fp-acoes button{padding:6px 14px;border:0;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600}
+        .st-novo,.st-aguardando_pix,.st-aguardando_pagamento{background:rgba(245,158,11,.15);color:var(--orange)}
+        .st-em_preparo{background:rgba(59,130,246,.15);color:var(--blue)}
+        .st-pronto,.st-finalizado{background:rgba(34,197,94,.15);color:var(--green)}
+        .st-cancelado{background:rgba(239,68,68,.15);color:var(--red)}
+        .plano-card .btn-assinar{padding:10px 20px;background:var(--green);color:#fff;border:0;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;transition:var(--transition);width:100%}
+        .plano-card .btn-assinar:hover{background:var(--green-dark)}
+        .plano-teste{position:absolute;top:10px;right:10px;background:var(--orange);color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px}
+        .loja-status{background:var(--bg-card);border-radius:var(--radius);padding:20px;border:1px solid var(--border-color);margin-top:16px}
+        .info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+        .info-item .label{font-size:11px;color:var(--text-secondary);text-transform:uppercase;font-weight:600}
+        .info-item .value{font-size:14px;font-weight:600;color:#fff;margin-top:2px}
+        .info-item .value.ativo{color:var(--green)}.info-item .value.expirado{color:var(--red)}
 
-@app.after_request
-def _desabilitar_cache_api(response):
-    """Evita que o navegador (WebView do Termux) sirva respostas de API em cache,
-    como o /api/auth/status — o que faria o logout 'não pegar' após um refresh."""
-    try:
-        if request.path.startswith('/api/'):
-            response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-            response.headers['Pragma'] = 'no-cache'
-            response.headers['Expires'] = '0'
-    except Exception:
-        pass
-    return response
+        .config-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+        .btn{padding:8px 16px;border:0;border-radius:8px;cursor:pointer;font-weight:500;font-size:13px;transition:var(--transition)}.btn.btn-primary{background:var(--green);color:#fff}.btn.btn-primary:hover{background:var(--green-dark)}
+        .usuarios-lista{display:flex;flex-direction:column;gap:6px}
+        .usuario-item{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg-primary);border-radius:8px;font-size:13px}
+        .usuario-item .cargo{font-size:10px;background:rgba(34,197,94,.15);color:var(--green);padding:1px 8px;border-radius:10px;margin-left:6px;font-weight:600}
+        .usuario-item .btn-delete{background:0;border:0;color:var(--red);cursor:pointer;font-size:14px;padding:2px 6px}
 
-VERSION: str = "10.3.0"
+        .cupom-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);backdrop-filter:blur(10px);z-index:9999;justify-content:center;align-items:center;padding:12px}
+        .cupom-modal.active{display:flex}
+        .cupom-container{background:#fff;border-radius:8px;padding:0;max-width:380px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.5);animation:fadeUp .3s ease;display:flex;flex-direction:column}
+        .cupom-header-ui{background:var(--bg-card);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-radius:8px 8px 0 0;border-bottom:1px solid var(--border-color)}
+        .cupom-header-ui h3{font-size:13px;font-weight:700;color:#fff;display:flex;align-items:center;gap:6px}
+        .cupom-header-ui .close{background:0;border:0;color:var(--text-secondary);font-size:18px;cursor:pointer;transition:var(--transition)}.cupom-header-ui .close:hover{color:#fff}
+        .cupom-preview{padding:16px;font-family:'Courier New',monospace;font-size:11px;color:#222;background:#fff;flex:1;max-height:500px;overflow-y:auto}
+        .cupom-loja{text-align:center;font-size:14px;font-weight:700;margin-bottom:2px}
+        .cupom-dados-cnpj{margin-bottom:6px;font-size:9px;color:#555;text-align:center}
+        .cupom-divider{border:none;border-top:1px dashed #999;margin:6px 0}
+        .cupom-titulo{text-align:center;font-size:11px;font-weight:700;margin-bottom:2px}
+        .cupom-linha{display:flex;justify-content:space-between;padding:1px 0;font-size:11px}
+        .cupom-total-linha{display:flex;justify-content:space-between;padding:2px 0;font-size:13px;font-weight:700;border-top:1px dashed #999;margin-top:4px}
+        .cupom-lucro-linha{display:flex;justify-content:space-between;padding:2px 0;font-size:12px;color:#92400e;font-weight:600;border-top:1px dashed #fcd34d}
+        .cupom-rodape{text-align:center;font-size:10px;color:#666;margin-top:6px}
+        .cupom-acoes{display:flex;flex-direction:column;gap:6px;padding:10px 14px;background:var(--bg-card);border-radius:0 0 8px 8px;border-top:1px solid var(--border-color)}
+        .cupom-opt{width:100%;padding:10px 8px;border:2px solid var(--border-color);border-radius:8px;background:var(--bg-primary);color:var(--text-secondary);cursor:pointer;font-weight:600;font-size:12px;font-family:inherit;text-align:center;transition:var(--transition);display:flex;align-items:center;justify-content:center;gap:6px}
+        .cupom-opt:hover{border-color:var(--green);color:#fff;background:rgba(34,197,94,.1)}
+        .cupom-opt.active{border-color:var(--green);background:rgba(34,197,94,.2);color:var(--green)}
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(LOG_PATH, encoding='utf-8'),
-        logging.StreamHandler(sys.stdout)
-    ]
-)
-logger: logging.Logger = logging.getLogger(__name__)
+        .modal-cliente{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);z-index:9999;justify-content:center;align-items:center;padding:12px}
+        .modal-cliente.active{display:flex}
+        .modal-cliente .modal{background:var(--bg-card);border-radius:var(--radius);padding:20px;max-width:400px;width:100%;border:1px solid var(--border-color);animation:fadeUp .3s ease}
+        .modal-cliente .modal h3{font-size:16px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+        .modal-cliente .modal-actions{display:flex;gap:8px;margin-top:12px}
+        .modal-cliente .btn-save{flex:1;padding:10px;background:var(--green);color:#fff;border:0;border-radius:8px;cursor:pointer;font-weight:600}
+        .modal-cliente .btn-close{padding:10px;background:transparent;color:var(--text-secondary);border:1px solid var(--border-color);border-radius:8px;cursor:pointer}
 
-# ============================================================
-# CONFIGURAÇÕES
-# ============================================================
-FB_URL: str = "https://droidguard-10597-default-rtdb.firebaseio.com"
-HTML_URL: str = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/refs/heads/main/PDV/templates/index.html"
-SESSOES_ATIVAS: Dict[str, str] = {}
-CACHE_CNPJ: Dict[str, Dict] = {}
-CACHE_PRODUTO_BARRAS: Dict[str, Dict] = {}
-
-MERCADO_PAGO_ACCESS_TOKEN: str = os.environ.get(
-    "MP_ACCESS_TOKEN",
-    "APP_USR-4548266140377032-050311-6589fc22b166e4cb2cfad0379b28dcdf-1059299796"
-)
-
-# ============================================================
-# CHAVE SECRETA PARA TOKENS DE PLANO
-# ============================================================
-CHAVE_SECRETA_PLANO: str = "hs7sudjsjfirijf839djd"
-
-# ============================================================
-# OPENROUTESERVICE (cálculo de distância/frete - grátis, sem cartão)
-# Crie uma conta grátis em https://openrouteservice.org/dev/#/signup
-# e cole sua chave aqui (ou use a variável de ambiente ORS_API_KEY).
-# ============================================================
-ORS_API_KEY: str = os.environ.get("ORS_API_KEY", "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjRjOTIzMTNkZDI4YjRmYjRhMzNmMzY0YjkxYTY1NGM1IiwiaCI6Im11cm11cjY0In0=")
-
-# ============================================================
-# PLANOS REVISADOS
-# ============================================================
-@dataclass
-class Plano:
-    id: int
-    usuarios: int
-    preco: float
-    nome: str
-    dias: int
-    produtos: int
-    permissoes: Dict
-    is_teste: bool = False
-
-PLANOS: List[Plano] = [
-    Plano(1, 1, 29.99, '🔰 BÁSICO', 30, 300, {
-        'clientes': False,
-        'dashboard': False,
-        'busca_estoque': False,
-        'margem': False,
-        'fiado': False,
-        'kit_combo': False,
-        'pedidos_online': False
-    }),
-    Plano(2, 3, 69.99, '⭐ STANDARD', 30, 1000, {
-        'clientes': True,
-        'dashboard': False,
-        'busca_estoque': False,
-        'margem': False,
-        'fiado': True,
-        'kit_combo': True,
-        'pedidos_online': False
-    }),
-    Plano(3, 5, 99.99, '💎 PREMIUM', 30, 5000, {
-        'clientes': True,
-        'dashboard': True,
-        'busca_estoque': True,
-        'margem': True,
-        'fiado': True,
-        'kit_combo': True,
-        'pedidos_online': False
-    }),
-    Plano(4, 10, 149.99, '👑 EMPRESARIAL', 30, -1, {
-        'clientes': True,
-        'dashboard': True,
-        'busca_estoque': True,
-        'margem': True,
-        'fiado': True,
-        'kit_combo': True,
-        'pedidos_online': True
-    }),
-    # Plano de TESTE (15 dias, todas as permissões liberadas, limite de 300 produtos e 1 usuário)
-    Plano(5, 1, 0.00, '🎁 TESTE', 15, 300, {
-        'clientes': True,
-        'dashboard': True,
-        'busca_estoque': True,
-        'margem': True,
-        'fiado': True,
-        'kit_combo': True,
-        'pedidos_online': True
-    }, is_teste=True),
-]
-
-pagamentos_pendentes: Dict[str, Dict] = {}
-rate_limits: Dict[str, List[float]] = {}
-
-def rate_limit(max_requests: int = 10, window: int = 60) -> Callable:
-    def decorator(f: Callable) -> Callable:
-        @wraps(f)
-        def wrapped(*args, **kwargs) -> Any:
-            key: str = request.remote_addr
-            now: float = _time.time()
-            if key not in rate_limits:
-                rate_limits[key] = []
-            rate_limits[key] = [t for t in rate_limits[key] if now - t < window]
-            if len(rate_limits[key]) >= max_requests:
-                return jsonify({"success": False, "error": "Muitas requisições. Tente novamente."}), 429
-            rate_limits[key].append(now)
-            return f(*args, **kwargs)
-        return wrapped
-    return decorator
-
-# ============================================================
-# DECORATOR PARA VERIFICAR PLANO
-# ============================================================
-
-def verificar_plano(f: Callable) -> Callable:
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        db_id = get_db_id()
-        if not db_id:
-            return jsonify({"success": False, "error": "Não autenticado"}), 401
-        
-        if not is_plano_ativo(db_id):
-            dias_restantes = get_dias_restantes(db_id)
-            return jsonify({
-                "success": False,
-                "error": "Plano expirado. Renove para continuar.",
-                "plano_expirado": True,
-                "dias_restantes": dias_restantes,
-                "url_renovacao": "#/planos"
-            }), 403
-        
-        return f(*args, **kwargs)
-    return decorated
-
-# ============================================================
-# FUNÇÃO PARA VERIFICAR PERMISSÕES
-# ============================================================
-
-def get_permissoes(db_id: str) -> Dict:
-    """Retorna as permissões do plano (definição completa mais abaixo, offline-first)."""
-    _perm_padrao = {'clientes': False, 'dashboard': False, 'busca_estoque': False, 'margem': False, 'fiado': False, 'kit_combo': False}
-    try:
-        dados = carregar_usuario_firebase(db_id, timeout=3)
-        if not dados:
-            return _perm_padrao
-        plano_id = dados.get('plano', 1)
-        plano = next((p for p in PLANOS if p.id == plano_id), PLANOS[0])
-        return plano.permissoes
-    except:
-        return _perm_padrao
-
-def verificar_permissao(permissao: str):
-    """Decorator para verificar permissões específicas"""
-    def decorator(f: Callable) -> Callable:
-        @wraps(f)
-        def decorated(*args, **kwargs):
-            db_id = get_db_id()
-            if not db_id:
-                return jsonify({"success": False, "error": "Não autenticado"}), 401
-            
-            permissoes = get_permissoes(db_id)
-            if not permissoes.get(permissao, False):
-                return jsonify({
-                    "success": False,
-                    "error": f"Seu plano não permite acesso a esta funcionalidade.",
-                    "permissao_negada": True
-                }), 403
-            
-            return f(*args, **kwargs)
-        return decorated
-    return decorator
-
-# ============================================================
-# BANCO DE DADOS
-# ============================================================
-def get_db() -> sqlite3.Connection:
-    conn = sqlite3.connect(DB_PATH, timeout=30, check_same_thread=False)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA synchronous=NORMAL")
-    conn.execute("PRAGMA cache_size=10000")
-    conn.execute("PRAGMA busy_timeout=30000")
-    conn.execute("PRAGMA temp_store=MEMORY")
-    return conn
-
-@contextmanager
-def get_db_context():
-    conn = None
-    try:
-        conn = get_db()
-        yield conn
-        conn.commit()
-    except sqlite3.OperationalError as e:
-        if "database is locked" in str(e):
-            _time.sleep(0.5)
-            try:
-                conn2 = get_db()
-                yield conn2
-                conn2.commit()
-            except Exception as e2:
-                raise e2
-        else:
-            raise e
-    finally:
-        if conn:
-            try:
-                conn.close()
-            except:
-                pass
-
-def init_db() -> None:
-    with get_db_context() as conn:
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS users (
-                id TEXT PRIMARY KEY,
-                nome TEXT,
-                email TEXT UNIQUE,
-                senha TEXT,
-                cargo TEXT,
-                db_id TEXT,
-                servidor_id TEXT,
-                nome_loja TEXT DEFAULT '',
-                cnpj TEXT DEFAULT '',
-                cnpj_dados TEXT DEFAULT '{}',
-                session_id TEXT DEFAULT '',
-                ultimo_acesso TIMESTAMP,
-                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                plano_cache INTEGER DEFAULT 1,
-                expira_cache TEXT,
-                ultima_verificacao TEXT,
-                sincronizado_em TIMESTAMP
-            )
-        ''')
-
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS produtos (
-                codigo TEXT PRIMARY KEY,
-                nome TEXT,
-                preco REAL,
-                custo REAL DEFAULT 0,
-                margem REAL DEFAULT 0,
-                estoque INTEGER DEFAULT 0,
-                categoria TEXT DEFAULT 'Geral',
-                imagem_url TEXT DEFAULT '',
-                db_id TEXT,
-                ultima_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                sincronizado_em TIMESTAMP
-            )
-        ''')
-        try:
-            conn.execute("ALTER TABLE produtos ADD COLUMN imagem_url TEXT DEFAULT ''")
-            conn.commit()
-        except Exception:
-            pass
-
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS clientes (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                nome TEXT,
-                telefone TEXT,
-                email TEXT,
-                divida REAL DEFAULT 0,
-                db_id TEXT,
-                ultima_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                sincronizado_em TIMESTAMP
-            )
-        ''')
-
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS vendas (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                data_hora TEXT,
-                subtotal REAL,
-                desconto REAL DEFAULT 0,
-                total REAL,
-                lucro_total REAL DEFAULT 0,
-                metodo TEXT DEFAULT 'Dinheiro',
-                itens TEXT,
-                cliente TEXT DEFAULT '',
-                usuario_id TEXT DEFAULT '',
-                db_id TEXT,
-                recebido REAL DEFAULT 0,
-                troco REAL DEFAULT 0,
-                sincronizado_em TIMESTAMP
-            )
-        ''')
-
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS caixa (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                usuario_id TEXT,
-                valor_abertura REAL,
-                data_abertura TEXT,
-                data_fechamento TEXT,
-                total REAL DEFAULT 0,
-                status TEXT DEFAULT 'fechado',
-                db_id TEXT,
-                sincronizado_em TIMESTAMP
-            )
-        ''')
-
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS pagamentos (
-                id TEXT PRIMARY KEY,
-                db_id TEXT,
-                plano_id INTEGER,
-                valor REAL,
-                status TEXT DEFAULT 'pendente',
-                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                pago_em TIMESTAMP
-            )
-        ''')
-
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS config (
-                chave TEXT PRIMARY KEY,
-                valor TEXT,
-                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS exclusoes (
-                tipo TEXT,
-                item_id TEXT,
-                db_id TEXT,
-                excluido_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY (tipo, item_id, db_id)
-            )
-        ''')
-
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS kits (
-                id TEXT PRIMARY KEY,
-                nome TEXT,
-                preco REAL DEFAULT 0,
-                itens TEXT DEFAULT '[]',
-                db_id TEXT,
-                ativo INTEGER DEFAULT 1,
-                ultima_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                sincronizado_em TIMESTAMP
-            )
-        ''')
-
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS config_food (
-                db_id TEXT PRIMARY KEY,
-                ativo INTEGER DEFAULT 0,
-                aberto INTEGER DEFAULT 0,
-                aceita_entrega INTEGER DEFAULT 1,
-                aceita_retirada INTEGER DEFAULT 1,
-                aceita_mesa INTEGER DEFAULT 0,
-                valor_km REAL DEFAULT 2.0,
-                frete_minimo REAL DEFAULT 5.0,
-                raio_max_km REAL DEFAULT 10,
-                tempo_preparo_min INTEGER DEFAULT 30,
-                endereco_loja TEXT DEFAULT '',
-                coord_lat REAL,
-                coord_lng REAL,
-                pix_habilitado INTEGER DEFAULT 1,
-                pagamento_na_entrega INTEGER DEFAULT 1,
-                ultima_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS pedidos_online (
-                id TEXT PRIMARY KEY,
-                db_id TEXT,
-                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                status TEXT DEFAULT 'novo',
-                tipo TEXT DEFAULT 'entrega',
-                cliente_nome TEXT,
-                cliente_telefone TEXT,
-                cliente_endereco TEXT,
-                cliente_lat REAL,
-                cliente_lng REAL,
-                mesa TEXT,
-                itens TEXT DEFAULT '[]',
-                subtotal REAL DEFAULT 0,
-                frete REAL DEFAULT 0,
-                distancia_km REAL DEFAULT 0,
-                total REAL DEFAULT 0,
-                pagamento TEXT DEFAULT 'pix',
-                pix_id TEXT,
-                pix_qr TEXT,
-                pix_copia_cola TEXT,
-                pago INTEGER DEFAULT 0,
-                impresso INTEGER DEFAULT 0,
-                ultima_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS chat_pedidos (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                pedido_id TEXT,
-                db_id TEXT,
-                autor TEXT,
-                mensagem TEXT,
-                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-
-        # Adicionar colunas faltantes
-        for tabela, colunas in {
-            'users': {'sincronizado_em': 'TIMESTAMP'},
-            'produtos': {'custo': 'REAL DEFAULT 0', 'margem': 'REAL DEFAULT 0', 'ultima_atualizacao': 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP', 'sincronizado_em': 'TIMESTAMP'},
-            'clientes': {'ultima_atualizacao': 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP', 'sincronizado_em': 'TIMESTAMP'},
-            'vendas': {'lucro_total': 'REAL DEFAULT 0', 'recebido': 'REAL DEFAULT 0', 'troco': 'REAL DEFAULT 0', 'sincronizado_em': 'TIMESTAMP'},
-            'caixa': {'sincronizado_em': 'TIMESTAMP'}
-        }.items():
-            cursor = conn.execute(f"PRAGMA table_info({tabela})")
-            colunas_existentes = [row[1] for row in cursor.fetchall()]
-            for coluna, tipo in colunas.items():
-                if coluna not in colunas_existentes:
-                    try:
-                        conn.execute(f"ALTER TABLE {tabela} ADD COLUMN {coluna} {tipo}")
-                    except:
-                        pass
-
-        conn.commit()
-        logger.info("✅ Banco de dados inicializado")
-
-# ============================================================
-# AUXILIARES
-# ============================================================
-def hash_senha(senha: str) -> str:
-    return hashlib.sha256(senha.encode()).hexdigest()
-
-def get_db_id() -> Optional[str]:
-    return session.get('db_id')
-
-def get_usuario_id() -> Optional[str]:
-    return session.get('usuario_id')
-
-def get_timestamp() -> str:
-    return datetime.now().isoformat()
-
-def _fb_key(db_id: str) -> str:
-    return db_id.replace(".", "_").replace("@", "_").replace("#", "").replace("$", "").replace("[", "").replace("]", "").replace("/", "_")
-
-# ============================================================
-# FIREBASE
-# ============================================================
-def salvar_usuario_firebase(db_id: str, dados: Dict) -> bool:
-    try:
-        key = _fb_key(db_id)
-        url = f'{FB_URL}/pdv/usuarios/{key}.json'
-        response = requests.put(url, json=dados, timeout=15)
-        return response.status_code == 200
-    except Exception as e:
-        logger.error(f"⚠️ Erro Firebase save: {e}")
-        return False
-
-def carregar_usuario_firebase(db_id: str, timeout: int = 10) -> Optional[Dict]:
-    if not db_id:
-        return None
-    try:
-        key = _fb_key(db_id)
-        url = f'{FB_URL}/pdv/usuarios/{key}.json'
-        response = requests.get(url, timeout=timeout)
-        if response.status_code == 200:
-            return response.json()
-        return None
-    except Exception as e:
-        logger.error(f"⚠️ Erro Firebase load: {e}")
-        return None
-
-def carregar_todos_usuarios_firebase() -> Dict:
-    try:
-        url = f'{FB_URL}/pdv/usuarios.json'
-        response = requests.get(url, timeout=10)
-        if response.status_code == 200:
-            return response.json() or {}
-        return {}
-    except:
-        return {}
-
-def buscar_usuario_por_email_firebase(email: str) -> Optional[Dict]:
-    try:
-        url = f'{FB_URL}/pdv/usuarios.json'
-        response = requests.get(url, timeout=10)
-        if response.status_code == 200:
-            usuarios = response.json()
-            if usuarios:
-                for key, dados in usuarios.items():
-                    if dados.get('email') == email:
-                        return dados
-        return None
-    except:
-        return None
-
-def validar_cnpj_firebase(cnpj: str) -> bool:
-    try:
-        url = f'{FB_URL}/pdv/usuarios.json'
-        response = requests.get(url, timeout=10)
-        if response.status_code == 200:
-            usuarios = response.json()
-            if usuarios:
-                for key, dados in usuarios.items():
-                    if dados.get('cnpj') == cnpj:
-                        return True
-        return False
-    except:
-        return False
-
-# ============================================================
-# ID DO SERVIDOR
-# ============================================================
-def obter_id_servidor() -> str:
-    try:
-        with get_db_context() as conn:
-            conn.execute('''CREATE TABLE IF NOT EXISTS config (chave TEXT PRIMARY KEY, valor TEXT, criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
-            cursor = conn.execute("SELECT valor FROM config WHERE chave='servidor_id'")
-            result = cursor.fetchone()
-            if result:
-                return result[0]
-            hostname = socket.gethostname()
-            servidor_id = f"SERV_{hostname[:6].upper()}_{str(uuid.uuid4())[:6]}"
-            conn.execute("INSERT INTO config (chave, valor) VALUES (?, ?)", ('servidor_id', servidor_id))
-            conn.commit()
-            return servidor_id
-    except Exception as e:
-        return f"SERV_{str(uuid.uuid4())[:12]}"
-
-SERVIDOR_ID: str = obter_id_servidor()
-
-# ============================================================
-# SISTEMA DE PLANO SEGURO SINCRONIZADO
-# ============================================================
-
-class PlanoSincronizado:
-    def __init__(self, db_id: str, chave_secreta: str):
-        self.db_id = db_id
-        self.chave_secreta = chave_secreta.encode()
-        self.arquivo_token = os.path.join(APP_DATA_DIR, f'token_{db_id}.enc')
-        self.arquivo_ultimo_timestamp = os.path.join(APP_DATA_DIR, f'ultimo_timestamp_{db_id}.json')
-        
-    def _derivar_chave(self) -> bytes:
-        kdf = PBKDF2HMAC(
-            algorithm=hashes.SHA256(),
-            length=32,
-            salt=self.chave_secreta,
-            iterations=100000,
-        )
-        return base64.urlsafe_b64encode(kdf.derive(self.db_id.encode()))
-    
-    def _criar_token(self, expira_em: str, plano_id: int) -> str:
-        dados = {
-            'db_id': self.db_id,
-            'plano_id': plano_id,
-            'expira_em': expira_em,
-            'criado_em': datetime.now().isoformat(),
-            'versao': '1.0',
-            'token_id': str(uuid.uuid4())[:8]
+        .modal-cliente-pagamento {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(8px);
+            z-index: 99999;
+            justify-content: center;
+            align-items: center;
+            padding: 12px;
+            animation: fadeUp 0.3s ease;
         }
-        dados_json = json.dumps(dados, sort_keys=True)
-        assinatura = hmac.new(self.chave_secreta, dados_json.encode(), hashlib.sha256).hexdigest()
-        token = {'dados': dados, 'assinatura': assinatura}
-        fernet = Fernet(self._derivar_chave())
-        token_criptografado = fernet.encrypt(json.dumps(token).encode())
-        return base64.b64encode(token_criptografado).decode()
-    
-    def _verificar_token(self, token_criptografado: str) -> Optional[Dict]:
-        try:
-            fernet = Fernet(self._derivar_chave())
-            token_bytes = base64.b64decode(token_criptografado.encode())
-            token_json = fernet.decrypt(token_bytes).decode()
-            token = json.loads(token_json)
-            dados_json = json.dumps(token['dados'], sort_keys=True)
-            assinatura_esperada = hmac.new(self.chave_secreta, dados_json.encode(), hashlib.sha256).hexdigest()
-            if not hmac.compare_digest(assinatura_esperada, token['assinatura']):
-                logger.warning(f"⚠️ Token adulterado para {self.db_id}")
-                return None
-            return token['dados']
-        except Exception as e:
-            logger.error(f"❌ Erro ao verificar token: {e}")
-            return None
-    
-    def salvar_token_local(self, token_criptografado: str) -> bool:
-        try:
-            with open(self.arquivo_token, 'w') as f:
-                f.write(token_criptografado)
-            with open(self.arquivo_ultimo_timestamp, 'w') as f:
-                json.dump({'ultimo_timestamp': datetime.now().isoformat(), 'ultima_verificacao': datetime.now().isoformat()}, f)
-            logger.info(f"✅ Token salvo localmente para {self.db_id}")
-            return True
-        except Exception as e:
-            logger.error(f"❌ Erro ao salvar token local: {e}")
-            return False
-    
-    def salvar_token_firebase(self, token_criptografado: str) -> bool:
-        try:
-            dados_fb = carregar_usuario_firebase(self.db_id) or {}
-            dados_fb['token_plano'] = token_criptografado
-            dados_fb['token_atualizado_em'] = datetime.now().isoformat()
-            ok = salvar_usuario_firebase(self.db_id, dados_fb)
-            if ok:
-                logger.info(f"✅ Token salvo no Firebase para {self.db_id}")
-            return ok
-        except Exception as e:
-            logger.error(f"❌ Erro ao salvar token no Firebase: {e}")
-            return False
-    
-    def sincronizar_token(self) -> Dict:
-        resultado = {'success': True, 'token_atualizado': False, 'mensagem': ''}
-        try:
-            dados_fb = carregar_usuario_firebase(self.db_id, timeout=4)
-            token_fb = dados_fb.get('token_plano') if dados_fb else None
-            token_local = None
-            if os.path.exists(self.arquivo_token):
-                with open(self.arquivo_token, 'r') as f:
-                    token_local = f.read().strip()
-            if token_fb and token_local:
-                dados_fb_token = self._verificar_token(token_fb)
-                dados_local_token = self._verificar_token(token_local)
-                if dados_fb_token and dados_local_token:
-                    data_fb_obj = datetime.fromisoformat(dados_fb_token.get('criado_em', '2000-01-01'))
-                    data_local_obj = datetime.fromisoformat(dados_local_token.get('criado_em', '2000-01-01'))
-                    if data_fb_obj > data_local_obj:
-                        self.salvar_token_local(token_fb)
-                        resultado['token_atualizado'] = True
-                        resultado['mensagem'] = 'Token atualizado do Firebase (mais novo)'
-                    elif data_local_obj > data_fb_obj:
-                        self.salvar_token_firebase(token_local)
-                        resultado['mensagem'] = 'Token local enviado para Firebase (mais novo)'
-            elif token_fb and not token_local:
-                self.salvar_token_local(token_fb)
-                resultado['token_atualizado'] = True
-                resultado['mensagem'] = 'Token baixado do Firebase'
-            elif token_local and not token_fb:
-                self.salvar_token_firebase(token_local)
-                resultado['mensagem'] = 'Token local enviado para Firebase'
-            return resultado
-        except Exception as e:
-            logger.error(f"❌ Erro na sincronização do token: {e}")
-            resultado['success'] = False
-            resultado['mensagem'] = f'Erro: {str(e)}'
-            return resultado
-    
-    def get_info_plano(self) -> Dict:
-        try:
-            try:
-                self.sincronizar_token()
-            except:
-                pass
-            if not os.path.exists(self.arquivo_token):
-                return {'ativo': False, 'dias_restantes': 0, 'expirado': True, 'mensagem': 'Plano não encontrado'}
-            with open(self.arquivo_token, 'r') as f:
-                token_criptografado = f.read().strip()
-            dados_token = self._verificar_token(token_criptografado)
-            if not dados_token:
-                return {'ativo': False, 'dias_restantes': 0, 'expirado': True, 'mensagem': 'Token inválido'}
-            expira_em = dados_token.get('expira_em')
-            if not expira_em:
-                return {'ativo': False, 'dias_restantes': 0, 'expirado': True, 'mensagem': 'Sem data de expiração'}
-            expira_date = datetime.fromisoformat(expira_em)
-            agora = datetime.now()
-            dias = (expira_date - agora).total_seconds() / 86400
-            if os.path.exists(self.arquivo_ultimo_timestamp):
-                with open(self.arquivo_ultimo_timestamp, 'r') as f:
-                    ultimo_registro = json.load(f)
-                    ultimo_timestamp = datetime.fromisoformat(ultimo_registro.get('ultimo_timestamp', ''))
-                    if agora < ultimo_timestamp:
-                        diferenca = (ultimo_timestamp - agora).total_seconds()
-                        if diferenca > 60:
-                            return {'ativo': False, 'dias_restantes': 0, 'expirado': True, 'mensagem': '⚠️ Data do sistema alterada'}
-            if dias >= 0:
-                with open(self.arquivo_ultimo_timestamp, 'w') as f:
-                    json.dump({'ultimo_timestamp': agora.isoformat(), 'ultima_verificacao': agora.isoformat()}, f)
-            return {
-                'ativo': dias >= 0,
-                'dias_restantes': max(0, dias),
-                'expirado': dias < 0,
-                'expira_em': expira_em,
-                'plano_id': dados_token.get('plano_id', 1),
-                'dias_para_expirar': dias,
-                'mensagem': f"Plano {'ativo' if dias >= 0 else 'expirado'}"
-            }
-        except Exception as e:
-            logger.error(f"❌ Erro ao obter info do plano: {e}")
-            return {'ativo': False, 'dias_restantes': 0, 'expirado': True, 'mensagem': f'Erro: {str(e)}'}
-    
-    def renovar_plano(self, expira_em: str, plano_id: int) -> Dict:
-        try:
-            token = self._criar_token(expira_em, plano_id)
-            self.salvar_token_local(token)
-            self.salvar_token_firebase(token)
-            dados_fb = carregar_usuario_firebase(self.db_id) or {}
-            dados_fb['expira_em'] = expira_em
-            dados_fb['plano'] = plano_id
-            dados_fb['plano_atualizado_em'] = datetime.now().isoformat()
-            salvar_usuario_firebase(self.db_id, dados_fb)
-            logger.info(f"✅ Plano renovado para {self.db_id} até {expira_em}")
-            return {'success': True, 'message': f'Plano renovado até {expira_em}', 'expira_em': expira_em}
-        except Exception as e:
-            logger.error(f"❌ Erro na renovação: {e}")
-            return {'success': False, 'error': str(e)}
-
-# ============================================================
-# FUNÇÕES DE INTEGRAÇÃO DO PLANO
-# ============================================================
-
-def is_plano_ativo(db_id: str) -> bool:
-    if not db_id:
-        return False
-    plano = PlanoSincronizado(db_id, CHAVE_SECRETA_PLANO)
-    info = plano.get_info_plano()
-    return info.get('ativo', False)
-
-def get_dias_restantes(db_id: str) -> float:
-    if not db_id:
-        return 0
-    try:
-        plano = PlanoSincronizado(db_id, CHAVE_SECRETA_PLANO)
-        info = plano.get_info_plano()
-        return info.get('dias_restantes', 0)
-    except:
-        return 0
-
-def get_info_plano_completa(db_id: str) -> Dict:
-    if not db_id:
-        return {'ativo': False, 'dias_restantes': 0, 'expirado': True}
-    try:
-        plano = PlanoSincronizado(db_id, CHAVE_SECRETA_PLANO)
-        return plano.get_info_plano()
-    except Exception as e:
-        return {'ativo': False, 'dias_restantes': 0, 'expirado': True, 'erro': str(e)}
-
-def get_plano_id_efetivo(db_id: str) -> int:
-    """Resolve o plano_id usando o TOKEN LOCAL como fonte primária (funciona offline).
-    Só consulta o Firebase como complemento se o token local não tiver a info."""
-    # 1) Token local (offline-first)
-    try:
-        info = get_info_plano_completa(db_id)
-        pid = info.get('plano_id')
-        if pid:
-            return int(pid)
-    except Exception:
-        pass
-    # 2) Firebase (só se online e token não tinha)
-    try:
-        dados = carregar_usuario_firebase(db_id, timeout=3)
-        if dados and dados.get('plano'):
-            return int(dados.get('plano'))
-    except Exception:
-        pass
-    # 3) Fallback seguro: plano básico
-    return 1
-
-def get_plano_efetivo(db_id: str) -> 'Plano':
-    pid = get_plano_id_efetivo(db_id)
-    return next((p for p in PLANOS if p.id == pid), PLANOS[0])
-
-def precisa_aviso_renovacao(db_id: str) -> Tuple[bool, float]:
-    if not db_id:
-        return False, 0
-    info = get_info_plano_completa(db_id)
-    dias = info.get('dias_restantes', 0)
-    if dias <= 3 and dias > 0:
-        return True, dias
-    return False, dias
-
-# ============================================================
-# CÁLCULO DE FRETE (OpenRouteService - distância real de rua)
-# ============================================================
-_CACHE_GEOCODE: Dict[str, Dict] = {}
-
-def _normalizar_endereco(endereco: str) -> str:
-    """Expande abreviações comuns de endereços brasileiros para melhorar o geocoding."""
-    import re as _re
-    e = ' ' + endereco + ' '
-    substituicoes = {
-        r'\bJD\b': 'Jardim', r'\bJ\.\b': 'Jardim',
-        r'\bST\b': 'Setor', r'\bST\.\b': 'Setor',
-        r'\bAV\b': 'Avenida', r'\bAV\.\b': 'Avenida',
-        r'\bR\b': 'Rua', r'\bR\.\b': 'Rua',
-        r'\bPÇA\b': 'Praça', r'\bPC\b': 'Praça',
-        r'\bRES\b': 'Residencial', r'\bCJ\b': 'Conjunto',
-        r'\bQD\b': 'Quadra', r'\bLT\b': 'Lote', r'\bBL\b': 'Bloco',
-        r'\bVL\b': 'Vila', r'\bPQ\b': 'Parque',
-    }
-    for padrao, valor in substituicoes.items():
-        e = _re.sub(padrao, valor, e, flags=_re.IGNORECASE)
-    return e.strip()
-
-def _consultar_geocode(texto: str) -> Optional[Dict]:
-    try:
-        url = "https://api.openrouteservice.org/geocode/search"
-        params = {"api_key": ORS_API_KEY, "text": texto, "boundary.country": "BR", "size": 1}
-        resp = requests.get(url, params=params, timeout=8)
-        if resp.status_code == 200:
-            features = resp.json().get('features', [])
-            if features:
-                coord = features[0]['geometry']['coordinates']  # [lng, lat]
-                return {"lng": coord[0], "lat": coord[1],
-                    "label": features[0].get('properties', {}).get('label', texto)}
-        return None
-    except Exception as e:
-        logger.error(f"❌ Erro no geocoding: {e}")
-        return None
-
-def geocodificar_endereco(endereco: str) -> Optional[Dict]:
-    """Converte um endereço em texto para coordenadas (lat/lng).
-    Tenta variações do endereço (original, normalizado, sem número) até uma funcionar."""
-    if not endereco or not endereco.strip():
-        return None
-    chave_cache = endereco.strip().lower()
-    if chave_cache in _CACHE_GEOCODE:
-        return _CACHE_GEOCODE[chave_cache]
-    if not ORS_API_KEY:
-        logger.warning("⚠️ ORS_API_KEY não configurada - geocoding indisponível")
-        return None
-
-    # Monta variações para tentar, da mais específica para a mais genérica
-    norm = _normalizar_endereco(endereco)
-    tentativas = []
-    for base in [endereco.strip(), norm]:
-        if base and base not in tentativas:
-            tentativas.append(base)
-        # versão com "Brasil" ao final
-        com_br = base + ', Brasil'
-        if com_br not in tentativas:
-            tentativas.append(com_br)
-    # versão sem o número (alguns endereços só batem pela rua/bairro)
-    import re as _re
-    sem_numero = _re.sub(r',?\s*\d{2,5}\s*-?\s*', ' ', norm).strip()
-    if sem_numero and sem_numero not in tentativas:
-        tentativas.append(sem_numero + ', Brasil')
-
-    for texto in tentativas:
-        resultado = _consultar_geocode(texto)
-        if resultado:
-            _CACHE_GEOCODE[chave_cache] = resultado
-            logger.info(f"📍 Endereço localizado: {resultado.get('label')}")
-            return resultado
-
-    logger.warning(f"⚠️ Geocoding sem resultado para: {endereco}")
-    return None
-
-def calcular_distancia_rua(lat1: float, lng1: float, lat2: float, lng2: float) -> Optional[float]:
-    """Distância real de rua (km) entre dois pontos, via OpenRouteService Directions."""
-    if not ORS_API_KEY:
-        return None
-    try:
-        url = "https://api.openrouteservice.org/v2/directions/driving-car"
-        headers = {"Authorization": ORS_API_KEY, "Content-Type": "application/json"}
-        body = {"coordinates": [[lng1, lat1], [lng2, lat2]]}
-        resp = requests.post(url, json=body, headers=headers, timeout=8)
-        if resp.status_code == 200:
-            data = resp.json()
-            rotas = data.get('routes', [])
-            if rotas:
-                metros = rotas[0].get('summary', {}).get('distance', 0)
-                return round(metros / 1000.0, 2)
-        logger.warning(f"⚠️ Sem rota encontrada entre os pontos")
-        return None
-    except Exception as e:
-        logger.error(f"❌ Erro ao calcular distância: {e}")
-        return None
-
-def get_config_food(db_id: str) -> Dict:
-    """Retorna a configuração de pedidos online da loja (cria padrão se não existir)."""
-    padrao = {'ativo': False, 'aberto': False, 'aceita_entrega': True, 'aceita_retirada': True,
-        'aceita_mesa': False, 'valor_km': 2.0, 'frete_minimo': 5.0, 'raio_max_km': 10,
-        'tempo_preparo_min': 30, 'endereco_loja': '', 'coord_lat': None, 'coord_lng': None,
-        'pix_habilitado': True, 'pagamento_na_entrega': True}
-    try:
-        with get_db_context() as conn:
-            cur = conn.execute("SELECT ativo, aberto, aceita_entrega, aceita_retirada, aceita_mesa, valor_km, frete_minimo, raio_max_km, tempo_preparo_min, endereco_loja, coord_lat, coord_lng, pix_habilitado, pagamento_na_entrega FROM config_food WHERE db_id=?", (db_id,))
-            row = cur.fetchone()
-            if row:
-                return {'ativo': bool(row[0]), 'aberto': bool(row[1]), 'aceita_entrega': bool(row[2]),
-                    'aceita_retirada': bool(row[3]), 'aceita_mesa': bool(row[4]), 'valor_km': row[5],
-                    'frete_minimo': row[6], 'raio_max_km': row[7], 'tempo_preparo_min': row[8],
-                    'endereco_loja': row[9] or '', 'coord_lat': row[10], 'coord_lng': row[11],
-                    'pix_habilitado': bool(row[12]), 'pagamento_na_entrega': bool(row[13])}
-    except Exception as e:
-        logger.error(f"❌ Erro ao ler config_food: {e}")
-    return padrao
-
-def get_limite_produtos(db_id: str) -> int:
-    try:
-        plano = get_plano_efetivo(db_id)
-        return plano.produtos if plano else 300
-    except:
-        return 300
-
-def get_total_produtos(db_id: str) -> int:
-    try:
-        with get_db_context() as conn:
-            cursor = conn.execute("SELECT COUNT(*) FROM produtos WHERE db_id=?", (db_id,))
-            return cursor.fetchone()[0] or 0
-    except:
-        return 0
-
-def get_usuarios_do_plano(db_id: str) -> List:
-    try:
-        with get_db_context() as conn:
-            cursor = conn.execute("SELECT id FROM users WHERE db_id=?", (db_id,))
-            return cursor.fetchall()
-    except:
-        return []
-
-def pode_adicionar_produto(db_id: str, quantidade: int = 1) -> Tuple[bool, str]:
-    limite = get_limite_produtos(db_id)
-    atual = get_total_produtos(db_id)
-    if limite == -1:
-        return True, f"Ilimitado ({atual} atuais)"
-    if atual + quantidade > limite:
-        return False, f"Limite de {limite} produtos atingido! ({atual}/{limite})"
-    return True, f"OK ({atual}/{limite})"
-
-def get_permissoes(db_id: str) -> Dict:
-    """Retorna as permissões do plano do usuário (offline-first via token local)"""
-    _perm_padrao = {'clientes': False, 'dashboard': False, 'busca_estoque': False, 'margem': False, 'fiado': False, 'kit_combo': False}
-    try:
-        plano = get_plano_efetivo(db_id)
-        return plano.permissoes if plano else _perm_padrao
-    except:
-        return _perm_padrao
-
-# ============================================================
-# FUNÇÃO DE SINCRONIZAÇÃO EM BACKGROUND
-# ============================================================
-
-def sincronizar_planos_periodicamente():
-    while True:
-        try:
-            _time.sleep(3600)
-            with get_db_context() as conn:
-                usuarios = conn.execute("SELECT db_id FROM users").fetchall()
-                for usuario in usuarios:
-                    db_id = usuario[0]
-                    if db_id:
-                        try:
-                            plano = PlanoSincronizado(db_id, CHAVE_SECRETA_PLANO)
-                            resultado = plano.sincronizar_token()
-                            if resultado.get('token_atualizado'):
-                                logger.info(f"🔄 Token sincronizado em background para {db_id}")
-                        except Exception as e:
-                            logger.error(f"⚠️ Erro na sincronização background de {db_id}: {e}")
-        except Exception as e:
-            logger.error(f"❌ Erro no loop de sincronização: {e}")
-            _time.sleep(300)
-
-# ============================================================
-# SINCRONIZAÇÃO INTELIGENTE
-# ============================================================
-
-def contar_dados_locais(db_id: str) -> Dict:
-    try:
-        with get_db_context() as conn:
-            p = conn.execute("SELECT COUNT(*) FROM produtos WHERE db_id=?", (db_id,)).fetchone()[0]
-            c = conn.execute("SELECT COUNT(*) FROM clientes WHERE db_id=?", (db_id,)).fetchone()[0]
-            v = conn.execute("SELECT COUNT(*) FROM vendas WHERE db_id=?", (db_id,)).fetchone()[0]
-            return {'produtos': p, 'clientes': c, 'vendas': v, 'total': p + c + v}
-    except:
-        return {'produtos': 0, 'clientes': 0, 'vendas': 0, 'total': 0}
-
-def _normalizar_dados_firebase(dados_fb: Dict) -> Dict:
-    if not dados_fb:
-        return {'produtos': {}, 'clientes': {}, 'vendas': []}
-    resultado = {}
-    produtos = dados_fb.get('produtos')
-    if produtos is None:
-        resultado['produtos'] = {}
-    elif isinstance(produtos, dict):
-        resultado['produtos'] = produtos
-    elif isinstance(produtos, list):
-        novo_dict = {}
-        for item in produtos:
-            if isinstance(item, dict):
-                codigo = item.get('codigo', str(uuid.uuid4())[:8])
-                novo_dict[codigo] = item
-        resultado['produtos'] = novo_dict
-    else:
-        resultado['produtos'] = {}
-    clientes = dados_fb.get('clientes')
-    if clientes is None:
-        resultado['clientes'] = {}
-    elif isinstance(clientes, dict):
-        resultado['clientes'] = clientes
-    elif isinstance(clientes, list):
-        novo_dict = {}
-        for item in clientes:
-            if isinstance(item, dict):
-                id_cli = item.get('id')
-                if id_cli is None:
-                    id_cli = str(uuid.uuid4())[:8]
-                novo_dict[str(id_cli)] = item
-        resultado['clientes'] = novo_dict
-    else:
-        resultado['clientes'] = {}
-    vendas = dados_fb.get('vendas')
-    if vendas is None:
-        resultado['vendas'] = []
-    elif isinstance(vendas, list):
-        resultado['vendas'] = vendas
-    elif isinstance(vendas, dict):
-        resultado['vendas'] = list(vendas.values())
-    else:
-        resultado['vendas'] = []
-    return resultado
-
-def contar_dados_firebase(dados_fb: Dict) -> Dict:
-    if not dados_fb:
-        return {'produtos': 0, 'clientes': 0, 'vendas': 0, 'total': 0}
-    normalizado = _normalizar_dados_firebase(dados_fb)
-    p = len(normalizado.get('produtos') or {})
-    c = len(normalizado.get('clientes') or {})
-    v = len(normalizado.get('vendas') or [])
-    return {'produtos': p, 'clientes': c, 'vendas': v, 'total': p + c + v}
-
-def sincronizar_dados(db_id: str) -> Dict:
-    resultado = {'success': True, 'direcao': 'nenhuma', 'produtos_adicionados': 0, 'clientes_adicionados': 0, 'vendas_adicionadas': 0, 'erros': []}
-    try:
-        dados_firebase = None
-        try:
-            dados_firebase = carregar_usuario_firebase(db_id)
-        except Exception as e:
-            logger.error(f"⚠️ Erro ao carregar Firebase: {e}")
-        dados_firebase = _normalizar_dados_firebase(dados_firebase)
-        local_count = contar_dados_locais(db_id)
-        firebase_count = contar_dados_firebase(dados_firebase)
-        logger.info(f"📊 Local: {local_count['total']} | Firebase: {firebase_count['total']}")
-        if not dados_firebase or firebase_count['total'] == 0:
-            logger.info("🔼 Firebase vazio → subindo dados locais")
-            enviou = enviar_para_firebase(db_id)
-            resultado['direcao'] = 'local_para_firebase'
-            resultado['success'] = enviou
-            return resultado
-        if local_count['total'] == 0:
-            logger.info("🔽 Local vazio → baixando dados do Firebase")
-            _baixar_firebase_para_local(db_id, dados_firebase, resultado)
-            resultado['direcao'] = 'firebase_para_local'
-            return resultado
-        logger.info("🔄 Merge bidirecional")
-        _merge_bidirecional_sem_duplicar(db_id, dados_firebase, resultado)
-        resultado['direcao'] = 'merge'
-        enviar_para_firebase(db_id)
-        return resultado
-    except Exception as e:
-        logger.error(f"❌ Erro na sincronização: {e}")
-        resultado['success'] = False
-        resultado['erros'].append(str(e))
-        return resultado
-
-def _baixar_firebase_para_local(db_id: str, dados_firebase: Dict, resultado: Dict) -> None:
-    with get_db_context() as conn:
-        for codigo, dados_prod in (dados_firebase.get('produtos') or {}).items():
-            try:
-                conn.execute("""INSERT OR IGNORE INTO produtos (codigo, nome, preco, custo, margem, estoque, categoria, db_id, ultima_atualizacao)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""", (codigo, dados_prod.get('nome', ''), dados_prod.get('preco', 0),
-                    dados_prod.get('custo', 0), dados_prod.get('margem', 0), dados_prod.get('estoque', 0),
-                    dados_prod.get('categoria', 'Geral'), db_id, dados_prod.get('ultima_atualizacao', get_timestamp())))
-                resultado['produtos_adicionados'] += 1
-            except Exception as e:
-                logger.error(f"⚠️ Erro ao inserir produto {codigo}: {e}")
-        for id_cli, dados_cli in (dados_firebase.get('clientes') or {}).items():
-            try:
-                id_int = int(id_cli) if str(id_cli).isdigit() else None
-                conn.execute("""INSERT OR IGNORE INTO clientes (id, nome, telefone, email, divida, db_id, ultima_atualizacao)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)""", (id_int, dados_cli.get('nome', ''), dados_cli.get('telefone', ''),
-                    dados_cli.get('email', ''), dados_cli.get('divida', 0), db_id, dados_cli.get('ultima_atualizacao', get_timestamp())))
-                resultado['clientes_adicionados'] += 1
-            except Exception as e:
-                logger.error(f"⚠️ Erro ao inserir cliente {id_cli}: {e}")
-        for venda_fb in (dados_firebase.get('vendas') or []):
-            venda_id = venda_fb.get('id')
-            if not venda_id:
-                continue
-            try:
-                conn.execute("""INSERT OR IGNORE INTO vendas (id, data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente, usuario_id, db_id, recebido, troco)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", (venda_id, venda_fb.get('data_hora', get_timestamp()),
-                    venda_fb.get('subtotal', 0), venda_fb.get('desconto', 0), venda_fb.get('total', 0),
-                    venda_fb.get('lucro_total', 0), venda_fb.get('metodo', 'Dinheiro'),
-                    json.dumps(venda_fb.get('itens', [])), venda_fb.get('cliente', ''),
-                    venda_fb.get('usuario_id', ''), db_id, venda_fb.get('recebido', 0), venda_fb.get('troco', 0)))
-                resultado['vendas_adicionadas'] += 1
-            except Exception as e:
-                logger.error(f"⚠️ Erro ao inserir venda {venda_id}: {e}")
-        conn.commit()
-
-def _merge_bidirecional_sem_duplicar(db_id: str, dados_firebase: Dict, resultado: Dict) -> None:
-    with get_db_context() as conn:
-        cursor = conn.execute("SELECT codigo FROM produtos WHERE db_id=?", (db_id,))
-        codigos_locais = {row[0] for row in cursor.fetchall()}
-        for codigo, dados_prod in (dados_firebase.get('produtos') or {}).items():
-            if codigo not in codigos_locais:
-                try:
-                    conn.execute("""INSERT INTO produtos (codigo, nome, preco, custo, margem, estoque, categoria, db_id, ultima_atualizacao)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""", (codigo, dados_prod.get('nome', ''), dados_prod.get('preco', 0),
-                        dados_prod.get('custo', 0), dados_prod.get('margem', 0), dados_prod.get('estoque', 0),
-                        dados_prod.get('categoria', 'Geral'), db_id, dados_prod.get('ultima_atualizacao', get_timestamp())))
-                    resultado['produtos_adicionados'] += 1
-                except Exception as e:
-                    logger.error(f"⚠️ Erro no merge produto {codigo}: {e}")
-            else:
-                firebase_ts = dados_prod.get('ultima_atualizacao')
-                if firebase_ts:
-                    cursor2 = conn.execute("SELECT ultima_atualizacao FROM produtos WHERE codigo=? AND db_id=?", (codigo, db_id))
-                    row = cursor2.fetchone()
-                    local_ts = row[0] if row else None
-                    if not local_ts or firebase_ts > local_ts:
-                        try:
-                            conn.execute("""UPDATE produtos SET nome=?, preco=?, custo=?, margem=?, estoque=?, categoria=?, ultima_atualizacao=?
-                                WHERE codigo=? AND db_id=?""", (dados_prod.get('nome', ''), dados_prod.get('preco', 0),
-                                dados_prod.get('custo', 0), dados_prod.get('margem', 0), dados_prod.get('estoque', 0),
-                                dados_prod.get('categoria', 'Geral'), firebase_ts, codigo, db_id))
-                        except Exception as e:
-                            logger.error(f"⚠️ Erro ao atualizar produto {codigo}: {e}")
-        cursor = conn.execute("SELECT id FROM clientes WHERE db_id=?", (db_id,))
-        ids_clientes_locais = {row[0] for row in cursor.fetchall()}
-        cursor = conn.execute("SELECT item_id FROM exclusoes WHERE tipo='cliente' AND db_id=?", (db_id,))
-        ids_clientes_excluidos = {row[0] for row in cursor.fetchall()}
-        for id_cli, dados_cli in (dados_firebase.get('clientes') or {}).items():
-            if str(id_cli) in ids_clientes_excluidos:
-                continue
-            id_int = int(id_cli) if str(id_cli).isdigit() else None
-            nome_cliente = dados_cli.get('nome', '')
-            if nome_cliente and id_int is None:
-                cursor2 = conn.execute("SELECT id FROM clientes WHERE nome=? AND db_id=?", (nome_cliente, db_id))
-                existente = cursor2.fetchone()
-                if existente:
-                    id_int = existente[0]
-            if id_int is not None and str(id_int) in ids_clientes_excluidos:
-                continue
-            if id_int is not None and id_int in ids_clientes_locais:
-                firebase_ts = dados_cli.get('ultima_atualizacao')
-                cursor2 = conn.execute("SELECT ultima_atualizacao FROM clientes WHERE id=? AND db_id=?", (id_int, db_id))
-                row = cursor2.fetchone()
-                local_ts = row[0] if row else None
-                # Só sobrescreve com o dado do Firebase se ele for de fato mais recente que o local
-                if firebase_ts and local_ts and firebase_ts <= local_ts:
-                    continue
-                try:
-                    conn.execute("""UPDATE clientes SET nome=?, telefone=?, email=?, divida=?, ultima_atualizacao=?
-                        WHERE id=? AND db_id=?""", (dados_cli.get('nome', ''), dados_cli.get('telefone', ''),
-                        dados_cli.get('email', ''), dados_cli.get('divida', 0), firebase_ts or get_timestamp(), id_int, db_id))
-                except Exception as e:
-                    logger.error(f"⚠️ Erro ao atualizar cliente {id_int}: {e}")
-            else:
-                try:
-                    conn.execute("""INSERT INTO clientes (id, nome, telefone, email, divida, db_id, ultima_atualizacao)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)""", (id_int, dados_cli.get('nome', ''), dados_cli.get('telefone', ''),
-                        dados_cli.get('email', ''), dados_cli.get('divida', 0), db_id, dados_cli.get('ultima_atualizacao', get_timestamp())))
-                    resultado['clientes_adicionados'] += 1
-                except Exception as e:
-                    logger.error(f"⚠️ Erro ao inserir cliente {id_cli}: {e}")
-        cursor = conn.execute("SELECT id FROM vendas WHERE db_id=?", (db_id,))
-        ids_vendas_locais = {row[0] for row in cursor.fetchall()}
-        for venda_fb in (dados_firebase.get('vendas') or []):
-            venda_id = venda_fb.get('id')
-            if not venda_id or venda_id in ids_vendas_locais:
-                continue
-            try:
-                conn.execute("""INSERT INTO vendas (id, data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente, usuario_id, db_id, recebido, troco)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", (venda_id, venda_fb.get('data_hora', get_timestamp()),
-                    venda_fb.get('subtotal', 0), venda_fb.get('desconto', 0), venda_fb.get('total', 0),
-                    venda_fb.get('lucro_total', 0), venda_fb.get('metodo', 'Dinheiro'),
-                    json.dumps(venda_fb.get('itens', [])), venda_fb.get('cliente', ''),
-                    venda_fb.get('usuario_id', ''), db_id, venda_fb.get('recebido', 0), venda_fb.get('troco', 0)))
-                resultado['vendas_adicionadas'] += 1
-            except Exception as e:
-                logger.error(f"⚠️ Erro no merge venda {venda_id}: {e}")
-
-        # === KITS / COMBOS ===
-        cursor = conn.execute("SELECT id FROM kits WHERE db_id=?", (db_id,))
-        ids_kits_locais = {row[0] for row in cursor.fetchall()}
-        cursor = conn.execute("SELECT item_id FROM exclusoes WHERE tipo='kit' AND db_id=?", (db_id,))
-        ids_kits_excluidos = {row[0] for row in cursor.fetchall()}
-        for kit_id, dados_kit in (dados_firebase.get('kits') or {}).items():
-            if str(kit_id) in ids_kits_excluidos:
-                continue
-            itens_kit = dados_kit.get('itens', [])
-            itens_json = json.dumps(itens_kit, ensure_ascii=False) if not isinstance(itens_kit, str) else itens_kit
-            if kit_id in ids_kits_locais:
-                firebase_ts = dados_kit.get('ultima_atualizacao')
-                cursor2 = conn.execute("SELECT ultima_atualizacao FROM kits WHERE id=? AND db_id=?", (kit_id, db_id))
-                row = cursor2.fetchone()
-                local_ts = row[0] if row else None
-                if firebase_ts and local_ts and firebase_ts <= local_ts:
-                    continue
-                try:
-                    conn.execute("""UPDATE kits SET nome=?, preco=?, itens=?, ativo=?, ultima_atualizacao=?
-                        WHERE id=? AND db_id=?""", (dados_kit.get('nome', ''), dados_kit.get('preco', 0),
-                        itens_json, 1 if dados_kit.get('ativo', True) else 0, firebase_ts or get_timestamp(), kit_id, db_id))
-                except Exception as e:
-                    logger.error(f"⚠️ Erro ao atualizar kit {kit_id}: {e}")
-            else:
-                try:
-                    conn.execute("""INSERT INTO kits (id, nome, preco, itens, db_id, ativo, ultima_atualizacao)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)""", (kit_id, dados_kit.get('nome', ''), dados_kit.get('preco', 0),
-                        itens_json, db_id, 1 if dados_kit.get('ativo', True) else 0, dados_kit.get('ultima_atualizacao', get_timestamp())))
-                except Exception as e:
-                    logger.error(f"⚠️ Erro ao inserir kit {kit_id}: {e}")
-
-        conn.commit()
-
-def enviar_para_firebase(db_id: str) -> bool:
-    try:
-        dados_firebase = carregar_usuario_firebase(db_id) or {}
-        with get_db_context() as conn:
-            cursor = conn.execute("""SELECT codigo, nome, preco, custo, margem, estoque, categoria, ultima_atualizacao FROM produtos WHERE db_id=?""", (db_id,))
-            produtos = {}
-            for row in cursor.fetchall():
-                produtos[row[0]] = {'nome': row[1], 'preco': row[2], 'custo': row[3] or 0, 'margem': row[4] or 0,
-                    'estoque': row[5], 'categoria': row[6] or 'Geral', 'ultima_atualizacao': row[7] or get_timestamp()}
-            dados_firebase['produtos'] = produtos
-            cursor = conn.execute("""SELECT id, nome, telefone, email, divida, ultima_atualizacao FROM clientes WHERE db_id=?""", (db_id,))
-            clientes = {}
-            for row in cursor.fetchall():
-                clientes[str(row[0])] = {'nome': row[1], 'telefone': row[2] or '', 'email': row[3] or '', 'divida': row[4] or 0, 'ultima_atualizacao': row[5] or get_timestamp()}
-            dados_firebase['clientes'] = clientes
-            cursor = conn.execute("""SELECT id, data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente, usuario_id, recebido, troco
-                FROM vendas WHERE db_id=?""", (db_id,))
-            vendas = []
-            for row in cursor.fetchall():
-                vendas.append({'id': row[0], 'data_hora': row[1], 'subtotal': row[2], 'desconto': row[3], 'total': row[4],
-                    'lucro_total': row[5] or 0, 'metodo': row[6], 'itens': json.loads(row[7]) if row[7] else [],
-                    'cliente': row[8] or '', 'usuario_id': row[9] or '', 'recebido': row[10] or 0, 'troco': row[11] or 0})
-            dados_firebase['vendas'] = vendas
-            cursor = conn.execute("""SELECT usuario_id, valor_abertura, data_abertura, data_fechamento, total, status
-                FROM caixa WHERE db_id=? ORDER BY id DESC LIMIT 1""", (db_id,))
-            result = cursor.fetchone()
-            if result:
-                dados_firebase['caixa'] = {'usuario_id': result[0], 'valor_abertura': result[1], 'data_abertura': result[2],
-                    'data_fechamento': result[3], 'total': result[4] or 0, 'status': result[5]}
-            cursor = conn.execute("SELECT nome_loja, cnpj, cnpj_dados FROM users WHERE db_id=? LIMIT 1", (db_id,))
-            loja = cursor.fetchone()
-            if loja:
-                dados_firebase['nome_loja'] = loja[0] or ''
-                dados_firebase['cnpj'] = loja[1] or ''
-                try:
-                    dados_firebase['cnpj_dados'] = json.loads(loja[2]) if loja[2] else {}
-                except:
-                    dados_firebase['cnpj_dados'] = {}
-            cursor = conn.execute("SELECT id, nome, preco, itens, ativo, ultima_atualizacao FROM kits WHERE db_id=?", (db_id,))
-            kits = {}
-            for row in cursor.fetchall():
-                try:
-                    itens_kit = json.loads(row[3]) if row[3] else []
-                except:
-                    itens_kit = []
-                kits[str(row[0])] = {'nome': row[1], 'preco': row[2] or 0, 'itens': itens_kit,
-                    'ativo': bool(row[4]), 'ultima_atualizacao': row[5] or get_timestamp()}
-            dados_firebase['kits'] = kits
-
-            # Configuração de pedidos online (lida pelo site SMART FOOD)
-            cfg = get_config_food(db_id)
-            # A loja só aparece no site se: ativo + aberto + caixa aberto
-            cur_caixa = conn.execute("SELECT id FROM caixa WHERE db_id=? AND status='aberto' LIMIT 1", (db_id,))
-            caixa_aberto = cur_caixa.fetchone() is not None
-            cfg['loja_disponivel'] = bool(cfg.get('ativo') and cfg.get('aberto') and caixa_aberto)
-            # Nome e endereço da loja para exibição no site
-            cur_loja = conn.execute("SELECT nome_loja, cnpj FROM users WHERE db_id=? LIMIT 1", (db_id,))
-            row_loja = cur_loja.fetchone()
-            if row_loja:
-                cfg['nome_loja'] = row_loja[0] or ''
-            dados_firebase['config_food'] = cfg
-
-            # Status do chat (mensagens da loja para os clientes)
-            cur_chat = conn.execute("SELECT pedido_id, autor, mensagem, criado_em FROM chat_pedidos WHERE db_id=? ORDER BY id DESC LIMIT 200", (db_id,))
-            chat = {}
-            for cr in cur_chat.fetchall():
-                chat.setdefault(cr[0], []).append({'autor': cr[1], 'mensagem': cr[2], 'criado_em': cr[3]})
-            dados_firebase['chat_pedidos'] = chat
-        ok = salvar_usuario_firebase(db_id, dados_firebase)
-        if ok:
-            logger.info(f"✅ Dados enviados para Firebase: {db_id} ({len(vendas)} vendas, {len(produtos)} produtos)")
-        else:
-            logger.error(f"❌ Falha ao enviar para Firebase: {db_id}")
-        return ok
-    except Exception as e:
-        logger.error(f"❌ Erro ao enviar para Firebase: {e}")
-        return False
-
-def sincronizar_automatico(db_id: str) -> None:
-    if not db_id:
-        return
-    def _sync():
-        try:
-            _time.sleep(0.5)
-            sincronizar_dados(db_id)
-        except Exception as e:
-            logger.error(f"⚠️ Erro sync automático: {e}")
-    threading.Thread(target=_sync, daemon=True).start()
-
-def criar_usuario_firebase(db_id: str, nome: str, email: str, senha_hash: str, servidor_id: str,
-                          nome_loja: str = "", cnpj: str = "", cnpj_dados: Dict = None) -> Dict:
-    if cnpj_dados is None:
-        cnpj_dados = {}
-    # 15 DIAS DE TESTE GRÁTIS (PLANO EMPRESARIAL)
-    expira_em = (datetime.now() + timedelta(days=15)).isoformat()
-    plano_id = 5  # Plano de TESTE (Empresarial completo)
-    plano = PlanoSincronizado(db_id, CHAVE_SECRETA_PLANO)
-    token = plano._criar_token(expira_em, plano_id)
-    dados = {
-        'db_id': db_id, 'nome': nome, 'email': email, 'senha': senha_hash,
-        'servidor_id': servidor_id, 'nome_loja': nome_loja, 'cnpj': cnpj,
-        'cnpj_dados': cnpj_dados, 'data_cadastro': get_timestamp(),
-        'plano': plano_id, 'expira_em': expira_em, 'token_plano': token,
-        'token_atualizado_em': get_timestamp(), 'teste_usado': True, 'produtos': {}, 'clientes': {},
-        'vendas': [], 'caixa': {'status': 'fechado'}, 'config': {}
-    }
-    salvar_usuario_firebase(db_id, dados)
-    plano.salvar_token_local(token)
-    try:
-        with get_db_context() as conn:
-            conn.execute("INSERT OR REPLACE INTO config (chave, valor) VALUES ('teste_usado', '1')")
-    except Exception as e:
-        logger.error(f"⚠️ Erro ao marcar teste usado no registro: {e}")
-    return dados
-
-# ============================================================
-# BUSCA PRODUTO POR CÓDIGO DE BARRAS
-# ============================================================
-def buscar_produto_por_codigo_barras(codigo_barras: str) -> Dict:
-    codigo_limpo = ''.join(filter(str.isdigit, codigo_barras))
-    if len(codigo_limpo) < 8:
-        return {"success": False, "error": "Código de barras inválido. Mínimo 8 dígitos."}
-    if codigo_limpo in CACHE_PRODUTO_BARRAS:
-        cache_data = CACHE_PRODUTO_BARRAS[codigo_limpo]
-        if _time.time() - cache_data['timestamp'] < 604800:
-            return {"success": True, "dados": cache_data['dados'], "fonte": "cache"}
-    try:
-        url = f"https://www.dotcompany.com.br/api/catalogo/public/buscar?q={codigo_limpo}"
-        response = requests.get(url, timeout=8, headers={"User-Agent": "SMART-PDV/10.0"})
-        if response.status_code == 200:
-            data = response.json()
-            if data.get('sucesso') and data.get('produto'):
-                produto = data['produto']
-                dados_produto = {
-                    "nome": produto.get('nome') or produto.get('descricao') or f"Produto {codigo_limpo}",
-                    "marca": produto.get('marca', ''),
-                    "categoria": produto.get('categoria') or produto.get('categoria_google_shopping') or "Geral",
-                    "gtin": produto.get('gtin', codigo_limpo),
-                    "imagem_url": produto.get('imagem_url', ''),
-                    "ncm": produto.get('ncm', ''),
-                    "fonte": "DotCompany"
-                }
-                CACHE_PRODUTO_BARRAS[codigo_limpo] = {'dados': dados_produto, 'timestamp': _time.time()}
-                return {"success": True, "dados": dados_produto, "fonte": "DotCompany"}
-    except:
-        pass
-    try:
-        url = f"https://world.openfoodfacts.org/api/v0/product/{codigo_limpo}.json"
-        response = requests.get(url, timeout=10, headers={"User-Agent": "SMART-PDV/10.0"})
-        if response.status_code == 200:
-            data = response.json()
-            if data.get('status') == 1 and data.get('product'):
-                produto = data['product']
-                nome = (produto.get('product_name') or produto.get('product_name_pt') or
-                        produto.get('product_name_en') or produto.get('generic_name') or '')
-                marca = produto.get('brands', '').split(',')[0].strip() if produto.get('brands') else ''
-                cat = produto.get('categories', '').split(',')[0].strip() if produto.get('categories') else 'Geral'
-                imagem_url = produto.get('image_front_url') or produto.get('image_url') or ''
-                dados_produto = {"nome": nome or f"Produto {codigo_limpo}", "marca": marca, "categoria": cat, "gtin": codigo_limpo, "imagem_url": imagem_url, "fonte": "OpenFoodFacts"}
-                CACHE_PRODUTO_BARRAS[codigo_limpo] = {'dados': dados_produto, 'timestamp': _time.time()}
-                return {"success": True, "dados": dados_produto, "fonte": "OpenFoodFacts"}
-    except:
-        pass
-    try:
-        url = f"https://brasilapi.com.br/api/gtin/v1/{codigo_limpo}"
-        response = requests.get(url, timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            if data.get('gtin'):
-                dados_produto = {"nome": data.get('nome') or data.get('descricao') or f"Produto {codigo_limpo}",
-                    "marca": data.get('marca', ''), "categoria": data.get('categoria') or data.get('classe') or "Geral",
-                    "gtin": data.get('gtin', codigo_limpo), "imagem_url": "", "fonte": "BrasilAPI"}
-                CACHE_PRODUTO_BARRAS[codigo_limpo] = {'dados': dados_produto, 'timestamp': _time.time()}
-                return {"success": True, "dados": dados_produto, "fonte": "BrasilAPI"}
-    except:
-        pass
-    dados_produto = {"nome": f"Produto {codigo_limpo}", "marca": "", "categoria": "Geral", "gtin": codigo_limpo, "imagem_url": "", "fonte": "Fallback"}
-    CACHE_PRODUTO_BARRAS[codigo_limpo] = {'dados': dados_produto, 'timestamp': _time.time()}
-    return {"success": True, "dados": dados_produto, "fonte": "Fallback"}
-
-# ============================================================
-# IMPRESSÃO ESC/POS - APENAS WINDOWS
-# ============================================================
-def formatar_cnpj(cnpj: str) -> str:
-    if not cnpj or len(cnpj) != 14:
-        return cnpj
-    return f"{cnpj[:2]}.{cnpj[2:5]}.{cnpj[5:8]}/{cnpj[8:12]}-{cnpj[12:14]}"
-
-def gerar_texto_cupom(dados: Dict) -> str:
-    nome_loja = dados.get('nome_loja', 'MINHA LOJA')
-    cnpj = dados.get('cnpj', '')
-    cnpj_dados = dados.get('cnpj_dados', {})
-    data_hora = dados.get('data_hora', datetime.now().strftime('%d/%m/%Y %H:%M:%S'))
-    venda_id = dados.get('venda_id', '')
-    itens = dados.get('itens', [])
-    subtotal = dados.get('subtotal', 0)
-    desconto = dados.get('desconto', 0)
-    total = dados.get('total', 0)
-    lucro_total = dados.get('lucro_total', 0)
-    metodo = dados.get('metodo', 'Dinheiro')
-    cliente = dados.get('cliente', '')
-    usuario = dados.get('usuario', '')
-    recebido = dados.get('recebido', 0)
-    troco = dados.get('troco', 0)
-
-    L = 48
-    linhas = []
-    linhas.append('=' * L)
-    linhas.append(nome_loja.center(L))
-    if cnpj:
-        linhas.append(f'CNPJ: {formatar_cnpj(cnpj)}'.center(L))
-    if cnpj_dados:
-        if cnpj_dados.get('razao_social'):
-            linhas.append(cnpj_dados['razao_social'][:46].center(L))
-        if cnpj_dados.get('nome_fantasia'):
-            linhas.append(f'FANTASIA: {cnpj_dados["nome_fantasia"][:37]}'.center(L))
-        if cnpj_dados.get('data_abertura'):
-            linhas.append(f'ABERTURA: {cnpj_dados["data_abertura"]}'.center(L))
-        if cnpj_dados.get('porte'):
-            linhas.append(f'PORTE: {cnpj_dados["porte"][:40]}'.center(L))
-        if cnpj_dados.get('natureza_juridica'):
-            linhas.append(f'NATUREZA: {cnpj_dados["natureza_juridica"][:37]}'.center(L))
-        if cnpj_dados.get('cnae_descricao'):
-            linhas.append(f'ATIVIDADE: {cnpj_dados["cnae_descricao"][:36]}'.center(L))
-        if cnpj_dados.get('logradouro'):
-            end = cnpj_dados.get('logradouro', '')
-            if cnpj_dados.get('numero'):
-                end += f", {cnpj_dados['numero']}"
-            if cnpj_dados.get('bairro'):
-                end += f" - {cnpj_dados['bairro']}"
-            if cnpj_dados.get('municipio'):
-                end += f", {cnpj_dados['municipio']}"
-            if cnpj_dados.get('uf'):
-                end += f"/{cnpj_dados['uf']}"
-            linhas.append(end[:46].center(L))
-        if cnpj_dados.get('telefone'):
-            linhas.append(f'TEL: {cnpj_dados["telefone"]}'.center(L))
-        if cnpj_dados.get('email'):
-            linhas.append(f'EMAIL: {cnpj_dados["email"]}'.center(L))
-    linhas.append('-' * L)
-    linhas.append('CUPOM NÃO FISCAL'.center(L))
-    linhas.append(f'Data: {data_hora}'.center(L))
-    if venda_id:
-        linhas.append(f'Venda: #{venda_id}'.center(L))
-    linhas.append('=' * L)
-    linhas.append('')
-    linhas.append('ITEM'.ljust(3) + 'DESCRIÇÃO'.ljust(25) + 'QTD'.rjust(4) + 'TOTAL'.rjust(16))
-    linhas.append('-' * L)
-
-    for idx, item in enumerate(itens, 1):
-        nome = item.get('nome', 'Item')[:22]
-        qtd = item.get('quantidade', 1)
-        total_item = item.get('total', 0)
-        preco_unit = item.get('preco_unitario', 0)
-        lucro_item = item.get('lucro', 0)
-        linhas.append(f"{str(idx).ljust(3)}{nome.ljust(25)}{str(qtd).rjust(4)}{f'R$ {total_item:.2f}'.rjust(16)}")
-        if qtd > 1 and preco_unit:
-            linhas.append(f"   R$ {preco_unit:.2f} x {qtd}")
-        if lucro_item > 0:
-            linhas.append(f"   Lucro: R$ {lucro_item:.2f}".ljust(40))
-
-    linhas.append('-' * L)
-    linhas.append(f"{'SUBTOTAL:'.ljust(32)}R$ {subtotal:.2f}".rjust(L))
-    if desconto > 0:
-        linhas.append(f"{'DESCONTO:'.ljust(32)}R$ {desconto:.2f}".rjust(L))
-    linhas.append(f"{'TOTAL:'.ljust(32)}R$ {total:.2f}".rjust(L))
-    if lucro_total > 0:
-        linhas.append(f"{'LUCRO:'.ljust(32)}R$ {lucro_total:.2f}".rjust(L))
-    linhas.append('-' * L)
-    linhas.append(f"PAGAMENTO: {metodo}".center(L))
-    if recebido > 0:
-        linhas.append(f"RECEBIDO: R$ {recebido:.2f}".center(L))
-    if troco > 0:
-        linhas.append(f"TROCO: R$ {troco:.2f}".center(L))
-    if cliente:
-        linhas.append(f"CLIENTE: {cliente}".center(L))
-    if usuario:
-        linhas.append(f"OPERADOR: {usuario}".center(L))
-    linhas.append('=' * L)
-    linhas.append('')
-    linhas.append('VOLTE SEMPRE!'.center(L))
-    linhas.append('=' * L)
-    return '\n'.join(linhas) + '\n\n'
-
-def imprimir_cupom_escpos(dados: Dict) -> Dict:
-    if not IS_WINDOWS or not IMPRESSAO_DISPONIVEL:
-        return {"success": False, "error": "Impressão ESC/POS disponível apenas no Windows"}
-
-    try:
-        import win32print
-        texto = gerar_texto_cupom(dados)
-        ESC = chr(27)
-        GS = chr(29)
-        cmd_init = (ESC + '@').encode('latin-1', 'replace')
-        cmd_cut = (GS + 'V' + chr(66) + chr(0)).encode('latin-1', 'replace')
-
-        impressora_nome = win32print.GetDefaultPrinter()
-        if not impressora_nome:
-            return {"success": False, "error": "Nenhuma impressora padrão definida"}
-
-        hprinter = win32print.OpenPrinter(impressora_nome)
-        try:
-            win32print.StartDocPrinter(hprinter, 1, ("Cupom Fiscal", None, "RAW"))
-            win32print.StartPagePrinter(hprinter)
-            win32print.WritePrinter(hprinter, cmd_init)
-            win32print.WritePrinter(hprinter, texto.encode('latin-1', 'replace'))
-            win32print.WritePrinter(hprinter, b'\n\n\n')
-            win32print.WritePrinter(hprinter, cmd_cut)
-            win32print.EndPagePrinter(hprinter)
-            win32print.EndDocPrinter(hprinter)
-        finally:
-            win32print.ClosePrinter(hprinter)
-
-        venda_id = dados.get('venda_id', '')
-        if venda_id:
-            arquivo = os.path.join(CUPONS_DIR, f'cupom_{venda_id}.txt')
-            with open(arquivo, 'w', encoding='utf-8') as f:
-                f.write(texto)
-
-        logger.info(f"✅ Cupom impresso: Venda #{dados.get('venda_id', '')} - R$ {dados.get('total', 0):.2f}")
-        return {"success": True, "message": "Cupom impresso com sucesso!", "impressora": impressora_nome}
-
-    except Exception as e:
-        logger.error(f"❌ Erro ao imprimir cupom: {e}")
-        return {"success": False, "error": str(e)}
-
-# ============================================================
-# NORMALIZAÇÃO DE CNPJ
-# ============================================================
-def _normalizar_cnpj_dados(data: Dict) -> Dict:
-    end = data.get('endereco') or {}
-    def pick(*keys, default=''):
-        for k in keys:
-            v = data.get(k)
-            if v not in (None, ''):
-                return v
-            v = end.get(k)
-            if v not in (None, ''):
-                return v
-        return default
-    cnae_desc = data.get('cnae_fiscal_descricao') or data.get('cnaePrincipalDescricao')
-    if not cnae_desc:
-        ativ = data.get('atividade_principal')
-        if isinstance(ativ, list) and ativ:
-            cnae_desc = ativ[0].get('text', '')
-    cnae_desc = cnae_desc or ''
-    return {
-        "razao_social": pick('razao_social', 'razaoSocial', 'nome'),
-        "nome_fantasia": pick('nome_fantasia', 'nomeFantasia', 'fantasia', 'nome'),
-        "logradouro": pick('logradouro'),
-        "numero": pick('numero'),
-        "complemento": pick('complemento'),
-        "bairro": pick('bairro'),
-        "municipio": pick('municipio'),
-        "uf": pick('uf'),
-        "cep": pick('cep'),
-        "telefone": pick('ddd_telefone_1', 'telefone'),
-        "email": pick('email'),
-        "cnae_descricao": cnae_desc,
-        "porte": pick('porte', 'porte_empresa', 'porteEmpresa'),
-        "natureza_juridica": pick('natureza_juridica', 'naturezaJuridica'),
-        "data_abertura": pick('data_inicio_atividade', 'dataInicioAtividades', 'abertura'),
-        "situacao": pick('descricao_situacao_cadastral', 'situacaoCadastral', 'situacao_cadastral')
-    }
-
-# ============================================================
-# DOWNLOAD HTML
-# ============================================================
-def baixar_html_github() -> bool:
-    try:
-        caminho_html = os.path.join(TEMPLATES_DIR, "index.html")
-        logger.info("🔄 Baixando HTML do GitHub...")
-        response = requests.get(HTML_URL, timeout=8)
-        response.raise_for_status()
-        with open(caminho_html, "w", encoding="utf-8") as f:
-            f.write(response.text)
-        logger.info(f"✅ HTML baixado ({len(response.text)} chars)")
-        return True
-    except Exception as e:
-        logger.error(f"❌ Erro ao baixar HTML: {e}")
-        return False
-
-# ============================================================
-# ROTAS FLASK
-# ============================================================
-@app.route('/')
-def index():
-    try:
-        return render_template('index.html')
-    except:
-        return """<!DOCTYPE html><html><head><meta charset="UTF-8"><title>SMART PDV</title>
-        <style>body{font-family:Arial;background:#0f0f1a;color:#fff;display:flex;justify-content:center;align-items:center;min-height:100vh;}
-        .c{background:#16162e;border-radius:12px;padding:40px;text-align:center;}button{padding:12px 24px;background:#22c55e;color:#fff;border:0;border-radius:8px;cursor:pointer;}</style></head>
-        <body><div class="c"><h1>🏪 SMART PDV</h1><p style="color:#a0a0c0;">Baixando interface...</p><button onclick="location.reload()">🔄 Recarregar</button></div></body></html>"""
-
-@app.route('/api/versao')
-def get_versao():
-    return jsonify({"success": True, "versao": VERSION, "servidor_id": SERVIDOR_ID})
-
-@app.route('/api/health')
-def health_check():
-    status = {"status": "online", "versao": VERSION, "servidor_id": SERVIDOR_ID, "timestamp": get_timestamp(),
-        "db_status": "ok", "firebase_status": "ok", "sessoes_ativas": len(SESSOES_ATIVAS), "os": sys.platform}
-    try:
-        response = requests.get(f'{FB_URL}/pdv/usuarios.json?shallow=true', timeout=5)
-        if response.status_code != 200:
-            status["firebase_status"] = "warning"
-    except:
-        status["firebase_status"] = "error"
-        status["status"] = "degraded"
-    try:
-        with get_db_context() as conn:
-            conn.execute("SELECT 1")
-    except:
-        status["db_status"] = "error"
-        status["status"] = "degraded"
-    return jsonify(status)
-
-# ============================================================
-# AUTH
-# ============================================================
-@app.route('/api/validar/cnpj/<cnpj>')
-def validar_cnpj_route(cnpj: str):
-    try:
-        cnpj_limpo = ''.join(filter(str.isdigit, cnpj))
-        if len(cnpj_limpo) != 14:
-            return jsonify({"success": False, "error": "CNPJ inválido"})
-        with get_db_context() as conn:
-            cursor = conn.execute("SELECT email FROM users WHERE cnpj=?", (cnpj_limpo,))
-            result = cursor.fetchone()
-            if result:
-                return jsonify({"success": True, "existe": True, "email": result[0]})
-        if validar_cnpj_firebase(cnpj_limpo):
-            return jsonify({"success": True, "existe": True})
-        return jsonify({"success": True, "existe": False})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
-
-@app.route('/api/auth/register', methods=['POST'])
-@rate_limit(max_requests=3, window=300)
-def register():
-    try:
-        data = request.json or {}
-        nome = (data.get('nome') or '').strip()
-        email = (data.get('email') or '').strip().lower()
-        senha = data.get('senha') or ''
-        senha_hash = hash_senha(senha)
-        cnpj = ''.join(filter(str.isdigit, data.get('cnpj') or ''))
-        cnpj_dados = data.get('cnpj_dados') or {}
-        db_id = (data.get('db_id') or '').strip()
-        nome_loja = cnpj_dados.get('razao_social') or cnpj_dados.get('nome_fantasia') or 'Minha Loja'
-
-        if not nome or not email or not senha:
-            return jsonify({"success": False, "error": "Preencha todos os campos"})
-        if len(senha) < 4:
-            return jsonify({"success": False, "error": "Senha deve ter pelo menos 4 caracteres"})
-        if not db_id:
-            db_id = str(uuid.uuid4())[:8]
-
-        with get_db_context() as conn:
-            cursor = conn.execute("SELECT COUNT(*) FROM users WHERE servidor_id=? AND (cnpj='' OR cnpj IS NULL)", (SERVIDOR_ID,))
-            contas_sem_cnpj = cursor.fetchone()[0]
-            if contas_sem_cnpj >= 2 and not cnpj:
-                return jsonify({"success": False, "error": "⚠️ Limite de 2 contas sem CNPJ neste dispositivo."}), 403
-
-        with get_db_context() as conn:
-            cursor = conn.execute("SELECT id FROM users WHERE email=?", (email,))
-            if cursor.fetchone():
-                return jsonify({"success": False, "error": "Email já cadastrado"})
-
-        usuarios_firebase = carregar_todos_usuarios_firebase()
-        if usuarios_firebase:
-            for key, dados in usuarios_firebase.items():
-                if dados.get('email') == email:
-                    return jsonify({"success": False, "error": "Este email já está cadastrado em outra conta."})
-
-        if cnpj:
-            with get_db_context() as conn:
-                cursor = conn.execute("SELECT email FROM users WHERE cnpj=?", (cnpj,))
-                result = cursor.fetchone()
-                if result:
-                    return jsonify({"success": False, "error": f"CNPJ já cadastrado no email: {result[0]}"})
-            if validar_cnpj_firebase(cnpj):
-                return jsonify({"success": False, "error": "CNPJ já cadastrado em outra conta."})
-
-        user_id = str(uuid.uuid4())[:8]
-        with get_db_context() as conn:
-            conn.execute("""INSERT INTO users (id, nome, email, senha, cargo, db_id, servidor_id, nome_loja, cnpj, cnpj_dados)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (user_id, nome, email, senha_hash, "Gerente", db_id, SERVIDOR_ID, nome_loja, cnpj, json.dumps(cnpj_dados)))
-
-        usuario_firebase = carregar_usuario_firebase(db_id)
-        if not usuario_firebase:
-            criar_usuario_firebase(db_id, nome, email, senha_hash, SERVIDOR_ID, nome_loja, cnpj, cnpj_dados)
-        else:
-            if not usuario_firebase.get('token_plano'):
-                # Se já existe, mantém o plano atual
-                expira_em = usuario_firebase.get('expira_em', (datetime.now() + timedelta(days=15)).isoformat())
-                plano_id = usuario_firebase.get('plano', 5)
-                plano = PlanoSincronizado(db_id, CHAVE_SECRETA_PLANO)
-                token = plano._criar_token(expira_em, plano_id)
-                usuario_firebase['token_plano'] = token
-                usuario_firebase['token_atualizado_em'] = get_timestamp()
-            usuario_firebase.update({'nome': nome, 'email': email, 'senha': senha_hash, 'servidor_id': SERVIDOR_ID,
-                'nome_loja': nome_loja, 'cnpj': cnpj, 'cnpj_dados': cnpj_dados})
-            salvar_usuario_firebase(db_id, usuario_firebase)
-
-        return jsonify({"success": True, "message": "Conta criada! 15 dias de teste grátis!", "db_id": db_id})
-    except Exception as e:
-        logger.error(f"Erro no registro: {e}")
-        return jsonify({"success": False, "error": str(e)})
-
-@app.route('/api/auth/login', methods=['POST'])
-@rate_limit(max_requests=5, window=60)
-def login():
-    try:
-        data = request.json or {}
-        email = (data.get('email') or '').strip().lower()
-        senha = data.get('senha') or ''
-        senha_hash = hash_senha(senha)
-        if not email or not senha:
-            return jsonify({"success": False, "error": "Preencha email e senha"})
-
-        def _fazer_login(user_db_id, user_id, nome, cargo, servidor_id_val, nome_loja_val, cnpj_val, cnpj_dados_val):
-            nova_session_id = secrets.token_hex(32)
-            session.permanent = True
-            session['usuario_id'] = user_id
-            session['nome'] = nome
-            session['cargo'] = cargo
-            session['db_id'] = user_db_id
-            session['servidor_id'] = servidor_id_val
-            session['nome_loja'] = nome_loja_val or 'Minha Loja'
-            session['cnpj'] = cnpj_val or ''
-            try:
-                session['cnpj_dados'] = json.loads(cnpj_dados_val) if isinstance(cnpj_dados_val, str) else (cnpj_dados_val or {})
-            except:
-                session['cnpj_dados'] = {}
-            session['session_id'] = nova_session_id
-
-            with get_db_context() as conn:
-                conn.execute("UPDATE users SET session_id=?, ultimo_acesso=? WHERE id=?", (nova_session_id, get_timestamp(), user_id))
-
-            try:
-                plano = PlanoSincronizado(user_db_id, CHAVE_SECRETA_PLANO)
-                resultado = plano.sincronizar_token()
-                if resultado.get('token_atualizado'):
-                    logger.info(f"🔄 Token sincronizado durante login para {user_db_id}")
-            except Exception as e:
-                logger.warning(f"⚠️ Falha ao sincronizar token no login: {e}")
-
-            try:
-                dados_fb = carregar_usuario_firebase(user_db_id)
-                if dados_fb:
-                    if dados_fb.get('cnpj_dados'):
-                        session['cnpj_dados'] = dados_fb.get('cnpj_dados', {})
-            except:
-                pass
-
-            SESSOES_ATIVAS[user_db_id] = nova_session_id
-
-            try:
-                resultado = sincronizar_dados(user_db_id)
-                logger.info(f"🔄 Sync pós-login: {resultado}")
-            except Exception as e:
-                logger.error(f"⚠️ Erro no sync pós-login: {e}")
-
-            plano_info = get_info_plano_completa(user_db_id)
-            dias_restantes = plano_info.get('dias_restantes', 0)
-            plano_ativo = plano_info.get('ativo', False)
-            precisa_aviso, dias_para_aviso = precisa_aviso_renovacao(user_db_id)
-            permissoes = get_permissoes(user_db_id)
-
-            return jsonify({
-                "success": True,
-                "id": user_id,
-                "nome": nome,
-                "cargo": cargo,
-                "db_id": user_db_id,
-                "servidor_id": servidor_id_val,
-                "nome_loja": nome_loja_val or 'Minha Loja',
-                "cnpj": cnpj_val or '',
-                "cnpj_dados": session.get('cnpj_dados', {}),
-                "plano_ativo": plano_ativo,
-                "dias_restantes": dias_restantes,
-                "precisa_aviso": precisa_aviso,
-                "dias_para_aviso": dias_para_aviso,
-                "permissoes": permissoes,
-                "url_renovacao": "#/planos" if not plano_ativo else None
-            })
-
-        # OFFLINE-FIRST: tenta autenticar com o banco LOCAL antes de consultar o Firebase.
-        # Assim o login funciona instantaneamente offline (sem esperar timeout de rede).
-        with get_db_context() as conn:
-            cursor = conn.execute("""SELECT id, nome, cargo, db_id, servidor_id, nome_loja, cnpj, cnpj_dados
-                FROM users WHERE email=? AND senha=?""", (email, senha_hash))
-            user_offline = cursor.fetchone()
-        if user_offline:
-            return _fazer_login(user_offline[3], user_offline[0], user_offline[1], user_offline[2],
-                user_offline[4], user_offline[5], user_offline[6], user_offline[7])
-
-        usuario_firebase = buscar_usuario_por_email_firebase(email)
-        if usuario_firebase:
-            firebase_db_id = usuario_firebase.get('db_id')
-            firebase_senha = usuario_firebase.get('senha')
-            if firebase_senha and senha_hash != firebase_senha:
-                with get_db_context() as conn:
-                    cursor = conn.execute("SELECT senha FROM users WHERE email=?", (email,))
-                    local = cursor.fetchone()
-                    if local and local[0] == senha_hash:
-                        usuario_firebase['senha'] = senha_hash
-                        salvar_usuario_firebase(firebase_db_id, usuario_firebase)
-                    else:
-                        return jsonify({"success": False, "error": "Email ou senha inválidos"})
-            with get_db_context() as conn:
-                cursor = conn.execute("SELECT * FROM users WHERE email=?", (email,))
-                user_local = cursor.fetchone()
-                if user_local:
-                    user_id = user_local['id']
-                    conn.execute("""UPDATE users SET nome=?, senha=?, cargo=?, db_id=?, servidor_id=?, nome_loja=?, cnpj=?, cnpj_dados=?
-                        WHERE id=?""", (usuario_firebase.get('nome', ''), senha_hash,
-                        usuario_firebase.get('cargo', 'Gerente'), firebase_db_id,
-                        usuario_firebase.get('servidor_id', SERVIDOR_ID),
-                        usuario_firebase.get('nome_loja', 'Minha Loja'),
-                        usuario_firebase.get('cnpj', ''),
-                        json.dumps(usuario_firebase.get('cnpj_dados', {})), user_id))
-                else:
-                    user_id = str(uuid.uuid4())[:8]
-                    conn.execute("""INSERT INTO users (id, nome, email, senha, cargo, db_id, servidor_id, nome_loja, cnpj, cnpj_dados)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", (user_id,
-                        usuario_firebase.get('nome', ''), email, senha_hash,
-                        usuario_firebase.get('cargo', 'Gerente'), firebase_db_id,
-                        usuario_firebase.get('servidor_id', SERVIDOR_ID),
-                        usuario_firebase.get('nome_loja', 'Minha Loja'),
-                        usuario_firebase.get('cnpj', ''),
-                        json.dumps(usuario_firebase.get('cnpj_dados', {}))))
-
-            return _fazer_login(firebase_db_id, user_id, usuario_firebase.get('nome', ''),
-                usuario_firebase.get('cargo', 'Gerente'), usuario_firebase.get('servidor_id', SERVIDOR_ID),
-                usuario_firebase.get('nome_loja', 'Minha Loja'), usuario_firebase.get('cnpj', ''),
-                usuario_firebase.get('cnpj_dados', {}))
-
-        with get_db_context() as conn:
-            cursor = conn.execute("""SELECT id, nome, cargo, db_id, servidor_id, nome_loja, cnpj, cnpj_dados
-                FROM users WHERE email=? AND senha=?""", (email, senha_hash))
-            user = cursor.fetchone()
-
-        if user:
-            return _fazer_login(user[3], user[0], user[1], user[2], user[4], user[5], user[6], user[7])
-
-        return jsonify({"success": False, "error": "Email ou senha inválidos"})
-    except Exception as e:
-        logger.error(f"Erro no login: {e}")
-        return jsonify({"success": False, "error": str(e)})
-
-@app.route('/api/auth/status')
-def auth_status():
-    if 'usuario_id' in session:
-        db_id = session.get('db_id')
-        plano_info = get_info_plano_completa(db_id)
-        dias_restantes = plano_info.get('dias_restantes', 0)
-        plano_ativo = plano_info.get('ativo', False)
-        precisa_aviso, dias_para_aviso = precisa_aviso_renovacao(db_id)
-        permissoes = get_permissoes(db_id)
-        return jsonify({
-            "logged_in": True,
-            "usuario_id": session.get('usuario_id'),
-            "nome": session.get('nome'),
-            "cargo": session.get('cargo'),
-            "db_id": db_id,
-            "servidor_id": session.get('servidor_id'),
-            "nome_loja": session.get('nome_loja', 'Minha Loja'),
-            "cnpj": session.get('cnpj', ''),
-            "cnpj_dados": session.get('cnpj_dados', {}),
-            "plano_ativo": plano_ativo,
-            "dias_restantes": dias_restantes,
-            "plano_expirado": not plano_ativo,
-            "precisa_aviso": precisa_aviso,
-            "dias_para_aviso": dias_para_aviso,
-            "permissoes": permissoes
-        })
-    return jsonify({"logged_in": False})
-
-@app.route('/api/auth/logout', methods=['POST'])
-def logout():
-    try:
-        db_id = session.get('db_id')
-        if db_id and db_id in SESSOES_ATIVAS:
-            del SESSOES_ATIVAS[db_id]
-        usuario_id = session.get('usuario_id')
-        if usuario_id:
-            with get_db_context() as conn:
-                conn.execute("UPDATE users SET session_id='' WHERE id=?", (usuario_id,))
-        session.clear()
-        return jsonify({"success": True})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
-
-# ============================================================
-# PRODUTOS
-# ============================================================
-@app.route('/api/produtos')
-@verificar_plano
-def get_produtos():
-    try:
-        db_id = get_db_id()
-        busca = request.args.get('busca', '').strip().lower()
-        with get_db_context() as conn:
-            if busca:
-                termo = f'%{busca}%'
-                cursor = conn.execute("""SELECT codigo, nome, preco, custo, margem, estoque, categoria, imagem_url FROM produtos
-                    WHERE db_id=? AND (LOWER(nome) LIKE ? OR LOWER(codigo) LIKE ?) ORDER BY nome""", (db_id, termo, termo))
-            else:
-                cursor = conn.execute("SELECT codigo, nome, preco, custo, margem, estoque, categoria, imagem_url FROM produtos WHERE db_id=? ORDER BY nome", (db_id,))
-            produtos = [dict(row) for row in cursor.fetchall()]
-        return jsonify({"success": True, "produtos": produtos})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
-
-@app.route('/api/produtos', methods=['POST'])
-@verificar_plano
-def save_produto():
-    try:
-        data = request.json or {}
-        db_id = get_db_id()
-        if not data.get('codigo') or not data.get('nome'):
-            return jsonify({"success": False, "error": "Código e nome são obrigatórios"})
-        
-        preco = data.get('preco', 0)
-        custo = data.get('custo', 0)
-        margem = data.get('margem', 0)
-        if preco > 0 and custo > 0 and margem == 0:
-            margem = ((preco - custo) / preco) * 100
-        
-        with get_db_context() as conn:
-            cursor = conn.execute("SELECT COUNT(*) FROM produtos WHERE codigo=? AND db_id=?", (data['codigo'], db_id))
-            existe = cursor.fetchone()[0] > 0
-        if not existe:
-            pode, msg = pode_adicionar_produto(db_id, 1)
-            if not pode:
-                return jsonify({"success": False, "error": msg}), 403
-        with get_db_context() as conn:
-            conn.execute("""INSERT INTO produtos (codigo, nome, preco, custo, margem, estoque, categoria, imagem_url, db_id, ultima_atualizacao)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(codigo) DO UPDATE SET
-                nome=excluded.nome, preco=excluded.preco, custo=excluded.custo, margem=excluded.margem,
-                estoque=excluded.estoque, categoria=excluded.categoria,
-                imagem_url=CASE WHEN excluded.imagem_url!='' THEN excluded.imagem_url ELSE produtos.imagem_url END,
-                ultima_atualizacao=excluded.ultima_atualizacao""",
-                (data['codigo'], data['nome'], preco, custo, margem, data.get('estoque', 0),
-                data.get('categoria', 'Geral'), data.get('imagem_url', ''), db_id, get_timestamp()))
-        sincronizar_automatico(db_id)
-        return jsonify({"success": True, "message": "Produto salvo"})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
-
-@app.route('/api/produtos/<codigo>', methods=['DELETE'])
-@verificar_plano
-def delete_produto(codigo: str):
-    try:
-        db_id = get_db_id()
-        with get_db_context() as conn:
-            conn.execute("DELETE FROM produtos WHERE codigo=? AND db_id=?", (codigo, db_id))
-        sincronizar_automatico(db_id)
-        return jsonify({"success": True, "message": "Produto excluído"})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
-
-# ============================================================
-# KITS / COMBOS - STANDARD PRA FRENTE
-# ============================================================
-@app.route('/api/kits')
-@verificar_permissao('kit_combo')
-@verificar_plano
-def get_kits():
-    try:
-        db_id = get_db_id()
-        with get_db_context() as conn:
-            cursor = conn.execute("SELECT id, nome, preco, itens, ativo FROM kits WHERE db_id=? ORDER BY nome", (db_id,))
-            kits = []
-            for row in cursor.fetchall():
-                try:
-                    itens = json.loads(row[3]) if row[3] else []
-                except:
-                    itens = []
-                kits.append({"id": row[0], "nome": row[1], "preco": row[2] or 0, "itens": itens, "ativo": bool(row[4])})
-        return jsonify({"success": True, "kits": kits})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
-
-@app.route('/api/kits', methods=['POST'])
-@verificar_permissao('kit_combo')
-@verificar_plano
-def save_kit():
-    try:
-        data = request.json or {}
-        db_id = get_db_id()
-        nome = (data.get('nome') or '').strip()
-        itens = data.get('itens', [])
-        preco = data.get('preco', 0)
-        if not nome:
-            return jsonify({"success": False, "error": "Nome do kit é obrigatório"})
-        if not itens or len(itens) == 0:
-            return jsonify({"success": False, "error": "Adicione pelo menos um item ao kit"})
-        try:
-            preco = float(preco)
-        except:
-            preco = 0
-        if preco <= 0:
-            return jsonify({"success": False, "error": "Defina um preço válido para o kit"})
-
-        kit_id = data.get('id') or f"kit_{uuid.uuid4().hex[:10]}"
-        itens_json = json.dumps(itens, ensure_ascii=False)
-        with get_db_context() as conn:
-            conn.execute("""INSERT INTO kits (id, nome, preco, itens, db_id, ativo, ultima_atualizacao)
-                VALUES (?, ?, ?, ?, ?, 1, ?)
-                ON CONFLICT(id) DO UPDATE SET
-                nome=excluded.nome, preco=excluded.preco, itens=excluded.itens,
-                ultima_atualizacao=excluded.ultima_atualizacao""",
-                (kit_id, nome, preco, itens_json, db_id, get_timestamp()))
-        sincronizar_automatico(db_id)
-        return jsonify({"success": True, "message": "Kit salvo", "id": kit_id})
-    except Exception as e:
-        logger.error(f"❌ Erro ao salvar kit: {e}")
-        return jsonify({"success": False, "error": str(e)})
-
-@app.route('/api/kits/<kit_id>', methods=['DELETE'])
-@verificar_permissao('kit_combo')
-@verificar_plano
-def delete_kit(kit_id: str):
-    try:
-        db_id = get_db_id()
-        with get_db_context() as conn:
-            cursor_del = conn.execute("DELETE FROM kits WHERE id=? AND db_id=?", (kit_id, db_id))
-            linhas = cursor_del.rowcount
-            conn.execute("INSERT OR REPLACE INTO exclusoes (tipo, item_id, db_id, excluido_em) VALUES (?, ?, ?, ?)",
-                ('kit', str(kit_id), db_id, get_timestamp()))
-        if linhas == 0:
-            return jsonify({"success": False, "error": "Kit não encontrado"}), 404
-        sincronizar_automatico(db_id)
-        return jsonify({"success": True, "message": "Kit excluído"})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
-
-# ============================================================
-# PEDIDOS ONLINE (SMART FOOD) - EMPRESARIAL
-# ============================================================
-@app.route('/api/food/config')
-@verificar_permissao('pedidos_online')
-@verificar_plano
-def food_get_config():
-    try:
-        db_id = get_db_id()
-        return jsonify({"success": True, "config": get_config_food(db_id)})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
-
-@app.route('/api/food/config', methods=['POST'])
-@verificar_permissao('pedidos_online')
-@verificar_plano
-def food_save_config():
-    try:
-        db_id = get_db_id()
-        d = request.json or {}
-        # Geocodifica o endereço da loja se mudou ou se não há coordenadas
-        coord_lat = d.get('coord_lat')
-        coord_lng = d.get('coord_lng')
-        endereco = (d.get('endereco_loja') or '').strip()
-        if endereco and (coord_lat is None or coord_lng is None or d.get('recalcular_coord')):
-            geo = geocodificar_endereco(endereco)
-            if geo:
-                coord_lat = geo['lat']
-                coord_lng = geo['lng']
-        with get_db_context() as conn:
-            conn.execute("""INSERT INTO config_food
-                (db_id, ativo, aberto, aceita_entrega, aceita_retirada, aceita_mesa, valor_km, frete_minimo,
-                 raio_max_km, tempo_preparo_min, endereco_loja, coord_lat, coord_lng, pix_habilitado,
-                 pagamento_na_entrega, ultima_atualizacao)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-                ON CONFLICT(db_id) DO UPDATE SET
-                ativo=excluded.ativo, aberto=excluded.aberto, aceita_entrega=excluded.aceita_entrega,
-                aceita_retirada=excluded.aceita_retirada, aceita_mesa=excluded.aceita_mesa,
-                valor_km=excluded.valor_km, frete_minimo=excluded.frete_minimo, raio_max_km=excluded.raio_max_km,
-                tempo_preparo_min=excluded.tempo_preparo_min, endereco_loja=excluded.endereco_loja,
-                coord_lat=excluded.coord_lat, coord_lng=excluded.coord_lng, pix_habilitado=excluded.pix_habilitado,
-                pagamento_na_entrega=excluded.pagamento_na_entrega, ultima_atualizacao=excluded.ultima_atualizacao""",
-                (db_id, 1 if d.get('ativo') else 0, 1 if d.get('aberto') else 0,
-                 1 if d.get('aceita_entrega', True) else 0, 1 if d.get('aceita_retirada', True) else 0,
-                 1 if d.get('aceita_mesa') else 0, float(d.get('valor_km', 2.0)), float(d.get('frete_minimo', 5.0)),
-                 float(d.get('raio_max_km', 10)), int(d.get('tempo_preparo_min', 30)), endereco,
-                 coord_lat, coord_lng, 1 if d.get('pix_habilitado', True) else 0,
-                 1 if d.get('pagamento_na_entrega', True) else 0, get_timestamp()))
-        sincronizar_automatico(db_id)
-        return jsonify({"success": True, "config": get_config_food(db_id),
-            "coord_ok": coord_lat is not None})
-    except Exception as e:
-        logger.error(f"❌ Erro ao salvar config_food: {e}")
-        return jsonify({"success": False, "error": str(e)})
-
-@app.route('/api/food/pedidos')
-@verificar_permissao('pedidos_online')
-@verificar_plano
-def food_listar_pedidos():
-    try:
-        db_id = get_db_id()
-        with get_db_context() as conn:
-            cur = conn.execute("""SELECT id, criado_em, status, tipo, cliente_nome, cliente_telefone,
-                cliente_endereco, mesa, itens, subtotal, frete, distancia_km, total, pagamento, pago, pix_qr
-                FROM pedidos_online WHERE db_id=? ORDER BY criado_em DESC LIMIT 100""", (db_id,))
-            pedidos = []
-            for r in cur.fetchall():
-                try:
-                    itens = json.loads(r[8]) if r[8] else []
-                except:
-                    itens = []
-                pedidos.append({"id": r[0], "criado_em": r[1], "status": r[2], "tipo": r[3],
-                    "cliente_nome": r[4], "cliente_telefone": r[5], "cliente_endereco": r[6], "mesa": r[7],
-                    "itens": itens, "subtotal": r[9], "frete": r[10], "distancia_km": r[11], "total": r[12],
-                    "pagamento": r[13], "pago": bool(r[14]), "tem_qr": bool(r[15])})
-        return jsonify({"success": True, "pedidos": pedidos})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
-
-@app.route('/api/food/pedidos/<pedido_id>/acao', methods=['POST'])
-@verificar_permissao('pedidos_online')
-@verificar_plano
-def food_acao_pedido(pedido_id: str):
-    try:
-        db_id = get_db_id()
-        acao = (request.json or {}).get('acao')
-        mapa = {'aceitar': 'em_preparo', 'recusar': 'cancelado', 'pronto': 'pronto', 'finalizar': 'finalizado'}
-        if acao not in mapa:
-            return jsonify({"success": False, "error": "Ação inválida"})
-        novo_status = mapa[acao]
-        with get_db_context() as conn:
-            cur = conn.execute("UPDATE pedidos_online SET status=?, ultima_atualizacao=? WHERE id=? AND db_id=?",
-                (novo_status, get_timestamp(), pedido_id, db_id))
-            if cur.rowcount == 0:
-                return jsonify({"success": False, "error": "Pedido não encontrado"}), 404
-        # Se aceitou, imprime o cupom do pedido
-        if acao == 'aceitar':
-            _imprimir_pedido_online(pedido_id, db_id)
-        sincronizar_automatico(db_id)
-        return jsonify({"success": True, "status": novo_status})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
-
-@app.route('/api/food/pedidos/<pedido_id>/imprimir', methods=['POST'])
-@verificar_permissao('pedidos_online')
-@verificar_plano
-def food_imprimir_pedido(pedido_id: str):
-    try:
-        db_id = get_db_id()
-        ok = _imprimir_pedido_online(pedido_id, db_id)
-        return jsonify({"success": ok})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
-
-@app.route('/api/food/chat/<pedido_id>')
-@verificar_permissao('pedidos_online')
-@verificar_plano
-def food_get_chat(pedido_id: str):
-    try:
-        db_id = get_db_id()
-        with get_db_context() as conn:
-            cur = conn.execute("SELECT autor, mensagem, criado_em FROM chat_pedidos WHERE pedido_id=? AND db_id=? ORDER BY id ASC", (pedido_id, db_id))
-            msgs = [{"autor": r[0], "mensagem": r[1], "criado_em": r[2]} for r in cur.fetchall()]
-        return jsonify({"success": True, "mensagens": msgs})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
-
-@app.route('/api/food/chat/<pedido_id>', methods=['POST'])
-@verificar_permissao('pedidos_online')
-@verificar_plano
-def food_enviar_chat(pedido_id: str):
-    try:
-        db_id = get_db_id()
-        msg = (request.json or {}).get('mensagem', '').strip()
-        if not msg:
-            return jsonify({"success": False, "error": "Mensagem vazia"})
-        with get_db_context() as conn:
-            conn.execute("INSERT INTO chat_pedidos (pedido_id, db_id, autor, mensagem, criado_em) VALUES (?,?,?,?,?)",
-                (pedido_id, db_id, 'loja', msg, get_timestamp()))
-        sincronizar_automatico(db_id)
-        return jsonify({"success": True})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
-
-def _imprimir_pedido_online(pedido_id: str, db_id: str) -> bool:
-    """Marca o pedido como impresso e gera o cupom (reusa a infra de impressão existente)."""
-    try:
-        with get_db_context() as conn:
-            cur = conn.execute("""SELECT id, tipo, cliente_nome, cliente_telefone, cliente_endereco, mesa,
-                itens, subtotal, frete, total, pagamento, pago FROM pedidos_online WHERE id=? AND db_id=?""",
-                (pedido_id, db_id))
-            r = cur.fetchone()
-            if not r:
-                return False
-            conn.execute("UPDATE pedidos_online SET impresso=1 WHERE id=? AND db_id=?", (pedido_id, db_id))
-        logger.info(f"🖨️ Pedido online {pedido_id} marcado para impressão")
-        return True
-    except Exception as e:
-        logger.error(f"❌ Erro ao imprimir pedido: {e}")
-        return False
-
-# ============================================================
-# CLIENTES - COM PERMISSÃO
-# ============================================================
-@app.route('/api/clientes')
-@verificar_permissao('clientes')
-@verificar_plano
-def get_clientes():
-    try:
-        db_id = get_db_id()
-        busca = request.args.get('busca', '').strip().lower()
-        with get_db_context() as conn:
-            if busca:
-                cursor = conn.execute("""SELECT id, nome, telefone, email, divida FROM clientes
-                    WHERE db_id=? AND LOWER(nome) LIKE ? ORDER BY nome""", (db_id, f'%{busca}%'))
-            else:
-                cursor = conn.execute("SELECT id, nome, telefone, email, divida FROM clientes WHERE db_id=? ORDER BY nome", (db_id,))
-            clientes = [dict(row) for row in cursor.fetchall()]
-        return jsonify({"success": True, "clientes": clientes})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
-
-@app.route('/api/clientes', methods=['POST'])
-@verificar_permissao('clientes')
-@verificar_plano
-def save_cliente():
-    try:
-        data = request.json or {}
-        db_id = get_db_id()
-        if not data.get('nome'):
-            return jsonify({"success": False, "error": "Nome é obrigatório"})
-        with get_db_context() as conn:
-            if data.get('id'):
-                conn.execute("""UPDATE clientes SET nome=?, telefone=?, email=?, divida=?, ultima_atualizacao=?
-                    WHERE id=? AND db_id=?""", (data['nome'], data.get('telefone', ''), data.get('email', ''),
-                    data.get('divida', 0), get_timestamp(), data['id'], db_id))
-            else:
-                conn.execute("""INSERT INTO clientes (nome, telefone, email, divida, db_id, ultima_atualizacao)
-                    VALUES (?, ?, ?, ?, ?, ?)""", (data['nome'], data.get('telefone', ''), data.get('email', ''),
-                    data.get('divida', 0), db_id, get_timestamp()))
-        sincronizar_automatico(db_id)
-        return jsonify({"success": True, "message": "Cliente salvo"})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
-
-@app.route('/api/clientes/<int:cliente_id>/pagar', methods=['POST'])
-@verificar_permissao('clientes')
-@verificar_plano
-def pagar_cliente(cliente_id: int):
-    try:
-        data = request.json or {}
-        db_id = get_db_id()
-        valor = data.get('valor', 0)
-        if valor <= 0:
-            return jsonify({"success": False, "error": "Valor deve ser maior que zero"})
-        with get_db_context() as conn:
-            cursor_upd = conn.execute("UPDATE clientes SET divida=MAX(0, divida-?), ultima_atualizacao=? WHERE id=? AND db_id=?",
-                (valor, get_timestamp(), cliente_id, db_id))
-            if cursor_upd.rowcount == 0:
-                return jsonify({"success": False, "error": "Cliente não encontrado"}), 404
-            cursor = conn.execute("SELECT id, nome, divida FROM clientes WHERE id=? AND db_id=?", (cliente_id, db_id))
-            cliente = cursor.fetchone()
-            if not cliente:
-                return jsonify({"success": False, "error": "Cliente não encontrado"})
-        logger.info(f"✅ Dívida atualizada para cliente {cliente['nome']}: R$ {cliente['divida']:.2f}")
-        sincronizar_automatico(db_id)
-        return jsonify({"success": True, "message": "Pagamento registrado",
-            "cliente": {"id": cliente['id'], "nome": cliente['nome'], "divida": cliente['divida']}})
-    except Exception as e:
-        logger.error(f"❌ Erro ao registrar pagamento: {e}")
-        return jsonify({"success": False, "error": str(e)})
-
-@app.route('/api/clientes/<int:cliente_id>', methods=['DELETE'])
-@verificar_permissao('clientes')
-@verificar_plano
-def delete_cliente(cliente_id: int):
-    try:
-        db_id = get_db_id()
-        with get_db_context() as conn:
-            cursor = conn.execute("SELECT nome FROM clientes WHERE id=? AND db_id=?", (cliente_id, db_id))
-            cliente = cursor.fetchone()
-            nome_cliente = cliente['nome'] if cliente else f"ID {cliente_id}"
-            cursor_del = conn.execute("DELETE FROM clientes WHERE id=? AND db_id=?", (cliente_id, db_id))
-            linhas_afetadas = cursor_del.rowcount
-            conn.execute("INSERT OR REPLACE INTO exclusoes (tipo, item_id, db_id, excluido_em) VALUES (?, ?, ?, ?)",
-                ('cliente', str(cliente_id), db_id, get_timestamp()))
-        if linhas_afetadas == 0:
-            logger.warning(f"⚠️ Tentativa de excluir cliente {cliente_id} não encontrado (db_id={db_id})")
-            return jsonify({"success": False, "error": "Cliente não encontrado"}), 404
-        logger.info(f"✅ Cliente excluído: {nome_cliente}")
-        sincronizar_automatico(db_id)
-        return jsonify({"success": True, "message": f"Cliente {nome_cliente} excluído"})
-    except Exception as e:
-        logger.error(f"❌ Erro ao excluir cliente: {e}")
-        return jsonify({"success": False, "error": str(e)})
-
-# ============================================================
-# VENDAS - COM LUCRO TOTAL
-# ============================================================
-@app.route('/api/vendas', methods=['POST'])
-@verificar_plano
-def registrar_venda():
-    try:
-        data = request.json or {}
-        db_id = get_db_id()
-        usuario_id = get_usuario_id()
-        data_hora = get_timestamp()
-        itens = data.get('itens', [])
-        if not itens:
-            return jsonify({"success": False, "error": "Nenhum item na venda"})
-
-        with get_db_context() as conn:
-            conn.execute("BEGIN TRANSACTION")
-            try:
-                for item in itens:
-                    codigo = item.get('codigo')
-                    is_kit = item.get('is_kit') or (isinstance(codigo, str) and codigo.startswith('KIT:'))
-                    # Kits têm preço próprio e não baixam estoque de componentes: pula validação de estoque,
-                    # mas MANTÉM o custo enviado (soma dos custos dos componentes) para o lucro real.
-                    if is_kit:
-                        item['custo_unitario'] = item.get('custo_unitario', item.get('custo', 0)) or 0
-                        continue
-                    if codigo and codigo != 'AVULSO':
-                        cursor = conn.execute("SELECT estoque, nome, custo FROM produtos WHERE codigo=? AND db_id=?", (codigo, db_id))
-                        produto = cursor.fetchone()
-                        if not produto:
-                            conn.execute("ROLLBACK")
-                            return jsonify({"success": False, "error": f"Produto '{item.get('nome', codigo)}' não encontrado"})
-                        qtd = item.get('quantidade', 1)
-                        if produto[0] < qtd:
-                            conn.execute("ROLLBACK")
-                            return jsonify({"success": False, "error": f"Estoque insuficiente para '{produto[1]}': disponível {produto[0]}, necessário {qtd}"})
-                        item['custo_unitario'] = produto[2] or 0
-                for item in itens:
-                    codigo = item.get('codigo')
-                    is_kit = item.get('is_kit') or (isinstance(codigo, str) and codigo.startswith('KIT:'))
-                    if is_kit:
-                        continue
-                    if codigo and codigo != 'AVULSO':
-                        qtd = item.get('quantidade', 1)
-                        conn.execute("UPDATE produtos SET estoque=estoque-?, ultima_atualizacao=? WHERE codigo=? AND db_id=?",
-                            (qtd, get_timestamp(), codigo, db_id))
-                conn.execute("COMMIT")
-            except Exception as e:
-                conn.execute("ROLLBACK")
-                raise e
-
-        itens_salvar = []
-        lucro_total = 0
-        for item in itens:
-            preco_unit = item.get('preco_unitario', item.get('preco', 0))
-            qtd = item.get('quantidade', 1)
-            custo_unit = item.get('custo_unitario', 0)
-            total_item = preco_unit * qtd
-            custo_total = custo_unit * qtd
-            lucro_item = total_item - custo_total
-            lucro_total += lucro_item
-            
-            itens_salvar.append({
-                'codigo': item.get('codigo', 'AVULSO'),
-                'nome': item.get('nome', 'Item'),
-                'quantidade': qtd,
-                'preco_unitario': preco_unit,
-                'custo_unitario': custo_unit,
-                'lucro': lucro_item,
-                'total': total_item
-            })
-
-        venda_id = None
-        with get_db_context() as conn:
-            cursor = conn.execute("""INSERT INTO vendas (data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente, usuario_id, db_id, recebido, troco)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", (data_hora, data.get('subtotal', 0), data.get('desconto', 0),
-                data.get('total', 0), lucro_total, data.get('metodo', 'Dinheiro'), json.dumps(itens_salvar, ensure_ascii=False),
-                data.get('cliente', ''), usuario_id, db_id, data.get('recebido', 0), data.get('troco', 0)))
-            venda_id = cursor.lastrowid
-
-        if data.get('metodo') == 'Fiado' and data.get('cliente'):
-            try:
-                with get_db_context() as conn:
-                    cursor = conn.execute("SELECT id FROM clientes WHERE nome=? AND db_id=?", (data.get('cliente'), db_id))
-                    cliente = cursor.fetchone()
-                    if cliente:
-                        conn.execute("UPDATE clientes SET divida=divida+?, ultima_atualizacao=? WHERE id=? AND db_id=?",
-                            (data.get('total', 0), get_timestamp(), cliente[0], db_id))
-                    else:
-                        conn.execute("INSERT INTO clientes (nome, divida, db_id, ultima_atualizacao) VALUES (?, ?, ?, ?)",
-                            (data.get('cliente'), data.get('total', 0), db_id, get_timestamp()))
-            except:
-                pass
-
-        with get_db_context() as conn:
-            cursor = conn.execute("SELECT nome_loja, cnpj, cnpj_dados FROM users WHERE db_id=? LIMIT 1", (db_id,))
-            loja = cursor.fetchone()
-
-        cnpj_dados = {}
-        if loja and loja[2]:
-            try:
-                cnpj_dados = json.loads(loja[2])
-            except:
-                pass
-
-        dados_impressao = {
-            'venda_id': venda_id,
-            'data_hora': data_hora,
-            'itens': itens_salvar,
-            'subtotal': data.get('subtotal', 0),
-            'desconto': data.get('desconto', 0),
-            'total': data.get('total', 0),
-            'lucro_total': lucro_total,
-            'metodo': data.get('metodo', 'Dinheiro'),
-            'cliente': data.get('cliente', ''),
-            'usuario': session.get('nome', ''),
-            'nome_loja': loja[0] if loja else session.get('nome_loja', 'Minha Loja'),
-            'cnpj': loja[1] if loja else session.get('cnpj', ''),
-            'cnpj_dados': cnpj_dados,
-            'recebido': data.get('recebido', 0),
-            'troco': data.get('troco', 0)
+        .modal-cliente-pagamento.active { display: flex; }
+        .modal-cliente-pagamento .modal {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 24px;
+            max-width: 400px;
+            width: 100%;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+        }
+        .modal-cliente-pagamento .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .modal-cliente-pagamento .modal-header h3 {
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #fff;
+        }
+        .modal-cliente-pagamento .modal-header .close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: var(--transition);
+        }
+        .modal-cliente-pagamento .modal-header .close:hover { color: #fff; }
+        .modal-cliente-pagamento .modal-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+        .modal-cliente-pagamento .btn-save {
+            flex: 1;
+            padding: 10px;
+            background: var(--green);
+            color: #fff;
+            border: 0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: var(--transition);
+        }
+        .modal-cliente-pagamento .btn-save:hover {
+            background: var(--green-dark);
+            transform: translateY(-1px);
+        }
+        .modal-cliente-pagamento .btn-close {
+            padding: 10px 20px;
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: var(--transition);
+        }
+        .modal-cliente-pagamento .btn-close:hover {
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+        }
+        .modal-cliente-pagamento .input-group { margin-bottom: 12px; }
+        .modal-cliente-pagamento .input-group label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .modal-cliente-pagamento .input-group input,
+        .modal-cliente-pagamento .input-group select {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: var(--transition);
+            background: var(--bg-primary);
+            color: #fff;
+        }
+        .modal-cliente-pagamento .input-group input:focus,
+        .modal-cliente-pagamento .input-group select:focus {
+            outline: 0;
+            border-color: var(--green);
+            box-shadow: 0 0 0 3px rgba(34,197,94,0.1);
         }
 
-        sincronizar_automatico(db_id)
+        .pix-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);z-index:9999;justify-content:center;align-items:center;padding:12px}
+        .pix-modal.active{display:flex}
+        .pix-modal .modal{background:var(--bg-card);border-radius:var(--radius);padding:20px;max-width:380px;width:100%;border:1px solid var(--border-color);animation:fadeUp .3s ease;text-align:center}
+        .pix-info .valor{font-size:28px;font-weight:700;color:var(--green);margin-bottom:8px}
+        .pix-info .chave{background:var(--bg-primary);border:1px dashed var(--green);border-radius:8px;padding:10px 14px;font-family:monospace;font-size:11px;cursor:pointer;margin:12px 0;word-break:break-all;color:var(--text-secondary);transition:var(--transition)}
+        .pix-info .chave:hover{background:rgba(34,197,94,.1);color:#fff}
+        .btn-verificar{padding:10px 24px;background:var(--blue);color:#fff;border:0;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;margin:8px 4px;transition:var(--transition)}.btn-verificar:hover{background:#2563eb}
+        .btn-cancelar{padding:10px 24px;background:transparent;color:var(--text-secondary);border:1px solid var(--border-color);border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;margin:8px 4px;transition:var(--transition)}.btn-cancelar:hover{background:rgba(255,255,255,.05);color:#fff}
 
-        return jsonify({
-            "success": True,
-            "id": venda_id,
-            "data_hora": data_hora,
-            "itens": itens_salvar,
-            "lucro_total": lucro_total,
-            "dados_impressao": dados_impressao,
-            "loja": {
-                "nome_loja": loja[0] if loja else session.get('nome_loja', 'Minha Loja'),
-                "cnpj": loja[1] if loja else session.get('cnpj', ''),
-                "cnpj_dados": cnpj_dados
-            }
-        })
-    except Exception as e:
-        logger.error(f"Erro ao registrar venda: {e}")
-        return jsonify({"success": False, "error": str(e)})
-
-@app.route('/api/vendas')
-@verificar_plano
-def get_vendas():
-    try:
-        db_id = get_db_id()
-        limite = request.args.get('limite', 200, type=int)
-        with get_db_context() as conn:
-            cursor = conn.execute("""SELECT id, data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente, usuario_id, recebido, troco
-                FROM vendas WHERE db_id=? ORDER BY id DESC LIMIT ?""", (db_id, limite))
-            vendas = []
-            for row in cursor.fetchall():
-                try:
-                    itens = json.loads(row[7]) if row[7] else []
-                except:
-                    itens = []
-                vendas.append({"id": row[0], "data_hora": row[1], "subtotal": row[2], "desconto": row[3],
-                    "total": row[4], "lucro_total": row[5] or 0, "metodo": row[6], "itens": itens,
-                    "cliente": row[8] or '', "usuario_id": row[9] or '', "recebido": row[10] or 0, "troco": row[11] or 0})
-        return jsonify({"success": True, "vendas": vendas})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
-
-# ============================================================
-# CUPOM DE VENDA - CORRIGIDO
-# ============================================================
-@app.route('/api/vendas/<int:venda_id>/cupom')
-@verificar_plano
-def get_cupom_venda(venda_id: int):
-    try:
-        db_id = get_db_id()
-        if not db_id:
-            return jsonify({"success": False, "error": "Não autenticado"}), 401
-        
-        with get_db_context() as conn:
-            cursor = conn.execute("""SELECT id, data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente, usuario_id, recebido, troco
-                FROM vendas WHERE id=? AND db_id=?""", (venda_id, db_id))
-            row = cursor.fetchone()
-            if not row:
-                return jsonify({"success": False, "error": "Venda não encontrada"}), 404
-            
-            try:
-                itens = json.loads(row[7]) if row[7] else []
-            except Exception as e:
-                logger.error(f"Erro ao parsear itens: {e}")
-                itens = []
-            
-            # Busca dados da loja
-            cursor2 = conn.execute("SELECT nome_loja, cnpj, cnpj_dados FROM users WHERE db_id=? LIMIT 1", (db_id,))
-            loja = cursor2.fetchone()
-            
-            cnpj_dados = {}
-            if loja and loja[2]:
-                try:
-                    cnpj_dados = json.loads(loja[2])
-                except:
-                    pass
-            
-            # Nome do operador de caixa que realizou a venda
-            usuario_id_venda = row[9] or ''
-            nome_operador = session.get('nome', '')
-            if usuario_id_venda:
-                cursor3 = conn.execute("SELECT nome FROM users WHERE id=?", (usuario_id_venda,))
-                u = cursor3.fetchone()
-                if u and u[0]:
-                    nome_operador = u[0]
-            
-            dados = {
-                'venda_id': row[0],
-                'data_hora': row[1],
-                'subtotal': row[2],
-                'desconto': row[3],
-                'total': row[4],
-                'lucro_total': row[5] or 0,
-                'metodo': row[6],
-                'itens': itens,
-                'cliente': row[8] or '',
-                'usuario': nome_operador or '',
-                'nome_loja': loja[0] if loja else session.get('nome_loja', 'Minha Loja'),
-                'cnpj': loja[1] if loja else session.get('cnpj', ''),
-                'cnpj_dados': cnpj_dados,
-                'recebido': row[10] or 0,
-                'troco': row[11] or 0
-            }
-            
-            return jsonify({"success": True, "dados": dados})
-    except Exception as e:
-        logger.error(f"Erro ao buscar cupom: {e}")
-        return jsonify({"success": False, "error": str(e)})
-
-# ============================================================
-# CAIXA
-# ============================================================
-@app.route('/api/caixa/status')
-def caixa_status():
-    try:
-        db_id = get_db_id()
-        if not db_id:
-            return jsonify({"aberto": False})
-        with get_db_context() as conn:
-            cursor = conn.execute("""SELECT id, usuario_id, valor_abertura, data_abertura, total
-                FROM caixa WHERE db_id=? AND status='aberto' ORDER BY id DESC LIMIT 1""", (db_id,))
-            result = cursor.fetchone()
-            nome_usuario = None
-            if result and result[1]:
-                cur2 = conn.execute("SELECT nome FROM users WHERE id=?", (result[1],))
-                row_u = cur2.fetchone()
-                if row_u:
-                    nome_usuario = row_u[0]
-        if result:
-            return jsonify({"aberto": True, "id": result[0], "usuario_id": result[1],
-                "usuario_nome": nome_usuario or result[1],
-                "valor_abertura": result[2], "data_abertura": result[3], "total": result[4] or 0})
-        return jsonify({"aberto": False})
-    except Exception as e:
-        return jsonify({"aberto": False, "error": str(e)})
-
-@app.route('/api/caixa/abrir', methods=['POST'])
-@verificar_plano
-def caixa_abrir():
-    try:
-        data = request.json or {}
-        db_id = get_db_id()
-        usuario_id = get_usuario_id()
-        with get_db_context() as conn:
-            cursor = conn.execute("SELECT id FROM caixa WHERE db_id=? AND status='aberto'", (db_id,))
-            if cursor.fetchone():
-                return jsonify({"success": False, "error": "Caixa já está aberto"})
-            conn.execute("INSERT INTO caixa (usuario_id, valor_abertura, data_abertura, status, db_id) VALUES (?, ?, ?, 'aberto', ?)",
-                (usuario_id, data.get('valor', 0), get_timestamp(), db_id))
-        sincronizar_automatico(db_id)
-        return jsonify({"success": True, "message": "Caixa aberto"})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
-
-@app.route('/api/caixa/fechar', methods=['POST'])
-@verificar_plano
-def caixa_fechar():
-    try:
-        db_id = get_db_id()
-        hoje = datetime.now().strftime('%Y-%m-%d')
-        with get_db_context() as conn:
-            cursor = conn.execute("SELECT SUM(total) FROM vendas WHERE db_id=? AND data_hora LIKE ?", (db_id, f'{hoje}%'))
-            total = cursor.fetchone()[0] or 0
-            conn.execute("UPDATE caixa SET status='fechado', data_fechamento=?, total=? WHERE db_id=? AND status='aberto'",
-                (get_timestamp(), total, db_id))
-        sincronizar_automatico(db_id)
-        return jsonify({"success": True, "total": total})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
-
-@app.route('/api/caixa/resumo')
-@verificar_plano
-def caixa_resumo():
-    try:
-        db_id = get_db_id()
-        data_param = request.args.get('data', datetime.now().strftime('%Y-%m-%d'))
-        with get_db_context() as conn:
-            cursor = conn.execute("""SELECT metodo, COUNT(*), SUM(total) FROM vendas
-                WHERE db_id=? AND data_hora LIKE ? GROUP BY metodo""", (db_id, f'{data_param}%'))
-            metodos = [{"metodo": row[0], "quantidade": row[1], "total": row[2] or 0} for row in cursor.fetchall()]
-            cursor = conn.execute("SELECT SUM(total), COUNT(*) FROM vendas WHERE db_id=? AND data_hora LIKE ?",
-                (db_id, f'{data_param}%'))
-            totals = cursor.fetchone()
-        return jsonify({"success": True, "data": data_param, "total_geral": totals[0] or 0,
-            "total_vendas": totals[1] or 0, "metodos": metodos})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
-
-# ============================================================
-# ESTATÍSTICAS - COM PERMISSÃO DASHBOARD
-# ============================================================
-@app.route('/api/estatisticas')
-@verificar_permissao('dashboard')
-@verificar_plano
-def get_estatisticas():
-    try:
-        db_id = get_db_id()
-        periodo = request.args.get('periodo', 'hoje')
-        hoje = datetime.now()
-        with get_db_context() as conn:
-            if periodo == "hoje":
-                filtro = hoje.strftime('%Y-%m-%d') + '%'
-                cursor = conn.execute("""SELECT id, data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente
-                    FROM vendas WHERE db_id=? AND data_hora LIKE ? ORDER BY id DESC LIMIT 100""", (db_id, filtro))
-            elif periodo == "semana":
-                filtro_data = (hoje - timedelta(days=7)).strftime('%Y-%m-%d')
-                cursor = conn.execute("""SELECT id, data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente
-                    FROM vendas WHERE db_id=? AND data_hora >= ? ORDER BY id DESC LIMIT 200""", (db_id, filtro_data))
-            elif periodo == "mes":
-                filtro_data = (hoje - timedelta(days=30)).strftime('%Y-%m-%d')
-                cursor = conn.execute("""SELECT id, data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente
-                    FROM vendas WHERE db_id=? AND data_hora >= ? ORDER BY id DESC LIMIT 500""", (db_id, filtro_data))
-            else:
-                filtro = hoje.strftime('%Y-%m-%d') + '%'
-                cursor = conn.execute("""SELECT id, data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente
-                    FROM vendas WHERE db_id=? AND data_hora LIKE ? ORDER BY id DESC LIMIT 100""", (db_id, filtro))
-            
-            total_geral = 0
-            total_lucro = 0
-            total_vendas = 0
-            total_itens = 0
-            metodos = {}
-            vendas = []
-            for row in cursor.fetchall():
-                total_geral += row[4] or 0
-                total_lucro += row[5] or 0
-                total_vendas += 1
-                metodo = row[6] or 'Dinheiro'
-                metodos[metodo] = metodos.get(metodo, 0) + (row[4] or 0)
-                try:
-                    itens = json.loads(row[7]) if row[7] else []
-                except:
-                    itens = []
-                total_itens += sum(i.get('quantidade', 1) for i in itens)
-                vendas.append({"id": row[0], "data_hora": row[1], "subtotal": row[2], "desconto": row[3],
-                    "total": row[4], "lucro_total": row[5] or 0, "metodo": metodo, "itens": itens, "cliente": row[8] or ''})
-        
-        return jsonify({"success": True, "stats": {
-            "total_geral": total_geral,
-            "total_lucro": total_lucro,
-            "total_vendas": total_vendas,
-            "media": total_geral / total_vendas if total_vendas > 0 else 0,
-            "media_lucro": total_lucro / total_vendas if total_vendas > 0 else 0,
-            "total_itens": total_itens,
-            "metodos": metodos,
-            "vendas": vendas
-        }})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
-
-# ============================================================
-# PLANOS
-# ============================================================
-@app.route('/api/planos')
-def get_planos():
-    return jsonify({"success": True, "planos": [asdict(p) for p in PLANOS]})
-
-@app.route('/api/plano/status')
-def get_plano_status():
-    try:
-        db_id = get_db_id()
-        if not db_id:
-            return jsonify({"success": False, "error": "Não autenticado"}), 401
-        # Fonte primária: token LOCAL (funciona offline). Firebase é só complemento.
-        info = get_info_plano_completa(db_id)
-        dados = carregar_usuario_firebase(db_id, timeout=2)  # timeout curto: token local já cobre o essencial
-
-        # plano_id: tenta Firebase; se offline, usa o que está no token local; senão, 1
-        if dados and dados.get('plano'):
-            plano_id = dados.get('plano', 1)
-        else:
-            plano_id = info.get('plano_id', 1)
-        plano_obj = next((p for p in PLANOS if p.id == plano_id), PLANOS[0])
-
-        # expira: Firebase tem prioridade; offline cai pro token local
-        expira = dados.get('expira_em') if dados else info.get('expira_em')
-
-        dias_restantes = info.get('dias_restantes', 0)
-        limite_produtos = plano_obj.produtos if plano_obj else 0
-        total_produtos = get_total_produtos(db_id)
-        produtos_restantes = -1 if limite_produtos == -1 else max(0, limite_produtos - total_produtos)
-        usuarios_atuais = len(get_usuarios_do_plano(db_id))
-        precisa_aviso, dias_para_aviso = precisa_aviso_renovacao(db_id)
-        percentual = 0
-        if limite_produtos != -1 and limite_produtos > 0:
-            percentual = min(100, (total_produtos / limite_produtos) * 100)
-        permissoes = plano_obj.permissoes if plano_obj else {}
-        is_teste = plano_obj.is_teste if plano_obj else False
-        return jsonify({
-            "success": True,
-            "plano": asdict(plano_obj) if plano_obj else None,
-            "expira_em": expira,
-            "dias_restantes": dias_restantes,
-            "expirado": not info.get('ativo', False),
-            "limite_produtos": limite_produtos,
-            "produtos_atuais": total_produtos,
-            "produtos_restantes": produtos_restantes,
-            "percentual_produtos": percentual,
-            "usuarios_limite": plano_obj.usuarios if plano_obj else 1,
-            "usuarios_atuais": usuarios_atuais,
-            "ativo": info.get('ativo', False),
-            "precisa_aviso": precisa_aviso,
-            "dias_para_aviso": dias_para_aviso,
-            "permissoes": permissoes,
-            "is_teste": is_teste,
-            "offline": dados is None,
-            "mensagem": info.get('mensagem', ''),
-            "url_renovacao": "#/planos"
-        })
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
-
-# ============================================================
-# PIX
-# ============================================================
-@app.route('/api/pix/criar', methods=['POST'])
-def criar_pix():
-    try:
-        data = request.json or {}
-        plano_id = data.get('plano_id')
-        db_id = get_db_id()
-        if not db_id:
-            return jsonify({"success": False, "error": "Não autenticado"}), 401
-        plano = next((p for p in PLANOS if p.id == plano_id), None)
-        if not plano:
-            return jsonify({"success": False, "error": "Plano inválido"})
-
-        # Plano gratuito/teste: não existe cobrança real, ativa direto sem chamar o Mercado Pago
-        if plano.is_teste or plano.preco <= 0:
-            # TRAVA: o teste só pode ser ativado UMA vez por conta (evita renovação infinita)
-            if plano.is_teste:
-                ja_usou = False
-                with get_db_context() as conn:
-                    cur = conn.execute("SELECT valor FROM config WHERE chave='teste_usado'")
-                    row = cur.fetchone()
-                    if row and str(row[0]) == '1':
-                        ja_usou = True
-                if not ja_usou:
-                    dados_fb = carregar_usuario_firebase(db_id, timeout=3)
-                    if dados_fb and dados_fb.get('teste_usado'):
-                        ja_usou = True
-                if ja_usou:
-                    return jsonify({"success": False, "error": "O período de teste já foi utilizado nesta conta. Escolha um plano pago para continuar."}), 403
-            pix_id = f"gratis_{uuid.uuid4().hex}"
-            pagamentos_pendentes[pix_id] = {'db_id': db_id, 'plano_id': plano_id, 'valor': 0, 'pago': False,
-                'criado_em': get_timestamp(), 'expira_em': (datetime.now() + timedelta(days=plano.dias)).isoformat()}
-            _confirmar_pagamento_plano(pix_id)
-            # Marca o teste como usado (local + Firebase) para impedir renovação infinita
-            if plano.is_teste:
-                try:
-                    with get_db_context() as conn:
-                        conn.execute("INSERT OR REPLACE INTO config (chave, valor) VALUES ('teste_usado', '1')")
-                    dados_fb = carregar_usuario_firebase(db_id, timeout=3) or {}
-                    dados_fb['teste_usado'] = True
-                    salvar_usuario_firebase(db_id, dados_fb)
-                except Exception as e:
-                    logger.error(f"⚠️ Erro ao marcar teste usado: {e}")
-            return jsonify({"success": True, "pix_id": pix_id, "gratis": True, "valor": 0, "plano": asdict(plano)})
-
-        resultado_pix = criar_pix_mercadopago(float(plano.preco), f"SMART PDV - {plano.nome}")
-        if resultado_pix:
-            pix_id = resultado_pix['pix_id']
-            pagamentos_pendentes[pix_id] = {'db_id': db_id, 'plano_id': plano_id, 'valor': plano.preco, 'pago': False,
-                'criado_em': get_timestamp(), 'expira_em': (datetime.now() + timedelta(days=plano.dias)).isoformat()}
-            return jsonify({"success": True, "pix_id": pix_id, "qr_code": resultado_pix['qr_code'],
-                "qr_code_base64": resultado_pix['qr_code_base64'], "valor": plano.preco, "plano": asdict(plano)})
-        return jsonify({"success": False, "error": "Erro ao gerar PIX"})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
-
-@app.route('/api/pix/verificar', methods=['POST'])
-def verificar_pix():
-    try:
-        data = request.json or {}
-        pix_id = data.get('pix_id')
-        if pix_id not in pagamentos_pendentes:
-            return jsonify({"success": False, "error": "Pagamento não encontrado"})
-        if pagamentos_pendentes[pix_id]['pago']:
-            return jsonify({"pago": True})
-        url = f"https://api.mercadopago.com/v1/payments/{pix_id}"
-        headers = {"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"}
-        res = requests.get(url, headers=headers, timeout=10)
-        res_data = res.json()
-        if res.status_code == 200 and res_data.get('status') == 'approved':
-            _confirmar_pagamento_plano(pix_id)
-            return jsonify({"pago": True})
-        return jsonify({"pago": False, "status": res_data.get('status', 'pending')})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
-
-def criar_pix_mercadopago(valor: float, descricao: str) -> Optional[Dict]:
-    """Cria uma cobrança PIX no Mercado Pago para QUALQUER valor.
-    Reutilizável tanto para planos quanto para pedidos online.
-    Cada chamada usa idempotency-key único, então suporta MÚLTIPLOS PIX simultâneos."""
-    try:
-        url = "https://api.mercadopago.com/v1/payments"
-        headers = {"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}", "Content-Type": "application/json",
-            "X-Idempotency-Key": str(uuid.uuid4())}
-        payment_data = {
-            "transaction_amount": round(float(valor), 2),
-            "description": descricao,
-            "payment_method_id": "pix",
-            "payer": {"email": "cliente@pdv.com", "first_name": "Cliente", "last_name": "PDV",
-                "identification": {"type": "CPF", "number": "00000000000"}}
+        .progress-bar-container {
+            width: 100%;
+            background: var(--bg-primary);
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+            margin: 8px 0;
+            border: 1px solid var(--border-color);
         }
-        res = requests.post(url, json=payment_data, headers=headers, timeout=20)
-        res_data = res.json()
-        if res.status_code == 201 and res_data.get('id'):
-            td = res_data['point_of_interaction']['transaction_data']
-            return {"pix_id": str(res_data['id']), "qr_code": td['qr_code'],
-                "qr_code_base64": td.get('qr_code_base64', '')}
-        logger.error(f"❌ Erro MP ao criar PIX: {res_data.get('message', res_data)}")
-        return None
-    except Exception as e:
-        logger.error(f"❌ Exceção ao criar PIX: {e}")
-        return None
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            color: #fff;
+        }
+        .progress-bar-fill.verde { background: var(--green); }
+        .progress-bar-fill.amarelo { background: var(--orange); }
+        .progress-bar-fill.vermelho { background: var(--red); }
 
-def verificar_pagamento_mercadopago(pix_id: str) -> bool:
-    """Consulta o Mercado Pago e retorna True se o pagamento foi aprovado."""
-    try:
-        url = f"https://api.mercadopago.com/v1/payments/{pix_id}"
-        headers = {"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"}
-        res = requests.get(url, headers=headers, timeout=10)
-        if res.status_code == 200:
-            return res.json().get('status') == 'approved'
-        return False
-    except Exception as e:
-        logger.error(f"❌ Erro ao verificar pagamento: {e}")
-        return False
+        .permissao-negada {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+        .permissao-negada .icon { font-size: 64px; margin-bottom: 16px; }
+        .permissao-negada h3 { color: var(--text-primary); margin-bottom: 8px; }
+        .permissao-negada p { font-size: 14px; }
 
-def _confirmar_pagamento_plano(pix_id: str) -> None:
-    info = pagamentos_pendentes.get(pix_id)
-    if not info or info.get('pago'):
-        return
-    info['pago'] = True
-    db_id = info['db_id']
-    plano_id = info['plano_id']
-    plano = next((p for p in PLANOS if p.id == plano_id), None)
-    if not plano:
-        return
-    expira_em = (datetime.now() + timedelta(days=plano.dias)).isoformat()
-    plano_obj = PlanoSincronizado(db_id, CHAVE_SECRETA_PLANO)
-    resultado = plano_obj.renovar_plano(expira_em, plano_id)
-    if resultado.get('success'):
-        logger.info(f"✅ Pagamento confirmado e plano renovado para {db_id} até {expira_em}")
-    else:
-        logger.error(f"❌ Falha ao renovar plano para {db_id}: {resultado.get('error')}")
+        .badge-teste {
+            background: var(--orange);
+            color: #fff;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 10px;
+            border-radius: 10px;
+            margin-left: 6px;
+        }
 
-# ============================================================
-# USUÁRIOS
-# ============================================================
-@app.route('/api/usuarios')
-@verificar_plano
-def get_usuarios():
-    try:
-        db_id = get_db_id()
-        with get_db_context() as conn:
-            cursor = conn.execute("""SELECT id, nome, email, cargo, criado_em, ultimo_acesso, session_id
-                FROM users WHERE db_id=? ORDER BY criado_em ASC""", (db_id,))
-            usuarios = []
-            for row in cursor.fetchall():
-                u = dict(row)
-                u['online'] = bool(u['session_id'] and u['session_id'] in SESSOES_ATIVAS)
-                usuarios.append(u)
-        plano = get_plano_efetivo(db_id)
-        return jsonify({"success": True, "usuarios": usuarios, "limite_usuarios": plano.usuarios,
-            "usuarios_atuais": len(usuarios)})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
+        @media print{
+            body > *:not(#cupomPrintArea){display:none !important}
+            #cupomPrintArea{display:block !important;position:fixed;top:0;left:0;width:100%;background:#fff;padding:10px;font-family:'Courier New',monospace;font-size:11px;color:#000}
+            #cupomPrintArea *{color:#000 !important}
+        }
+        #cupomPrintArea{display:none}
 
-@app.route('/api/usuarios', methods=['POST'])
-@verificar_plano
-def criar_usuario():
-    try:
-        data = request.json or {}
-        db_id = get_db_id()
-        nome = (data.get('nome') or '').strip()
-        email = (data.get('email') or '').strip().lower()
-        senha = data.get('senha') or ''
-        if not nome or not email or not senha:
-            return jsonify({"success": False, "error": "Preencha nome, email e senha"})
-        plano = get_plano_efetivo(db_id)
-        if not plano:
-            return jsonify({"success": False, "error": "Plano inválido"})
-        with get_db_context() as conn:
-            cursor = conn.execute("SELECT COUNT(*) FROM users WHERE db_id=?", (db_id,))
-            total = cursor.fetchone()[0]
-            if total >= plano.usuarios:
-                return jsonify({"success": False, "error": f"Limite de {plano.usuarios} usuário(s) atingido."})
-            cursor = conn.execute("SELECT id FROM users WHERE email=?", (email,))
-            if cursor.fetchone():
-                return jsonify({"success": False, "error": "Email já cadastrado"})
-            user_id = str(uuid.uuid4())[:8]
-            conn.execute("""INSERT INTO users (id, nome, email, senha, cargo, db_id, servidor_id, nome_loja, cnpj)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""", (user_id, nome, email, hash_senha(senha),
-                data.get('cargo', 'Funcionario'), db_id, SERVIDOR_ID, session.get('nome_loja', ''), session.get('cnpj', '')))
-        return jsonify({"success": True, "message": "Usuário criado!",
-            "usuario": {"id": user_id, "nome": nome, "email": email, "cargo": data.get('cargo', 'Funcionario')}})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
+        @media(max-width:768px){
+            .pdv-grid{grid-template-columns:1fr}.estoque-grid{grid-template-columns:1fr}.chart-row{grid-template-columns:1fr}.config-grid{grid-template-columns:1fr}.stat-cards{grid-template-columns:repeat(2,1fr)}
+            body{padding:4px}
+            .auth-box{padding:24px 16px}
+            .payment-modal .modal{max-width:100%;margin:8px;padding:16px}
+        }
+        @media(max-width:480px){.stat-cards{grid-template-columns:repeat(2,1fr)}}
 
-@app.route('/api/usuarios/<user_id>', methods=['DELETE'])
-@verificar_plano
-def delete_usuario(user_id: str):
-    try:
-        db_id = get_db_id()
-        if user_id == get_usuario_id():
-            return jsonify({"success": False, "error": "Não é possível excluir seu próprio usuário"})
-        with get_db_context() as conn:
-            cursor = conn.execute("SELECT id FROM users WHERE id=? AND db_id=?", (user_id, db_id))
-            if not cursor.fetchone():
-                return jsonify({"success": False, "error": "Usuário não encontrado"})
-            conn.execute("DELETE FROM users WHERE id=? AND db_id=?", (user_id, db_id))
-        return jsonify({"success": True, "message": "Usuário excluído"})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
+        .login-loading{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:999999;justify-content:center;align-items:center;flex-direction:column}
+        .login-loading.active{display:flex}
+        .login-loading .spinner{width:50px;height:50px;border:4px solid var(--border-color);border-top-color:var(--green);border-radius:50%;animation:spin 0.8s linear infinite}
+        .login-loading p{margin-top:16px;color:var(--text-secondary);font-size:14px}
+        @keyframes spin{to{transform:rotate(360deg)}}
+    </style>
+</head>
+<body>
+<div id="toastContainer" class="toast-container"></div>
+<div id="cupomPrintArea"></div>
 
-# ============================================================
-# LOJA
-# ============================================================
-@app.route('/api/loja/nome', methods=['POST'])
-@verificar_plano
-def salvar_nome_loja():
-    try:
-        data = request.json or {}
-        db_id = get_db_id()
-        nome = (data.get('nome') or '').strip()
-        cnpj = ''.join(filter(str.isdigit, data.get('cnpj') or ''))
-        cnpj_dados = data.get('cnpj_dados', {})
-        if not nome:
-            return jsonify({"success": False, "error": "Nome da loja é obrigatório"})
-        with get_db_context() as conn:
-            conn.execute("UPDATE users SET nome_loja=?, cnpj=?, cnpj_dados=? WHERE db_id=?",
-                (nome, cnpj, json.dumps(cnpj_dados, ensure_ascii=False), db_id))
-        session['nome_loja'] = nome
-        session['cnpj'] = cnpj
-        session['cnpj_dados'] = cnpj_dados
-        dados = carregar_usuario_firebase(db_id)
-        if dados:
-            dados.update({'nome_loja': nome, 'cnpj': cnpj, 'cnpj_dados': cnpj_dados})
-            salvar_usuario_firebase(db_id, dados)
-        return jsonify({"success": True, "message": "Informações salvas!"})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
+<div class="login-loading" id="loginLoading">
+    <div class="spinner"></div>
+    <p id="loginLoadingText">🔄 Entrando no SMART PDV...</p>
+</div>
 
-@app.route('/api/loja/info')
-def get_loja_info():
-    try:
-        db_id = get_db_id()
-        if not db_id:
-            return jsonify({"success": False, "error": "Não autenticado"}), 401
-        with get_db_context() as conn:
-            cursor = conn.execute("SELECT nome_loja, cnpj, cnpj_dados FROM users WHERE db_id=? LIMIT 1", (db_id,))
-            result = cursor.fetchone()
-        cnpj_dados = {}
-        if result and result[2]:
-            try:
-                cnpj_dados = json.loads(result[2])
-            except:
-                pass
-        return jsonify({
-            "success": True,
-            "nome_loja": result[0] if result else 'Minha Loja',
-            "cnpj": result[1] if result else '',
-            "cnpj_dados": cnpj_dados
-        })
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
+<div class="auth-page" id="authPage">
+    <div class="auth-box" id="loginBox">
+        <span class="logo"><i class="fas fa-cash-register"></i></span>
+        <h1>SMART PDV</h1>
+        <p class="sub">Sistema de Ponto de Venda</p>
+        <div class="msg" id="authMsg"></div>
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="loginEmail" placeholder="seu@email.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+            <label>Senha</label>
+            <input type="password" id="loginSenha" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button class="btn-primary" id="btnLoginEntrar" onclick="fazerLogin()"><i class="fas fa-sign-in-alt"></i> Entrar</button>
+        <div class="auth-link">Não tem conta? <span onclick="mostrarRegistro()">Criar conta grátis</span></div>
+    </div>
 
-# ============================================================
-# CNPJ
-# ============================================================
-@app.route('/api/cnpj/<cnpj>')
-def buscar_cnpj(cnpj: str):
-    try:
-        cnpj_limpo = ''.join(filter(str.isdigit, cnpj))
-        if len(cnpj_limpo) != 14:
-            return jsonify({"success": False, "error": "CNPJ inválido. Deve ter 14 dígitos."})
-        if cnpj_limpo in CACHE_CNPJ:
-            cache_data = CACHE_CNPJ[cnpj_limpo]
-            if _time.time() - cache_data['timestamp'] < 86400:
-                return jsonify({"success": True, "dados": cache_data['dados'], "fonte": "cache"})
-        apis = [
-            f"https://brasilapi.com.br/api/cnpj/v1/{cnpj_limpo}",
-            f"https://api.opencnpj.org/{cnpj_limpo}",
-            f"https://publica.cnpj.ws/cnpj/{cnpj_limpo}",
-            f"https://www.receitaws.com.br/v1/cnpj/{cnpj_limpo}",
-        ]
-        for url in apis:
-            try:
-                response = requests.get(url, timeout=12, headers={"User-Agent": "SMART-PDV/10.0"})
-                if response.status_code != 200:
-                    continue
-                raw = response.json()
-                if 'estabelecimento' in raw:
-                    est = raw.get('estabelecimento', {})
-                    flat = {
-                        "razao_social": raw.get('razao_social', ''),
-                        "nome_fantasia": est.get('nome_fantasia', ''),
-                        "logradouro": est.get('logradouro', ''),
-                        "numero": est.get('numero', ''),
-                        "complemento": est.get('complemento', ''),
-                        "bairro": est.get('bairro', ''),
-                        "municipio": (est.get('cidade') or {}).get('nome', ''),
-                        "uf": (est.get('estado') or {}).get('sigla', ''),
-                        "cep": est.get('cep', ''),
-                        "ddd_telefone_1": f"{est.get('ddd1','')}{est.get('telefone1','')}",
-                        "email": est.get('email', ''),
-                        "cnae_fiscal_descricao": (est.get('atividade_principal') or {}).get('descricao', ''),
-                        "porte": (raw.get('porte') or {}).get('descricao', ''),
-                        "natureza_juridica": (raw.get('natureza_juridica') or {}).get('descricao', ''),
-                        "data_inicio_atividade": est.get('data_inicio_atividade', ''),
-                        "descricao_situacao_cadastral": est.get('situacao_cadastral', '')
+    <div class="auth-box" id="registerBox" style="display:none">
+        <span class="logo">✨</span>
+        <h1>Criar Conta</h1>
+        <p class="sub">15 dias de teste grátis!</p>
+        <div class="msg" id="registerMsg"></div>
+        <div class="form-group"><label>Nome completo</label><input type="text" id="registerNome" placeholder="Seu nome"></div>
+        <div class="form-group"><label>Email</label><input type="email" id="registerEmail" placeholder="seu@email.com"></div>
+        <div class="form-group"><label>Senha</label><input type="password" id="registerSenha" placeholder="Mínimo 4 caracteres"></div>
+        <div class="form-group">
+            <label>CNPJ (opcional)</label>
+            <input type="text" id="registerCnpj" placeholder="00.000.000/0000-00" oninput="formatarCnpjInput(this)" onchange="buscarDadosCNPJ(this.value)">
+            <div class="hint">Com CNPJ: sem limite de contas + dados da empresa no cupom</div>
+        </div>
+        <div id="dadosCnpjRegistro" style="display:none;background:var(--bg-primary);padding:10px;border-radius:8px;margin-bottom:10px;font-size:12px;color:var(--text-secondary);"></div>
+        <button class="btn-primary" id="btnRegistroCriar" onclick="fazerRegistro()"><i class="fas fa-user-plus"></i> Criar Conta</button>
+        <div class="auth-link">Já tem conta? <span onclick="mostrarLogin()">Fazer login</span></div>
+    </div>
+</div>
+
+<div class="app" id="app">
+    <div class="header">
+        <div class="logo"><i class="fas fa-cash-register" style="color:var(--green);"></i> <span>SMART</span> PDV <span class="version" id="versaoHeader">v10.3.0</span></div>
+        <div class="user">
+            <div class="avatar" id="userAvatar">U</div>
+            <div>
+                <div style="font-size:13px;font-weight:600;" id="userName">Usuário</div>
+                <div style="font-size:11px;color:var(--text-muted);" id="userCargo">Cargo</div>
+            </div>
+            <div id="lojaNomeDisplay" style="font-size:12px;color:var(--text-secondary);"></div>
+            <div class="db-id" id="dbIdDisplay" onclick="copiarId()" title="Copiar ID">📋 ID: ---</div>
+            <div class="status-caixa fechado" id="statusCaixaHeader">🔒 Fechado</div>
+            <div class="status-sincronizacao" id="statusSincronizacao">⚡ Online</div>
+            <div class="atalhos-indicador"><kbd>F1</kbd> <span class="destaque">Tudo</span> | <kbd>Enter</kbd> Confirmar | <kbd>Esc</kbd> Fechar</div>
+            <button class="btn-sair" onclick="fazerLogout()"><i class="fas fa-sign-out-alt"></i> Sair</button>
+        </div>
+    </div>
+    <nav class="nav" id="nav">
+        <button data-tab="vendas" onclick="trocarTab('vendas')" class="active"><i class="fas fa-cash-register"></i> Vendas</button>
+        <button data-tab="clientes" onclick="trocarTab('clientes')"><i class="fas fa-users"></i> Clientes <span class="badge" id="badgeFiados" style="display:none">0</span></button>
+        <button data-tab="caixa" onclick="trocarTab('caixa')"><i class="fas fa-box"></i> Caixa</button>
+        <button data-tab="dashboard" onclick="trocarTab('dashboard')"><i class="fas fa-chart-bar"></i> Dashboard</button>
+        <button data-tab="estoque" onclick="trocarTab('estoque')"><i class="fas fa-boxes"></i> Estoque</button>
+        <button data-tab="planos" onclick="trocarTab('planos')"><i class="fas fa-crown"></i> Planos</button>
+        <button data-tab="config" onclick="trocarTab('config')"><i class="fas fa-cog"></i> Config</button>
+    </nav>
+    <div class="content">
+        <div class="plano-expirado-aviso" id="planoExpiradoAviso">⚠️ Seu plano expirou! <a onclick="trocarTab('planos')">Renovar agora →</a></div>
+        
+        <!-- PANEL VENDAS -->
+        <div class="panel active" id="panelVendas">
+            <div class="pdv-grid">
+                <div class="card">
+                    <h3><i class="fas fa-barcode" style="color:var(--green);"></i> Produto</h3>
+                    <div class="input-group" style="position:relative;">
+                        <label>Buscar produto (código ou nome)</label>
+                        <input type="text" id="codigoInput" placeholder="Leia o código, ou digite código/nome..." autocomplete="off">
+                        <div class="search-results" id="searchResults"></div>
+                    </div>
+                    <div class="input-group"><label>Nome Produto</label><input type="text" id="nomeProduto" placeholder="—" readonly></div>
+                    <div class="input-group"><label>Preço Unit.</label><input type="text" id="precoProduto" placeholder="—" readonly></div>
+                    <div class="status-msg" id="statusMsg">Aguardando produto...</div>
+                </div>
+                <div class="card">
+                    <h3><i class="fas fa-shopping-cart" style="color:var(--green);"></i> Carrinho</h3>
+                    <table class="cart-table">
+                        <thead><tr><th>Produto</th><th class="qty">Qtd</th><th class="price">Preço</th><th class="total-item">Total</th><th></th></tr></thead>
+                        <tbody id="cartBody"><tr><td colspan="5" class="empty-cart">🛒 Carrinho vazio</td></tr></tbody>
+                    </table>
+                    <div class="cart-summary">
+                        <div class="row"><span>Subtotal</span><span id="subtotalLabel">R$ 0,00</span></div>
+                        <div class="row"><span>Desconto (R$)</span><input type="text" id="descontoInput" value="0,00" oninput="calcularTotal()"></div>
+                        <div class="row total"><span>TOTAL</span><span id="totalLabel">R$ 0,00</span></div>
+                    </div>
+                    <button class="btn-finalizar" id="btnFinalizar" onclick="abrirPagamento()" disabled>
+                        <i class="fas fa-check-circle"></i> Finalizar Venda (F1)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PANEL CLIENTES COM PERMISSÃO -->
+        <div class="panel" id="panelClientes">
+            <div class="permissao-negada" id="clientesPermissaoNegada">
+                <div class="icon">🔒</div>
+                <h3>Plano não permite acesso a Clientes</h3>
+                <p>Atualize seu plano para acessar esta funcionalidade.</p>
+                <button onclick="trocarTab('planos')" style="margin-top:16px;padding:10px 24px;background:var(--green);color:#fff;border:0;border-radius:8px;cursor:pointer;font-weight:600;">Ver Planos</button>
+            </div>
+            <div class="card" id="clientesConteudo">
+                <h3><i class="fas fa-users" style="color:var(--blue);"></i> Clientes</h3>
+                <div class="clientes-actions">
+                    <input type="text" id="buscaCliente" placeholder="Buscar cliente..." oninput="carregarClientes()">
+                    <button onclick="abrirModalCliente()"><i class="fas fa-plus"></i> Novo</button>
+                </div>
+                <table class="clientes-table">
+                    <thead><tr><th>Nome</th><th>Telefone</th><th>Dívida</th><th>Ações</th></tr></thead>
+                    <tbody id="tabelaClientes"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- PANEL CAIXA -->
+        <div class="panel" id="panelCaixa">
+            <div class="card caixa-center" id="caixaCard">
+                <div class="icon" id="caixaIcon">🔒</div>
+                <h2 id="caixaStatus">Caixa Fechado</h2>
+                <p id="caixaMsg">Abra o caixa para iniciar as vendas</p>
+                <input type="number" id="valorAbertura" class="input-abertura" placeholder="Valor de abertura (R$)" value="0" min="0" step="0.01">
+                <div><button class="btn-caixa" id="btnCaixa" onclick="toggleCaixa()">🔓 Abrir Caixa</button></div>
+            </div>
+            <div class="card resumo-caixa" id="resumoCaixa" style="display:none">
+                <h3><i class="fas fa-receipt" style="color:var(--green);"></i> Resumo do Dia</h3>
+                <table><thead><tr><th>Método</th><th style="text-align:right;">Qtd</th><th style="text-align:right;">Total</th></tr></thead><tbody id="tabelaResumoCaixa"></tbody></table>
+            </div>
+        </div>
+
+        <!-- PANEL DASHBOARD COM PERMISSÃO -->
+        <div class="panel" id="panelDashboard">
+            <div class="permissao-negada" id="dashboardPermissaoNegada">
+                <div class="icon">🔒</div>
+                <h3>Plano não permite acesso ao Dashboard</h3>
+                <p>Atualize seu plano para acessar esta funcionalidade.</p>
+                <button onclick="trocarTab('planos')" style="margin-top:16px;padding:10px 24px;background:var(--green);color:#fff;border:0;border-radius:8px;cursor:pointer;font-weight:600;">Ver Planos</button>
+            </div>
+            <div class="dashboard-conteudo">
+                <div class="filtros-dashboard">
+                    <button class="btn-filtro active" data-periodo="hoje" onclick="filtrarDashboard(this,'hoje')"><i class="fas fa-sun"></i> Hoje</button>
+                    <button class="btn-filtro" data-periodo="semana" onclick="filtrarDashboard(this,'semana')"><i class="fas fa-calendar-week"></i> Semana</button>
+                    <button class="btn-filtro" data-periodo="mes" onclick="filtrarDashboard(this,'mes')"><i class="fas fa-calendar-alt"></i> Mês</button>
+                </div>
+                <div class="stat-cards">
+                    <div class="stat-card"><div class="icon">💰</div><div class="value" id="statTotal">R$ 0,00</div><div class="label">Total do Período</div></div>
+                    <div class="stat-card"><div class="icon">🛒</div><div class="value" id="statVendas">0</div><div class="label">Vendas</div></div>
+                    <div class="stat-card"><div class="icon">📦</div><div class="value" id="statItens">0</div><div class="label">Itens Vendidos</div></div>
+                    <div class="stat-card"><div class="icon">📈</div><div class="value" id="statMedia">R$ 0,00</div><div class="label">Ticket Médio</div></div>
+                    <div class="stat-card"><div class="icon">💎</div><div class="value lucro-value" id="statLucro">R$ 0,00</div><div class="label">💰 Lucro Líquido</div></div>
+                </div>
+                <div class="chart-row">
+                    <div class="chart-box"><h4><i class="fas fa-credit-card"></i> Métodos de Pagamento</h4><div id="metodosContainer"><p style="color:var(--text-secondary);font-size:13px;">Carregando...</p></div></div>
+                    <div class="chart-box"><h4><i class="fas fa-clock"></i> Últimas Vendas</h4><div class="vendas-list" id="vendasList"><p style="color:var(--text-secondary);font-size:13px;">Carregando...</p></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PANEL ESTOQUE -->
+        <div class="panel" id="panelEstoque">
+            <div class="subtabs">
+                <button class="subtab-btn active" data-subtab="produtos" onclick="trocarSubAbaEstoque('produtos')"><i class="fas fa-box"></i> Produtos</button>
+                <button class="subtab-btn" data-subtab="kits" id="subtabKitsBtn" onclick="trocarSubAbaEstoque('kits')"><i class="fas fa-layer-group"></i> Kit/Combo/Promoção</button>
+            </div>
+
+            <div class="subpanel active" id="subpanelProdutos">
+            <div class="estoque-grid">
+                <div class="card">
+                    <h3><i class="fas fa-plus-circle" style="color:var(--green);"></i> Produto <button class="btn-excluir-produto" onclick="excluirProdutoSelecionado()">🗑️ Excluir</button></h3>
+                    <div class="input-group">
+                        <label>Código de Barras 🔍</label>
+                        <input type="text" id="prodCodigo" placeholder="Digite ou leia o código" style="flex:1;" autocomplete="off" oninput="buscarProdutoAutomatico(this.value)">
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">💡 Digite o código para busca automática</div>
+                    </div>
+                    <div class="permissao-negada" id="buscaEstoquePermissaoNegada" style="display:none;padding:8px;background:rgba(255,255,255,.05);border-radius:6px;margin-bottom:8px;">
+                        <p style="font-size:12px;color:var(--text-muted);">🔒 Busca inteligente não disponível no seu plano</p>
+                    </div>
+                    <div class="input-group"><label>Nome</label><input type="text" id="prodNome" placeholder="Nome do produto"></div>
+                    <div class="input-group"><label>Preço (R$)</label><input type="text" id="prodPreco" placeholder="0,00" oninput="calcularMargem()"></div>
+                    <div class="input-group" id="margemGrupo">
+                        <label>Custo (R$)</label><input type="text" id="prodCusto" placeholder="0,00" oninput="calcularMargem()">
+                    </div>
+                    <div class="input-group" id="margemGrupo2">
+                        <label>Margem (%)</label><input type="text" id="prodMargem" placeholder="0,00" readonly style="font-weight:700;color:var(--gold);">
+                    </div>
+                    <div class="input-group" id="margemGrupo3">
+                        <label>Lucro (R$)</label><input type="text" id="prodLucro" placeholder="0,00" readonly style="font-weight:700;color:var(--green);">
+                    </div>
+                    <div class="permissao-negada" id="margemPermissaoNegada" style="display:none;padding:8px;margin-bottom:10px;background:rgba(255,255,255,.05);border-radius:6px;">
+                        <p style="font-size:12px;color:var(--text-muted);">📊 Margem de lucro não disponível no seu plano</p>
+                    </div>
+                    <div class="input-group"><label>Estoque</label><input type="number" id="prodEstoque" value="0"></div>
+                    <div class="input-group"><label>Categoria</label><input type="text" id="prodCategoria" placeholder="Geral"></div>
+                    <button class="btn-salvar" onclick="salvarProduto()"><i class="fas fa-save"></i> Salvar Produto</button>
+                    <button class="btn-limpar" onclick="limparCamposProduto()">Limpar Campos</button>
+                </div>
+                <div class="card">
+                    <h3><i class="fas fa-list"></i> Lista de Produtos</h3>
+                    <div class="input-group"><label>Buscar</label><input type="text" id="buscaEstoque" placeholder="Nome ou código..." oninput="carregarProdutos()"></div>
+                    <div class="estoque-wrapper">
+                        <table class="estoque-table">
+                            <thead><tr><th>Código</th><th>Nome</th><th style="text-align:right;">Preço</th><th style="text-align:right;">Custo</th><th style="text-align:center;">Margem</th><th style="text-align:center;">Est.</th></tr></thead>
+                            <tbody id="tabelaEstoque"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+            <div class="subpanel" id="subpanelKits">
+                <div class="estoque-grid">
+                    <div class="card">
+                        <h3><i class="fas fa-layer-group" style="color:var(--purple);"></i> Montar Kit/Combo/Promoção</h3>
+                        <div class="input-group"><label>Nome do Kit</label><input type="text" id="kitNome" placeholder="Ex: Combo Balada"></div>
+                        <div class="input-group">
+                            <label>Adicionar item ao kit</label>
+                            <input type="text" id="kitBuscaProduto" placeholder="Buscar produto por nome..." autocomplete="off" oninput="buscarProdutoKit(this.value)">
+                            <div class="search-results" id="kitSearchResults" style="position:relative;"></div>
+                        </div>
+                        <div id="kitItensContainer" style="margin:10px 0;">
+                            <p style="font-size:12px;color:var(--text-muted);text-align:center;padding:10px;">Nenhum item adicionado ainda</p>
+                        </div>
+                        <div style="border-top:1px solid var(--border-color);padding-top:10px;margin-top:6px;">
+                            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:4px;">
+                                <span>Soma dos itens (avulso):</span><span id="kitSomaAvulso">R$ 0,00</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:4px;">
+                                <span>Custo total (componentes):</span><span id="kitCustoTotal">R$ 0,00</span>
+                            </div>
+                            <div class="input-group" style="margin-top:8px;">
+                                <label style="color:var(--green);">Preço do Kit (R$)</label>
+                                <input type="text" id="kitPreco" placeholder="0,00" style="font-weight:700;font-size:16px;color:var(--green);" oninput="atualizarLucroKit()">
+                            </div>
+                            <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;margin-top:6px;padding:6px 8px;background:rgba(34,197,94,.08);border-radius:6px;">
+                                <span style="color:var(--text-secondary);">Lucro do kit:</span><span id="kitLucro" style="color:var(--green);">R$ 0,00</span>
+                            </div>
+                        </div>
+                        <button class="btn-salvar" onclick="salvarKit()" style="background:var(--purple);"><i class="fas fa-save"></i> Salvar Kit</button>
+                        <button class="btn-limpar" onclick="limparKit()">Limpar</button>
+                    </div>
+                    <div class="card">
+                        <h3><i class="fas fa-list"></i> Kits Cadastrados</h3>
+                        <div class="estoque-wrapper" id="kitsListaContainer">
+                            <p style="font-size:13px;color:var(--text-muted);text-align:center;padding:20px;">Carregando...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PANEL PLANOS -->
+        <div class="panel" id="panelPlanos">
+            <div style="text-align:center;margin-bottom:20px;">
+                <h2 style="font-size:22px;"><i class="fas fa-store" style="color:var(--green);"></i> Planos</h2>
+                <p style="color:var(--text-secondary);font-size:13px;">Escolha o plano ideal para sua empresa</p>
+                <div style="margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+                    <button onclick="verificarPlanoManual()" style="padding:8px 20px;background:var(--blue);color:#fff;border:0;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;">🔄 Verificar Plano</button>
+                </div>
+            </div>
+            <div class="planos-grid" id="planosGrid"></div>
+            <div class="loja-status" id="statusLoja"><h4 style="font-size:14px;margin-bottom:10px;"><i class="fas fa-info-circle"></i> Status da Conta</h4><p style="color:var(--text-secondary);">Carregando...</p></div>
+        </div>
+
+        <!-- PANEL CONFIG -->
+        <div class="panel" id="panelConfig">
+            <div class="config-grid">
+                <div class="card">
+                    <h3><i class="fas fa-user-cog" style="color:var(--blue);"></i> Usuários</h3>
+                    <div class="input-group"><label>Nome</label><input type="text" id="novoUserNome" placeholder="Nome"></div>
+                    <div class="input-group"><label>Email</label><input type="email" id="novoUserEmail" placeholder="email@exemplo.com"></div>
+                    <div class="input-group"><label>Senha</label><input type="password" id="novoUserSenha" placeholder="••••••••"></div>
+                    <div class="input-group"><label>Cargo</label><select id="novoUserCargo" style="width:100%;padding:8px 12px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-primary);color:#fff;"><option value="Funcionario">Funcionário</option><option value="Gerente">Gerente</option></select></div>
+                    <button class="btn btn-primary" onclick="cadastrarUsuario()"><i class="fas fa-user-plus"></i> Cadastrar</button>
+                    <div style="margin-top:12px;"><h4 style="font-size:13px;color:var(--text-secondary);margin-bottom:6px;">Usuários Cadastrados</h4><div class="usuarios-lista" id="listaUsuarios"></div></div>
+                </div>
+                <div class="card">
+                    <h3><i class="fas fa-store-alt" style="color:var(--orange);"></i> Loja</h3>
+                    <div class="input-group"><label>Nome da Loja</label><input type="text" id="lojaNomeConfig" placeholder="Nome da loja"></div>
+                    <div class="input-group"><label>CNPJ</label><input type="text" id="lojaCnpjConfig" placeholder="00.000.000/0000-00" oninput="formatarCnpjInput(this)" onchange="buscarDadosCNPJ(this.value)"></div>
+                    <div id="dadosCnpjConfig" style="display:none;background:var(--bg-primary);padding:10px;border-radius:8px;margin-bottom:10px;font-size:12px;color:var(--text-secondary);"></div>
+                    <button class="btn btn-primary" onclick="salvarNomeLoja()" style="margin-top:10px;"><i class="fas fa-save"></i> Salvar</button>
+                    <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border-color);">
+                        <p style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;"><strong>Versão:</strong> <span id="versaoSistema">10.3.0</span></p>
+                        <p style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;"><strong>ID do Banco:</strong> <span id="dbIdConfig" style="font-family:monospace;cursor:pointer;color:var(--green);" onclick="copiarId()">---</span></p>
+                        <p style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;"><strong>Servidor:</strong> <span id="servidorIdConfig" style="font-family:monospace;">---</span></p>
+                    </div>
+                    <div style="margin-top:12px;"><button onclick="sincronizarAgora(true)" style="width:100%;padding:8px;background:rgba(59,130,246,.15);color:var(--blue);border:1px solid var(--blue);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">🔄 Sincronizar Agora</button></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PAYMENT MODAL -->
+<div class="payment-modal" id="paymentModal">
+    <div class="modal">
+        <div class="modal-header"><h3>💳 Pagamento</h3><button class="close" onclick="fecharPagamento()">✕</button></div>
+        <div class="total-display">
+            <div class="label">TOTAL A PAGAR</div>
+            <div class="value" id="paymentTotal">R$ 0,00</div>
+            <div class="troco-display" id="paymentTrocoDisplay"><div class="label">TROCO</div><div class="value" id="paymentTroco">R$ 0,00</div></div>
+        </div>
+        <div class="cliente-input"><input type="text" id="clientePagamento" placeholder="👤 Cliente (opcional)" autocomplete="off"></div>
+        <div class="payment-methods" id="paymentMethods">
+            <button data-metodo="Dinheiro" onclick="selecionarMetodo('Dinheiro')" class="active"><i class="fas fa-money-bill-wave"></i> Dinheiro</button>
+            <button data-metodo="PIX" onclick="selecionarMetodo('PIX')"><i class="fas fa-qrcode"></i> PIX</button>
+            <button data-metodo="Cartão" onclick="selecionarMetodo('Cartão')"><i class="fas fa-credit-card"></i> Cartão</button>
+            <button data-metodo="Débito" onclick="selecionarMetodo('Débito')"><i class="fas fa-credit-card"></i> Débito</button>
+            <button data-metodo="Fiado" onclick="selecionarMetodo('Fiado')" id="btnFiado"><i class="fas fa-handshake"></i> Fiado</button>
+        </div>
+        <div class="payment-input" id="recebidoContainer">
+            <span class="label">Recebido</span>
+            <input type="number" id="valorRecebido" placeholder="0,00" step="0.01" oninput="calcularTroco()">
+            <span class="remaining" id="trocoLabel">Troco: R$ 0,00</span>
+        </div>
+        <div class="payment-actions">
+            <button class="btn-confirmar" id="btnConfirmarPagamento" onclick="confirmarPagamento()"><i class="fas fa-check"></i> Confirmar</button>
+            <button class="btn-cancelar" onclick="fecharPagamento()">Cancelar</button>
+        </div>
+        <div class="atalhos-info"><kbd>Enter</kbd> Confirmar • <kbd>↑↓</kbd> Mudar método • <kbd>Esc</kbd> Cancelar • <span class="destaque">Clique funciona!</span></div>
+    </div>
+</div>
+
+<!-- CUPOM MODAL -->
+<div class="cupom-modal" id="cupomModal">
+    <div class="cupom-container">
+        <div class="cupom-header-ui"><h3>🧾 Cupom Não Fiscal</h3><button class="close" onclick="fecharCupom()">✕</button></div>
+        <div class="cupom-preview" id="cupomPreview">
+            <div class="cupom-loja" id="cupomLojaNome"></div>
+            <div style="text-align:center;font-size:10px;color:#555;margin-bottom:4px;" id="cupomCnpjLine"></div>
+            <div id="cupomDadosCnpj" class="cupom-dados-cnpj"></div>
+            <hr class="cupom-divider">
+            <div class="cupom-titulo">CUPOM NÃO FISCAL</div>
+            <div style="text-align:center;font-size:10px;color:#555;margin-bottom:4px;" id="cupomData"></div>
+            <div style="text-align:center;font-size:10px;color:#555;margin-bottom:6px;" id="cupomVendaIdLine"></div>
+            <hr class="cupom-divider">
+            <div style="display:flex;justify-content:space-between;font-size:10px;font-weight:700;color:#555;margin-bottom:3px;"><span>ITEM / QTD</span><span>TOTAL</span></div>
+            <div id="cupomItens"></div>
+            <hr class="cupom-divider">
+            <div class="cupom-linha"><span>Subtotal</span><span id="cupomSubtotal"></span></div>
+            <div class="cupom-linha" id="cupomDescontoLinha" style="color:#e53e3e;"><span>Desconto</span><span id="cupomDesconto"></span></div>
+            <div class="cupom-total-linha"><span>TOTAL</span><span id="cupomTotal"></span></div>
+            <div class="cupom-lucro-linha" id="cupomLucroLinha"><span>💰 LUCRO</span><span id="cupomLucro"></span></div>
+            <hr class="cupom-divider">
+            <div class="cupom-linha"><span>Pagamento</span><span id="cupomMetodo"></span></div>
+            <div class="cupom-linha" id="cupomRecebidoLinha"><span>Recebido</span><span id="cupomRecebido"></span></div>
+            <div class="cupom-linha" id="cupomTrocoLinha"><span>Troco</span><span id="cupomTroco"></span></div>
+            <div class="cupom-linha"><span>Cliente</span><span id="cupomCliente"></span></div>
+            <div class="cupom-linha"><span>Operador</span><span id="cupomOperador"></span></div>
+            <hr class="cupom-divider">
+            <div class="cupom-rodape">VOLTE SEMPRE! ★ OBRIGADO!</div>
+        </div>
+        <div class="cupom-acoes">
+            <button class="cupom-opt active" id="cupomOptImprimir" onclick="cupomEscolher('imprimir');imprimirCupom()"><i class="fas fa-print"></i> Imprimir</button>
+            <button class="cupom-opt" id="cupomOptNaoImprimir" onclick="cupomEscolher('nao');fecharCupomSemImprimir()"><i class="fas fa-times"></i> Sem Impressão</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL CLIENTE -->
+<div class="modal-cliente" id="modalCliente">
+    <div class="modal">
+        <h3><i class="fas fa-user-plus" style="color:var(--green);"></i> Novo Cliente</h3>
+        <div class="input-group"><label>Nome</label><input type="text" id="clienteNome" placeholder="Nome completo"></div>
+        <div class="input-group"><label>Telefone</label><input type="text" id="clienteTelefone" placeholder="(00) 00000-0000"></div>
+        <div class="input-group"><label>Email</label><input type="email" id="clienteEmail" placeholder="email@exemplo.com"></div>
+        <div class="modal-actions"><button class="btn-save" onclick="salvarCliente()"><i class="fas fa-save"></i> Salvar</button><button class="btn-close" onclick="fecharModalCliente()">Cancelar</button></div>
+    </div>
+</div>
+
+<!-- MODAL PAGAMENTO CLIENTE -->
+<div class="modal-cliente-pagamento" id="modalClientePagamento">
+    <div class="modal">
+        <div class="modal-header"><h3><i class="fas fa-hand-holding-usd" style="color:var(--green);"></i> Pagar Dívida</h3><button class="close" onclick="fecharModalPagamentoCliente()">✕</button></div>
+        <div style="text-align:center;margin-bottom:16px;"><p style="font-size:14px;color:var(--text-secondary);">Cliente: <strong id="pagClienteNome" style="color:#fff;"></strong></p><p style="font-size:20px;font-weight:700;color:var(--red);">Dívida: R$ <span id="pagClienteDivida">0,00</span></p></div>
+        <div class="input-group"><label>Valor do Pagamento</label><input type="text" id="pagClienteValor" placeholder="0,00" style="font-size:18px;font-weight:700;text-align:center;"></div>
+        <div class="input-group"><label>Método de Pagamento</label><select id="pagClienteMetodo" style="width:100%;padding:8px 12px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-primary);color:#fff;"><option value="Dinheiro">💰 Dinheiro</option><option value="PIX">📱 PIX</option><option value="Cartão">💳 Cartão</option><option value="Débito">💳 Débito</option></select></div>
+        <div class="modal-actions"><button class="btn-save" onclick="confirmarPagamentoCliente()"><i class="fas fa-check"></i> Confirmar Pagamento</button><button class="btn-close" onclick="fecharModalPagamentoCliente()">Cancelar</button></div>
+        <div style="text-align:center;font-size:11px;color:var(--text-muted);margin-top:8px;"><kbd>Enter</kbd> Confirmar • <kbd>Esc</kbd> Cancelar</div>
+    </div>
+</div>
+
+<!-- PIX MODAL -->
+<div class="pix-modal" id="modalPix">
+    <div class="modal"><h3 style="margin-bottom:12px;"><i class="fas fa-qrcode" style="color:var(--green);"></i> Pagamento PIX</h3><div id="pixContent"></div></div>
+</div>
+
+<script>
+// ============================================================
+// VERSÃO
+// ============================================================
+let SISTEMA_VERSAO = '10.3.0';
+
+// ============================================================
+// ESTADO GLOBAL
+// ============================================================
+const state = {
+    usuario_id:null,nome:'',cargo:'',db_id:null,servidor_id:null,
+    nome_loja:'',cnpj:'',cnpj_dados:{},caixa_aberto:false,
+    itens:[],subtotal:0,total:0,produtos:[],kits:[],clientes:[],
+    periodo:'hoje',searchIndex:-1,_resultados:[],
+    produtoSelecionado:null,plano_ativo:true,ultimaVenda:null,
+    cupomEscolha:'imprimir',f1Cycle:0,
+    permissoes:{clientes:false,dashboard:false,busca_estoque:false,margem:false,fiado:false,kit_combo:false}
+};
+
+let ultimoCupomData = null;
+let ultimaVendaId = null;
+let metodoAtivo = 'Dinheiro';
+
+// ============================================================
+// PERMISSÕES
+// ============================================================
+function temPermissao(permissao) {
+    return state.permissoes && state.permissoes[permissao] === true;
+}
+
+function atualizarPermissoesUI() {
+    // Clientes
+    const clientesConteudo = document.getElementById('clientesConteudo');
+    const clientesNegado = document.getElementById('clientesPermissaoNegada');
+    if (temPermissao('clientes')) {
+        clientesConteudo.style.display = 'block';
+        clientesNegado.style.display = 'none';
+    } else {
+        clientesConteudo.style.display = 'none';
+        clientesNegado.style.display = 'block';
+    }
+
+    // Dashboard
+    const dashboardConteudo = document.querySelector('.dashboard-conteudo');
+    const dashboardNegado = document.getElementById('dashboardPermissaoNegada');
+    if (temPermissao('dashboard')) {
+        dashboardConteudo.style.display = 'block';
+        dashboardNegado.style.display = 'none';
+    } else {
+        dashboardConteudo.style.display = 'none';
+        dashboardNegado.style.display = 'block';
+    }
+
+    // Busca Estoque - apenas oculta o botão, mantém o campo
+    const buscaEstoqueNegado = document.getElementById('buscaEstoquePermissaoNegada');
+    if (temPermissao('busca_estoque')) {
+        buscaEstoqueNegado.style.display = 'none';
+    } else {
+        buscaEstoqueNegado.style.display = 'block';
+    }
+
+    // Margem
+    const margemGrupo = document.getElementById('margemGrupo');
+    const margemGrupo2 = document.getElementById('margemGrupo2');
+    const margemGrupo3 = document.getElementById('margemGrupo3');
+    const margemNegado = document.getElementById('margemPermissaoNegada');
+    if (temPermissao('margem')) {
+        margemGrupo.style.display = 'block';
+        margemGrupo2.style.display = 'block';
+        margemGrupo3.style.display = 'block';
+        margemNegado.style.display = 'none';
+    } else {
+        margemGrupo.style.display = 'none';
+        margemGrupo2.style.display = 'none';
+        margemGrupo3.style.display = 'none';
+        margemNegado.style.display = 'block';
+    }
+
+    // Fiado
+    const btnFiado = document.getElementById('btnFiado');
+    if (temPermissao('fiado')) {
+        btnFiado.style.display = 'flex';
+    } else {
+        btnFiado.style.display = 'none';
+    }
+
+    // Kit/Combo (sub-aba do estoque)
+    const subtabKits = document.getElementById('subtabKitsBtn');
+    if (subtabKits) {
+        if (temPermissao('kit_combo')) {
+            subtabKits.style.opacity = '1';
+            subtabKits.innerHTML = '<i class="fas fa-layer-group"></i> Kit/Combo/Promoção';
+        } else {
+            subtabKits.style.opacity = '0.6';
+            subtabKits.innerHTML = '<i class="fas fa-layer-group"></i> Kit/Combo/Promoção <span class="lock">🔒</span>';
+        }
+    }
+
+}
+
+// ============================================================
+// PLANO - VERIFICAÇÃO E AVISOS
+// ============================================================
+let planoAtivo = true, diasRestantes = 0, avisoMostrado = false;
+
+async function verificarStatusPlano() {
+    try {
+        const res = await fetch('/api/plano/status', { credentials: 'include' });
+        const data = await res.json();
+        if (data.success) {
+            planoAtivo = data.ativo || false;
+            diasRestantes = data.dias_restantes || 0;
+            state.permissoes = data.permissoes || {clientes:false,dashboard:false,busca_estoque:false,margem:false,fiado:false};
+            atualizarPermissoesUI();
+            atualizarStatusPlanoUI(data);
+            if (!data.ativo) { bloquearAbas(true); mostrarAvisoExpirado(); }
+            else if (data.precisa_aviso) { mostrarAvisoRenovacao(data.dias_para_aviso || data.dias_restantes); bloquearAbas(false); }
+            else { bloquearAbas(false); ocultarAvisos(); }
+        }
+    } catch (e) {
+        // Falha de rede/servidor offline: NÃO bloqueia o PDV. O plano é validado pelo token local no backend;
+        // um erro de conexão aqui não significa plano inativo. Mantém o último estado conhecido.
+        console.warn('Não foi possível verificar o plano agora (offline?). Mantendo estado atual.', e);
+    }
+}
+
+function atualizarStatusPlanoUI(data) {
+    const dias = data.dias_restantes || 0, ativo = data.ativo, precisaAviso = data.precisa_aviso;
+    const tabPlanos = document.querySelector('[data-tab="planos"]');
+    if (tabPlanos) {
+        let badge = tabPlanos.querySelector('.badge');
+        if (!ativo) {
+            if (!badge) { badge = document.createElement('span'); badge.className = 'badge'; tabPlanos.appendChild(badge); }
+            badge.textContent = '🔴 EXPIRADO'; badge.style.background = 'var(--red)';
+        } else if (precisaAviso) {
+            if (!badge) { badge = document.createElement('span'); badge.className = 'badge'; tabPlanos.appendChild(badge); }
+            badge.textContent = `⚠️ ${Math.ceil(dias)}d`; badge.style.background = 'var(--orange)';
+        } else { if (badge) badge.remove(); }
+    }
+}
+
+function mostrarAvisoRenovacao(dias) {
+    const aviso = document.getElementById('planoExpiradoAviso');
+    if (aviso) {
+        aviso.style.display = 'flex';
+        aviso.style.background = 'var(--orange)';
+        aviso.innerHTML = `⚠️ Seu plano expira em <strong>${Math.ceil(dias)} dias</strong>! <a onclick="trocarTab('planos')">Renovar agora →</a>`;
+    }
+    if (!avisoMostrado) { showToast(`⚠️ Seu plano expira em ${Math.ceil(dias)} dias! Renove para não ser bloqueado.`, 'warning'); avisoMostrado = true; }
+}
+
+function mostrarAvisoExpirado() {
+    const aviso = document.getElementById('planoExpiradoAviso');
+    if (aviso) { aviso.style.display = 'flex'; aviso.style.background = 'var(--red)'; aviso.innerHTML = `🔴 Plano EXPIRADO! <a onclick="trocarTab('planos')">Renovar agora →</a>`; }
+}
+
+function ocultarAvisos() { const aviso = document.getElementById('planoExpiradoAviso'); if (aviso) aviso.style.display = 'none'; avisoMostrado = false; }
+
+function bloquearAbas(bloquear) {
+    document.querySelectorAll('.nav button').forEach(btn => {
+        const tab = btn.dataset.tab;
+        if (tab === 'planos') { btn.style.opacity = '1'; btn.style.cursor = 'pointer'; return; }
+        if (bloquear) {
+            btn.style.opacity = '0.4'; btn.style.cursor = 'not-allowed'; btn.style.pointerEvents = 'none';
+            const painelAtivo = document.querySelector('.panel.active');
+            if (painelAtivo && painelAtivo.id !== 'panelPlanos') trocarTab('planos');
+        } else { btn.style.opacity = '1'; btn.style.cursor = 'pointer'; btn.style.pointerEvents = 'auto'; }
+    });
+}
+
+async function verificarPlanoManual() { showToast('🔄 Verificando status do plano...', 'info'); await verificarStatusPlano(); showToast('✅ Status atualizado!', 'success'); }
+
+// ============================================================
+// TOAST
+// ============================================================
+let lastToastMessage='',lastToastTime=0;
+function showToast(message,type='info',title=null){
+    const now=Date.now();
+    if(message===lastToastMessage&&now-lastToastTime<2000)return;
+    lastToastMessage=message;lastToastTime=now;
+    const container=document.getElementById('toastContainer');if(!container)return;
+    const titles={success:'✅ Sucesso!',error:'❌ Erro!',warning:'⚠️ Atenção!',info:'ℹ️ Info'};
+    const icons={success:'✅',error:'❌',warning:'⚠️',info:'ℹ️'};
+    const toast=document.createElement('div');
+    toast.className='toast toast-'+type;
+    toast.innerHTML=`<div class="toast-icon">${icons[type]||'ℹ️'}</div><div class="toast-content"><div class="toast-title">${title||titles[type]||'Info'}</div><div class="toast-message">${message}</div></div><button class="toast-close" onclick="this.parentElement.remove()">✕</button>`;
+    container.appendChild(toast);
+    setTimeout(()=>{if(toast.parentElement){toast.classList.add('toast-hide');setTimeout(()=>{if(toast.parentElement)toast.remove();},500);}},5000);
+}
+
+// ============================================================
+// FORMATAÇÃO
+// ============================================================
+function formatarCnpj(cnpj){if(!cnpj||cnpj.length!==14)return cnpj;return cnpj.substring(0,2)+'.'+cnpj.substring(2,5)+'.'+cnpj.substring(5,8)+'/'+cnpj.substring(8,12)+'-'+cnpj.substring(12,14);}
+function formatarCnpjInput(el){let v=el.value.replace(/\D/g,'').substring(0,14);if(v.length>=12)v=v.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2}).*/,'$1.$2.$3/$4-$5');else if(v.length>=9)v=v.replace(/^(\d{2})(\d{3})(\d{3})(\d{4}).*/,'$1.$2.$3/$4');else if(v.length>=6)v=v.replace(/^(\d{2})(\d{3})(\d{3}).*/,'$1.$2.$3');else if(v.length>=3)v=v.replace(/^(\d{2})(\d{3}).*/,'$1.$2');el.value=v;}
+function copiarId(){const id=state.db_id||document.getElementById('dbIdConfig').textContent;if(!id||id==='---')return;navigator.clipboard.writeText(id).then(()=>showToast('📋 ID copiado: '+id,'success')).catch(()=>showToast('ID: '+id,'info'));}
+
+// ============================================================
+// MARGEM E LUCRO
+// ============================================================
+function calcularMargem() {
+    if (!temPermissao('margem')) {
+        document.getElementById('prodMargem').value = '0,00%';
+        document.getElementById('prodLucro').value = 'R$ 0,00';
+        return;
+    }
+    const preco = parseFloat(document.getElementById('prodPreco').value.replace(',','.')) || 0;
+    const custo = parseFloat(document.getElementById('prodCusto').value.replace(',','.')) || 0;
+    if (preco > 0 && custo >= 0) {
+        const margem = preco > 0 ? ((preco - custo) / preco) * 100 : 0;
+        const lucro = preco - custo;
+        document.getElementById('prodMargem').value = margem.toFixed(2) + '%';
+        document.getElementById('prodLucro').value = 'R$ ' + lucro.toFixed(2);
+    } else {
+        document.getElementById('prodMargem').value = '0,00%';
+        document.getElementById('prodLucro').value = 'R$ 0,00';
+    }
+}
+
+// ============================================================
+// NAVEGAÇÃO NO CUPOM
+// ============================================================
+function navegarCupom(direcao) {
+    const botoes = document.querySelectorAll('.cupom-opt');
+    if (!botoes.length) return;
+    let idx = -1;
+    botoes.forEach((b, i) => { if (b.classList.contains('active')) idx = i; });
+    if (idx === -1) idx = 0;
+    if (direcao === 'proximo') idx = (idx + 1) % botoes.length;
+    else if (direcao === 'anterior') idx = (idx - 1 + botoes.length) % botoes.length;
+    botoes.forEach(b => b.classList.remove('active'));
+    botoes[idx].classList.add('active');
+    state.cupomEscolha = botoes[idx].id === 'cupomOptImprimir' ? 'imprimir' : 'nao';
+}
+
+// ============================================================
+// TECLAS GLOBAIS
+// ============================================================
+document.addEventListener('keydown',function(e){
+    if(['F2','F3','F4','F5','F6','F7','F8','F9','F10','F11','F12'].includes(e.key)){e.preventDefault();e.stopPropagation();return;}
+    if(e.key==='F1'){e.preventDefault();e.stopPropagation();processarF1();return;}
+    if(e.ctrlKey&&(e.key==='r'||e.key==='R')){e.preventDefault();return;}
+    if(e.ctrlKey&&e.shiftKey&&(e.key==='i'||e.key==='I')){e.preventDefault();return;}
+
+    const modalPgto=document.getElementById('paymentModal').classList.contains('active');
+    const modalCupom=document.getElementById('cupomModal').classList.contains('active');
+    const modalPix=document.getElementById('modalPix').classList.contains('active');
+    const modalCli=document.getElementById('modalCliente').classList.contains('active');
+    const modalPgtoCliente=document.getElementById('modalClientePagamento').classList.contains('active');
+
+    if(e.key==='Escape'){
+        e.preventDefault();
+        if(modalPgto){fecharPagamento();return;}
+        if(modalCupom){fecharCupom();return;}
+        if(modalPix){fecharModalPix();return;}
+        if(modalCli){fecharModalCliente();return;}
+        if(modalPgtoCliente){fecharModalPagamentoCliente();return;}
+        const sr=document.getElementById('searchResults');
+        if(sr&&sr.classList.contains('active')){sr.classList.remove('active');document.getElementById('codigoInput').value='';}
+        return;
+    }
+
+    if(e.key==='Enter'){
+        if(modalPgto){e.preventDefault();confirmarPagamento();return;}
+        if(modalCupom){e.preventDefault();const ativo=document.querySelector('.cupom-opt.active');if(ativo) ativo.click();return;}
+        if(modalPgtoCliente){e.preventDefault();confirmarPagamentoCliente();return;}
+        const active=document.activeElement;
+        if(active&&(active.id==='prodCodigo')){return;}
+        if(active&&(active.tagName==='INPUT'||active.tagName==='SELECT'||active.tagName==='TEXTAREA'))return;
+        e.preventDefault();
+        return;
+    }
+
+    if(modalCupom && (e.key==='ArrowDown' || e.key==='ArrowUp')){
+        e.preventDefault();e.stopPropagation();
+        if(e.key==='ArrowDown') navegarCupom('proximo');
+        else navegarCupom('anterior');
+        return;
+    }
+
+    if(modalPgto&&(e.key==='ArrowUp'||e.key==='ArrowDown')){
+        e.preventDefault();
+        const metodos=document.querySelectorAll('#paymentMethods button');
+        if(!metodos.length)return;
+        let ci=-1;metodos.forEach((el,i)=>{if(el.classList.contains('active'))ci=i;});
+        if(e.key==='ArrowDown'){const ni=(ci+1)%metodos.length;selecionarMetodo(metodos[ni].dataset.metodo);metodos[ni].focus();}
+        else{const pi=(ci-1+metodos.length)%metodos.length;selecionarMetodo(metodos[pi].dataset.metodo);metodos[pi].focus();}
+        return;
+    }
+});
+
+function processarF1(){
+    const modalPgto=document.getElementById('paymentModal').classList.contains('active');
+    const modalCupom=document.getElementById('cupomModal').classList.contains('active');
+    if(modalCupom){const ativo=document.querySelector('.cupom-opt.active');if(ativo) ativo.click();return;}
+    if(modalPgto){confirmarPagamento();return;}
+    if(state.itens.length>0&&state.caixa_aberto){abrirPagamento();return;}
+
+    const ci=document.getElementById('codigoInput');
+    const sr=document.getElementById('searchResults');
+
+    if(sr&&sr.classList.contains('active')&&state.searchIndex>=0){
+        const items=sr.querySelectorAll('.result-item');
+        if(items[state.searchIndex]&&items[state.searchIndex].dataset.codigo){
+            selecionarProdutoPorCodigo(items[state.searchIndex].dataset.codigo);
+            sr.classList.remove('active');state.f1Cycle=0;ci.focus();
+        }
+        return;
+    }
+
+    // Foca o campo de busca do produto
+    ci.focus();ci.select();
+}
+
+// ============================================================
+// AUTH
+// ============================================================
+function mostrarRegistro(){document.getElementById('loginBox').style.display='none';document.getElementById('registerBox').style.display='block';}
+function mostrarLogin(){document.getElementById('registerBox').style.display='none';document.getElementById('loginBox').style.display='block';}
+
+async function fazerLogin(){
+    const email=document.getElementById('loginEmail').value.trim();
+    const senha=document.getElementById('loginSenha').value;
+    const msg=document.getElementById('authMsg');
+    const btn=document.getElementById('btnLoginEntrar');
+    const overlay=document.getElementById('loginLoading');
+    msg.className='msg';msg.style.display='none';
+    if(!email||!senha){msg.className='msg error';msg.textContent='Preencha email e senha.';msg.style.display='block';return;}
+    btn.disabled=true;
+    document.getElementById('loginLoadingText').textContent='🔄 Entrando no SMART PDV...';
+    overlay.classList.add('active');
+    try{
+        const res=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({email,senha})});
+        const data=await res.json();
+        if(data.success){
+            state.db_id=data.db_id;state.usuario_id=data.id;state.nome=data.nome;state.cargo=data.cargo;
+            state.nome_loja=data.nome_loja||'Minha Loja';state.cnpj=data.cnpj||'';state.cnpj_dados=data.cnpj_dados||{};
+            state.plano_ativo=data.plano_ativo!==false;
+            state.permissoes=data.permissoes||{clientes:false,dashboard:false,busca_estoque:false,margem:false,fiado:false};
+            document.getElementById('authPage').classList.add('hidden');
+            document.getElementById('app').classList.add('active');
+            atualizarHeader();
+            carregarPlanos();carregarProdutos().then(()=>carregarKitsParaVenda());carregarClientes();carregarUsuarios();
+            carregarStatusCaixa();carregarDash('hoje');carregarLojaInfo();
+            atualizarPermissoesUI();
+            setTimeout(verificarStatusPlano, 500);
+            showToast('👋 Bem-vindo, '+data.nome+'!','success');
+        }else{
+            msg.className='msg error';msg.textContent=data.error||'Erro ao fazer login.';msg.style.display='block';
+        }
+    }catch(e){msg.className='msg error';msg.textContent='Erro de conexão.';msg.style.display='block';}
+    finally{btn.disabled=false;overlay.classList.remove('active');}
+}
+
+async function fazerRegistro(){
+    const msg=document.getElementById('registerMsg');
+    msg.className='msg';msg.style.display='none';
+    const nome=document.getElementById('registerNome').value.trim();
+    const email=document.getElementById('registerEmail').value.trim();
+    const senha=document.getElementById('registerSenha').value;
+    const cnpj=document.getElementById('registerCnpj').value.replace(/\D/g,'');
+    const cnpjDados = JSON.parse(document.getElementById('dadosCnpjRegistro').dataset.dados||'{}');
+    const nome_loja = cnpjDados.razao_social || cnpjDados.nome_fantasia || 'Minha Loja';
+    if(!nome||!email||!senha){msg.className='msg error';msg.textContent='Preencha todos os campos obrigatórios.';msg.style.display='block';return;}
+    if(senha.length<4){msg.className='msg error';msg.textContent='Senha deve ter pelo menos 4 caracteres.';msg.style.display='block';return;}
+    const btn=document.getElementById('btnRegistroCriar');
+    const overlay=document.getElementById('loginLoading');
+    btn.disabled=true;
+    document.getElementById('loginLoadingText').textContent='✨ Criando sua conta...';
+    overlay.classList.add('active');
+    try{
+        const res=await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,email,senha,nome_loja,cnpj,cnpj_dados:cnpjDados})});
+        const data=await res.json();
+        if(data.success){msg.className='msg success';msg.textContent='Conta criada! 15 dias de teste grátis!';msg.style.display='block';mostrarLogin();document.getElementById('loginEmail').value=email;}
+        else{msg.className='msg error';msg.textContent=data.error||'Erro ao criar conta.';msg.style.display='block';}
+    }catch(e){msg.className='msg error';msg.textContent='Erro de conexão.';msg.style.display='block';}
+    finally{btn.disabled=false;overlay.classList.remove('active');}
+}
+
+function atualizarHeader(){
+    document.getElementById('userName').textContent=state.nome;
+    document.getElementById('userAvatar').textContent=state.nome.charAt(0).toUpperCase();
+    document.getElementById('userCargo').textContent=state.cargo||'Usuário';
+    document.getElementById('dbIdDisplay').textContent='📋 ID: '+state.db_id;
+    document.getElementById('dbIdConfig').textContent=state.db_id||'---';
+    document.getElementById('lojaNomeDisplay').textContent='🏬 '+state.nome_loja;
+    document.getElementById('servidorIdConfig').textContent=state.servidor_id||'---';
+}
+
+async function fazerLogout(){
+    try{
+        await fetch('/api/auth/logout',{method:'POST',credentials:'include',cache:'no-store'});
+    }catch(e){}
+    // Limpa o estado local independentemente da resposta do servidor
+    state.db_id=null;state.usuario_id=null;state.nome='';state.cargo='';
+    state.permissoes={clientes:false,dashboard:false,busca_estoque:false,margem:false,fiado:false,kit_combo:false};
+    state.itens=[];state.produtos=[];state.kits=[];state.clientes=[];
+    document.getElementById('app').classList.remove('active');
+    document.getElementById('authPage').classList.remove('hidden');
+    const senha=document.getElementById('loginSenha');if(senha)senha.value='';
+    showToast('👋 Até logo!','info');
+    // Recarrega a página limpa para garantir que nada de logado permaneça em cache/memória
+    setTimeout(()=>{ window.location.reload(); }, 300);
+}
+
+// ============================================================
+// TROCAR ABA
+// ============================================================
+function trocarTab(nome){
+    if (!planoAtivo && nome !== 'planos') {
+        showToast('🔴 Plano expirado! Acesse a aba Planos para renovar.', 'error');
+        return;
+    }
+    
+    if (nome === 'clientes' && !temPermissao('clientes')) {
+        showToast('🔒 Seu plano não permite acesso a Clientes.', 'warning');
+        return;
+    }
+    if (nome === 'dashboard' && !temPermissao('dashboard')) {
+        showToast('🔒 Seu plano não permite acesso ao Dashboard.', 'warning');
+        return;
+    }
+    
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+    const panel = document.getElementById('panel' + nome.charAt(0).toUpperCase() + nome.slice(1));
+    if (panel) panel.classList.add('active');
+    const btn = document.querySelector(`[data-tab="${nome}"]`);
+    if (btn) btn.classList.add('active');
+    if(nome==='clientes') carregarClientes();
+    if(nome==='estoque') carregarProdutos();
+    if(nome==='vendas') carregarKitsParaVenda();
+    if(nome==='dashboard') carregarDash(state.periodo);
+    if(nome==='caixa') carregarStatusCaixa();
+    if(nome==='planos') {carregarPlanos(); verificarStatusPlano();}
+    
+    atualizarPermissoesUI();
+}
+
+// ============================================================
+// PRODUTOS
+// ============================================================
+async function carregarKitsParaVenda(){
+    // Carrega os kits para que apareçam na busca de vendas como itens vendíveis
+    if(!temPermissao('kit_combo')){ state.kits=[]; return; }
+    try{
+        const res=await fetch('/api/kits',{credentials:'include'});
+        const data=await res.json();
+        if(data.success){
+            state.kits=(data.kits||[]).map(k=>{
+                // Garante que cada item tenha custo_original (kits antigos podem não ter)
+                const itens=(k.itens||[]).map(it=>{
+                    if(it.custo_original===undefined||it.custo_original===null){
+                        const p=(state.produtos||[]).find(x=>x.codigo===it.codigo);
+                        it.custo_original=p?(p.custo||0):0;
                     }
-                else:
-                    flat = raw
-                if not flat.get('razao_social') and not flat.get('razaoSocial') and not flat.get('nome'):
-                    continue
-                dados = _normalizar_cnpj_dados(flat)
-                CACHE_CNPJ[cnpj_limpo] = {'dados': dados, 'timestamp': _time.time()}
-                return jsonify({"success": True, "dados": dados, "fonte": url.split('/')[2]})
-            except:
-                continue
-        return jsonify({"success": False, "error": "CNPJ não encontrado em nenhuma fonte disponível"})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
+                    return it;
+                });
+                return {...k, itens};
+            });
+        }
+    }catch(e){ state.kits=state.kits||[]; }
+}
 
-# ============================================================
-# IMPRESSÃO
-# ============================================================
-@app.route('/api/imprimir/cupom', methods=['POST'])
-def imprimir_cupom_route():
-    try:
-        db_id = get_db_id()
-        if not db_id:
-            return jsonify({"success": False, "error": "Não autenticado"}), 401
-        dados = request.json or {}
-        cnpj_dados_frontend = dados.get('cnpj_dados') or {}
-        with get_db_context() as conn:
-            cursor = conn.execute("SELECT nome_loja, cnpj, cnpj_dados FROM users WHERE db_id=? LIMIT 1", (db_id,))
-            loja = cursor.fetchone()
-            if loja:
-                dados['nome_loja'] = loja[0] or 'MINHA LOJA'
-                dados['cnpj'] = loja[1] or ''
-                try:
-                    cnpj_dados_db = json.loads(loja[2]) if loja[2] else {}
-                except:
-                    cnpj_dados_db = {}
-                merged = {**cnpj_dados_frontend}
-                for k, v in cnpj_dados_db.items():
-                    if v not in (None, '', {}, []):
-                        merged[k] = v
-                dados['cnpj_dados'] = merged
-        dados['usuario'] = session.get('nome', '')
-        resultado = imprimir_cupom_escpos(dados)
-        return jsonify(resultado)
-    except Exception as e:
-        logger.error(f"❌ Erro ao imprimir: {e}")
-        return jsonify({"success": False, "error": str(e)})
+async function carregarProdutos(){
+    try{
+        const elBusca=document.getElementById('buscaEstoque');
+        const busca=elBusca?elBusca.value||'':'';
+        const res=await fetch(`/api/produtos?busca=${encodeURIComponent(busca)}`,{credentials:'include'});
+        const data=await res.json();
+        if(data.success){
+            state.produtos=data.produtos||[];
+            const tbody=document.getElementById('tabelaEstoque');
+            if(state.produtos.length===0){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:16px;">Nenhum produto</td></tr>';return;}
+            let html='';
+            state.produtos.forEach(p=>{
+                const cls=p.estoque<=0?'estoque-baixo':p.estoque<=5?'estoque-medio':'estoque-alto';
+                const margem = p.preco > 0 ? ((p.preco - p.custo) / p.preco * 100) : 0;
+                html+=`<tr onclick="selecionarProdutoParaEdicao('${p.codigo}')">
+                    <td style="font-size:11px;color:var(--text-muted);">${p.codigo}</td>
+                    <td>${p.nome}</td>
+                    <td style="text-align:right;">R$ ${p.preco.toFixed(2)}</td>
+                    <td style="text-align:right;font-size:11px;color:var(--text-muted);">R$ ${(p.custo||0).toFixed(2)}</td>
+                    <td style="text-align:center;font-weight:600;color:${margem>30?'var(--green)':margem>15?'var(--orange)':'var(--red)'};">${margem.toFixed(0)}%</td>
+                    <td style="text-align:center;" class="${cls}">${p.estoque}</td>
+                </tr>`;
+            });
+            tbody.innerHTML=html;
+        }
+    }catch(e){console.error(e);}
+}
 
-@app.route('/api/imprimir/texto', methods=['POST'])
-def imprimir_texto_route():
-    try:
-        db_id = get_db_id()
-        if not db_id:
-            return jsonify({"success": False, "error": "Não autenticado"}), 401
-        dados = request.json or {}
-        with get_db_context() as conn:
-            cursor = conn.execute("SELECT nome_loja, cnpj, cnpj_dados FROM users WHERE db_id=? LIMIT 1", (db_id,))
-            loja = cursor.fetchone()
-            if loja:
-                dados['nome_loja'] = dados.get('nome_loja') or loja[0]
-                dados['cnpj'] = dados.get('cnpj') or loja[1] or ''
-                try:
-                    cnpj_dados_db = json.loads(loja[2]) if loja[2] else {}
-                except:
-                    cnpj_dados_db = {}
-                merged = {**cnpj_dados_db}
-                merged.update(dados.get('cnpj_dados') or {})
-                dados['cnpj_dados'] = merged
-        texto = gerar_texto_cupom(dados)
-        return jsonify({"success": True, "texto": texto})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
+function selecionarProdutoParaEdicao(codigo){
+    const p=state.produtos.find(x=>x.codigo===codigo);
+    if(!p)return;
+    document.getElementById('prodCodigo').value=p.codigo;
+    document.getElementById('prodNome').value=p.nome;
+    document.getElementById('prodPreco').value=p.preco.toFixed(2);
+    document.getElementById('prodCusto').value=(p.custo||0).toFixed(2);
+    document.getElementById('prodEstoque').value=p.estoque;
+    document.getElementById('prodCategoria').value=p.categoria||'Geral';
+    calcularMargem();
+    document.getElementById('prodCodigo').focus();
+    state.produtoSelecionado=p.codigo;
+}
 
-# ============================================================
-# PRODUTO POR CÓDIGO DE BARRAS - COM PERMISSÃO DE BUSCA
-# ============================================================
-@app.route('/api/produto/buscar/<codigo_barras>')
-@verificar_permissao('busca_estoque')
-@verificar_plano
-def buscar_produto_barras_route(codigo_barras: str):
-    try:
-        resultado = buscar_produto_por_codigo_barras(codigo_barras)
-        return jsonify(resultado)
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
+function limparCamposProduto(){
+    document.getElementById('prodCodigo').value='';
+    document.getElementById('prodNome').value='';
+    document.getElementById('prodPreco').value='';
+    document.getElementById('prodCusto').value='';
+    document.getElementById('prodMargem').value='0,00%';
+    document.getElementById('prodLucro').value='R$ 0,00';
+    document.getElementById('prodEstoque').value='0';
+    document.getElementById('prodCategoria').value='Geral';
+    state.produtoSelecionado=null;
+    document.getElementById('prodCodigo').focus();
+}
 
-# ============================================================
-# SINCRONIZAÇÃO
-# ============================================================
-@app.route('/api/sincronizar', methods=['POST'])
-@verificar_plano
-def sincronizar_route():
-    try:
-        db_id = get_db_id()
-        resultado = sincronizar_dados(db_id)
-        return jsonify(resultado)
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
+// ============================================================
+// KIT / COMBO
+// ============================================================
+let kitItensAtuais = [];
+let kitEditandoId = null;
 
-# ============================================================
-# SERVIDOR
-# ============================================================
-@app.route('/api/servidor/id')
-def get_servidor_id_route():
-    return jsonify({"success": True, "servidor_id": SERVIDOR_ID, "versao": VERSION})
+function trocarSubAbaEstoque(sub){
+    if(sub==='kits' && !temPermissao('kit_combo')){
+        showToast('🔒 Kit/Combo disponível a partir do plano Standard. Faça upgrade!','warning');
+        return;
+    }
+    document.querySelectorAll('.subtab-btn').forEach(b=>b.classList.toggle('active',b.dataset.subtab===sub));
+    document.getElementById('subpanelProdutos').classList.toggle('active',sub==='produtos');
+    document.getElementById('subpanelKits').classList.toggle('active',sub==='kits');
+    if(sub==='kits'){ carregarProdutosParaKit(); carregarKits(); }
+}
 
-@app.route('/api/baixar_html')
-def baixar_html_manual():
-    try:
-        if baixar_html_github():
-            return jsonify({"success": True, "message": "HTML baixado!"})
-        return jsonify({"success": False, "error": "Falha ao baixar HTML"})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)})
+async function carregarProdutosParaKit(){
+    // Garante a lista completa de produtos (sem filtro de busca) para montar o kit
+    try{
+        const res=await fetch('/api/produtos',{credentials:'include'});
+        const data=await res.json();
+        if(data.success) state.produtos=data.produtos||[];
+    }catch(e){}
+}
 
-# ============================================================
-# THREADS BACKGROUND
-# ============================================================
+let kitSearchIndex=-1;
+function buscarProdutoKit(termo){
+    const container=document.getElementById('kitSearchResults');
+    termo=(termo||'').trim().toLowerCase();
+    if(!termo){container.classList.remove('active');container.innerHTML='';return;}
+    const resultados=(state.produtos||[]).filter(p=>
+        p.nome.toLowerCase().includes(termo)||(p.codigo||'').toLowerCase().includes(termo)).slice(0,8);
+    if(resultados.length===0){container.classList.remove('active');container.innerHTML='';return;}
+    container.innerHTML=resultados.map(p=>
+        `<div class="result-item" data-codigo="${p.codigo}" onclick="adicionarItemKit('${p.codigo}')">
+            <span>${p.nome}</span><span style="color:var(--green);">R$ ${(p.preco||0).toFixed(2)}</span>
+        </div>`).join('');
+    container.classList.add('active');
+    kitSearchIndex=-1; // nenhum pré-selecionado: 1ª seta pra baixo vai ao primeiro
+}
 
-def _verificador_automatico_pix() -> None:
-    while True:
-        _time.sleep(15)
-        try:
-            for pix_id, dados in list(pagamentos_pendentes.items()):
-                if dados.get('pago'):
-                    continue
-                try:
-                    url = f"https://api.mercadopago.com/v1/payments/{pix_id}"
-                    headers = {"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"}
-                    res = requests.get(url, headers=headers, timeout=10)
-                    res_data = res.json()
-                    if res.status_code == 200 and res_data.get('status') == 'approved':
-                        _confirmar_pagamento_plano(pix_id)
-                except:
-                    pass
-        except:
-            pass
+// Navegação por teclado na busca de produtos dos Combos
+document.addEventListener('DOMContentLoaded',function(){
+    const campo=document.getElementById('kitBuscaProduto');
+    if(campo) campo.addEventListener('keydown',function(e){
+        const container=document.getElementById('kitSearchResults');
+        if(!container.classList.contains('active'))return;
+        const items=container.querySelectorAll('.result-item');
+        if(!items.length)return;
+        if(e.key==='ArrowDown'){e.preventDefault();const next=Math.min(kitSearchIndex+1,items.length-1);items.forEach((el,i)=>el.classList.toggle('active',i===next));kitSearchIndex=next;}
+        else if(e.key==='ArrowUp'){e.preventDefault();const prev=Math.max(kitSearchIndex-1,0);items.forEach((el,i)=>el.classList.toggle('active',i===prev));kitSearchIndex=prev;}
+        else if(e.key==='Enter'){e.preventDefault();const active=container.querySelector('.result-item.active')||items[0];if(active&&active.dataset.codigo){adicionarItemKit(active.dataset.codigo);}}
+    });
+});
 
-def _processador_pedidos_online() -> None:
-    """Thread que processa pedidos online de TODAS as lojas com pedidos_online ativo:
-    1) baixa pedidos novos do Firebase para o banco local
-    2) cria PIX para pedidos 'aguardando_pix'
-    3) valida pagamento dos 'aguardando_pagamento' e imprime quando pago"""
-    while True:
-        _time.sleep(8)
-        try:
-            with get_db_context() as conn:
-                cur = conn.execute("SELECT DISTINCT db_id FROM config_food WHERE ativo=1")
-                lojas = [r[0] for r in cur.fetchall()]
-            for db_id in lojas:
-                try:
-                    _processar_pedidos_loja(db_id)
-                except Exception as e:
-                    logger.error(f"⚠️ Erro ao processar pedidos da loja {db_id}: {e}")
-        except Exception as e:
-            logger.error(f"⚠️ Erro no processador de pedidos: {e}")
+function adicionarItemKit(codigo){
+    const p=(state.produtos||[]).find(x=>x.codigo===codigo);
+    if(!p){showToast('❌ Produto não encontrado','error');return;}
+    if(kitItensAtuais.find(i=>i.codigo===codigo)){showToast('⚠️ Item já está no kit','warning');return;}
+    kitItensAtuais.push({
+        codigo:p.codigo,
+        nome:p.nome,
+        custo_original:p.custo||0,
+        preco_original:p.preco||0,
+        preco_combo:p.preco||0
+    });
+    document.getElementById('kitBuscaProduto').value='';
+    document.getElementById('kitSearchResults').classList.remove('active');
+    document.getElementById('kitSearchResults').innerHTML='';
+    kitSearchIndex=-1;
+    document.getElementById('kitBuscaProduto').focus();
+    renderizarItensKit();
+}
 
-def _processar_pedidos_loja(db_id: str) -> None:
-    # 1) Baixa pedidos do Firebase para o local
-    dados = carregar_usuario_firebase(db_id, timeout=5)
-    if dados:
-        pedidos_fb = dados.get('pedidos_online') or {}
-        for pid, pd in pedidos_fb.items():
-            with get_db_context() as conn:
-                cur = conn.execute("SELECT id, status FROM pedidos_online WHERE id=? AND db_id=?", (pid, db_id))
-                existe = cur.fetchone()
-                if not existe:
-                    itens = pd.get('itens', [])
-                    itens_json = json.dumps(itens, ensure_ascii=False) if not isinstance(itens, str) else itens
-                    conn.execute("""INSERT INTO pedidos_online
-                        (id, db_id, criado_em, status, tipo, cliente_nome, cliente_telefone, cliente_endereco,
-                         cliente_lat, cliente_lng, mesa, itens, subtotal, frete, distancia_km, total, pagamento,
-                         pago, ultima_atualizacao)
-                        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                        (pid, db_id, pd.get('criado_em', get_timestamp()), pd.get('status', 'novo'),
-                         pd.get('tipo', 'entrega'), pd.get('cliente', {}).get('nome', ''),
-                         pd.get('cliente', {}).get('telefone', ''), pd.get('cliente', {}).get('endereco', ''),
-                         pd.get('cliente', {}).get('lat'), pd.get('cliente', {}).get('lng'),
-                         pd.get('mesa', ''), itens_json, pd.get('subtotal', 0), pd.get('frete', 0),
-                         pd.get('distancia_km', 0), pd.get('total', 0), pd.get('pagamento', 'pix'),
-                         0, get_timestamp()))
-    # 2) Cria PIX para pedidos aguardando
-    with get_db_context() as conn:
-        cur = conn.execute("""SELECT id, total FROM pedidos_online
-            WHERE db_id=? AND status='aguardando_pix' AND pagamento='pix' AND (pix_id IS NULL OR pix_id='')""", (db_id,))
-        novos = cur.fetchall()
-    for pid, total in novos:
-        resultado = criar_pix_mercadopago(float(total), f"Pedido {pid[:8]}")
-        if resultado:
-            with get_db_context() as conn:
-                conn.execute("""UPDATE pedidos_online SET pix_id=?, pix_qr=?, pix_copia_cola=?,
-                    status='aguardando_pagamento', ultima_atualizacao=? WHERE id=? AND db_id=?""",
-                    (resultado['pix_id'], resultado['qr_code_base64'], resultado['qr_code'], get_timestamp(), pid, db_id))
-            pagamentos_pendentes[resultado['pix_id']] = {'db_id': db_id, 'pedido_id': pid, 'tipo': 'pedido', 'pago': False}
-            sincronizar_automatico(db_id)
-    # 3) Verifica pagamento e imprime
-    with get_db_context() as conn:
-        cur = conn.execute("""SELECT id, pix_id FROM pedidos_online
-            WHERE db_id=? AND status='aguardando_pagamento' AND pago=0 AND pix_id IS NOT NULL AND pix_id!=''""", (db_id,))
-        aguardando = cur.fetchall()
-    for pid, pix_id in aguardando:
-        if verificar_pagamento_mercadopago(pix_id):
-            with get_db_context() as conn:
-                conn.execute("""UPDATE pedidos_online SET pago=1, status='em_preparo', ultima_atualizacao=?
-                    WHERE id=? AND db_id=?""", (get_timestamp(), pid, db_id))
-            _imprimir_pedido_online(pid, db_id)
-            if pix_id in pagamentos_pendentes:
-                pagamentos_pendentes[pix_id]['pago'] = True
-            sincronizar_automatico(db_id)
-            logger.info(f"✅ Pedido {pid} pago e enviado para impressão")
+function removerItemKit(codigo){
+    kitItensAtuais=kitItensAtuais.filter(i=>i.codigo!==codigo);
+    renderizarItensKit();
+}
 
-def limpar_sessoes_inativas() -> None:
-    while True:
-        _time.sleep(300)
-        try:
-            with get_db_context() as conn:
-                cursor = conn.execute("""SELECT id, session_id FROM users
-                    WHERE session_id != '' AND ultimo_acesso < datetime('now', '-1 hour')""")
-                for user in cursor.fetchall():
-                    user_id, session_id = user
-                    for db_id_key, sess_id in list(SESSOES_ATIVAS.items()):
-                        if sess_id == session_id:
-                            del SESSOES_ATIVAS[db_id_key]
-                            break
-                    conn.execute("UPDATE users SET session_id='' WHERE id=?", (user_id,))
-        except:
-            pass
+function alterarPrecoItemKit(codigo,valor){
+    const item=kitItensAtuais.find(i=>i.codigo===codigo);
+    if(!item)return;
+    let v=parseFloat(String(valor).replace(',','.'))||0;
+    item.preco_combo=v;
+    atualizarSomaKit();
+}
 
-def _sync_pendente_background() -> None:
-    offline_detectado = False
-    while True:
-        _time.sleep(60)
-        try:
-            requests.get(f'{FB_URL}/.json?shallow=true', timeout=5)
-            if offline_detectado:
-                logger.info("🌐 Conexão restaurada! Sincronizando dados pendentes...")
-                offline_detectado = False
-                for db_id in list(SESSOES_ATIVAS.keys()):
-                    try:
-                        enviar_para_firebase(db_id)
-                    except:
-                        pass
-        except:
-            if not offline_detectado:
-                logger.warning("📴 Sem conexão com Firebase - salvando localmente")
-                offline_detectado = True
+function renderizarItensKit(){
+    const container=document.getElementById('kitItensContainer');
+    if(kitItensAtuais.length===0){
+        container.innerHTML='<p style="font-size:12px;color:var(--text-muted);text-align:center;padding:10px;">Nenhum item adicionado ainda</p>';
+        atualizarSomaKit();return;
+    }
+    container.innerHTML=kitItensAtuais.map(i=>
+        `<div class="kit-item-row">
+            <div class="kit-item-nome">${i.nome}<br><span class="kit-item-preco-orig">R$ ${i.preco_original.toFixed(2)}</span></div>
+            <input type="text" class="kit-item-preco" value="${i.preco_combo.toFixed(2).replace('.',',')}" onchange="alterarPrecoItemKit('${i.codigo}',this.value)" onfocus="this.select()">
+            <button class="kit-item-remove" onclick="removerItemKit('${i.codigo}')">✕</button>
+        </div>`).join('');
+    atualizarSomaKit();
+}
 
-# ============================================================
-# INICIAR SERVIDOR
-# ============================================================
+function atualizarSomaKit(){
+    const soma=kitItensAtuais.reduce((acc,i)=>acc+(i.preco_combo||0),0);
+    document.getElementById('kitSomaAvulso').textContent='R$ '+soma.toFixed(2);
+    const custo=kitItensAtuais.reduce((acc,i)=>acc+(i.custo_original||0),0);
+    const elCusto=document.getElementById('kitCustoTotal');
+    if(elCusto) elCusto.textContent='R$ '+custo.toFixed(2);
+    atualizarLucroKit();
+}
 
-if __name__ == '__main__':
-    print("=" * 60)
-    print(f"🏪 SMART PDV v{VERSION} - VERSÃO COMPLETA")
-    print("=" * 60)
-    print(f"📁 Dados: {APP_DATA_DIR}")
-    print(f"📁 DB: {DB_PATH}")
-    print("=" * 60)
-    print("🔐 SISTEMA DE PLANO SEGURO:")
-    print("  ✅ Token assinado digitalmente")
-    print("  ✅ Funciona OFFLINE (sem brechas)")
-    print("  ✅ Sincroniza entre dispositivos")
-    print("  ✅ Detecta fraude de relógio")
-    print("  ✅ SEM período de carência")
-    print("  ✅ Renovação automática via Firebase")
-    print("  ✅ Aviso com 3 dias de antecedência")
-    print("  ✅ Mantém login mesmo com plano expirado")
-    print("  ✅ Apenas a aba Planos fica acessível")
-    print("=" * 60)
-    print("📊 NOVOS PLANOS:")
-    print("  🎁 TESTE: 15 dias grátis (Empresarial completo)")
-    print("  🔰 BÁSICO: R$ 29,99/mês (1 usuário, 300 produtos)")
-    print("  ⭐ STANDARD: R$ 59,99/mês (3 usuários, 1000 produtos)")
-    print("  💎 PREMIUM: R$ 89,99/mês (5 usuários, 5000 produtos)")
-    print("  👑 EMPRESARIAL: R$ 129,99/mês (10 usuários, Ilimitado)")
-    print("=" * 60)
-    print("📊 PERMISSÕES POR PLANO:")
-    print("  🔰 BÁSICO: Vendas, Caixa, Estoque")
-    print("  ⭐ STANDARD: + Clientes")
-    print("  💎 PREMIUM: + Dashboard, Busca Estoque, Margem")
-    print("  👑 EMPRESARIAL: Tudo liberado")
-    print("=" * 60)
-    print("📊 LUCRO LÍQUIDO:")
-    print("  ✅ Custo e margem por produto")
-    print("  ✅ Lucro por venda")
-    print("  ✅ Lucro total no Dashboard")
-    print("  ✅ CNPJ completo na nota fiscal")
-    print("=" * 60)
-    print("🔄 SINCRONIZAÇÃO INTELIGENTE:")
-    print("  - Quem tem MAIS DADOS vence")
-    print("  - Merge bidirecional automático")
-    print("  - Sobe dados quando internet voltar")
-    print("  - Firebase tem sempre prioridade final")
-    print("=" * 60)
-    if IS_WINDOWS and IMPRESSAO_DISPONIVEL:
-        print("🖨️ Impressão ESC/POS ativa (impressora térmica)")
-    else:
-        print("🖨️ Impressão disponível apenas no Windows")
-    print("=" * 60)
-    print("⌨️ TECLAS:")
-    print("  F1 → Mestre (foco/finalizar/confirmar)")
-    print("  Enter no código de barras → Busca automática")
-    print("  Clique nos botões do cupom → Funciona!")
-    print("=" * 60)
+function atualizarLucroKit(){
+    const custo=kitItensAtuais.reduce((acc,i)=>acc+(i.custo_original||0),0);
+    const preco=parseFloat((document.getElementById('kitPreco').value||'').replace(',','.'))||0;
+    const lucro=preco-custo;
+    const el=document.getElementById('kitLucro');
+    if(!el)return;
+    el.textContent='R$ '+lucro.toFixed(2);
+    el.style.color = lucro>0 ? 'var(--green)' : (lucro<0 ? 'var(--red)' : 'var(--text-secondary)');
+}
 
-    init_db()
+async function salvarKit(){
+    const nome=document.getElementById('kitNome').value.trim();
+    const preco=parseFloat(document.getElementById('kitPreco').value.replace(',','.'))||0;
+    if(!nome){showToast('⚠️ Digite o nome do kit','warning');return;}
+    if(kitItensAtuais.length===0){showToast('⚠️ Adicione pelo menos um item','warning');return;}
+    if(preco<=0){showToast('⚠️ Defina o preço do kit','warning');return;}
+    const payload={nome,preco,itens:kitItensAtuais};
+    if(kitEditandoId)payload.id=kitEditandoId;
+    try{
+        const res=await fetch('/api/kits',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify(payload)});
+        const data=await res.json();
+        if(data.success){showToast('✅ Kit salvo com sucesso!','success');limparKit();carregarKits();carregarKitsParaVenda();}
+        else showToast('❌ '+(data.error||'Erro ao salvar kit'),'error');
+    }catch(e){showToast('❌ Erro ao salvar kit','error');}
+}
 
-    print("📥 Verificando HTML em segundo plano...")
-    # Download do HTML roda em THREAD para NÃO travar o boot quando offline ou rede lenta.
-    # Só atualiza o index.html local se já existir um (primeira instalação baixa de forma síncrona).
-    caminho_html_local = os.path.join(TEMPLATES_DIR, "index.html")
-    if not os.path.exists(caminho_html_local):
-        # Primeira vez: precisa do HTML para funcionar, baixa síncrono (com proteção de timeout interna)
-        baixar_html_github()
-    else:
-        # Já existe HTML local: atualiza em background sem bloquear o início do servidor
-        threading.Thread(target=baixar_html_github, daemon=True).start()
+function limparKit(){
+    kitItensAtuais=[];
+    kitEditandoId=null;
+    document.getElementById('kitNome').value='';
+    document.getElementById('kitPreco').value='';
+    document.getElementById('kitBuscaProduto').value='';
+    renderizarItensKit();
+}
 
-    threading.Thread(target=_verificador_automatico_pix, daemon=True).start()
-    threading.Thread(target=_processador_pedidos_online, daemon=True).start()
-    threading.Thread(target=limpar_sessoes_inativas, daemon=True).start()
-    threading.Thread(target=_sync_pendente_background, daemon=True).start()
-    threading.Thread(target=sincronizar_planos_periodicamente, daemon=True).start()
-    print("🔄 Thread de sincronização de planos iniciada")
+async function carregarKits(){
+    if(!temPermissao('kit_combo'))return;
+    const container=document.getElementById('kitsListaContainer');
+    try{
+        const res=await fetch('/api/kits',{credentials:'include'});
+        const data=await res.json();
+        if(data.success){
+            if(!data.kits||data.kits.length===0){
+                container.innerHTML='<p style="font-size:13px;color:var(--text-muted);text-align:center;padding:20px;">Nenhum kit cadastrado ainda</p>';
+                return;
+            }
+            container.innerHTML=data.kits.map(k=>{
+                const itensTxt=(k.itens||[]).map(i=>`${i.nome} (R$ ${(i.preco_combo||0).toFixed(2)})`).join(' + ');
+                return `<div class="kit-card">
+                    <div class="kit-card-header">
+                        <span class="kit-card-nome">📦 ${k.nome}</span>
+                        <span class="kit-card-preco">R$ ${(k.preco||0).toFixed(2)}</span>
+                    </div>
+                    <div class="kit-card-itens">${itensTxt}</div>
+                    <div class="kit-card-acoes">
+                        <button class="btn-kit-editar" onclick='editarKit(${JSON.stringify(JSON.stringify(k))})'>✏️ Editar</button>
+                        <button class="btn-kit-excluir" onclick="excluirKit('${k.id}')">🗑️ Excluir</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+    }catch(e){container.innerHTML='<p style="font-size:13px;color:var(--red);text-align:center;padding:20px;">Erro ao carregar kits</p>';}
+}
 
-    print(f"\n🆔 Servidor: {SERVIDOR_ID}")
-    print(f"📌 Versão: {VERSION}")
-    print("🌐 http://localhost:5000")
-    print("=" * 60)
+function editarKit(kitJson){
+    const k=typeof kitJson==='string'?JSON.parse(kitJson):kitJson;
+    kitEditandoId=k.id;
+    kitItensAtuais=(k.itens||[]).map(i=>{
+        // Recupera o custo: usa o salvo, ou busca no produto atual se faltar (kits antigos)
+        let custo=i.custo_original;
+        if(custo===undefined||custo===null){
+            const p=(state.produtos||[]).find(x=>x.codigo===i.codigo);
+            custo=p?(p.custo||0):0;
+        }
+        return {
+            codigo:i.codigo,nome:i.nome,
+            custo_original:custo||0,
+            preco_original:i.preco_original||i.preco_combo||0,
+            preco_combo:i.preco_combo||0
+        };
+    });
+    document.getElementById('kitNome').value=k.nome;
+    document.getElementById('kitPreco').value=(k.preco||0).toFixed(2).replace('.',',');
+    renderizarItensKit();
+    showToast('✏️ Editando kit: '+k.nome,'info');
+}
 
-    app.run(host='0.0.0.0', port=5000, debug=False)
+async function excluirKit(id){
+    if(!confirm('Excluir este kit?'))return;
+    try{
+        const res=await fetch('/api/kits/'+id,{method:'DELETE',credentials:'include'});
+        const data=await res.json();
+        if(data.success){showToast('✅ Kit excluído!','success');carregarKits();carregarKitsParaVenda();}
+        else showToast('❌ '+(data.error||'Erro'),'error');
+    }catch(e){showToast('❌ Erro ao excluir kit','error');}
+}
+
+async function salvarProduto(){
+    try{
+        const elCod=document.getElementById('prodCodigo');
+        const elNome=document.getElementById('prodNome');
+        if(!elCod||!elNome){showToast('❌ Erro: recarregue a página (Ctrl+F5)','error');return;}
+        const codigo=elCod.value.trim();
+        const nome=elNome.value.trim();
+        const preco=parseFloat((document.getElementById('prodPreco').value||'').replace(',','.'))||0;
+        const custo=temPermissao('margem') ? (parseFloat((document.getElementById('prodCusto').value||'').replace(',','.'))||0) : 0;
+        const estoque=parseInt(document.getElementById('prodEstoque').value)||0;
+        const categoria=(document.getElementById('prodCategoria').value||'').trim()||'Geral';
+        if(!codigo||!nome){showToast('❌ Código e nome são obrigatórios.','error');return;}
+        const res=await fetch('/api/produtos',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({codigo,nome,preco,custo,estoque,categoria})});
+        const data=await res.json();
+        if(data.success){showToast('✅ Produto salvo!','success');limparCamposProduto();carregarProdutos();}
+        else{showToast('❌ '+(data.error||'Erro ao salvar'),'error');}
+    }catch(e){showToast('❌ Erro ao salvar: '+(e.message||e),'error');}
+}
+
+async function excluirProdutoSelecionado(){
+    const codigo=document.getElementById('prodCodigo').value.trim();
+    if(!codigo){showToast('⚠️ Selecione um produto para excluir.','warning');return;}
+    if(!confirm(`Tem certeza que deseja excluir o produto "${document.getElementById('prodNome').value}"?`))return;
+    try{
+        const res=await fetch(`/api/produtos/${encodeURIComponent(codigo)}`,{method:'DELETE',credentials:'include'});
+        const data=await res.json();
+        if(data.success){showToast('✅ Produto excluído!','success');limparCamposProduto();carregarProdutos();}
+        else showToast('❌ '+data.error,'error');
+    }catch(e){showToast('❌ Erro ao excluir','error');}
+}
+
+let timeoutBuscaCodigo = null;
+function buscarProdutoAutomatico(codigo){
+    if (!temPermissao('busca_estoque')) return;
+    clearTimeout(timeoutBuscaCodigo);
+    if(codigo.length < 8) return;
+    timeoutBuscaCodigo = setTimeout(() => buscarProdutoPorCodigo(), 500);
+}
+
+async function buscarProdutoPorCodigo(){
+    if (!temPermissao('busca_estoque')) {
+        showToast('🔒 Busca inteligente não disponível no seu plano.', 'warning');
+        return;
+    }
+    const codigo=document.getElementById('prodCodigo').value.trim();
+    if(!codigo){showToast('⚠️ Digite um código.','warning');return;}
+    try{
+        const res=await fetch(`/api/produto/buscar/${encodeURIComponent(codigo)}`,{credentials:'include'});
+        const data=await res.json();
+        if(data.success && data.dados){
+            document.getElementById('prodNome').value=data.dados.nome||'';
+            document.getElementById('prodCategoria').value=data.dados.categoria||'Geral';
+            document.getElementById('prodCodigo').value=data.dados.gtin||codigo;
+            showToast('✅ Dados preenchidos!','success');
+        }else{showToast('⚠️ Produto não encontrado. Cadastre manualmente.','warning');}
+    }catch(e){showToast('❌ Erro na busca','error');}
+}
+
+// ============================================================
+// CLIENTES
+// ============================================================
+async function carregarClientes(){
+    if (!temPermissao('clientes')) return;
+    try{
+        const busca=document.getElementById('buscaCliente').value||'';
+        const res=await fetch(`/api/clientes?busca=${encodeURIComponent(busca)}`,{credentials:'include'});
+        const data=await res.json();
+        if(data.success){
+            const tbody=document.getElementById('tabelaClientes');
+            if(!data.clientes||data.clientes.length===0){tbody.innerHTML=`<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">Nenhum cliente cadastrado</td></tr>`;return;}
+            let html='', totalFiados=0;
+            data.clientes.forEach(c=>{if(c.divida>0) totalFiados++;
+                html+=`<tr><td><strong>${c.nome}</strong></td><td>${c.telefone||'-'}</td><td class="divida">R$ ${c.divida.toFixed(2)}</td>
+                    <td>${c.divida>0?`<button class="btn-pagar" onclick="pagarDivida(${c.id},'${c.nome}',${c.divida})">💰 Pagar</button>`:''}
+                    <button class="btn-delete" onclick="excluirCliente(${c.id})">🗑️</button></td></tr>`;
+            });
+            tbody.innerHTML=html;
+            const badge=document.getElementById('badgeFiados');
+            if(totalFiados>0){badge.style.display='inline';badge.textContent=totalFiados;}else{badge.style.display='none';}
+        }
+    }catch(e){console.error(e);}
+}
+
+function pagarDivida(id, nome, divida){
+    document.getElementById('pagClienteNome').textContent=nome;
+    document.getElementById('pagClienteDivida').textContent=divida.toFixed(2);
+    document.getElementById('pagClienteValor').value=divida.toFixed(2);
+    document.getElementById('pagClienteValor').dataset.clienteId=id;
+    document.getElementById('modalClientePagamento').classList.add('active');
+    setTimeout(()=>{document.getElementById('pagClienteValor').focus();document.getElementById('pagClienteValor').select();},100);
+}
+
+function fecharModalPagamentoCliente(){document.getElementById('modalClientePagamento').classList.remove('active');}
+
+async function confirmarPagamentoCliente(){
+    const clienteId=document.getElementById('pagClienteValor').dataset.clienteId;
+    const valorInput=document.getElementById('pagClienteValor');
+    const metodo=document.getElementById('pagClienteMetodo').value;
+    let valor=valorInput.value.replace(/[^0-9,.]/g,'').replace(',','.');
+    valor=parseFloat(valor)||0;
+    if(valor<=0){showToast('❌ Valor inválido! Digite um valor maior que zero.','error');return;}
+    try{
+        const res=await fetch(`/api/clientes/${clienteId}/pagar`,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({valor,metodo})});
+        const data=await res.json();
+        if(data.success){showToast(`✅ Pagamento de R$ ${valor.toFixed(2)} registrado!`,'success');fecharModalPagamentoCliente();carregarClientes();}
+        else{showToast('❌ '+(data.error||'Erro ao registrar pagamento'),'error');}
+    }catch(e){showToast('❌ Erro ao processar pagamento','error');}
+}
+
+async function excluirCliente(id){
+    if(!confirm('Excluir este cliente?'))return;
+    try{
+        const res=await fetch(`/api/clientes/${id}`,{method:'DELETE',credentials:'include'});
+        const data=await res.json();
+        if(data.success){showToast('✅ Cliente excluído!','success');carregarClientes();}
+        else showToast('❌ '+data.error,'error');
+    }catch(e){showToast('❌ Erro','error');}
+}
+
+function abrirModalCliente(){
+    document.getElementById('clienteNome').value='';
+    document.getElementById('clienteTelefone').value='';
+    document.getElementById('clienteEmail').value='';
+    document.getElementById('modalCliente').classList.add('active');
+    setTimeout(()=>document.getElementById('clienteNome').focus(),100);
+}
+function fecharModalCliente(){document.getElementById('modalCliente').classList.remove('active');}
+
+async function salvarCliente(){
+    const nome=document.getElementById('clienteNome').value.trim();
+    const telefone=document.getElementById('clienteTelefone').value.trim();
+    const email=document.getElementById('clienteEmail').value.trim();
+    if(!nome){showToast('❌ Nome é obrigatório.','error');return;}
+    try{
+        const res=await fetch('/api/clientes',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({nome,telefone,email})});
+        const data=await res.json();
+        if(data.success){showToast('✅ Cliente salvo!','success');fecharModalCliente();carregarClientes();}
+        else showToast('❌ '+data.error,'error');
+    }catch(e){showToast('❌ Erro ao salvar','error');}
+}
+
+// ============================================================
+// VENDAS / PDV
+// ============================================================
+document.getElementById('codigoInput').addEventListener('input',function(){
+    const val=this.value.trim();
+    const results=document.getElementById('searchResults');
+    if(val.length<1){results.classList.remove('active');return;}
+    const termo=val.toLowerCase();
+    const filtrados=state.produtos.filter(p=>p.nome.toLowerCase().includes(termo)||(p.codigo||'').toLowerCase().includes(termo));
+    const kitsFiltrados=(state.kits||[]).filter(k=>k.nome.toLowerCase().includes(termo));
+    if(filtrados.length===0 && kitsFiltrados.length===0){results.classList.remove('active');return;}
+    state._resultados=filtrados;
+    let html='';
+    kitsFiltrados.forEach((k)=>{
+        const codigoKit='KIT:'+k.id;
+        html+=`<div class="result-item" data-codigo="${codigoKit}" onclick="selecionarProdutoPorCodigo('${codigoKit}')">
+            <span class="name">📦 ${k.nome} <span style="font-size:10px;color:var(--purple);">COMBO</span></span>
+            <span class="price">R$ ${(k.preco||0).toFixed(2)}</span>
+            <span class="stock">kit</span>
+        </div>`;
+    });
+    filtrados.forEach((p,i)=>{
+        html+=`<div class="result-item" data-codigo="${p.codigo}" onclick="selecionarProdutoPorCodigo('${p.codigo}')">
+            <span class="name">${p.nome}</span>
+            <span class="price">R$ ${p.preco.toFixed(2)}</span>
+            <span class="stock">estoque: ${p.estoque}</span>
+        </div>`;
+    });
+    results.innerHTML=html;results.classList.add('active');state.searchIndex=-1;
+});
+
+document.getElementById('codigoInput').addEventListener('keydown',function(e){
+    const results=document.getElementById('searchResults');
+    const dropdownAberto=results.classList.contains('active');
+    const items=results.querySelectorAll('.result-item');
+    if(dropdownAberto && items.length){
+        if(e.key==='ArrowDown'){e.preventDefault();const next=Math.min(state.searchIndex+1,items.length-1);items.forEach((el,i)=>el.classList.toggle('active',i===next));state.searchIndex=next;return;}
+        if(e.key==='ArrowUp'){e.preventDefault();const prev=Math.max(state.searchIndex-1,0);items.forEach((el,i)=>el.classList.toggle('active',i===prev));state.searchIndex=prev;return;}
+    }
+    if(e.key==='Enter'){
+        e.preventDefault();
+        // Se há um item destacado na lista, seleciona ele
+        const active=results.querySelector('.result-item.active');
+        if(dropdownAberto && active && active.dataset.codigo){
+            selecionarProdutoPorCodigo(active.dataset.codigo);
+            this.value='';results.classList.remove('active');
+            return;
+        }
+        // Senão, trata como código de barras (busca LOCAL, sem API externa = sem lentidão)
+        const codigo=this.value.trim();
+        if(codigo) buscarProdutoPorCodigoVenda(codigo);
+    }
+});
+
+function selecionarProdutoPorCodigo(codigo){
+    // Kit/combo: código virtual "KIT:<id>"
+    if(codigo && codigo.startsWith('KIT:')){
+        const kitId=codigo.slice(4);
+        const k=(state.kits||[]).find(x=>x.id===kitId);
+        if(!k){showToast('⚠️ Kit não encontrado','warning');return;}
+        const custoKit=(k.itens||[]).reduce((acc,it)=>acc+(it.custo_original||0),0);
+        adicionarAoCarrinho({codigo:'KIT:'+k.id,nome:'📦 '+k.nome,preco:k.preco||0,custo:custoKit,estoque:9999,categoria:'Combo',is_kit:true});
+        document.getElementById('codigoInput').value='';
+        document.getElementById('searchResults').classList.remove('active');
+        document.getElementById('codigoInput').focus();
+        return;
+    }
+    const p=state.produtos.find(x=>x.codigo===codigo);
+    if(!p){showToast('⚠️ Produto não encontrado','warning');return;}
+    adicionarAoCarrinho(p);
+    document.getElementById('codigoInput').value='';
+    document.getElementById('searchResults').classList.remove('active');
+    document.getElementById('codigoInput').focus();
+}
+
+function buscarProdutoPorCodigoVenda(codigo){
+    // Busca APENAS local (produtos já carregados). NÃO chama API externa,
+    // para o caixa ser instantâneo ao bipar o código de barras.
+    const p=state.produtos.find(x=>x.codigo===codigo);
+    if(p){
+        adicionarAoCarrinho(p);
+    } else {
+        showToast('⚠️ Produto não cadastrado. Cadastre no Estoque.','warning');
+    }
+    const el=document.getElementById('codigoInput');
+    el.value=''; el.focus();
+    document.getElementById('searchResults').classList.remove('active');
+}
+
+function adicionarAoCarrinho(produto){
+    if(state.itens.some(i=>i.codigo===produto.codigo)){
+        const item=state.itens.find(i=>i.codigo===produto.codigo);
+        item.quantidade++;item.total=item.quantidade*item.preco_unitario;
+    }else{
+        state.itens.push({codigo:produto.codigo,nome:produto.nome,preco_unitario:produto.preco,custo_unitario:produto.custo||0,quantidade:1,total:produto.preco,categoria:produto.categoria||'Geral',is_kit:produto.is_kit===true});
+    }
+    atualizarCarrinho();showToast(`➕ ${produto.nome} adicionado!`,'success');
+}
+
+function removerItem(index){state.itens.splice(index,1);atualizarCarrinho();}
+
+function mudarQuantidade(index,delta){
+    const item=state.itens[index];if(!item)return;
+    const nova=item.quantidade+delta;
+    if(nova<=0){removerItem(index);return;}
+    item.quantidade=nova;item.total=nova*item.preco_unitario;atualizarCarrinho();
+}
+
+function definirQuantidade(index,valor){
+    const item=state.itens[index];if(!item)return;
+    let nova=parseFloat(String(valor).replace(',','.'));
+    if(isNaN(nova)||nova<=0){removerItem(index);return;}
+    item.quantidade=nova;item.total=nova*item.preco_unitario;atualizarCarrinho();
+}
+
+function definirValorTotal(index,valor){
+    const item=state.itens[index];if(!item)return;
+    let novoTotal=parseFloat(String(valor).replace('R$','').trim().replace(',','.'));
+    if(isNaN(novoTotal)||novoTotal<=0){removerItem(index);return;}
+    if(!item.preco_unitario||item.preco_unitario<=0){atualizarCarrinho();return;}
+    const novaQtd=novoTotal/item.preco_unitario;
+    item.quantidade=Math.round(novaQtd*1000)/1000;
+    item.total=item.quantidade*item.preco_unitario;
+    atualizarCarrinho();
+}
+
+function atualizarCarrinho(){
+    const tbody=document.getElementById('cartBody');
+    if(state.itens.length===0){
+        tbody.innerHTML='<tr><td colspan="5" class="empty-cart">🛒 Carrinho vazio</td></tr>';
+        document.getElementById('btnFinalizar').disabled=true;
+        document.getElementById('subtotalLabel').textContent='R$ 0,00';
+        document.getElementById('totalLabel').textContent='R$ 0,00';
+        state.subtotal=0;state.total=0;return;
+    }
+    let html='';
+    state.itens.forEach((item,i)=>{
+        html+=`<tr>
+            <td>${item.nome}</td>
+            <td class="qty"><button onclick="mudarQuantidade(${i},-1)">−</button><input type="text" class="qty-input" value="${item.quantidade}" onchange="definirQuantidade(${i},this.value)" onkeydown="if(event.key==='Enter'){this.blur();}" onfocus="this.select()"><button onclick="mudarQuantidade(${i},1)">+</button></td>
+            <td class="price">R$ ${item.preco_unitario.toFixed(2)}</td>
+            <td class="total-item"><input type="text" class="total-input" value="${item.total.toFixed(2).replace('.',',')}" onchange="definirValorTotal(${i},this.value)" onkeydown="if(event.key==='Enter'){this.blur();}" onfocus="this.select()"></td>
+            <td><button class="btn-remove" onclick="removerItem(${i})">✕</button></td>
+        </tr>`;
+    });
+    tbody.innerHTML=html;
+    calcularTotal();
+    document.getElementById('btnFinalizar').disabled=false;
+}
+
+function calcularTotal(){
+    const desconto=parseFloat(document.getElementById('descontoInput').value.replace(',','.'))||0;
+    state.subtotal=state.itens.reduce((acc,i)=>acc+i.total,0);
+    state.total=Math.max(0,state.subtotal-desconto);
+    document.getElementById('subtotalLabel').textContent='R$ '+state.subtotal.toFixed(2);
+    document.getElementById('totalLabel').textContent='R$ '+state.total.toFixed(2);
+}
+
+function abrirPagamento(){
+    if(state.itens.length===0||!state.caixa_aberto){if(!state.caixa_aberto)showToast('🔒 Caixa fechado!','warning');return;}
+    document.getElementById('paymentTotal').textContent='R$ '+state.total.toFixed(2);
+    document.getElementById('valorRecebido').value='';
+    document.getElementById('trocoLabel').textContent='Troco: R$ 0,00';
+    document.getElementById('paymentTrocoDisplay').style.display='none';
+    document.getElementById('clientePagamento').value='';
+    document.getElementById('btnConfirmarPagamento').disabled=false;
+    selecionarMetodo('Dinheiro');
+    document.getElementById('paymentModal').classList.add('active');
+    setTimeout(()=>{if(metodoAtivo==='Dinheiro'){document.getElementById('valorRecebido').focus();} else if(metodoAtivo==='Fiado'){document.getElementById('clientePagamento').focus();} else {document.getElementById('clientePagamento').focus();}}, 300);
+}
+
+function fecharPagamento(){document.getElementById('paymentModal').classList.remove('active');}
+
+function selecionarMetodo(metodo){
+    metodoAtivo=metodo;
+    document.querySelectorAll('#paymentMethods button').forEach(b=>b.classList.toggle('active',b.dataset.metodo===metodo));
+    const isFiado=metodo==='Fiado', isPIX=metodo==='PIX', isCartao=metodo==='Cartão'||metodo==='Débito';
+    document.getElementById('recebidoContainer').style.display=(isFiado||isPIX||isCartao)?'none':'flex';
+    if(isFiado){document.getElementById('trocoLabel').textContent='Fiado - cliente obrigatório';}
+    else{document.getElementById('trocoLabel').textContent='Troco: R$ 0,00';}
+    setTimeout(()=>{if(isFiado){document.getElementById('clientePagamento').focus();} else if(!isPIX&&!isCartao){document.getElementById('valorRecebido').focus();} else{document.getElementById('clientePagamento').focus();}}, 100);
+}
+
+function calcularTroco(){
+    const recebido=parseFloat(document.getElementById('valorRecebido').value)||0;
+    const troco=Math.max(0,recebido-state.total);
+    document.getElementById('trocoLabel').textContent='Troco: R$ '+troco.toFixed(2);
+    const display=document.getElementById('paymentTrocoDisplay');
+    if(troco>0&&recebido>0){display.style.display='block';document.getElementById('paymentTroco').textContent='R$ '+troco.toFixed(2);}
+    else{display.style.display='none';}
+}
+
+async function confirmarPagamento(){
+    const metodo=document.querySelector('#paymentMethods .active')?.dataset.metodo||'Dinheiro';
+    let cliente=document.getElementById('clientePagamento').value.trim()||'';
+    
+    // VERIFICA PERMISSÃO DE FIADO
+    if(metodo==='Fiado' && !temPermissao('fiado')){
+        showToast('🔒 Seu plano não permite vendas a fiado.','warning');
+        return;
+    }
+    
+    if(metodo==='Fiado' && !cliente){
+        showToast('❌ Nome do cliente é obrigatório para fiado!','error');
+        document.getElementById('clientePagamento').focus();
+        document.getElementById('clientePagamento').style.borderColor='var(--red)';
+        setTimeout(()=>{document.getElementById('clientePagamento').style.borderColor='';},3000);
+        return;
+    }
+    const recebido=parseFloat(document.getElementById('valorRecebido').value)||0;
+    const troco=Math.max(0,recebido-state.total);
+    if(metodo!=='Fiado'&&metodo!=='PIX'&&metodo!=='Cartão'&&metodo!=='Débito'&&recebido<state.total){
+        showToast('⚠️ Valor recebido insuficiente!','warning');return;
+    }
+    document.getElementById('btnConfirmarPagamento').disabled=true;
+    try{
+        const res=await fetch('/api/vendas',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({
+            itens:state.itens,subtotal:state.subtotal,
+            desconto:parseFloat(document.getElementById('descontoInput').value.replace(',','.'))||0,
+            total:state.total,metodo,cliente,recebido,troco
+        })});
+        const data=await res.json();
+        if(data.success){
+            ultimaVendaId=data.id;ultimoCupomData=data.dados_impressao;
+            state.itens=[];atualizarCarrinho();fecharPagamento();
+            mostrarCupom(data.dados_impressao);
+            carregarDash(state.periodo);carregarStatusCaixa();
+            showToast('✅ Venda finalizada!','success');
+        }else{showToast('❌ '+data.error,'error');document.getElementById('btnConfirmarPagamento').disabled=false;}
+    }catch(e){showToast('❌ Erro na venda','error');document.getElementById('btnConfirmarPagamento').disabled=false;}
+}
+
+// ============================================================
+// CUPOM
+// ============================================================
+function mostrarCupom(dados){
+    if(!dados)return;
+    document.getElementById('cupomLojaNome').textContent=dados.nome_loja||'MINHA LOJA';
+    document.getElementById('cupomCnpjLine').textContent=dados.cnpj?'CNPJ: '+formatarCnpj(dados.cnpj):'';
+    const cnpjDados=dados.cnpj_dados||{};
+    let cnpjHtml='';
+    if(cnpjDados.razao_social) cnpjHtml+=`<div>${cnpjDados.razao_social}</div>`;
+    if(cnpjDados.nome_fantasia) cnpjHtml+=`<div>FANTASIA: ${cnpjDados.nome_fantasia}</div>`;
+    if(cnpjDados.logradouro){
+        let end=cnpjDados.logradouro;
+        if(cnpjDados.numero) end+=`, ${cnpjDados.numero}`;
+        if(cnpjDados.bairro) end+=` - ${cnpjDados.bairro}`;
+        if(cnpjDados.municipio) end+=`, ${cnpjDados.municipio}`;
+        if(cnpjDados.uf) end+=`/${cnpjDados.uf}`;
+        cnpjHtml+=`<div>${end}</div>`;
+    }
+    if(cnpjDados.telefone) cnpjHtml+=`<div>TEL: ${cnpjDados.telefone}</div>`;
+    if(cnpjDados.email) cnpjHtml+=`<div>EMAIL: ${cnpjDados.email}</div>`;
+    document.getElementById('cupomDadosCnpj').innerHTML=cnpjHtml;
+    document.getElementById('cupomData').textContent=dados.data_hora||new Date().toLocaleString('pt-BR');
+    document.getElementById('cupomVendaIdLine').textContent='Venda: #'+ultimaVendaId;
+    
+    let itensHtml='';
+    dados.itens.forEach(i=>{
+        const lucro = i.lucro || 0;
+        itensHtml+=`<div class="cupom-linha"><span>${i.nome} x ${i.quantidade}</span><span>R$ ${i.total.toFixed(2)}</span></div>`;
+        if(lucro > 0) itensHtml+=`<div style="font-size:9px;color:#92400e;text-align:right;padding-right:4px;">💰 Lucro: R$ ${lucro.toFixed(2)}</div>`;
+    });
+    document.getElementById('cupomItens').innerHTML=itensHtml;
+    document.getElementById('cupomSubtotal').textContent='R$ '+dados.subtotal.toFixed(2);
+    document.getElementById('cupomDesconto').textContent='R$ '+dados.desconto.toFixed(2);
+    document.getElementById('cupomTotal').textContent='R$ '+dados.total.toFixed(2);
+    document.getElementById('cupomLucro').textContent='R$ '+(dados.lucro_total||0).toFixed(2);
+    document.getElementById('cupomMetodo').textContent=dados.metodo||'Dinheiro';
+    document.getElementById('cupomRecebido').textContent=dados.recebido?'R$ '+dados.recebido.toFixed(2):'—';
+    document.getElementById('cupomTroco').textContent=dados.troco?'R$ '+dados.troco.toFixed(2):'—';
+    document.getElementById('cupomCliente').textContent=dados.cliente||'—';
+    document.getElementById('cupomOperador').textContent=dados.usuario||'—';
+    document.getElementById('cupomLucroLinha').style.display=(dados.lucro_total||0)>0?'flex':'none';
+    
+    state.cupomEscolha='imprimir';
+    document.querySelectorAll('.cupom-opt').forEach(b=>b.classList.remove('active'));
+    document.getElementById('cupomOptImprimir').classList.add('active');
+    document.getElementById('cupomModal').classList.add('active');
+}
+
+function cupomEscolher(opcao){state.cupomEscolha=opcao;}
+function fecharCupomSemImprimir(){document.getElementById('cupomModal').classList.remove('active');}
+function fecharCupom(){document.getElementById('cupomModal').classList.remove('active');}
+
+async function imprimirCupom(){
+    const dados = ultimoCupomData;
+    if (!dados) { showToast('❌ Dados do cupom não encontrados', 'error'); return; }
+    showToast('🖨️ Enviando para impressão...', 'info');
+    try {
+        const res = await fetch('/api/imprimir/cupom', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(dados) });
+        const data = await res.json();
+        if (data.success) showToast('🖨️ Cupom impresso com sucesso!', 'success');
+        else showToast('❌ Falha na impressão: ' + (data.error || 'Erro desconhecido'), 'error');
+    } catch (e) { showToast('❌ Erro ao enviar para impressão', 'error'); }
+    document.getElementById('cupomModal').classList.remove('active');
+}
+
+async function imprimirCupomAntigo(vendaId){
+    if(!vendaId) return;
+    showToast('🔄 Buscando dados da venda...', 'info');
+    try{
+        const res=await fetch(`/api/vendas/${vendaId}/cupom`,{credentials:'include'});
+        const data=await res.json();
+        if(data.success && data.dados){
+            ultimoCupomData=data.dados;
+            ultimaVendaId=vendaId;
+            mostrarCupom(data.dados);
+        }else{
+            showToast('❌ '+ (data.error || 'Erro ao buscar cupom'), 'error');
+        }
+    }catch(e){
+        showToast('❌ Erro ao buscar cupom: ' + (e.message || 'Erro desconhecido'), 'error');
+    }
+}
+
+// ============================================================
+// CAIXA
+// ============================================================
+async function carregarStatusCaixa(){
+    try{
+        const res=await fetch('/api/caixa/status',{credentials:'include'});
+        const data=await res.json();
+        state.caixa_aberto=data.aberto||false;
+        const icon=document.getElementById('caixaIcon'), status=document.getElementById('caixaStatus'), msg=document.getElementById('caixaMsg');
+        const btn=document.getElementById('btnCaixa'), header=document.getElementById('statusCaixaHeader'), input=document.getElementById('valorAbertura');
+        if(state.caixa_aberto){
+            icon.textContent='💰';status.textContent='Caixa Aberto';msg.textContent=`Aberto por ${data.usuario_nome||data.usuario_id||'usuário'} | Total: R$ ${(data.total||0).toFixed(2)}`;
+            btn.textContent='🔒 Fechar Caixa';btn.className='btn-caixa fechar';header.textContent='💰 Aberto';header.className='status-caixa aberto';
+            input.style.display='none';document.getElementById('resumoCaixa').style.display='block';carregarResumoCaixa();
+        }else{
+            icon.textContent='🔒';status.textContent='Caixa Fechado';msg.textContent='Abra o caixa para iniciar as vendas';
+            btn.textContent='🔓 Abrir Caixa';btn.className='btn-caixa';header.textContent='🔒 Fechado';header.className='status-caixa fechado';
+            input.style.display='block';document.getElementById('resumoCaixa').style.display='none';
+        }
+    }catch(e){console.error(e);}
+}
+
+async function toggleCaixa(){
+    try{
+        if(state.caixa_aberto){
+            if(!confirm('Fechar caixa? O total do dia será registrado.'))return;
+            const res=await fetch('/api/caixa/fechar',{method:'POST',credentials:'include'});
+            const data=await res.json();
+            if(data.success){showToast('✅ Caixa fechado! Total: R$ '+data.total.toFixed(2),'success');}
+            else showToast('❌ '+data.error,'error');
+        }else{
+            const valor=parseFloat(document.getElementById('valorAbertura').value)||0;
+            const res=await fetch('/api/caixa/abrir',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({valor})});
+            const data=await res.json();
+            if(data.success){showToast('✅ Caixa aberto!','success');}
+            else showToast('❌ '+data.error,'error');
+        }
+        carregarStatusCaixa();
+    }catch(e){showToast('❌ Erro','error');}
+}
+
+async function carregarResumoCaixa(){
+    try{
+        const res=await fetch('/api/caixa/resumo',{credentials:'include'});
+        const data=await res.json();
+        if(data.success&&data.metodos&&data.metodos.length>0){
+            let html='';
+            data.metodos.forEach(m=>{html+=`<tr><td>${m.metodo}</td><td style="text-align:right;">${m.quantidade}</td><td style="text-align:right;">R$ ${m.total.toFixed(2)}</td></tr>`;});
+            html+=`<tr class="total-row"><td><strong>TOTAL</strong></td><td style="text-align:right;">${data.total_vendas||0}</td><td style="text-align:right;">R$ ${(data.total_geral||0).toFixed(2)}</td></tr>`;
+            document.getElementById('tabelaResumoCaixa').innerHTML=html;
+        }else{document.getElementById('tabelaResumoCaixa').innerHTML='<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:12px;">Nenhuma venda hoje</td></tr>';}
+    }catch(e){console.error(e);}
+}
+
+// ============================================================
+// DASHBOARD - COM LUCRO
+// ============================================================
+function filtrarDashboard(el,periodo){
+    if (!temPermissao('dashboard')) return;
+    document.querySelectorAll('.btn-filtro').forEach(b=>b.classList.remove('active'));
+    el.classList.add('active');state.periodo=periodo;carregarDash(periodo);
+}
+
+async function carregarDash(periodo){
+    if (!temPermissao('dashboard')) return;
+    try{
+        const res=await fetch(`/api/estatisticas?periodo=${periodo}`,{credentials:'include'});
+        const data=await res.json();
+        if(data.success){
+            const s=data.stats;
+            document.getElementById('statTotal').textContent='R$ '+(s.total_geral||0).toFixed(2);
+            document.getElementById('statVendas').textContent=s.total_vendas||0;
+            document.getElementById('statItens').textContent=s.total_itens||0;
+            document.getElementById('statMedia').textContent='R$ '+(s.media||0).toFixed(2);
+            document.getElementById('statLucro').textContent='R$ '+(s.total_lucro||0).toFixed(2);
+            
+            const metodos=s.metodos||{};
+            const total=Object.values(metodos).reduce((a,b)=>a+b,0);
+            let html='';
+            if(total>0){
+                const cores=['#22c55e','#3b82f6','#8b5cf6','#f59e0b','#ef4444'];
+                let i=0;
+                for(const [metodo,valor] of Object.entries(metodos)){
+                    const pct=total>0?(valor/total*100):0;
+                    html+=`<div class="method-bar"><span class="label">${metodo}</span><div class="track"><div class="fill" style="width:${pct}%;background:${cores[i%cores.length]};">${pct.toFixed(0)}%</div></div><span style="font-size:12px;font-weight:600;min-width:60px;text-align:right;">R$ ${valor.toFixed(2)}</span></div>`;
+                    i++;
+                }
+            }else{html='<p style="color:var(--text-muted);font-size:13px;">Nenhuma venda no período</p>';}
+            document.getElementById('metodosContainer').innerHTML=html;
+            
+            const vendas=s.vendas||[];
+            let vHtml='';
+            if(vendas.length>0){
+                vendas.slice(0,20).forEach(v=>{
+                    const metodo=v.metodo||'Dinheiro';
+                    const cls={'Dinheiro':'dinheiro','PIX':'pix','Cartão':'cartao','Débito':'cartao','Fiado':'fiado'}[metodo]||'dinheiro';
+                    vHtml+=`<div class="venda-item">
+                        <span style="font-weight:600;">#${v.id}</span>
+                        <span style="font-size:11px;color:var(--text-muted);">${v.data_hora ? new Date(v.data_hora).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : ''}</span>
+                        <span class="metodo ${cls}">${metodo}</span>
+                        <span class="valor">R$ ${v.total.toFixed(2)}</span>
+                        <span class="lucro-item">💰 Lucro: R$ ${(v.lucro_total||0).toFixed(2)}</span>
+                        <div class="produtos-detalhe">${(v.itens||[]).map(i=>`${i.nome}(${i.quantidade})`).join(', ')}</div>
+                        <button class="btn-imprimir-venda" onclick="imprimirCupomAntigo(${v.id})"><i class="fas fa-print"></i></button>
+                    </div>`;
+                });
+            }else{vHtml='<p style="color:var(--text-muted);font-size:13px;">Nenhuma venda no período</p>';}
+            document.getElementById('vendasList').innerHTML=vHtml;
+        }
+    }catch(e){console.error(e);}
+}
+
+// ============================================================
+// PLANOS
+// ============================================================
+async function carregarPlanos(){
+    try{
+        const res=await fetch('/api/planos',{credentials:'include'});
+        const data=await res.json();
+        if(data.success){
+            const grid=document.getElementById('planosGrid');
+            let html='';
+            data.planos.forEach(p=>{
+                const produtos=p.produtos===-1?'Ilimitado':p.produtos;
+                const permissoes = p.permissoes || {};
+                let perms = ['🛒 Vendas e Caixa'];
+                if(permissoes.clientes) perms.push('👥 Clientes');
+                if(permissoes.fiado) perms.push('📝 Fiado');
+                if(permissoes.kit_combo) perms.push('📦 Kit/Combo/Promoção');
+                if(permissoes.dashboard) perms.push('📊 Dashboard');
+                if(permissoes.busca_estoque) perms.push('🔍 Busca Estoque');
+                if(permissoes.margem) perms.push('💰 Margem de Lucro');
+                const permsText = perms.join(' • ');
+                const isTeste = p.is_teste || false;
+                const badgeTeste = isTeste ? '<span class="badge-teste">🎁 TESTE</span>' : '';
+                html+=`<div class="plano-card">
+                    ${isTeste ? '<div class="plano-teste">15 dias grátis</div>' : `<div class="plano-teste">${p.dias} dias</div>`}
+                    <div class="nome">${p.nome} ${badgeTeste}</div>
+                    <div class="preco">${p.preco === 0 ? 'GRÁTIS' : `R$ ${p.preco.toFixed(2)}`} ${p.preco > 0 ? '<small>/mês</small>' : ''}</div>
+                    <div class="desc">${p.usuarios} usuário${p.usuarios>1?'s':''}</div>
+                    <div class="detalhes"><span class="limite-produtos">📦 ${produtos} produtos</span></div>
+                    <div class="plano-features">${perms.map(f=>`<div class="feat-line">${f}</div>`).join('')}</div>
+                    ${p.preco > 0 ? `<button class="btn-assinar" onclick="assinarPlano(${p.id})">💳 Assinar</button>` : `<button class="btn-assinar" onclick="assinarPlano(${p.id})" style="background:var(--orange);">🎁 Iniciar Teste</button>`}
+                </div>`;
+            });
+            grid.innerHTML=html;
+            carregarStatusConta();
+        }
+    }catch(e){console.error(e);}
+}
+
+async function carregarStatusConta(){
+    try{
+        const res=await fetch('/api/plano/status',{credentials:'include'});
+        const data=await res.json();
+        if(data.success){
+            const status=document.getElementById('statusLoja');
+            const ativo=data.ativo!==false, dias=data.dias_restantes||0, percentual=data.percentual_produtos||0;
+            const corBarra=percentual>=90?'vermelho':percentual>=70?'amarelo':'verde';
+            const limiteProdutos=data.limite_produtos===-1?'∞':data.limite_produtos;
+            const permissoes = data.permissoes || {};
+            let permsText = [];
+            if(permissoes.clientes) permsText.push('👥 Clientes');
+            if(permissoes.dashboard) permsText.push('📊 Dashboard');
+            if(permissoes.busca_estoque) permsText.push('🔍 Busca Estoque');
+            if(permissoes.margem) permsText.push('💰 Margem');
+            if(permissoes.fiado) permsText.push('📝 Fiado');
+            const permsDisplay = permsText.length ? permsText.join(' • ') : 'Vendas e Caixa';
+            const isTeste = data.is_teste || false;
+            const testeBadge = isTeste ? '<span class="badge-teste">🎁 TESTE ATIVO</span>' : '';
+            status.innerHTML=`
+                <h4 style="font-size:14px;margin-bottom:10px;"><i class="fas fa-info-circle"></i> Status da Conta ${testeBadge}</h4>
+                <div class="info-grid">
+                    <div class="info-item"><div class="label">Plano</div><div class="value">${data.plano?.nome||'—'}</div></div>
+                    <div class="info-item"><div class="label">Status</div><div class="value ${ativo?'ativo':'expirado'}">${ativo?'✅ Ativo':'🔴 Expirado'}</div></div>
+                    <div class="info-item"><div class="label">Dias Restantes</div><div class="value ${dias<=3?'expirado':'ativo'}">${dias.toFixed(1)} dias</div></div>
+                    <div class="info-item"><div class="label">Produtos</div><div class="value">${data.produtos_atuais||0}/${limiteProdutos}</div></div>
+                    <div class="info-item"><div class="label">Usuários</div><div class="value">${data.usuarios_atuais||0}/${data.usuarios_limite||1}</div></div>
+                    <div class="info-item"><div class="label">Funcionalidades</div><div class="value" style="font-size:12px;">${permsDisplay}</div></div>
+                </div>
+                <div style="margin-top:12px;">
+                    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);">
+                        <span>Produtos usados: ${data.produtos_atuais||0}</span>
+                        <span>${data.limite_produtos===-1?'Ilimitado':data.limite_produtos}</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill ${corBarra}" style="width:${Math.min(100, percentual)}%;">
+                            ${data.limite_produtos===-1?'∞':`${Math.min(100, Math.round(percentual))}%`}
+                        </div>
+                    </div>
+                </div>
+                ${data.expirado?'<div style="margin-top:12px;padding:12px;background:rgba(239,68,68,.15);border-radius:8px;text-align:center;color:var(--red);">🔴 Seu plano expirou! <a onclick="trocarTab(\'planos\')" style="color:var(--green);cursor:pointer;font-weight:700;">Renovar agora →</a></div>':''}
+                ${!data.expirado && data.dias_restantes<=3 ? `<div style="margin-top:12px;padding:12px;background:rgba(245,158,11,.15);border-radius:8px;text-align:center;color:var(--orange);">⚠️ Seu plano expira em ${Math.ceil(dias)} dias! <a onclick="trocarTab(\'planos\')" style="color:var(--green);cursor:pointer;font-weight:700;">Renovar →</a></div>` : ''}
+            `;
+        }
+    }catch(e){console.error(e);}
+}
+
+async function assinarPlano(planoId){
+    try{
+        showToast('🔄 Gerando pagamento...','info');
+        const res=await fetch('/api/pix/criar',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({plano_id:planoId})});
+        const data=await res.json();
+        if(data.success){
+            if(data.gratis){
+                showToast('✅ Plano de teste ativado! 15 dias grátis.','success');
+                carregarPlanos();verificarStatusPlano();
+                return;
+            }
+            document.getElementById('pixContent').innerHTML=`
+                <div class="pix-info">
+                    <div class="valor">${data.valor === 0 ? 'GRÁTIS' : 'R$ '+data.valor.toFixed(2)}</div>
+                    <p style="color:var(--text-secondary);font-size:13px;">${data.plano.nome}</p>
+                    ${data.qr_code_base64 ? `<img src="data:image/png;base64,${data.qr_code_base64}" style="max-width:200px;border-radius:8px;background:#fff;padding:10px;margin:8px 0;">` : ''}
+                    ${data.qr_code ? `<div class="chave" onclick="copiarPix('${data.qr_code}')">📋 Clique para copiar o código PIX</div>
+                    <div style="font-size:11px;color:var(--text-muted);word-break:break-all;background:var(--bg-primary);padding:8px;border-radius:6px;">${data.qr_code}</div>` : ''}
+                    <button class="btn-verificar" onclick="verificarPix('${data.pix_id}')">✅ Verificar Pagamento</button>
+                    <button class="btn-cancelar" onclick="fecharModalPix()">Fechar</button>
+                </div>
+            `;
+            document.getElementById('modalPix').classList.add('active');
+        }else{showToast('❌ '+data.error,'error');}
+    }catch(e){showToast('❌ Erro ao gerar PIX','error');}
+}
+
+function copiarPix(codigo){navigator.clipboard.writeText(codigo).then(()=>showToast('✅ Código PIX copiado!','success')).catch(()=>prompt('Copie o código:',codigo));}
+
+async function verificarPix(pixId){
+    try{
+        const res=await fetch('/api/pix/verificar',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({pix_id:pixId})});
+        const data=await res.json();
+        if(data.pago){showToast('✅ Pagamento confirmado! Plano renovado!','success');fecharModalPix();carregarPlanos();verificarStatusPlano();}
+        else{showToast('⏳ Pagamento ainda não confirmado... Aguarde.','warning');}
+    }catch(e){showToast('❌ Erro ao verificar','error');}
+}
+
+function fecharModalPix(){document.getElementById('modalPix').classList.remove('active');}
+
+// ============================================================
+// CONFIG - USUÁRIOS
+// ============================================================
+async function carregarUsuarios(){
+    try{
+        const res=await fetch('/api/usuarios',{credentials:'include'});
+        const data=await res.json();
+        if(data.success){
+            const lista=document.getElementById('listaUsuarios');
+            if(data.usuarios.length===0){lista.innerHTML='<p style="color:var(--text-muted);font-size:13px;">Nenhum usuário</p>';return;}
+            let html='';
+            data.usuarios.forEach(u=>{const isAtivo=u.online||u.session_id; html+=`<div class="usuario-item"><span>${u.nome} <span class="cargo">${u.cargo||'Funcionario'}</span> ${isAtivo?'🟢':''}</span><button class="btn-delete" onclick="excluirUsuario('${u.id}')">🗑️</button></div>`;});
+            lista.innerHTML=html;
+        }
+    }catch(e){console.error(e);}
+}
+
+async function cadastrarUsuario(){
+    const nome=document.getElementById('novoUserNome').value.trim();
+    const email=document.getElementById('novoUserEmail').value.trim();
+    const senha=document.getElementById('novoUserSenha').value;
+    const cargo=document.getElementById('novoUserCargo').value;
+    if(!nome||!email||!senha){showToast('❌ Preencha todos os campos','error');return;}
+    try{
+        const res=await fetch('/api/usuarios',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({nome,email,senha,cargo})});
+        const data=await res.json();
+        if(data.success){showToast('✅ Usuário criado!','success');document.getElementById('novoUserNome').value='';document.getElementById('novoUserEmail').value='';document.getElementById('novoUserSenha').value='';carregarUsuarios();}
+        else showToast('❌ '+data.error,'error');
+    }catch(e){showToast('❌ Erro','error');}
+}
+
+async function excluirUsuario(id){
+    if(!confirm('Excluir este usuário?'))return;
+    try{
+        const res=await fetch(`/api/usuarios/${id}`,{method:'DELETE',credentials:'include'});
+        const data=await res.json();
+        if(data.success){showToast('✅ Usuário excluído!','success');carregarUsuarios();}
+        else showToast('❌ '+data.error,'error');
+    }catch(e){showToast('❌ Erro','error');}
+}
+
+// ============================================================
+// LOJA
+// ============================================================
+async function carregarLojaInfo(){
+    try{
+        const res=await fetch('/api/loja/info',{credentials:'include'});
+        const data=await res.json();
+        if(data.success){
+            document.getElementById('lojaNomeConfig').value=data.nome_loja||'';
+            document.getElementById('lojaCnpjConfig').value=data.cnpj?formatarCnpj(data.cnpj):'';
+            const cnpjDados=data.cnpj_dados||{};
+            const divDados=document.getElementById('dadosCnpjConfig');
+            if(cnpjDados.razao_social || cnpjDados.nome_fantasia){
+                let html='<strong>📋 Dados da Empresa:</strong><br>';
+                if(cnpjDados.razao_social) html+=`🏢 Razão Social: ${cnpjDados.razao_social}<br>`;
+                if(cnpjDados.nome_fantasia) html+=`📛 Nome Fantasia: ${cnpjDados.nome_fantasia}<br>`;
+                if(cnpjDados.logradouro){
+                    let end=cnpjDados.logradouro;
+                    if(cnpjDados.numero) end+=`, ${cnpjDados.numero}`;
+                    if(cnpjDados.bairro) end+=` - ${cnpjDados.bairro}`;
+                    if(cnpjDados.municipio) end+=`, ${cnpjDados.municipio}`;
+                    if(cnpjDados.uf) end+=`/${cnpjDados.uf}`;
+                    html+=`📍 Endereço: ${end}<br>`;
+                }
+                if(cnpjDados.telefone) html+=`📞 Telefone: ${cnpjDados.telefone}<br>`;
+                if(cnpjDados.email) html+=`📧 Email: ${cnpjDados.email}<br>`;
+                if(cnpjDados.data_abertura) html+=`📅 Abertura: ${cnpjDados.data_abertura}<br>`;
+                if(cnpjDados.porte) html+=`📊 Porte: ${cnpjDados.porte}<br>`;
+                if(cnpjDados.natureza_juridica) html+=`⚖️ Natureza: ${cnpjDados.natureza_juridica}<br>`;
+                divDados.innerHTML=html;divDados.style.display='block';divDados.dataset.dados=JSON.stringify(cnpjDados);
+            } else {divDados.style.display='none';}
+        }
+    }catch(e){console.error(e);}
+}
+
+async function salvarNomeLoja(){
+    const nome=document.getElementById('lojaNomeConfig').value.trim();
+    const cnpj=document.getElementById('lojaCnpjConfig').value.replace(/\D/g,'');
+    let cnpj_dados={};
+    try{cnpj_dados=JSON.parse(document.getElementById('dadosCnpjConfig').dataset.dados||'{}');}catch(e){}
+    if(!nome){showToast('❌ Nome da loja é obrigatório.','error');return;}
+    try{
+        const res=await fetch('/api/loja/nome',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({nome,cnpj,cnpj_dados})});
+        const data=await res.json();
+        if(data.success){showToast('✅ Informações salvas!','success');state.nome_loja=nome;state.cnpj=cnpj;document.getElementById('lojaNomeDisplay').textContent='🏬 '+nome;}
+        else showToast('❌ '+data.error,'error');
+    }catch(e){showToast('❌ Erro ao salvar','error');}
+}
+
+async function buscarDadosCNPJ(cnpj){
+    const el=document.getElementById('dadosCnpjConfig')||document.getElementById('dadosCnpjRegistro');
+    const limpo=cnpj.replace(/\D/g,'');
+    if(limpo.length!==14){el.style.display='none';return;}
+    try{
+        const res=await fetch(`/api/cnpj/${limpo}`,{credentials:'include'});
+        const data=await res.json();
+        if(data.success&&data.dados){
+            const d=data.dados;
+            let html='<strong>📋 Dados do CNPJ:</strong><br>';
+            if(d.razao_social) html+=`🏢 Razão Social: ${d.razao_social}<br>`;
+            if(d.nome_fantasia) html+=`📛 Nome Fantasia: ${d.nome_fantasia}<br>`;
+            if(d.logradouro){
+                let end=d.logradouro;
+                if(d.numero) end+=`, ${d.numero}`;
+                if(d.bairro) end+=` - ${d.bairro}`;
+                if(d.municipio) end+=`, ${d.municipio}`;
+                if(d.uf) end+=`/${d.uf}`;
+                html+=`📍 Endereço: ${end}<br>`;
+            }
+            if(d.telefone) html+=`📞 Telefone: ${d.telefone}<br>`;
+            if(d.email) html+=`📧 Email: ${d.email}<br>`;
+            if(d.data_abertura) html+=`📅 Abertura: ${d.data_abertura}<br>`;
+            if(d.porte) html+=`📊 Porte: ${d.porte}<br>`;
+            el.innerHTML=html;el.style.display='block';el.dataset.dados=JSON.stringify(d);
+        }else{el.style.display='none';}
+    }catch(e){el.style.display='none';}
+}
+
+// ============================================================
+// SINCRONIZAÇÃO
+// ============================================================
+async function sincronizarAgora(show){
+    try{
+        if(show) showToast('🔄 Sincronizando...','info');
+        const res=await fetch('/api/sincronizar',{method:'POST',credentials:'include'});
+        const data=await res.json();
+        if(data.success){
+            if(show) showToast('✅ Sincronizado!','success');
+            document.getElementById('statusSincronizacao').textContent='✅ Online';
+            document.getElementById('statusSincronizacao').style.background='rgba(34,197,94,.15)';
+            carregarProdutos();carregarClientes();carregarDash(state.periodo);
+        }else{
+            if(show) showToast('⚠️ Falha na sincronização','warning');
+            document.getElementById('statusSincronizacao').textContent='⚠️ Offline';
+            document.getElementById('statusSincronizacao').style.background='rgba(239,68,68,.15)';
+        }
+    }catch(e){
+        if(show) showToast('⚠️ Falha na sincronização','warning');
+        document.getElementById('statusSincronizacao').textContent='⚠️ Offline';
+        document.getElementById('statusSincronizacao').style.background='rgba(239,68,68,.15)';
+    }
+}
+
+// ============================================================
+// INICIALIZAÇÃO
+// ============================================================
+document.addEventListener('DOMContentLoaded',function(){
+    fetch('/api/auth/status',{credentials:'include',cache:'no-store'})
+        .then(res=>res.json())
+        .then(data=>{
+            if(data.logged_in){
+                state.db_id=data.db_id;state.usuario_id=data.usuario_id;state.nome=data.nome;state.cargo=data.cargo;
+                state.nome_loja=data.nome_loja||'Minha Loja';state.cnpj=data.cnpj||'';state.cnpj_dados=data.cnpj_dados||{};
+                state.plano_ativo=data.plano_ativo!==false;
+                state.permissoes=data.permissoes||{clientes:false,dashboard:false,busca_estoque:false,margem:false,fiado:false};
+                document.getElementById('authPage').classList.add('hidden');
+                document.getElementById('app').classList.add('active');
+                atualizarHeader();
+                carregarPlanos();carregarProdutos();carregarClientes();carregarUsuarios();
+                carregarStatusCaixa();carregarDash('hoje');carregarLojaInfo();
+                atualizarPermissoesUI();
+                setTimeout(verificarStatusPlano, 500);
+            }else{
+                document.getElementById('authPage').classList.remove('hidden');
+                document.getElementById('app').classList.remove('active');
+            }
+        })
+        .catch(()=>{
+            document.getElementById('authPage').classList.remove('hidden');
+            document.getElementById('app').classList.remove('active');
+        });
+});
+
+if(!String.prototype.center){
+    String.prototype.center=function(len){
+        const pad=Math.max(0,len-this.length);
+        const left=Math.floor(pad/2);
+        return ' '.repeat(left)+this+' '.repeat(pad-left);
+    };
+}
+
+console.log('🧾 SMART PDV v10.3.0 carregado!');
+console.log('📌 Use F1 para navegação rápida');
+console.log('💰 Lucro líquido ativado!');
+console.log('🔒 Permissões por plano ativadas!');
+console.log('🎁 15 dias de teste grátis!');
+</script>
+</body>
+</html>
