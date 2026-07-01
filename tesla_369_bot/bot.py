@@ -843,7 +843,15 @@ def _email_da_requisicao():
 @app.route('/')
 def index():
     skins = carregar_todas_skins_do_firebase()
-    skin_id = request.args.get('skin_id', 'skin_padrao')
+    # A skin certa do usuario vem do e-mail, nao de um parametro solto na URL.
+    # Sem isso, todo reload da pagina (compra de skin, PIX pago, conectar)
+    # cai de volta na skin padrao, mesmo que o usuario tenha ativado outra.
+    email = _email_da_requisicao()
+    skin_id = 'skin_padrao'
+    if email:
+        usuario = carregar_usuario(email.strip().lower())
+        if usuario:
+            skin_id = usuario.get('skin_atual', 'skin_padrao')
     skin = next((s for s in skins if s.get('id') == skin_id), skins[0] if skins else list(get_skins_fallback().values())[0])
     planos_json = ','.join([f'{{"id":{p["id"]},"moedas":{p["moedas"]},"preco":{p["preco"]},"nome":"{p["nome"]}","desc":"{p["desc"]}","tag":"{p.get("tag","")}","desconto":"{p.get("desconto","")}"}}' for p in PLANOS])
     return render_template('index.html',
