@@ -1967,11 +1967,17 @@ def _sync_kits_firebase_bg(db_id: str) -> None:
     """Sincroniza os kits do Firebase em segundo plano (não trava a tela)."""
     try:
         dados_fb = carregar_usuario_firebase(db_id, timeout=8)
-        if dados_fb and dados_fb.get('kits'):
+        kits_fb = dados_fb.get('kits') if dados_fb else None
+        # O Firebase pode devolver uma lista (quando as chaves são numéricas). Normaliza para dict.
+        if isinstance(kits_fb, list):
+            kits_fb = {str(i): v for i, v in enumerate(kits_fb) if v}
+        if kits_fb and isinstance(kits_fb, dict):
             with get_db_context() as conn:
                 cur_exc = conn.execute("SELECT item_id FROM exclusoes WHERE tipo='kit' AND db_id=?", (db_id,))
                 excluidos = {r[0] for r in cur_exc.fetchall()}
-                for kit_id, dk in dados_fb['kits'].items():
+                for kit_id, dk in kits_fb.items():
+                    if not isinstance(dk, dict):
+                        continue
                     if str(kit_id) in excluidos:
                         continue
                     itens_kit = dk.get('itens', [])
