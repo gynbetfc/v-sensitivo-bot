@@ -624,7 +624,7 @@ function ativarSkin(skinId) {
     if(!confirm('Ativar esta skin? O visual será atualizado.')) return;
     fetch('/ativar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(comEmail({skin_id:skinId}))})
     .then(function(r) { return r.json(); }).then(function(d) { 
-        if(d.ok){ showToast('Skin ativada! Recarregando...', 'success'); setTimeout(function() { location.reload(); }, 800); } 
+        if(d.ok){ showToast('Skin ativada! Recarregando...', 'success'); setTimeout(function() { location.href = urlComEmail('/'); }, 800); } 
         else { showToast('ERRO: '+d.erro, 'error'); } 
     });
 }
@@ -659,7 +659,7 @@ function copiarPix(){ if(pixAtual && pixAtual.qr_code){ navigator.clipboard.writ
 function verificarPagamento(pixId){
     fetch('/verificar_pix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pix_id:pixId})})
     .then(function(r) { return r.json(); }).then(function(d){ 
-        if(d.pago){ showToast('✅ PAGAMENTO CONFIRMADO! +'+d.moedas+' VOLTS!', 'success'); document.getElementById('moedasSaldo').textContent=d.saldo; fecharModal(); location.reload(); } 
+        if(d.pago){ showToast('✅ PAGAMENTO CONFIRMADO! +'+d.moedas+' VOLTS!', 'success'); document.getElementById('moedasSaldo').textContent=d.saldo; fecharModal(); location.href = urlComEmail('/'); } 
         else { showToast('⏰ Aguardando confirmação...', 'warning'); } 
     });
 }
@@ -703,7 +703,7 @@ function conectarIQ() {
             iniciarChat();
             carregarSkinEffectsDoFirebase();
             showToast('✅ Conectado!', 'success');
-            if(d.refresh) { setTimeout(function() { location.reload(); }, 1500); }
+            if(d.refresh) { setTimeout(function() { location.href = urlComEmail('/'); }, 1500); }
         } else { showToast('ERRO: '+d.erro, 'error'); btnConectar.disabled=false; btnConectar.textContent='🔌 CONECTAR'; }
     }).catch(function(err) { showToast('Erro: ' + err.message, 'error'); btnConectar.disabled=false; btnConectar.textContent='🔌 CONECTAR'; });
 }
