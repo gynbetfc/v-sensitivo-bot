@@ -102,6 +102,16 @@ class Sessao:
         self.percentual_banca = PERCENTUAL_BANCA_PADRAO  # por sessao — o ajuste de um usuario nao afeta o de outro
         self.senha = None  # guardada em memoria só pra permitir reconexão do zero (ver nota de segurança no final)
 
+        # ===== CONFIG DE OPERACAO (escolhas do USUARIO, nao da estrategia) =====
+        # usar_config_padrao=True => usa o que a estrategia sugere (gales/timeframe).
+        # False => usa os overrides abaixo.
+        self.usar_config_padrao = True
+        self.gales_override = 2              # usado só quando usar_config_padrao=False
+        self.auto_par = True                 # True => bot escolhe o melhor par OTC; False => usa self.par
+        self.modo_entrada = 'calculo'        # 'calculo' (recomendado) ou 'fixa'
+        self.mao_fixa_valor = 2.0            # valor em $ quando modo_entrada='fixa'
+        self.melhor_par_info = {}            # ultimo resultado do auto-par (pra mostrar na tela)
+
         self.bot_lock = threading.Lock()          # protege iniciar/parar bot desta sessao
         self.conexao_lock = threading.Lock()       # protege conectar_iq/verificar_saude desta sessao
 
@@ -386,6 +396,82 @@ def calcular_entradas(b, p, g, percentual_banca):
         entradas[-1] = round(entradas[-1] - (sum(entradas) - b) - 0.02, 2)
     return [max(1, e) for e in entradas]
 
+# ===================== PARES OTC + AUTO-PAR =====================
+# Cache curto de pares OTC abertos (compartilhado — nao muda por usuario).
+cache_pares_otc = {"data": [], "timestamp": 0}
+CACHE_PARES_TTL = 60
+
+def listar_pares_otc(sessao):
+    """Lista os pares OTC que estao ABERTOS agora na IQ Option.
+    Usa get_all_open_time() da propria lib — nada de lista fixa/chutada."""
+    global cache_pares_otc
+    agora = time.time()
+    if cache_pares_otc["data"] and (agora - cache_pares_otc["timestamp"]) < CACHE_PARES_TTL:
+        return cache_pares_otc["data"]
+    pares = []
+    try:
+        abertos = sessao.API.get_all_open_time()
+        # binarias/turbo costumam ter os OTC; olhamos os dois tipos
+        for tipo in ('turbo', 'binary'):
+            if tipo in abertos:
+                for par, info in abertos[tipo].items():
+                    if par.endswith('-OTC') and info.get('open'):
+                        if par not in pares:
+                            pares.append(par)
+    except Exception as e:
+        print(f"⚠️ Erro ao listar pares OTC: {e}")
+    if not pares:
+        pares = ["EURUSD-OTC"]  # fallback minimo
+    cache_pares_otc["data"] = pares
+    cache_pares_otc["timestamp"] = agora
+    return pares
+
+def escolher_melhor_par(sessao, funcao_estrategia, pares_candidatos=None):
+    """Escolhe automaticamente o par OTC com melhor combinacao de:
+      (1) PAYOUT atual  — o quanto a corretora paga agora
+      (2) ATIVIDADE da estrategia — se ela daria sinal nos candles recentes
+    IMPORTANTE: NAO ranqueamos por 'taxa de acerto no passado' de proposito.
+    O par que mais 'acertou' nos ultimos minutos nao e o que mais vai acertar
+    nos proximos — isso e overfitting e gera falsa confianca. Aqui a gente
+    prioriza payout (fato concreto) e usa a atividade so como leve desempate."""
+    pares = pares_candidatos or listar_pares_otc(sessao)
+    ranking = []
+    add_log(sessao, f"🔎 Testando {len(pares)} pares OTC...", 'indicator')
+    for par in pares:
+        if not sessao.bot_rodando and sessao.auto_par:
+            # se o usuario parou no meio, aborta o scan
+            break
+        try:
+            payout = Payout(sessao, par)
+            if payout <= 0:
+                continue
+            # a estrategia "roda na cabeca" so pra ver se ela reage a esse par
+            # AGORA (1 leitura), nao pra contar acertos historicos.
+            deu_sinal = False
+            try:
+                res = funcao_estrategia(sessao.API, par, lambda m, t='info': None)
+                deu_sinal = bool(res and res.get('direcao', '').lower() in ('call', 'put'))
+            except Exception:
+                deu_sinal = False
+            # score: payout manda; atividade da um empurraozinho pequeno
+            score = payout + (0.02 if deu_sinal else 0)
+            ranking.append({'par': par, 'payout': payout, 'sinal_agora': deu_sinal, 'score': score})
+        except Exception:
+            continue
+
+    if not ranking:
+        return None
+    ranking.sort(key=lambda x: x['score'], reverse=True)
+    melhor = ranking[0]
+    sessao.melhor_par_info = {
+        'par': melhor['par'],
+        'payout': round(melhor['payout'] * 100, 1),
+        'testados': len(ranking)
+    }
+    add_log(sessao, f"🏆 Melhor par: {melhor['par']} (payout {round(melhor['payout']*100,1)}%)", 'win')
+    return melhor['par']
+
+
 def aguardar_inicio_vela(sessao):
     add_log(sessao, "   ⏳ Aguardando inicio da vela...", 'info')
     while datetime.now().second > 5:
@@ -531,18 +617,57 @@ def verificar_saude_api(sessao):
 
 # ========== FUNCOES DO BOT (LOGICA DEFINITIVA — inalterada, so usa sessao) ==========
 
-def executar_ciclo(sessao, direcao):
+def _timestamp_servidor(sessao):
+    """Relogio do servidor da IQ (nao do celular). Fallback pro relogio local."""
+    try:
+        ts = sessao.API.get_server_timestamp()
+        if ts:
+            return float(ts)
+    except Exception:
+        pass
+    return time.time()
+
+def aguardar_expiracao_vela(sessao, timeframe):
+    """Espera ATE a vela expirar de verdade, ancorado no relogio do servidor.
+    Isso mata o 'delay crescente': antes a gente contava 60s a partir do buy,
+    entao cada ~2s de processamento do buy empurrava tudo pra frente e ia
+    acumulando. Agora a espera termina no fechamento REAL da vela + margem,
+    independente de quanto o buy demorou."""
+    agora = _timestamp_servidor(sessao)
+    # proximo multiplo de 'timeframe' (fechamento da vela em que entramos)
+    expiracao = (int(agora // timeframe) + 1) * timeframe
+    margem = 2  # segundos apos a expiracao pra garantir que o payout caiu na conta
+    ciclos = 0
+    while _timestamp_servidor(sessao) < expiracao + margem:
+        if not sessao.bot_rodando:
+            return False
+        ciclos += 1
+        if ciclos % 15 == 0:
+            verificar_saude_api(sessao)  # checagem leve, nao interrompe a espera
+        time.sleep(0.5)
+    return True
+
+def executar_ciclo(sessao, plano):
     """
-    LOGICA DEFINITIVA (igual a original):
-    1. ENTRADA: Aguarda inicio da vela, guarda o ID da ordem e o saldo antes.
-    2. Aguarda 60 segundos (agora checando saude da conexao no meio do caminho).
+    LOGICA DEFINITIVA (mesma essencia de sempre), agora dirigida por 'plano':
+      plano = {
+        'direcao': 'call'|'put',      # da estrategia
+        'timeframe': 60,              # resolvido (estrategia ou override do usuario)
+        'gales': 2,                   # resolvido (estrategia ou override do usuario)
+        'entradas': [e0, e1, ...],    # ja calculado (calculo OU mao fixa)
+      }
+    1. ENTRADA: aguarda inicio da vela, guarda saldo antes.
+    2. Aguarda a vela EXPIRAR (ancorado no relogio, sem delay crescente).
     3. Verifica resultado por SALDO.
-    4. Se WIN: para o bot (STOP GAIN).
-    5. Se LOSS: executa GALE 1 (NOVA ORDEM, SEM aguardar inicio da vela).
-    6. Repete para GALE 2.
+    4. WIN => STOP GAIN. LOSS => proximo GALE (imediato). Repete ate acabar os gales.
     """
     if not sessao.bot_rodando or not sessao.API:
         return
+
+    direcao = plano['direcao']
+    timeframe = plano['timeframe']
+    gales = plano['gales']
+    entradas = plano['entradas']
 
     try:
         if not consumir_volt(sessao):
@@ -558,12 +683,11 @@ def executar_ciclo(sessao, direcao):
                 return
 
         bi = sessao.API.get_balance()
-        payout = Payout(sessao, sessao.par)
-        entradas = calcular_entradas(bi, payout, MARTINGALE, sessao.percentual_banca)
-        add_log(sessao, f"💰 Banca: ${bi:.2f} | Payout: {payout*100:.0f}%", 'info')
-        add_log(sessao, f"📐 E1:${entradas[0]:.2f} | E2:${entradas[1]:.2f} | E3:${entradas[2]:.2f}", 'info')
+        add_log(sessao, f"💰 Banca: ${bi:.2f} | ⏱️ {timeframe}s | 🔁 {gales} gale(s)", 'info')
+        entradas_str = " | ".join(f"E{idx+1}:${e:.2f}" for idx, e in enumerate(entradas))
+        add_log(sessao, f"📐 {entradas_str}", 'info')
 
-        for i in range(MARTINGALE + 1):
+        for i in range(gales + 1):
             if not sessao.bot_rodando: break
 
             if not verificar_saude_api(sessao):
@@ -590,10 +714,12 @@ def executar_ciclo(sessao, direcao):
 
             add_log(sessao, f"🎯 {'ENTRADA' if i == 0 else f'GALE {i}'}: {direcao.upper()} ${valor:.2f}", 'info')
 
-            st, id_ordem = sessao.API.buy(valor, sessao.par, direcao, 1)
+            # duracao em minutos pra API.buy (binaria/turbo). timeframe vem em segundos.
+            duracao_min = max(1, int(round(timeframe / 60)))
+            st, id_ordem = sessao.API.buy(valor, sessao.par, direcao, duracao_min)
             if not st or not id_ordem:
                 try:
-                    st, id_ordem = sessao.API.buy_digital_spot(sessao.par, valor, direcao, 1)
+                    st, id_ordem = sessao.API.buy_digital_spot(sessao.par, valor, direcao, duracao_min)
                 except Exception:
                     pass
 
@@ -607,15 +733,9 @@ def executar_ciclo(sessao, direcao):
             else:
                 add_log(sessao, f"   📝 Ordem #{id_ordem} (GALE {i})", 'info')
 
-            add_log(sessao, f"   ⏳ Aguardando 60 segundos...", 'info')
-            for s in range(60):
-                if not sessao.bot_rodando:
-                    return
-                # checagem leve no meio da espera: nao interrompe o ciclo,
-                # so garante que o log/estado reflita a realidade da rede
-                if s % 15 == 0 and s > 0:
-                    verificar_saude_api(sessao)
-                time.sleep(1)
+            add_log(sessao, f"   ⏳ Aguardando expiração da vela ({timeframe}s)...", 'info')
+            if not aguardar_expiracao_vela(sessao, timeframe):
+                return  # bot foi parado no meio da espera
 
             if not verificar_saude_api(sessao):
                 add_log(sessao, "⚠️ Conexão perdida durante espera! Tentando reconectar...", 'error')
@@ -661,7 +781,7 @@ def executar_ciclo(sessao, direcao):
                     })
                     salvar_usuario(sessao.email, u)
 
-                if i < MARTINGALE and sessao.bot_rodando:
+                if i < gales and sessao.bot_rodando:
                     add_log(sessao, f"   ➡️ Indo para GALE {i + 1}...", 'loss')
                 else:
                     add_log(sessao, "   💀 CICLO ESGOTADO! Todas as entradas perdidas.", 'loss')
@@ -681,8 +801,38 @@ def executar_ciclo(sessao, direcao):
         sessao.ordem_id_atual = None
         add_log(sessao, "⏹️ Ciclo finalizado!", 'info')
 
+def _resolver_plano(sessao, resultado_estrategia, estrategia_info):
+    """Junta o que a ESTRATEGIA decidiu com o que o USUARIO configurou.
+    Regra: se sessao.usar_config_padrao=True, usa as sugestoes da estrategia;
+    senao, usa os overrides do usuario. Direcao SEMPRE vem da estrategia."""
+    direcao = resultado_estrategia.get('direcao', '').lower()
+
+    # timeframe e gales: estrategia sugere, usuario pode sobrescrever
+    tf_estrategia = resultado_estrategia.get('timeframe', estrategia_info.get('timeframe', 60))
+    gales_estrategia = resultado_estrategia.get('gales', estrategia_info.get('gales', 2))
+
+    if sessao.usar_config_padrao:
+        timeframe = int(tf_estrategia)
+        gales = int(gales_estrategia)
+    else:
+        timeframe = int(tf_estrategia)          # timeframe segue a estrategia (o par OTC depende dele)
+        gales = int(sessao.gales_override)
+
+    gales = max(0, min(gales, 5))  # teto de seguranca: nunca mais que 5 gales
+
+    # entradas: calculo do sistema OU mao fixa
+    if sessao.modo_entrada == 'fixa':
+        # mao fixa: mesmo valor em todas as entradas do ciclo (usuario assume o risco)
+        entradas = [round(float(sessao.mao_fixa_valor), 2)] * (gales + 1)
+    else:
+        banca = sessao.API.get_balance()
+        payout = Payout(sessao, sessao.par)
+        entradas = calcular_entradas(banca, payout, gales, sessao.percentual_banca)
+
+    return {'direcao': direcao, 'timeframe': timeframe, 'gales': gales, 'entradas': entradas}
+
 def bot_loop(sessao):
-    """Loop principal do bot — agora roda uma instancia POR SESSAO."""
+    """Loop principal do bot — uma instancia POR SESSAO."""
     with sessao.bot_lock:
         if not sessao.bot_rodando or not sessao.API:
             sessao.bot_rodando = False
@@ -704,13 +854,28 @@ def bot_loop(sessao):
         estrategia_info = estrategias_info[sessao.estrategia_atual]
         sessao.timeframe_atual = estrategia_info.get('timeframe', 60)
         add_log(sessao, f"📊 Estrategia: {estrategia_info.get('nome')}", 'indicator')
-        add_log(sessao, f"⏱️ Timeframe: {sessao.timeframe_atual}s", 'info')
 
         funcao_estrategia = obter_funcao_estrategia(sessao.estrategia_atual)
         if not funcao_estrategia:
             add_log(sessao, f"❌ Nao foi possivel carregar a estrategia '{sessao.estrategia_atual}'!", 'error')
             sessao.bot_rodando = False
             return
+
+        # ===== AUTO-PAR: escolhe o melhor par OTC antes de comecar =====
+        if sessao.auto_par:
+            melhor = escolher_melhor_par(sessao, funcao_estrategia)
+            if melhor:
+                sessao.par = melhor
+            else:
+                add_log(sessao, "⚠️ Auto-par não encontrou par; usando o atual.", 'error')
+        add_log(sessao, f"📌 Par: {sessao.par}", 'info')
+
+        # log da config resolvida (transparencia pro usuario)
+        if sessao.usar_config_padrao:
+            add_log(sessao, "⚙️ Config: PADRÃO da estratégia", 'info')
+        else:
+            add_log(sessao, f"⚙️ Config: PERSONALIZADA ({sessao.gales_override} gales)", 'info')
+        add_log(sessao, f"💵 Entrada: {'MÃO FIXA $' + format(sessao.mao_fixa_valor, '.2f') if sessao.modo_entrada == 'fixa' else 'CÁLCULO do sistema'}", 'info')
 
         sessao.BANCA_INICIAL_DO_BOT = sessao.API.get_balance()
         sessao.STOP_GAIN_ATINGIDO = False
@@ -719,7 +884,7 @@ def bot_loop(sessao):
         sessao.volt_ja_consumido = False
         sessao.sinal_pendente = None
         sessao.ultimo_sinal = "Aguardando..."
-        add_log(sessao, f"📌 {sessao.par} | Timeframe: {sessao.timeframe_atual}s | 💰 ${sessao.BANCA_INICIAL_DO_BOT:.2f}")
+        add_log(sessao, f"💰 ${sessao.BANCA_INICIAL_DO_BOT:.2f}")
 
         while sessao.bot_rodando and not sessao.STOP_GAIN_ATINGIDO:
             if not verificar_saude_api(sessao):
@@ -736,8 +901,9 @@ def bot_loop(sessao):
                     if direcao in ['call', 'put']:
                         sessao.ultimo_sinal = f"GATILHO: {direcao.upper()}"
                         add_log(sessao, f"🎯 SINAL: {direcao.upper()}!", 'sensitive')
+                        plano = _resolver_plano(sessao, resultado, estrategia_info)
                         add_log(sessao, f"🎯 EXECUTANDO CICLO: {direcao.upper()}", 'sensitive')
-                        executar_ciclo(sessao, direcao)
+                        executar_ciclo(sessao, plano)
                         break
                 time.sleep(0.3)
             except Exception as e:
@@ -907,8 +1073,47 @@ def status():
         'skin_id': skin_atual, 'skins_status': skins_status,
         'estrategia': estrategia_atual, 'estrategia_nome': estrategia_nome, 'estrategias_compradas': estrategias_compradas,
         'estrategias_disponiveis': {k: {'nome': v['nome'], 'desc': v['desc'], 'preco_moedas': v['preco_moedas'], 'gratis': v['gratis']} for k, v in estrategias_info.items()},
-        'analise': sessao.ultima_analise, 'bot_version': BOT_VERSION
+        'analise': sessao.ultima_analise, 'bot_version': BOT_VERSION,
+        'par': sessao.par, 'melhor_par_info': sessao.melhor_par_info,
+        'config': {
+            'usar_config_padrao': sessao.usar_config_padrao,
+            'gales_override': sessao.gales_override,
+            'auto_par': sessao.auto_par,
+            'modo_entrada': sessao.modo_entrada,
+            'mao_fixa_valor': sessao.mao_fixa_valor,
+            'percentual_banca': sessao.percentual_banca
+        }
     })
+
+@app.route('/pares_otc')
+def pares_otc():
+    sessao = get_sessao(_email_da_requisicao())
+    if not sessao or not sessao.API or not sessao.conectado_iq:
+        return jsonify({'pares': [], 'erro': 'Conecte primeiro'})
+    return jsonify({'pares': listar_pares_otc(sessao)})
+
+@app.route('/set_config', methods=['POST'])
+def set_config():
+    """Salva as escolhas do usuario (padrao vs personalizado, auto-par,
+    mao fixa vs calculo, gales). Tudo por sessao — nao afeta outros usuarios."""
+    d = request.json or {}
+    sessao = get_sessao(d.get('email'))
+    if not sessao: return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+    if 'usar_config_padrao' in d: sessao.usar_config_padrao = bool(d['usar_config_padrao'])
+    if 'auto_par' in d: sessao.auto_par = bool(d['auto_par'])
+    if 'par' in d and d['par']: sessao.par = d['par']
+    if 'modo_entrada' in d and d['modo_entrada'] in ('calculo', 'fixa'): sessao.modo_entrada = d['modo_entrada']
+    if 'mao_fixa_valor' in d:
+        try: sessao.mao_fixa_valor = max(1.0, float(d['mao_fixa_valor']))
+        except (TypeError, ValueError): pass
+    if 'gales_override' in d:
+        try: sessao.gales_override = max(0, min(5, int(d['gales_override'])))
+        except (TypeError, ValueError): pass
+    return jsonify({'ok': True, 'config': {
+        'usar_config_padrao': sessao.usar_config_padrao, 'auto_par': sessao.auto_par,
+        'par': sessao.par, 'modo_entrada': sessao.modo_entrada,
+        'mao_fixa_valor': sessao.mao_fixa_valor, 'gales_override': sessao.gales_override
+    }})
 
 @app.route('/set_percentual', methods=['POST'])
 def set_percentual():
