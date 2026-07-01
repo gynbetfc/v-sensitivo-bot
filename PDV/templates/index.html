@@ -72,8 +72,16 @@
         .panel{display:none;animation:fadeUp .3s ease}.panel.active{display:block}
         .subtabs{display:flex;gap:6px;margin-bottom:16px;border-bottom:1px solid var(--border-color);padding-bottom:0}
         .subtab-btn{padding:10px 20px;border:0;background:0;cursor:pointer;font-weight:600;font-size:13px;color:var(--text-secondary);border-bottom:2px solid transparent;transition:var(--transition);display:flex;align-items:center;gap:6px;margin-bottom:-1px}
-        .dash-subtab{padding:6px 14px;border:1px solid var(--border-color);background:var(--bg-card);color:var(--text-secondary);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;transition:var(--transition)}
-        .dash-subtab.active{background:var(--green);color:#fff;border-color:var(--green)}
+        .switch-busca{display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;white-space:nowrap}
+        .switch-busca input{display:none}
+        .switch-busca .switch-slider{position:relative;width:40px;height:22px;background:var(--border-color);border-radius:22px;transition:.2s;flex-shrink:0}
+        .switch-busca .switch-slider::before{content:'';position:absolute;width:16px;height:16px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+        .switch-busca input:checked + .switch-slider{background:var(--green)}
+        .switch-busca input:checked + .switch-slider::before{transform:translateX(18px)}
+        .switch-busca .switch-label{font-size:11px;color:var(--text-secondary);font-weight:600}
+        #panelVendas.com-bg{position:relative;}
+        #panelVendas.com-bg::before{content:'';position:absolute;inset:0;background-image:var(--bg-vendas-img);background-size:cover;background-position:center;background-repeat:no-repeat;opacity:var(--bg-vendas-op,0.15);pointer-events:none;z-index:0;border-radius:12px;}
+        #panelVendas.com-bg > *{position:relative;z-index:1;}
         .subtab-btn:hover{color:#fff}
         .subtab-btn.active{color:var(--green);border-bottom-color:var(--green)}
         .subtab-btn .lock{font-size:10px;opacity:.7}
@@ -223,6 +231,7 @@
         .venda-item .lucro-item{font-size:10px;color:var(--gold);font-weight:600}
         .venda-item .produtos-detalhe{width:100%;font-size:11px;color:var(--text-muted);display:flex;flex-wrap:wrap;gap:4px}
         .venda-item .btn-imprimir-venda{background:var(--bg-card);border:1px solid var(--border-color);color:var(--text-secondary);padding:3px 8px;border-radius:6px;cursor:pointer;font-size:11px;transition:var(--transition)}.venda-item .btn-imprimir-venda:hover{color:var(--green);border-color:var(--green)}
+        .venda-item .btn-excluir-venda{background:var(--bg-card);border:1px solid var(--border-color);color:var(--text-secondary);padding:3px 8px;border-radius:6px;cursor:pointer;font-size:11px;margin-left:4px;transition:var(--transition)}.venda-item .btn-excluir-venda:hover{color:var(--red);border-color:var(--red)}
 
         .estoque-grid{display:grid;grid-template-columns:1fr 1.5fr;gap:16px}
         .estoque-grid > .card{min-width:0}
@@ -251,19 +260,6 @@
         .plano-card .limite-produtos{display:block;margin-top:4px;font-size:11px;color:var(--green)}
         .plano-card .plano-features{text-align:left;margin:10px 0 14px;display:flex;flex-direction:column;gap:4px}
         .plano-card .feat-line{font-size:11px;color:var(--text-secondary);padding:3px 8px;background:rgba(255,255,255,.03);border-radius:5px;border-left:2px solid var(--green)}
-        .food-switch{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary);cursor:pointer}
-        .food-switch input{width:18px;height:18px;accent-color:var(--green);cursor:pointer}
-        .food-pedido{background:var(--bg-primary);border:1px solid var(--border-color);border-radius:10px;padding:14px;margin-bottom:10px}
-        .food-pedido .fp-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-        .food-pedido .fp-status{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
-        .food-pedido .fp-itens{font-size:12px;color:var(--text-secondary);line-height:1.6;margin:6px 0}
-        .food-pedido .fp-total{font-weight:700;color:var(--green);font-size:15px}
-        .food-pedido .fp-acoes{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
-        .food-pedido .fp-acoes button{padding:6px 14px;border:0;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600}
-        .st-novo,.st-aguardando_pix,.st-aguardando_pagamento{background:rgba(245,158,11,.15);color:var(--orange)}
-        .st-em_preparo{background:rgba(59,130,246,.15);color:var(--blue)}
-        .st-pronto,.st-finalizado{background:rgba(34,197,94,.15);color:var(--green)}
-        .st-cancelado{background:rgba(239,68,68,.15);color:var(--red)}
         .plano-card .btn-assinar{padding:10px 20px;background:var(--green);color:#fff;border:0;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;transition:var(--transition);width:100%}
         .plano-card .btn-assinar:hover{background:var(--green-dark)}
         .plano-teste{position:absolute;top:10px;right:10px;background:var(--orange);color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px}
@@ -564,7 +560,6 @@
         <button data-tab="caixa" onclick="trocarTab('caixa')"><i class="fas fa-box"></i> Caixa</button>
         <button data-tab="dashboard" onclick="trocarTab('dashboard')"><i class="fas fa-chart-bar"></i> Dashboard</button>
         <button data-tab="estoque" onclick="trocarTab('estoque')"><i class="fas fa-boxes"></i> Estoque</button>
-        <button data-tab="food" id="tabFoodBtn" onclick="trocarTab('food')" style="display:none;"><i class="fas fa-utensils"></i> Pedidos Online</button>
         <button data-tab="planos" onclick="trocarTab('planos')"><i class="fas fa-crown"></i> Planos</button>
         <button data-tab="config" onclick="trocarTab('config')"><i class="fas fa-cog"></i> Config</button>
     </nav>
@@ -581,9 +576,6 @@
                         <input type="text" id="codigoInput" placeholder="Leia o código, ou digite código/nome..." autocomplete="off">
                         <div class="search-results" id="searchResults"></div>
                     </div>
-                    <div class="input-group"><label>Nome Produto</label><input type="text" id="nomeProduto" placeholder="—" readonly></div>
-                    <div class="input-group"><label>Preço Unit.</label><input type="text" id="precoProduto" placeholder="—" readonly></div>
-                    <div class="status-msg" id="statusMsg">Aguardando produto...</div>
                 </div>
                 <div class="card">
                     <h3><i class="fas fa-shopping-cart" style="color:var(--green);"></i> Carrinho</h3>
@@ -662,15 +654,7 @@
                 </div>
                 <div class="chart-row">
                     <div class="chart-box"><h4><i class="fas fa-credit-card"></i> Métodos de Pagamento</h4><div id="metodosContainer"><p style="color:var(--text-secondary);font-size:13px;">Carregando...</p></div></div>
-                    <div class="chart-box">
-                        <h4><i class="fas fa-clock"></i> Últimas Vendas</h4>
-                        <div style="display:flex;gap:8px;margin-bottom:10px;">
-                            <button class="dash-subtab active" id="dashSubLocal" onclick="trocarSubVendas('local')">🏪 Local</button>
-                            <button class="dash-subtab" id="dashSubDelivery" onclick="trocarSubVendas('delivery')">🛵 Delivery</button>
-                        </div>
-                        <div class="vendas-list" id="vendasList"><p style="color:var(--text-secondary);font-size:13px;">Carregando...</p></div>
-                        <div class="vendas-list" id="vendasDeliveryList" style="display:none;"><p style="color:var(--text-secondary);font-size:13px;">Carregando...</p></div>
-                    </div>
+                    <div class="chart-box"><h4><i class="fas fa-clock"></i> Últimas Vendas</h4><div class="vendas-list" id="vendasList"><p style="color:var(--text-secondary);font-size:13px;">Carregando...</p></div></div>
                 </div>
             </div>
         </div>
@@ -688,8 +672,15 @@
                     <h3><i class="fas fa-plus-circle" style="color:var(--green);"></i> Produto <button class="btn-excluir-produto" onclick="excluirProdutoSelecionado()">🗑️ Excluir</button></h3>
                     <div class="input-group">
                         <label>Código de Barras 🔍</label>
-                        <input type="text" id="prodCodigo" placeholder="Digite ou leia o código" style="flex:1;" autocomplete="off" oninput="buscarProdutoAutomatico(this.value)">
-                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">💡 Digite o código para busca automática</div>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <input type="text" id="prodCodigo" placeholder="Digite ou leia o código" style="flex:1;" autocomplete="off" oninput="buscarProdutoAutomatico(this.value)">
+                            <label class="switch-busca" id="switchBuscaWrap" title="Busca inteligente (preenche nome/categoria pelo código)">
+                                <input type="checkbox" id="toggleBuscaInteligente" checked onchange="toggleBuscaEstoque()">
+                                <span class="switch-slider"></span>
+                                <span class="switch-label">🔍 Auto</span>
+                            </label>
+                        </div>
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;" id="dicaBusca">💡 Busca inteligente ligada: preenche nome/categoria pelo código</div>
                     </div>
                     <div class="permissao-negada" id="buscaEstoquePermissaoNegada" style="display:none;padding:8px;background:rgba(255,255,255,.05);border-radius:6px;margin-bottom:8px;">
                         <p style="font-size:12px;color:var(--text-muted);">🔒 Busca inteligente não disponível no seu plano</p>
@@ -780,57 +771,6 @@
             <div class="loja-status" id="statusLoja"><h4 style="font-size:14px;margin-bottom:10px;"><i class="fas fa-info-circle"></i> Status da Conta</h4><p style="color:var(--text-secondary);">Carregando...</p></div>
         </div>
 
-        <!-- PANEL PEDIDOS ONLINE (SMART DELIVERY) -->
-        <div class="panel" id="panelFood">
-            <div class="subtabs">
-                <button class="subtab-btn active" data-foodtab="pedidos" onclick="trocarSubAbaFood('pedidos')"><i class="fas fa-receipt"></i> Pedidos</button>
-                <button class="subtab-btn" data-foodtab="config" onclick="trocarSubAbaFood('config')"><i class="fas fa-sliders-h"></i> Configurações</button>
-            </div>
-
-            <div class="subpanel active" id="foodPedidos">
-                <div class="card">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                        <h3><i class="fas fa-receipt" style="color:var(--orange);"></i> Pedidos Recebidos</h3>
-                        <button class="btn-limpar" style="width:auto;padding:6px 14px;" onclick="carregarPedidosFood()">🔄 Atualizar</button>
-                    </div>
-                    <div id="foodPedidosLista"><p style="color:var(--text-muted);text-align:center;padding:20px;">Carregando...</p></div>
-                </div>
-            </div>
-
-            <div class="subpanel" id="foodConfig">
-                <div class="card">
-                    <h3><i class="fas fa-store" style="color:var(--green);"></i> Configurações da Loja Online</h3>
-                    <div style="display:flex;gap:16px;flex-wrap:wrap;margin:12px 0;">
-                        <label class="food-switch"><input type="checkbox" id="foodAtivo"> <span>Aceitar pedidos online</span></label>
-                        <label class="food-switch"><input type="checkbox" id="foodAberto"> <span>Loja aberta agora</span></label>
-                    </div>
-                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:14px;padding:8px;background:rgba(255,255,255,.03);border-radius:6px;">
-                        💡 Sua loja só aparece no site quando: <b>plano Empresarial</b> + <b>aceitar pedidos</b> + <b>loja aberta</b> + <b>caixa aberto</b> + <b>online</b>.
-                    </div>
-                    <h4 style="font-size:13px;margin:14px 0 8px;color:var(--text-secondary);">Tipos de pedido aceitos</h4>
-                    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
-                        <label class="food-switch"><input type="checkbox" id="foodEntrega" checked> <span>🛵 Entrega</span></label>
-                        <label class="food-switch"><input type="checkbox" id="foodRetirada" checked> <span>🏪 Retirada</span></label>
-                        <label class="food-switch"><input type="checkbox" id="foodMesa"> <span>🍽️ Mesa</span></label>
-                    </div>
-                    <h4 style="font-size:13px;margin:14px 0 8px;color:var(--text-secondary);">Entrega e frete</h4>
-                    <div class="input-group"><label>Endereço da loja (para calcular distância)</label><input type="text" id="foodEndereco" placeholder="Rua, número, bairro, cidade"></div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                        <div class="input-group"><label>Valor por km (R$)</label><input type="text" id="foodValorKm" placeholder="2,00"></div>
-                        <div class="input-group"><label>Frete mínimo (R$)</label><input type="text" id="foodFreteMin" placeholder="5,00"></div>
-                        <div class="input-group"><label>Raio máximo (km)</label><input type="text" id="foodRaioMax" placeholder="10"></div>
-                        <div class="input-group"><label>Tempo de preparo (min)</label><input type="text" id="foodPreparo" placeholder="30"></div>
-                    </div>
-                    <h4 style="font-size:13px;margin:14px 0 8px;color:var(--text-secondary);">Pagamento</h4>
-                    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
-                        <label class="food-switch"><input type="checkbox" id="foodPix" checked> <span>💠 PIX online</span></label>
-                        <label class="food-switch"><input type="checkbox" id="foodPagEntrega" checked> <span>💵 Pagar na entrega/retirada</span></label>
-                    </div>
-                    <button class="btn-salvar" onclick="salvarConfigFood()"><i class="fas fa-save"></i> Salvar Configurações</button>
-                </div>
-            </div>
-        </div>
-
         <!-- PANEL CONFIG -->
         <div class="panel" id="panelConfig">
             <div class="config-grid">
@@ -850,25 +790,33 @@
                     <div id="dadosCnpjConfig" style="display:none;background:var(--bg-primary);padding:10px;border-radius:8px;margin-bottom:10px;font-size:12px;color:var(--text-secondary);"></div>
                     <button class="btn btn-primary" onclick="salvarNomeLoja()" style="margin-top:10px;"><i class="fas fa-save"></i> Salvar</button>
                     <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border-color);">
-                        <p style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;"><strong>Versão:</strong> <span id="versaoSistema">10.3.0</span></p>
+                        <p style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;"><strong>Versão:</strong> <span id="versaoSistema">11.0.0</span></p>
                         <p style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;"><strong>ID do Banco:</strong> <span id="dbIdConfig" style="font-family:monospace;cursor:pointer;color:var(--green);" onclick="copiarId()">---</span></p>
                         <p style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;"><strong>Servidor:</strong> <span id="servidorIdConfig" style="font-family:monospace;">---</span></p>
                     </div>
                     <div style="margin-top:12px;"><button onclick="sincronizarAgora(true)" style="width:100%;padding:8px;background:rgba(59,130,246,.15);color:var(--blue);border:1px solid var(--blue);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">🔄 Sincronizar Agora</button></div>
                 </div>
+                <div class="card">
+                    <h3><i class="fas fa-image" style="color:var(--purple);"></i> Personalização</h3>
+                    <div class="input-group">
+                        <label>Imagem de fundo da tela de Vendas</label>
+                        <input type="text" id="bgVendasUrl" placeholder="Cole o link de uma imagem (https://...)" oninput="previewBgVendas()">
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">💡 Cole um link de imagem OU escolha um arquivo do seu dispositivo</div>
+                    </div>
+                    <div class="input-group">
+                        <label>Ou enviar do dispositivo</label>
+                        <input type="file" id="bgVendasArquivo" accept="image/*" onchange="carregarBgArquivo(event)" style="font-size:12px;color:var(--text-secondary);">
+                    </div>
+                    <div class="input-group">
+                        <label>Opacidade da imagem: <span id="bgOpacidadeLabel">15</span>%</label>
+                        <input type="range" id="bgVendasOpacidade" min="0" max="60" value="15" oninput="ajustarOpacidadeBg(this.value)" style="width:100%;">
+                    </div>
+                    <div style="display:flex;gap:8px;margin-top:10px;">
+                        <button class="btn btn-primary" onclick="salvarBgVendas()" style="flex:1;"><i class="fas fa-save"></i> Aplicar</button>
+                        <button onclick="removerBgVendas()" style="padding:8px 14px;background:rgba(239,68,68,.15);color:var(--red);border:1px solid var(--red);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">Remover</button>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-</div>
-
-<!-- CHAT MODAL (Pedidos Online) -->
-<div class="payment-modal" id="chatModal">
-    <div class="modal" style="max-width:420px;">
-        <div class="modal-header"><h3>💬 Chat com <span id="chatClienteNome">cliente</span></h3><button class="close" onclick="fecharChatPedido()">✕</button></div>
-        <div id="chatMensagens" style="max-height:340px;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--bg-primary,#0f0f1a);border-radius:10px;margin-bottom:10px;"></div>
-        <div style="display:flex;gap:8px;">
-            <input type="text" id="chatInput" placeholder="Digite sua mensagem..." style="flex:1;padding:12px;border-radius:10px;border:1px solid var(--border-color,#333);background:var(--bg-card,#1a1a2e);color:var(--text,#fff);" onkeydown="if(event.key==='Enter')enviarChatPedido()">
-            <button class="btn-salvar" style="width:auto;padding:12px 18px;" onclick="enviarChatPedido()">Enviar</button>
         </div>
     </div>
 </div>
@@ -983,7 +931,7 @@ const state = {
     periodo:'hoje',searchIndex:-1,_resultados:[],
     produtoSelecionado:null,plano_ativo:true,ultimaVenda:null,
     cupomEscolha:'imprimir',f1Cycle:0,
-    permissoes:{clientes:false,dashboard:false,busca_estoque:false,margem:false,fiado:false,kit_combo:false,pedidos_online:false}
+    permissoes:{clientes:false,dashboard:false,busca_estoque:false,margem:false,fiado:false,kit_combo:false}
 };
 
 let ultimoCupomData = null;
@@ -1022,10 +970,13 @@ function atualizarPermissoesUI() {
 
     // Busca Estoque - apenas oculta o botão, mantém o campo
     const buscaEstoqueNegado = document.getElementById('buscaEstoquePermissaoNegada');
+    const switchBuscaWrap = document.getElementById('switchBuscaWrap');
     if (temPermissao('busca_estoque')) {
         buscaEstoqueNegado.style.display = 'none';
+        if(switchBuscaWrap) switchBuscaWrap.style.display = 'inline-flex';
     } else {
         buscaEstoqueNegado.style.display = 'block';
+        if(switchBuscaWrap) switchBuscaWrap.style.display = 'none';
     }
 
     // Margem
@@ -1065,11 +1016,6 @@ function atualizarPermissoesUI() {
         }
     }
 
-    // Pedidos Online (aba só aparece no plano Empresarial)
-    const tabFood = document.getElementById('tabFoodBtn');
-    if (tabFood) {
-        tabFood.style.display = temPermissao('pedidos_online') ? 'flex' : 'none';
-    }
 }
 
 // ============================================================
@@ -1318,7 +1264,7 @@ async function fazerLogin(){
             carregarStatusCaixa();carregarDash('hoje');carregarLojaInfo();
             atualizarPermissoesUI();
             setTimeout(verificarStatusPlano, 500);
-            setTimeout(iniciarMonitorPedidos, 1500);
+            carregarBgVendasSalvo();
             showToast('👋 Bem-vindo, '+data.nome+'!','success');
         }else{
             msg.className='msg error';msg.textContent=data.error||'Erro ao fazer login.';msg.style.display='block';
@@ -1395,10 +1341,6 @@ function trocarTab(nome){
         showToast('🔒 Seu plano não permite acesso ao Dashboard.', 'warning');
         return;
     }
-    if (nome === 'food' && !temPermissao('pedidos_online')) {
-        showToast('🔒 Pedidos Online disponível apenas no plano Empresarial.', 'warning');
-        return;
-    }
     
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
@@ -1412,7 +1354,6 @@ function trocarTab(nome){
     if(nome==='dashboard') carregarDash(state.periodo);
     if(nome==='caixa') carregarStatusCaixa();
     if(nome==='planos') {carregarPlanos(); verificarStatusPlano();}
-    if(nome==='food') {carregarPedidosFood(); carregarConfigFood();}
     
     atualizarPermissoesUI();
 }
@@ -1523,6 +1464,7 @@ async function carregarProdutosParaKit(){
     }catch(e){}
 }
 
+let kitSearchIndex=-1;
 function buscarProdutoKit(termo){
     const container=document.getElementById('kitSearchResults');
     termo=(termo||'').trim().toLowerCase();
@@ -1531,11 +1473,26 @@ function buscarProdutoKit(termo){
         p.nome.toLowerCase().includes(termo)||(p.codigo||'').toLowerCase().includes(termo)).slice(0,8);
     if(resultados.length===0){container.classList.remove('active');container.innerHTML='';return;}
     container.innerHTML=resultados.map(p=>
-        `<div class="result-item" onclick="adicionarItemKit('${p.codigo}')">
+        `<div class="result-item" data-codigo="${p.codigo}" onclick="adicionarItemKit('${p.codigo}')">
             <span>${p.nome}</span><span style="color:var(--green);">R$ ${(p.preco||0).toFixed(2)}</span>
         </div>`).join('');
     container.classList.add('active');
+    kitSearchIndex=-1; // nenhum pré-selecionado: 1ª seta pra baixo vai ao primeiro
 }
+
+// Navegação por teclado na busca de produtos dos Combos
+document.addEventListener('DOMContentLoaded',function(){
+    const campo=document.getElementById('kitBuscaProduto');
+    if(campo) campo.addEventListener('keydown',function(e){
+        const container=document.getElementById('kitSearchResults');
+        if(!container.classList.contains('active'))return;
+        const items=container.querySelectorAll('.result-item');
+        if(!items.length)return;
+        if(e.key==='ArrowDown'){e.preventDefault();const next=Math.min(kitSearchIndex+1,items.length-1);items.forEach((el,i)=>el.classList.toggle('active',i===next));kitSearchIndex=next;}
+        else if(e.key==='ArrowUp'){e.preventDefault();const prev=Math.max(kitSearchIndex-1,0);items.forEach((el,i)=>el.classList.toggle('active',i===prev));kitSearchIndex=prev;}
+        else if(e.key==='Enter'){e.preventDefault();const active=container.querySelector('.result-item.active')||items[0];if(active&&active.dataset.codigo){adicionarItemKit(active.dataset.codigo);}}
+    });
+});
 
 function adicionarItemKit(codigo){
     const p=(state.produtos||[]).find(x=>x.codigo===codigo);
@@ -1551,6 +1508,8 @@ function adicionarItemKit(codigo){
     document.getElementById('kitBuscaProduto').value='';
     document.getElementById('kitSearchResults').classList.remove('active');
     document.getElementById('kitSearchResults').innerHTML='';
+    kitSearchIndex=-1;
+    document.getElementById('kitBuscaProduto').focus();
     renderizarItensKit();
 }
 
@@ -1688,264 +1647,6 @@ async function excluirKit(id){
     }catch(e){showToast('❌ Erro ao excluir kit','error');}
 }
 
-// ============================================================
-// PEDIDOS ONLINE (SMART DELIVERY)
-// ============================================================
-function trocarSubAbaFood(sub){
-    document.querySelectorAll('[data-foodtab]').forEach(b=>b.classList.toggle('active',b.dataset.foodtab===sub));
-    document.getElementById('foodPedidos').classList.toggle('active',sub==='pedidos');
-    document.getElementById('foodConfig').classList.toggle('active',sub==='config');
-    if(sub==='pedidos')carregarPedidosFood();
-    if(sub==='config')carregarConfigFood();
-}
-
-async function carregarConfigFood(){
-    try{
-        const res=await fetch('/api/food/config',{credentials:'include'});
-        const data=await res.json();
-        if(data.success){
-            const c=data.config;
-            document.getElementById('foodAtivo').checked=c.ativo;
-            document.getElementById('foodAberto').checked=c.aberto;
-            document.getElementById('foodEntrega').checked=c.aceita_entrega;
-            document.getElementById('foodRetirada').checked=c.aceita_retirada;
-            document.getElementById('foodMesa').checked=c.aceita_mesa;
-            document.getElementById('foodEndereco').value=c.endereco_loja||'';
-            document.getElementById('foodValorKm').value=(c.valor_km||2).toFixed(2).replace('.',',');
-            document.getElementById('foodFreteMin').value=(c.frete_minimo||5).toFixed(2).replace('.',',');
-            document.getElementById('foodRaioMax').value=c.raio_max_km||10;
-            document.getElementById('foodPreparo').value=c.tempo_preparo_min||30;
-            document.getElementById('foodPix').checked=c.pix_habilitado;
-            document.getElementById('foodPagEntrega').checked=c.pagamento_na_entrega;
-        }
-    }catch(e){}
-}
-
-async function salvarConfigFood(){
-    const payload={
-        ativo:document.getElementById('foodAtivo').checked,
-        aberto:document.getElementById('foodAberto').checked,
-        aceita_entrega:document.getElementById('foodEntrega').checked,
-        aceita_retirada:document.getElementById('foodRetirada').checked,
-        aceita_mesa:document.getElementById('foodMesa').checked,
-        endereco_loja:document.getElementById('foodEndereco').value.trim(),
-        valor_km:parseFloat(document.getElementById('foodValorKm').value.replace(',','.'))||2,
-        frete_minimo:parseFloat(document.getElementById('foodFreteMin').value.replace(',','.'))||5,
-        raio_max_km:parseFloat(document.getElementById('foodRaioMax').value.replace(',','.'))||10,
-        tempo_preparo_min:parseInt(document.getElementById('foodPreparo').value)||30,
-        pix_habilitado:document.getElementById('foodPix').checked,
-        pagamento_na_entrega:document.getElementById('foodPagEntrega').checked,
-        recalcular_coord:true
-    };
-    try{
-        const res=await fetch('/api/food/config',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify(payload)});
-        const data=await res.json();
-        if(data.success){
-            if(payload.endereco_loja && !data.coord_ok)
-                showToast('⚠️ Config salva, mas não consegui localizar o endereço no mapa. Verifique o endereço.','warning');
-            else showToast('✅ Configurações salvas!','success');
-        }else showToast('❌ '+(data.error||'Erro'),'error');
-    }catch(e){showToast('❌ Erro ao salvar','error');}
-}
-
-const FOOD_STATUS_LABEL={novo:'Novo',aguardando_pix:'Aguardando PIX',aguardando_pagamento:'Aguardando pagamento',em_preparo:'Em preparo',pronto:'Pronto',finalizado:'Finalizado',cancelado:'Cancelado'};
-
-async function carregarPedidosFood(){
-    if(!temPermissao('pedidos_online'))return;
-    const cont=document.getElementById('foodPedidosLista');
-    try{
-        const res=await fetch('/api/food/pedidos',{credentials:'include'});
-        const data=await res.json();
-        if(data.success){
-            if(!data.pedidos||data.pedidos.length===0){
-                cont.innerHTML='<p style="color:var(--text-muted);text-align:center;padding:20px;">Nenhum pedido ainda</p>';return;
-            }
-            cont.innerHTML=data.pedidos.map(p=>{
-                const itensTxt=(p.itens||[]).map(i=>`${i.qtd||1}x ${i.nome}`).join(', ');
-                const tipoIcon=p.tipo==='entrega'?'🛵 Entrega':p.tipo==='retirada'?'🏪 Retirada':'🍽️ Mesa '+(p.mesa||'');
-                const pagTxt=p.pagamento==='pix'?(p.pago?'💠 PIX (pago)':'💠 PIX (aguardando)'):'💵 Na entrega';
-                let acoes='';
-                if(p.status==='novo'||p.status==='aguardando_confirmacao')
-                    acoes=`<button style="background:rgba(34,197,94,.15);color:var(--green);" onclick="acaoPedidoFood('${p.id}','aceitar')">✅ Aceitar</button><button style="background:rgba(239,68,68,.15);color:var(--red);" onclick="acaoPedidoFood('${p.id}','recusar')">❌ Recusar</button>`;
-                else if(p.status==='em_preparo')
-                    acoes=`<button style="background:rgba(34,197,94,.15);color:var(--green);" onclick="acaoPedidoFood('${p.id}','pronto')">📦 Pronto</button>`;
-                else if(p.status==='pronto')
-                    acoes=`<button style="background:rgba(34,197,94,.15);color:var(--green);" onclick="acaoPedidoFood('${p.id}','finalizar')">✔️ Finalizar</button>`;
-                acoes+=`<button style="background:rgba(59,130,246,.15);color:var(--blue);" onclick="imprimirPedidoFood('${p.id}')">🖨️ Imprimir</button>`;
-                acoes+=`<button style="background:rgba(139,92,246,.15);color:var(--purple);" onclick="abrirChatPedido('${p.id}','${(p.cliente_nome||'').replace(/'/g,'')}')">💬 Chat</button>`;
-                return `<div class="food-pedido">
-                    <div class="fp-head">
-                        <div><b>${p.cliente_nome||'Cliente'}</b> <span style="font-size:11px;color:var(--text-muted);">${tipoIcon}</span></div>
-                        <span class="fp-status st-${p.status}">${FOOD_STATUS_LABEL[p.status]||p.status}</span>
-                    </div>
-                    <div class="fp-itens">${itensTxt}</div>
-                    ${p.cliente_endereco?`<div style="font-size:11px;color:var(--text-muted);">📍 ${p.cliente_endereco} ${p.distancia_km?`(${p.distancia_km} km)`:''}</div>`:''}
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
-                        <span style="font-size:11px;color:var(--text-muted);">${pagTxt}${p.frete?` • frete R$ ${p.frete.toFixed(2)}`:''}</span>
-                        <span class="fp-total">R$ ${(p.total||0).toFixed(2)}</span>
-                    </div>
-                    <div class="fp-acoes">${acoes}</div>
-                </div>`;
-            }).join('');
-        }
-    }catch(e){cont.innerHTML='<p style="color:var(--red);text-align:center;padding:20px;">Erro ao carregar pedidos</p>';}
-}
-
-// ===== Alerta sonoro de novo pedido =====
-let foodAlertInterval = null;
-
-function tocarSomPedido(){
-    try{
-        const ctx = new (window.AudioContext||window.webkitAudioContext)();
-        // Dois bips ascendentes
-        [0,0.18].forEach((delay,idx)=>{
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.connect(gain); gain.connect(ctx.destination);
-            osc.type='sine';
-            osc.frequency.value = idx===0?880:1174;
-            gain.gain.setValueAtTime(0.001, ctx.currentTime+delay);
-            gain.gain.exponentialRampToValueAtTime(0.4, ctx.currentTime+delay+0.02);
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+delay+0.16);
-            osc.start(ctx.currentTime+delay);
-            osc.stop(ctx.currentTime+delay+0.18);
-        });
-    }catch(e){}
-}
-
-async function checarAlertasPedidos(){
-    if(!temPermissao('pedidos_online'))return;
-    // Se a aba de pedidos está aberta, SEMPRE recarrega a lista (para status mudar em tempo real)
-    const painelFood=document.getElementById('panelFood');
-    const abaAberta = painelFood && painelFood.classList.contains('active');
-    const subPedidos = document.getElementById('foodPedidos');
-    if(abaAberta && subPedidos && subPedidos.classList.contains('active')){
-        carregarPedidosFood();
-    }
-    try{
-        const res=await fetch('/api/food/alertas',{credentials:'include',cache:'no-store'});
-        const data=await res.json();
-        if(data.success && data.novos>0){
-            tocarSomPedido();
-            showToast(`🔔 ${data.novos} novo(s) pedido(s) recebido(s)!`,'success');
-            if(abaAberta) carregarPedidosFood();
-            const btn=document.getElementById('tabFoodBtn');
-            if(btn && !abaAberta){ btn.style.color='var(--brasa,#ff5722)'; }
-        }
-        // Mensagens novas do cliente no chat
-        if(data.success && data.chat_novos>0){
-            tocarSomPedido();
-            showToast(`💬 ${data.chat_novos} nova(s) mensagem(ns) de cliente!`,'info');
-            chatNaoLido = true;
-            // Se o chat estiver aberto, recarrega e marca como lido
-            const chatModal=document.getElementById('chatModal');
-            if(chatModal && chatModal.classList.contains('active')){
-                carregarChatPedido();
-                chatNaoLido = false;
-            }
-        }
-        // Mantém a aba destacada enquanto houver chat não lido
-        const btnFood=document.getElementById('tabFoodBtn');
-        if(btnFood){
-            if(chatNaoLido) btnFood.style.color='var(--purple,#8b5cf6)';
-            else if(!abaAberta) {} // mantém a cor de pedido novo se houver
-        }
-    }catch(e){}
-}
-
-function iniciarMonitorPedidos(){
-    if(foodAlertInterval) clearInterval(foodAlertInterval);
-    if(temPermissao('pedidos_online')){
-        foodAlertInterval = setInterval(checarAlertasPedidos, 6000); // a cada 6s
-    }
-}
-
-async function acaoPedidoFood(id,acao){
-    if(acao==='recusar'&&!confirm('Recusar este pedido?'))return;
-    try{
-        const res=await fetch('/api/food/pedidos/'+id+'/acao',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({acao})});
-        const data=await res.json();
-        if(data.success){showToast('✅ Pedido atualizado','success');carregarPedidosFood();}
-        else showToast('❌ '+(data.error||'Erro'),'error');
-    }catch(e){showToast('❌ Erro','error');}
-}
-
-async function imprimirPedidoFood(id){
-    try{
-        const res=await fetch('/api/food/pedidos/'+id+'/imprimir',{method:'POST',credentials:'include'});
-        const data=await res.json();
-        if(data.success)showToast('🖨️ Enviado para impressão','success');
-        else showToast('❌ Erro ao imprimir','error');
-    }catch(e){showToast('❌ Erro','error');}
-}
-
-let chatPedidoAtual=null;
-let chatPollInterval=null;
-let chatNaoLido=false;
-async function abrirChatPedido(id,nome){
-    chatPedidoAtual=id;
-    chatNaoLido=false; // marca como lido
-    const btnFood=document.getElementById('tabFoodBtn');
-    if(btnFood) btnFood.style.color='';
-    document.getElementById('chatClienteNome').textContent=nome||'cliente';
-    document.getElementById('chatModal').classList.add('active');
-    document.getElementById('chatInput').value='';
-    await carregarChatPedido();
-    // Atualiza o chat a cada 5s enquanto estiver aberto
-    if(chatPollInterval) clearInterval(chatPollInterval);
-    chatPollInterval=setInterval(carregarChatPedido,2000);
-    setTimeout(()=>document.getElementById('chatInput').focus(),100);
-}
-
-function fecharChatPedido(){
-    document.getElementById('chatModal').classList.remove('active');
-    if(chatPollInterval){clearInterval(chatPollInterval);chatPollInterval=null;}
-}
-
-async function carregarChatPedido(){
-    if(!chatPedidoAtual)return;
-    try{
-        const res=await fetch('/api/food/chat/'+chatPedidoAtual,{credentials:'include',cache:'no-store'});
-        const data=await res.json();
-        const cont=document.getElementById('chatMensagens');
-        if(data.success){
-            if(!data.mensagens||!data.mensagens.length){
-                cont.innerHTML='<p style="text-align:center;color:var(--text-muted);font-size:12px;padding:20px;">Nenhuma mensagem ainda. Diga oi! 👋</p>';
-                return;
-            }
-            cont.innerHTML=data.mensagens.map(m=>{
-                const euLoja=m.autor==='loja';
-                return `<div style="align-self:${euLoja?'flex-end':'flex-start'};max-width:75%;">
-                    <div style="background:${euLoja?'var(--green,#22c55e)':'var(--bg-card,#1a1a2e)'};color:${euLoja?'#fff':'var(--text,#fff)'};padding:8px 12px;border-radius:12px;font-size:13px;border:1px solid var(--border-color,#333);">${m.mensagem}</div>
-                    <div style="font-size:9px;color:var(--text-muted);margin-top:2px;text-align:${euLoja?'right':'left'};">${euLoja?'Você':'Cliente'}</div>
-                </div>`;
-            }).join('');
-            cont.scrollTop=cont.scrollHeight;
-        }
-    }catch(e){}
-}
-
-async function enviarChatPedido(){
-    const input=document.getElementById('chatInput');
-    const msg=input.value.trim();
-    if(!msg||!chatPedidoAtual)return;
-    input.value='';
-    // Mostra na hora (otimista), sem esperar o servidor
-    const cont=document.getElementById('chatMensagens');
-    const placeholder=cont.querySelector('p');
-    if(placeholder) cont.innerHTML='';
-    const div=document.createElement('div');
-    div.style.cssText='align-self:flex-end;max-width:75%;';
-    div.innerHTML=`<div style="background:var(--green,#22c55e);color:#fff;padding:8px 12px;border-radius:12px;font-size:13px;">${msg}</div><div style="font-size:9px;color:var(--text-muted);margin-top:2px;text-align:right;">Você</div>`;
-    cont.appendChild(div);
-    cont.scrollTop=cont.scrollHeight;
-    try{
-        const res=await fetch('/api/food/chat/'+chatPedidoAtual,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({mensagem:msg})});
-        const data=await res.json();
-        if(!data.success) showToast('❌ '+(data.error||'Erro'),'error');
-    }catch(e){showToast('❌ Erro ao enviar','error');}
-}
-
 async function salvarProduto(){
     try{
         const elCod=document.getElementById('prodCodigo');
@@ -1980,9 +1681,25 @@ async function excluirProdutoSelecionado(){
 let timeoutBuscaCodigo = null;
 function buscarProdutoAutomatico(codigo){
     if (!temPermissao('busca_estoque')) return;
+    // Só roda se o toggle da busca inteligente estiver ligado
+    const toggle=document.getElementById('toggleBuscaInteligente');
+    if(toggle && !toggle.checked) return;
     clearTimeout(timeoutBuscaCodigo);
     if(codigo.length < 8) return;
     timeoutBuscaCodigo = setTimeout(() => buscarProdutoPorCodigo(), 500);
+}
+
+function toggleBuscaEstoque(){
+    const toggle=document.getElementById('toggleBuscaInteligente');
+    const dica=document.getElementById('dicaBusca');
+    if(!toggle||!dica)return;
+    if(toggle.checked){
+        dica.innerHTML='💡 Busca inteligente ligada: preenche nome/categoria pelo código';
+        showToast('🔍 Busca inteligente ligada','info');
+    }else{
+        dica.innerHTML='✍️ Busca inteligente desligada: cadastro manual (mais rápido)';
+        showToast('✍️ Busca inteligente desligada','info');
+    }
 }
 
 async function buscarProdutoPorCodigo(){
@@ -2015,7 +1732,12 @@ async function carregarClientes(){
         const data=await res.json();
         if(data.success){
             const tbody=document.getElementById('tabelaClientes');
-            if(!data.clientes||data.clientes.length===0){tbody.innerHTML=`<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">Nenhum cliente cadastrado</td></tr>`;return;}
+            const badge=document.getElementById('badgeFiados');
+            if(!data.clientes||data.clientes.length===0){
+                tbody.innerHTML=`<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">Nenhum cliente cadastrado</td></tr>`;
+                if(badge){badge.style.display='none';} // zera o aviso quando não há clientes
+                return;
+            }
             let html='', totalFiados=0;
             data.clientes.forEach(c=>{if(c.divida>0) totalFiados++;
                 html+=`<tr><td><strong>${c.nome}</strong></td><td>${c.telefone||'-'}</td><td class="divida">R$ ${c.divida.toFixed(2)}</td>
@@ -2023,7 +1745,6 @@ async function carregarClientes(){
                     <button class="btn-delete" onclick="excluirCliente(${c.id})">🗑️</button></td></tr>`;
             });
             tbody.innerHTML=html;
-            const badge=document.getElementById('badgeFiados');
             if(totalFiados>0){badge.style.display='inline';badge.textContent=totalFiados;}else{badge.style.display='none';}
         }
     }catch(e){console.error(e);}
@@ -2109,13 +1830,13 @@ document.getElementById('codigoInput').addEventListener('input',function(){
         </div>`;
     });
     filtrados.forEach((p,i)=>{
-        html+=`<div class="result-item ${(i===0&&kitsFiltrados.length===0)?'active':''}" data-codigo="${p.codigo}" onclick="selecionarProdutoPorCodigo('${p.codigo}')">
+        html+=`<div class="result-item" data-codigo="${p.codigo}" onclick="selecionarProdutoPorCodigo('${p.codigo}')">
             <span class="name">${p.nome}</span>
             <span class="price">R$ ${p.preco.toFixed(2)}</span>
             <span class="stock">estoque: ${p.estoque}</span>
         </div>`;
     });
-    results.innerHTML=html;results.classList.add('active');state.searchIndex=0;
+    results.innerHTML=html;results.classList.add('active');state.searchIndex=-1;
 });
 
 document.getElementById('codigoInput').addEventListener('keydown',function(e){
@@ -2403,6 +2124,85 @@ async function imprimirCupomAntigo(vendaId){
     }
 }
 
+async function excluirVenda(vendaId){
+    if(!vendaId) return;
+    if(!confirm('Excluir esta venda do histórico e das análises? Esta ação não pode ser desfeita.')) return;
+    try{
+        const res=await fetch(`/api/vendas/${vendaId}`,{method:'DELETE',credentials:'include'});
+        const data=await res.json();
+        if(data.success){
+            showToast('🗑️ Venda excluída','success');
+            carregarDash(state.periodo); // recarrega o dashboard (totais e lista)
+        }else{
+            showToast('❌ '+(data.error||'Erro ao excluir'),'error');
+        }
+    }catch(e){showToast('❌ Erro ao excluir venda','error');}
+}
+
+// ============================================================
+// PERSONALIZAÇÃO - Fundo da tela de Vendas
+// ============================================================
+function previewBgVendas(){
+    const url=document.getElementById('bgVendasUrl').value.trim();
+    if(url) aplicarBgVendas(url, document.getElementById('bgVendasOpacidade').value);
+}
+function carregarBgArquivo(event){
+    const file=event.target.files[0];
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=e=>{
+        document.getElementById('bgVendasUrl').value=e.target.result; // data URL
+        aplicarBgVendas(e.target.result, document.getElementById('bgVendasOpacidade').value);
+    };
+    reader.readAsDataURL(file);
+}
+function ajustarOpacidadeBg(val){
+    document.getElementById('bgOpacidadeLabel').textContent=val;
+    const url=document.getElementById('bgVendasUrl').value.trim();
+    if(url) aplicarBgVendas(url, val);
+}
+function aplicarBgVendas(url, opacidade){
+    const painel=document.getElementById('panelVendas');
+    if(!painel)return;
+    const op=(parseInt(opacidade)||15)/100;
+    painel.style.setProperty('--bg-vendas-img', `url('${url}')`);
+    painel.style.setProperty('--bg-vendas-op', op);
+    painel.classList.add('com-bg');
+}
+function salvarBgVendas(){
+    const url=document.getElementById('bgVendasUrl').value.trim();
+    const op=document.getElementById('bgVendasOpacidade').value;
+    if(!url){showToast('⚠️ Informe um link ou envie uma imagem','warning');return;}
+    try{
+        localStorage.setItem('sd_bg_vendas', url);
+        localStorage.setItem('sd_bg_vendas_op', op);
+        aplicarBgVendas(url, op);
+        showToast('✅ Fundo aplicado!','success');
+    }catch(e){showToast('❌ Erro ao salvar (imagem muito grande?)','error');}
+}
+function removerBgVendas(){
+    try{localStorage.removeItem('sd_bg_vendas');localStorage.removeItem('sd_bg_vendas_op');}catch(e){}
+    const painel=document.getElementById('panelVendas');
+    if(painel) painel.classList.remove('com-bg');
+    document.getElementById('bgVendasUrl').value='';
+    showToast('🗑️ Fundo removido','info');
+}
+function carregarBgVendasSalvo(){
+    try{
+        const url=localStorage.getItem('sd_bg_vendas');
+        const op=localStorage.getItem('sd_bg_vendas_op')||'15';
+        if(url){
+            const campo=document.getElementById('bgVendasUrl');
+            if(campo) campo.value=url;
+            const slider=document.getElementById('bgVendasOpacidade');
+            if(slider) slider.value=op;
+            const lbl=document.getElementById('bgOpacidadeLabel');
+            if(lbl) lbl.textContent=op;
+            aplicarBgVendas(url, op);
+        }
+    }catch(e){}
+}
+
 // ============================================================
 // CAIXA
 // ============================================================
@@ -2507,45 +2307,13 @@ async function carregarDash(periodo){
                         <span class="lucro-item">💰 Lucro: R$ ${(v.lucro_total||0).toFixed(2)}</span>
                         <div class="produtos-detalhe">${(v.itens||[]).map(i=>`${i.nome}(${i.quantidade})`).join(', ')}</div>
                         <button class="btn-imprimir-venda" onclick="imprimirCupomAntigo(${v.id})"><i class="fas fa-print"></i></button>
+                        <button class="btn-excluir-venda" onclick="excluirVenda(${v.id})" title="Excluir esta venda do histórico"><i class="fas fa-times"></i></button>
                     </div>`;
                 });
             }else{vHtml='<p style="color:var(--text-muted);font-size:13px;">Nenhuma venda no período</p>';}
             document.getElementById('vendasList').innerHTML=vHtml;
-
-            // Vendas DELIVERY
-            const vendasD=s.vendas_delivery||[];
-            let dHtml='';
-            if(vendasD.length>0){
-                vendasD.slice(0,20).forEach(v=>{
-                    const pagCls=v.pagamento==='pix'?'pix':'dinheiro';
-                    const stLabel={em_preparo:'Em preparo',pronto:'Pronto',finalizado:'Finalizado'}[v.status]||v.status;
-                    dHtml+=`<div class="venda-item">
-                        <span style="font-weight:600;">🛵 ${v.cliente}</span>
-                        <span style="font-size:11px;color:var(--text-muted);">${v.data_hora ? new Date(v.data_hora).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : ''}</span>
-                        <span class="metodo ${pagCls}">${v.pagamento==='pix'?'PIX':'Entrega'}</span>
-                        <span class="valor">R$ ${v.total.toFixed(2)}</span>
-                        <span class="lucro-item">💰 Lucro: R$ ${(v.lucro_total||0).toFixed(2)}</span>
-                        <div class="produtos-detalhe">${(v.itens||[]).map(i=>`${i.nome}(${i.qtd||i.quantidade||1})`).join(', ')}${v.frete?` • frete R$ ${v.frete.toFixed(2)}`:''}</div>
-                    </div>`;
-                });
-            }else{dHtml='<p style="color:var(--text-muted);font-size:13px;">Nenhum pedido delivery no período</p>';}
-            document.getElementById('vendasDeliveryList').innerHTML=dHtml;
         }
     }catch(e){console.error(e);}
-}
-
-function trocarSubVendas(qual){
-    const local=document.getElementById('vendasList');
-    const deliv=document.getElementById('vendasDeliveryList');
-    const btnL=document.getElementById('dashSubLocal');
-    const btnD=document.getElementById('dashSubDelivery');
-    if(qual==='local'){
-        local.style.display='';deliv.style.display='none';
-        btnL.classList.add('active');btnD.classList.remove('active');
-    }else{
-        local.style.display='none';deliv.style.display='';
-        btnD.classList.add('active');btnL.classList.remove('active');
-    }
 }
 
 // ============================================================
@@ -2568,7 +2336,6 @@ async function carregarPlanos(){
                 if(permissoes.dashboard) perms.push('📊 Dashboard');
                 if(permissoes.busca_estoque) perms.push('🔍 Busca Estoque');
                 if(permissoes.margem) perms.push('💰 Margem de Lucro');
-                if(permissoes.pedidos_online) perms.push('🍔 Pedidos Online (SMART DELIVERY)');
                 const permsText = perms.join(' • ');
                 const isTeste = p.is_teste || false;
                 const badgeTeste = isTeste ? '<span class="badge-teste">🎁 TESTE</span>' : '';
