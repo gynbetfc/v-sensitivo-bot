@@ -374,14 +374,20 @@ def Payout(sessao, p):
     try:
         if not sessao.API: return PAYOUT_PADRAO
         sessao.API.subscribe_strike_list(p, 1)
-        for _ in range(20):
-            d = sessao.API.get_digital_current_profit(p, 1)
-            if d != False:
-                sessao.API.unsubscribe_strike_list(p, 1)
-                return round(int(d) / 100, 2)
-            time.sleep(0.5)
-        sessao.API.unsubscribe_strike_list(p, 1)
-        return PAYOUT_PADRAO
+        try:
+            # espera no maximo ~3s por par (6 x 0.5s) em vez de 10s — o scan
+            # inteiro fica leve e nao segura o socket por muito tempo
+            for _ in range(6):
+                d = sessao.API.get_digital_current_profit(p, 1)
+                if d != False:
+                    return round(int(d) / 100, 2)
+                time.sleep(0.5)
+            return PAYOUT_PADRAO
+        finally:
+            # unsubscribe SEMPRE, mesmo se der erro/timeout — senao ficam
+            # varias subscriptions penduradas afogando a conexao
+            try: sessao.API.unsubscribe_strike_list(p, 1)
+            except Exception: pass
     except: return PAYOUT_PADRAO
 
 def calcular_entradas(b, p, g, percentual_banca):
@@ -401,25 +407,43 @@ def calcular_entradas(b, p, g, percentual_banca):
 cache_pares_otc = {"data": [], "timestamp": 0}
 CACHE_PARES_TTL = 60
 
+# Pares de CAMBIO OTC que a lib iqoptionapi reconhece de forma confiavel.
+# A conta lista ~179 ativos OTC (acoes, cripto, indices...), mas boa parte
+# retorna "Asset X not found on consts" e/ou trava o Payout, afogando o
+# websocket ate a corretora derrubar a conexao. Entao o auto-par so testa
+# esta lista curta de forex OTC — que e o foco do bot e o que a lib suporta.
+PARES_OTC_CONFIAVEIS = [
+    "EURUSD-OTC", "GBPUSD-OTC", "USDJPY-OTC", "AUDUSD-OTC", "USDCHF-OTC",
+    "EURGBP-OTC", "EURJPY-OTC", "NZDUSD-OTC", "AUDCAD-OTC", "EURUSD-OTC"
+]
+MAX_PARES_AUTO = 8   # teto rigido: nunca testa mais que isso, pra nao afogar o socket
+
 def listar_pares_otc(sessao):
-    """Lista os pares OTC que estao ABERTOS agora na IQ Option.
-    Usa get_all_open_time() da propria lib — nada de lista fixa/chutada."""
+    """Lista pares OTC ABERTOS agora, MAS filtrando pela whitelist de forex
+    que a lib reconhece. Sem isso o auto-par tentava 179 ativos e derrubava
+    a conexao."""
     global cache_pares_otc
     agora = time.time()
     if cache_pares_otc["data"] and (agora - cache_pares_otc["timestamp"]) < CACHE_PARES_TTL:
         return cache_pares_otc["data"]
-    pares = []
+    abertos_set = set()
     try:
         abertos = sessao.API.get_all_open_time()
-        # binarias/turbo costumam ter os OTC; olhamos os dois tipos
         for tipo in ('turbo', 'binary'):
             if tipo in abertos:
                 for par, info in abertos[tipo].items():
                     if par.endswith('-OTC') and info.get('open'):
-                        if par not in pares:
-                            pares.append(par)
+                        abertos_set.add(par)
     except Exception as e:
         print(f"⚠️ Erro ao listar pares OTC: {e}")
+
+    # so mantem os da whitelist que estao REALMENTE abertos agora (preserva ordem, sem duplicar)
+    pares = []
+    for p in PARES_OTC_CONFIAVEIS:
+        if p in pares:
+            continue
+        if not abertos_set or p in abertos_set:
+            pares.append(p)
     if not pares:
         pares = ["EURUSD-OTC"]  # fallback minimo
     cache_pares_otc["data"] = pares
@@ -427,39 +451,36 @@ def listar_pares_otc(sessao):
     return pares
 
 def escolher_melhor_par(sessao, funcao_estrategia, pares_candidatos=None):
-    """Escolhe automaticamente o par OTC com melhor combinacao de:
-      (1) PAYOUT atual  — o quanto a corretora paga agora
-      (2) ATIVIDADE da estrategia — se ela daria sinal nos candles recentes
-    IMPORTANTE: NAO ranqueamos por 'taxa de acerto no passado' de proposito.
-    O par que mais 'acertou' nos ultimos minutos nao e o que mais vai acertar
-    nos proximos — isso e overfitting e gera falsa confianca. Aqui a gente
-    prioriza payout (fato concreto) e usa a atividade so como leve desempate."""
+    """Escolhe o par OTC com melhor PAYOUT atual (fato concreto), usando a
+    atividade da estrategia so como leve desempate. Testa NO MAXIMO
+    MAX_PARES_AUTO pares, com uma pausa entre cada um pra nao sobrecarregar
+    o websocket da IQ (foi isso que derrubava a conexao antes)."""
     pares = pares_candidatos or listar_pares_otc(sessao)
+    pares = pares[:MAX_PARES_AUTO]  # teto rigido
     ranking = []
-    add_log(sessao, f"🔎 Testando {len(pares)} pares OTC...", 'indicator')
+    add_log(sessao, f"🔎 Testando {len(pares)} pares OTC (payout)...", 'indicator')
     for par in pares:
-        if not sessao.bot_rodando and sessao.auto_par:
-            # se o usuario parou no meio, aborta o scan
+        if not sessao.bot_rodando:
             break
         try:
             payout = Payout(sessao, par)
             if payout <= 0:
                 continue
-            # a estrategia "roda na cabeca" so pra ver se ela reage a esse par
-            # AGORA (1 leitura), nao pra contar acertos historicos.
             deu_sinal = False
             try:
                 res = funcao_estrategia(sessao.API, par, lambda m, t='info': None)
                 deu_sinal = bool(res and res.get('direcao', '').lower() in ('call', 'put'))
             except Exception:
                 deu_sinal = False
-            # score: payout manda; atividade da um empurraozinho pequeno
             score = payout + (0.02 if deu_sinal else 0)
             ranking.append({'par': par, 'payout': payout, 'sinal_agora': deu_sinal, 'score': score})
         except Exception:
             continue
+        time.sleep(0.5)  # respiro entre pares — evita afogar o socket
 
     if not ranking:
+        # nao conseguiu testar nenhum (conexao ruim?) — nao troca o par, segue com o atual
+        add_log(sessao, "⚠️ Auto-par não obteve payouts; mantendo par atual.", 'error')
         return None
     ranking.sort(key=lambda x: x['score'], reverse=True)
     melhor = ranking[0]
@@ -984,8 +1005,22 @@ def sincronizar_html_local():
         HTML_URL = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/tesla_369_bot/templates/index.html"
         response = requests.get(HTML_URL, timeout=10)
         if response.status_code == 200:
+            conteudo = response.text
+            # PROTECAO: so sobrescreve se o que baixou for HTML DE VERDADE.
+            # Ja aconteceu do arquivo no GitHub estar com codigo Python colado
+            # por engano — sem essa checagem, o bot se auto-sabotava toda vez
+            # que iniciava, baixando Python por cima do HTML bom.
+            inicio = conteudo.lstrip()[:200].lower()
+            parece_html = inicio.startswith('<!doctype') or inicio.startswith('<html') or '<head' in inicio
+            parece_python = inicio.startswith('#!/usr/bin/env python') or 'from flask import' in inicio or inicio.startswith('# -*-')
+            if parece_python or not parece_html:
+                print("⚠️ HTML remoto parece inválido (não é HTML). Mantendo o arquivo local.")
+                # se nem existe um local, ai nao tem o que manter — avisa alto
+                if not os.path.exists("templates/index.html"):
+                    print("❌ ATENÇÃO: não há index.html local válido! Corrija o arquivo no GitHub.")
+                return False
             with open("templates/index.html", "w", encoding="utf-8") as f:
-                f.write(response.text)
+                f.write(conteudo)
             print("✅ HTML sincronizado!")
             return True
     except Exception as e: print(f"❌ Erro HTML: {e}")
