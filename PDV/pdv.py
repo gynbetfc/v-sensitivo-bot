@@ -475,7 +475,7 @@ def init_db() -> None:
 
         # Adicionar colunas faltantes
         for tabela, colunas in {
-            'users': {'sincronizado_em': 'TIMESTAMP'},
+            'users': {'sincronizado_em': 'TIMESTAMP', 'bg_vendas_img': 'TEXT DEFAULT ""', 'bg_vendas_opacidade': 'INTEGER DEFAULT 50'},
             'produtos': {'custo': 'REAL DEFAULT 0', 'margem': 'REAL DEFAULT 0', 'ultima_atualizacao': 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP', 'sincronizado_em': 'TIMESTAMP'},
             'clientes': {'ultima_atualizacao': 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP', 'sincronizado_em': 'TIMESTAMP'},
             'vendas': {'lucro_total': 'REAL DEFAULT 0', 'recebido': 'REAL DEFAULT 0', 'troco': 'REAL DEFAULT 0', 'sincronizado_em': 'TIMESTAMP'},
@@ -1234,7 +1234,7 @@ def enviar_para_firebase(db_id: str) -> bool:
             if result:
                 dados_firebase['caixa'] = {'usuario_id': result[0], 'valor_abertura': result[1], 'data_abertura': result[2],
                     'data_fechamento': result[3], 'total': result[4] or 0, 'status': result[5]}
-            cursor = conn.execute("SELECT nome_loja, cnpj, cnpj_dados FROM users WHERE db_id=? LIMIT 1", (db_id,))
+            cursor = conn.execute("SELECT nome_loja, cnpj, cnpj_dados, bg_vendas_img, bg_vendas_opacidade FROM users WHERE db_id=? LIMIT 1", (db_id,))
             loja = cursor.fetchone()
             if loja:
                 dados_firebase['nome_loja'] = loja[0] or ''
@@ -1243,6 +1243,8 @@ def enviar_para_firebase(db_id: str) -> bool:
                     dados_firebase['cnpj_dados'] = json.loads(loja[2]) if loja[2] else {}
                 except:
                     dados_firebase['cnpj_dados'] = {}
+                dados_firebase['bg_vendas_img'] = loja[3] or ''
+                dados_firebase['bg_vendas_opacidade'] = loja[4] if loja[4] is not None else 50
             cursor = conn.execute("SELECT id, nome, preco, itens, ativo, ultima_atualizacao FROM kits WHERE db_id=?", (db_id,))
             kits = {}
             for row in cursor.fetchall():
@@ -2882,6 +2884,62 @@ def get_loja_info():
             "cnpj": result[1] if result else '',
             "cnpj_dados": cnpj_dados
         })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+# ============================================================
+# PERSONALIZAÇÃO - Fundo da tela de vendas
+# ============================================================
+@app.route('/api/loja/background', methods=['POST'])
+@verificar_plano
+def salvar_background():
+    try:
+        data = request.json or {}
+        db_id = get_db_id()
+        img = data.get('img', '')  # URL ou data-URL (base64)
+        opacidade = int(data.get('opacidade', 50))
+        opacidade = max(0, min(100, opacidade))
+        with get_db_context() as conn:
+            conn.execute("UPDATE users SET bg_vendas_img=?, bg_vendas_opacidade=? WHERE db_id=?",
+                (img, opacidade, db_id))
+        # Salva também no Firebase para aparecer em outros dispositivos
+        try:
+            dados = carregar_usuario_firebase(db_id)
+            if dados is not None:
+                dados['bg_vendas_img'] = img
+                dados['bg_vendas_opacidade'] = opacidade
+                salvar_usuario_firebase(db_id, dados)
+        except Exception as e:
+            logger.error(f"⚠️ Erro ao salvar background no Firebase: {e}")
+        return jsonify({"success": True, "message": "Fundo salvo!"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/loja/background')
+def get_background():
+    try:
+        db_id = get_db_id()
+        if not db_id:
+            return jsonify({"success": False, "error": "Não autenticado"}), 401
+        img, opac = '', 50
+        with get_db_context() as conn:
+            cursor = conn.execute("SELECT bg_vendas_img, bg_vendas_opacidade FROM users WHERE db_id=? LIMIT 1", (db_id,))
+            row = cursor.fetchone()
+            if row:
+                img = row[0] or ''
+                opac = row[1] if row[1] is not None else 50
+        # Se não tem local, tenta o Firebase (ex: primeiro acesso em outro dispositivo)
+        if not img:
+            try:
+                dados = carregar_usuario_firebase(db_id, timeout=4)
+                if dados and dados.get('bg_vendas_img'):
+                    img = dados.get('bg_vendas_img', '')
+                    opac = dados.get('bg_vendas_opacidade', 50)
+                    with get_db_context() as conn:
+                        conn.execute("UPDATE users SET bg_vendas_img=?, bg_vendas_opacidade=? WHERE db_id=?", (img, opac, db_id))
+            except Exception:
+                pass
+        return jsonify({"success": True, "img": img, "opacidade": opac})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
