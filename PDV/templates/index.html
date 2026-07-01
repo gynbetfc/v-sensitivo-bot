@@ -72,6 +72,8 @@
         .panel{display:none;animation:fadeUp .3s ease}.panel.active{display:block}
         .subtabs{display:flex;gap:6px;margin-bottom:16px;border-bottom:1px solid var(--border-color);padding-bottom:0}
         .subtab-btn{padding:10px 20px;border:0;background:0;cursor:pointer;font-weight:600;font-size:13px;color:var(--text-secondary);border-bottom:2px solid transparent;transition:var(--transition);display:flex;align-items:center;gap:6px;margin-bottom:-1px}
+        .dash-subtab{padding:6px 14px;border:1px solid var(--border-color);background:var(--bg-card);color:var(--text-secondary);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;transition:var(--transition)}
+        .dash-subtab.active{background:var(--green);color:#fff;border-color:var(--green)}
         .subtab-btn:hover{color:#fff}
         .subtab-btn.active{color:var(--green);border-bottom-color:var(--green)}
         .subtab-btn .lock{font-size:10px;opacity:.7}
@@ -660,7 +662,15 @@
                 </div>
                 <div class="chart-row">
                     <div class="chart-box"><h4><i class="fas fa-credit-card"></i> Métodos de Pagamento</h4><div id="metodosContainer"><p style="color:var(--text-secondary);font-size:13px;">Carregando...</p></div></div>
-                    <div class="chart-box"><h4><i class="fas fa-clock"></i> Últimas Vendas</h4><div class="vendas-list" id="vendasList"><p style="color:var(--text-secondary);font-size:13px;">Carregando...</p></div></div>
+                    <div class="chart-box">
+                        <h4><i class="fas fa-clock"></i> Últimas Vendas</h4>
+                        <div style="display:flex;gap:8px;margin-bottom:10px;">
+                            <button class="dash-subtab active" id="dashSubLocal" onclick="trocarSubVendas('local')">🏪 Local</button>
+                            <button class="dash-subtab" id="dashSubDelivery" onclick="trocarSubVendas('delivery')">🛵 Delivery</button>
+                        </div>
+                        <div class="vendas-list" id="vendasList"><p style="color:var(--text-secondary);font-size:13px;">Carregando...</p></div>
+                        <div class="vendas-list" id="vendasDeliveryList" style="display:none;"><p style="color:var(--text-secondary);font-size:13px;">Carregando...</p></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1826,11 +1836,19 @@ async function checarAlertasPedidos(){
         if(data.success && data.chat_novos>0){
             tocarSomPedido();
             showToast(`💬 ${data.chat_novos} nova(s) mensagem(ns) de cliente!`,'info');
-            const btn=document.getElementById('tabFoodBtn');
-            if(btn && !abaAberta){ btn.style.color='var(--purple,#8b5cf6)'; }
-            // Se o chat estiver aberto, recarrega
+            chatNaoLido = true;
+            // Se o chat estiver aberto, recarrega e marca como lido
             const chatModal=document.getElementById('chatModal');
-            if(chatModal && chatModal.classList.contains('active')) carregarChatPedido();
+            if(chatModal && chatModal.classList.contains('active')){
+                carregarChatPedido();
+                chatNaoLido = false;
+            }
+        }
+        // Mantém a aba destacada enquanto houver chat não lido
+        const btnFood=document.getElementById('tabFoodBtn');
+        if(btnFood){
+            if(chatNaoLido) btnFood.style.color='var(--purple,#8b5cf6)';
+            else if(!abaAberta) {} // mantém a cor de pedido novo se houver
         }
     }catch(e){}
 }
@@ -1863,15 +1881,19 @@ async function imprimirPedidoFood(id){
 
 let chatPedidoAtual=null;
 let chatPollInterval=null;
+let chatNaoLido=false;
 async function abrirChatPedido(id,nome){
     chatPedidoAtual=id;
+    chatNaoLido=false; // marca como lido
+    const btnFood=document.getElementById('tabFoodBtn');
+    if(btnFood) btnFood.style.color='';
     document.getElementById('chatClienteNome').textContent=nome||'cliente';
     document.getElementById('chatModal').classList.add('active');
     document.getElementById('chatInput').value='';
     await carregarChatPedido();
     // Atualiza o chat a cada 5s enquanto estiver aberto
     if(chatPollInterval) clearInterval(chatPollInterval);
-    chatPollInterval=setInterval(carregarChatPedido,3000);
+    chatPollInterval=setInterval(carregarChatPedido,2000);
     setTimeout(()=>document.getElementById('chatInput').focus(),100);
 }
 
@@ -1908,11 +1930,19 @@ async function enviarChatPedido(){
     const msg=input.value.trim();
     if(!msg||!chatPedidoAtual)return;
     input.value='';
+    // Mostra na hora (otimista), sem esperar o servidor
+    const cont=document.getElementById('chatMensagens');
+    const placeholder=cont.querySelector('p');
+    if(placeholder) cont.innerHTML='';
+    const div=document.createElement('div');
+    div.style.cssText='align-self:flex-end;max-width:75%;';
+    div.innerHTML=`<div style="background:var(--green,#22c55e);color:#fff;padding:8px 12px;border-radius:12px;font-size:13px;">${msg}</div><div style="font-size:9px;color:var(--text-muted);margin-top:2px;text-align:right;">Você</div>`;
+    cont.appendChild(div);
+    cont.scrollTop=cont.scrollHeight;
     try{
         const res=await fetch('/api/food/chat/'+chatPedidoAtual,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({mensagem:msg})});
         const data=await res.json();
-        if(data.success)carregarChatPedido();
-        else showToast('❌ '+(data.error||'Erro'),'error');
+        if(!data.success) showToast('❌ '+(data.error||'Erro'),'error');
     }catch(e){showToast('❌ Erro ao enviar','error');}
 }
 
@@ -2481,8 +2511,41 @@ async function carregarDash(periodo){
                 });
             }else{vHtml='<p style="color:var(--text-muted);font-size:13px;">Nenhuma venda no período</p>';}
             document.getElementById('vendasList').innerHTML=vHtml;
+
+            // Vendas DELIVERY
+            const vendasD=s.vendas_delivery||[];
+            let dHtml='';
+            if(vendasD.length>0){
+                vendasD.slice(0,20).forEach(v=>{
+                    const pagCls=v.pagamento==='pix'?'pix':'dinheiro';
+                    const stLabel={em_preparo:'Em preparo',pronto:'Pronto',finalizado:'Finalizado'}[v.status]||v.status;
+                    dHtml+=`<div class="venda-item">
+                        <span style="font-weight:600;">🛵 ${v.cliente}</span>
+                        <span style="font-size:11px;color:var(--text-muted);">${v.data_hora ? new Date(v.data_hora).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : ''}</span>
+                        <span class="metodo ${pagCls}">${v.pagamento==='pix'?'PIX':'Entrega'}</span>
+                        <span class="valor">R$ ${v.total.toFixed(2)}</span>
+                        <span class="lucro-item">💰 Lucro: R$ ${(v.lucro_total||0).toFixed(2)}</span>
+                        <div class="produtos-detalhe">${(v.itens||[]).map(i=>`${i.nome}(${i.qtd||i.quantidade||1})`).join(', ')}${v.frete?` • frete R$ ${v.frete.toFixed(2)}`:''}</div>
+                    </div>`;
+                });
+            }else{dHtml='<p style="color:var(--text-muted);font-size:13px;">Nenhum pedido delivery no período</p>';}
+            document.getElementById('vendasDeliveryList').innerHTML=dHtml;
         }
     }catch(e){console.error(e);}
+}
+
+function trocarSubVendas(qual){
+    const local=document.getElementById('vendasList');
+    const deliv=document.getElementById('vendasDeliveryList');
+    const btnL=document.getElementById('dashSubLocal');
+    const btnD=document.getElementById('dashSubDelivery');
+    if(qual==='local'){
+        local.style.display='';deliv.style.display='none';
+        btnL.classList.add('active');btnD.classList.remove('active');
+    }else{
+        local.style.display='none';deliv.style.display='';
+        btnD.classList.add('active');btnL.classList.remove('active');
+    }
 }
 
 // ============================================================
