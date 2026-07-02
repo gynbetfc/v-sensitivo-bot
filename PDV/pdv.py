@@ -475,7 +475,7 @@ def init_db() -> None:
 
         # Adicionar colunas faltantes
         for tabela, colunas in {
-            'users': {'sincronizado_em': 'TIMESTAMP', 'bg_vendas_img': 'TEXT DEFAULT ""', 'bg_vendas_opacidade': 'INTEGER DEFAULT 50'},
+            'users': {'sincronizado_em': 'TIMESTAMP', 'bg_vendas_img': 'TEXT DEFAULT ""', 'bg_vendas_opacidade': 'INTEGER DEFAULT 50', 'escala_sistema': 'INTEGER DEFAULT 100'},
             'produtos': {'custo': 'REAL DEFAULT 0', 'margem': 'REAL DEFAULT 0', 'ultima_atualizacao': 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP', 'sincronizado_em': 'TIMESTAMP'},
             'clientes': {'ultima_atualizacao': 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP', 'sincronizado_em': 'TIMESTAMP'},
             'vendas': {'lucro_total': 'REAL DEFAULT 0', 'recebido': 'REAL DEFAULT 0', 'troco': 'REAL DEFAULT 0', 'sincronizado_em': 'TIMESTAMP'},
@@ -1473,7 +1473,7 @@ def gerar_texto_cupom(dados: Dict) -> str:
 
 def imprimir_cupom_escpos(dados: Dict) -> Dict:
     if not IS_WINDOWS or not IMPRESSAO_DISPONIVEL:
-        return {"success": False, "error": "Impressão ESC/POS disponível apenas no Windows"}
+        return {"success": False, "error": "Impressão indisponível. Se você está no Windows, os módulos de impressão (pywin32) não foram incluídos no aplicativo. Gere o executável novamente com o pywin32."}
 
     try:
         import win32print
@@ -2963,6 +2963,43 @@ def get_background():
             except Exception:
                 pass
         return jsonify({"success": True, "img": img, "opacidade": opac})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/loja/escala', methods=['POST'])
+@verificar_plano
+def salvar_escala():
+    try:
+        data = request.json or {}
+        db_id = get_db_id()
+        escala = int(data.get('escala', 100))
+        escala = max(100, min(180, escala))
+        with get_db_context() as conn:
+            conn.execute("UPDATE users SET escala_sistema=? WHERE db_id=?", (escala, db_id))
+        try:
+            dados = carregar_usuario_firebase(db_id)
+            if dados is not None:
+                dados['escala_sistema'] = escala
+                salvar_usuario_firebase(db_id, dados)
+        except Exception:
+            pass
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/loja/escala')
+def get_escala():
+    try:
+        db_id = get_db_id()
+        if not db_id:
+            return jsonify({"success": False, "error": "Não autenticado"}), 401
+        escala = 100
+        with get_db_context() as conn:
+            cursor = conn.execute("SELECT escala_sistema FROM users WHERE db_id=? LIMIT 1", (db_id,))
+            row = cursor.fetchone()
+            if row and row[0]:
+                escala = row[0]
+        return jsonify({"success": True, "escala": escala})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
