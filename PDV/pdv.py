@@ -177,7 +177,7 @@ class Plano:
     is_teste: bool = False
 
 PLANOS: List[Plano] = [
-    Plano(1, 1, 0.01, '🔰 BÁSICO', 30, 300, {
+    Plano(1, 1, 29.99, '🔰 BÁSICO', 30, 300, {
         'clientes': False,
         'dashboard': False,
         'busca_estoque': False,
@@ -241,6 +241,20 @@ def calcular_preco_duracao(preco_mensal: float, meses: int):
 pagamentos_pendentes: Dict[str, Dict] = {}
 rate_limits: Dict[str, List[float]] = {}
 
+# ============================================================
+# MODO DESENVOLVEDOR
+# Quando ativado (via senha secreta), libera TODAS as permissões e
+# ignora expiração de plano — só para você testar. Guardado por db_id.
+# TROQUE a senha abaixo por uma que só você saiba.
+# ============================================================
+SENHA_MODO_DEV: str = "ejs2026dev"
+_modo_dev_ativo: Dict[str, bool] = {}  # {db_id: True}
+_PERM_TOTAL = {'clientes': True, 'dashboard': True, 'busca_estoque': True,
+               'margem': True, 'fiado': True, 'kit_combo': True}
+
+def modo_dev_ligado(db_id: str) -> bool:
+    return bool(db_id and _modo_dev_ativo.get(db_id))
+
 def rate_limit(max_requests: int = 10, window: int = 60) -> Callable:
     def decorator(f: Callable) -> Callable:
         @wraps(f)
@@ -267,7 +281,9 @@ def verificar_plano(f: Callable) -> Callable:
         db_id = get_db_id()
         if not db_id:
             return jsonify({"success": False, "error": "Não autenticado"}), 401
-        
+        # Modo desenvolvedor: ignora expiração
+        if modo_dev_ligado(db_id):
+            return f(*args, **kwargs)
         if not is_plano_ativo(db_id):
             dias_restantes = get_dias_restantes(db_id)
             return jsonify({
@@ -284,19 +300,6 @@ def verificar_plano(f: Callable) -> Callable:
 # ============================================================
 # FUNÇÃO PARA VERIFICAR PERMISSÕES
 # ============================================================
-
-def get_permissoes(db_id: str) -> Dict:
-    """Retorna as permissões do plano (definição completa mais abaixo, offline-first)."""
-    _perm_padrao = {'clientes': False, 'dashboard': False, 'busca_estoque': False, 'margem': False, 'fiado': False, 'kit_combo': False}
-    try:
-        dados = carregar_usuario_firebase(db_id, timeout=3)
-        if not dados:
-            return _perm_padrao
-        plano_id = dados.get('plano', 1)
-        plano = next((p for p in PLANOS if p.id == plano_id), PLANOS[0])
-        return plano.permissoes
-    except:
-        return _perm_padrao
 
 def verificar_permissao(permissao: str):
     """Decorator para verificar permissões específicas"""
@@ -885,6 +888,9 @@ def pode_adicionar_produto(db_id: str, quantidade: int = 1) -> Tuple[bool, str]:
 
 def get_permissoes(db_id: str) -> Dict:
     """Retorna as permissões do plano do usuário (offline-first via token local)"""
+    # Modo desenvolvedor: libera tudo
+    if modo_dev_ligado(db_id):
+        return dict(_PERM_TOTAL)
     _perm_padrao = {'clientes': False, 'dashboard': False, 'busca_estoque': False, 'margem': False, 'fiado': False, 'kit_combo': False}
     try:
         plano = get_plano_efetivo(db_id)
@@ -2598,6 +2604,28 @@ def get_estatisticas():
 # ============================================================
 # PLANOS
 # ============================================================
+@app.route('/api/dev/status')
+def dev_status():
+    db_id = get_db_id()
+    if not db_id:
+        return jsonify({"success": False, "error": "Não autenticado"}), 401
+    return jsonify({"success": True, "ativo": modo_dev_ligado(db_id)})
+
+@app.route('/api/dev/toggle', methods=['POST'])
+def dev_toggle():
+    db_id = get_db_id()
+    if not db_id:
+        return jsonify({"success": False, "error": "Não autenticado"}), 401
+    data = request.json or {}
+    senha = data.get('senha', '')
+    if senha != SENHA_MODO_DEV:
+        return jsonify({"success": False, "error": "Senha incorreta"}), 403
+    # alterna o estado
+    novo = not modo_dev_ligado(db_id)
+    _modo_dev_ativo[db_id] = novo
+    logger.info(f"🛠️ Modo desenvolvedor {'ATIVADO' if novo else 'desativado'} para {db_id}")
+    return jsonify({"success": True, "ativo": novo})
+
 @app.route('/api/planos')
 def get_planos():
     planos_out = []
