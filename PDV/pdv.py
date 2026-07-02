@@ -1,14 +1,6 @@
 # pdv.py - SMART PDV v11.0.0 - VERSÃO COM PLANOS REVISADOS
 """
 🏪 SMART PDV v11.0.0
-
-🔹 NOVIDADES v10.3:
-- 15 DIAS DE TESTE GRÁTIS (EMPRESARIAL COMPLETO) ✅
-- NOVOS VALORES DE PLANOS (R$ 29,99 a R$ 129,99) ✅
-- CORREÇÃO DA REIMPRESSÃO DE CUPONS ✅
-- CAMPO CÓDIGO DE BARRAS RESTAURADO ✅
-- FIADO BLOQUEADO PARA PLANOS SEM CLIENTES ✅
-- SISTEMA DE CLIENTES CORRIGIDO ✅
 """
 
 import sys
@@ -201,7 +193,7 @@ PLANOS: List[Plano] = [
         'fiado': True,
         'kit_combo': True,
     }),
-    Plano(4, 10, 149.99, '👑 EMPRESARIAL', 30, -1, {
+    Plano(4, 10, 129.99, '👑 EMPRESARIAL', 30, -1, {
         'clientes': True,
         'dashboard': True,
         'busca_estoque': True,
