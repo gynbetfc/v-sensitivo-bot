@@ -10,7 +10,7 @@
         *{margin:0;padding:0;box-sizing:border-box}
         :root{--bg-primary:#0f0f1a;--bg-secondary:#1a1a2e;--bg-card:#16162e;--bg-card-hover:#1e1e3a;--text-primary:#ffffff;--text-secondary:#a0a0c0;--text-muted:#6a6a8a;--border-color:#2a2a4a;--green:#22c55e;--green-dark:#16a34a;--blue:#3b82f6;--purple:#8b5cf6;--orange:#f59e0b;--red:#ef4444;--gold:#fbbf24;--radius:12px;--shadow:0 8px 32px rgba(0,0,0,0.4);--transition:all 0.3s cubic-bezier(0.4,0,0.2,1)}
         html,body{height:100%;min-height:100vh}
-        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg-primary);color:var(--text-primary);display:flex;justify-content:center;align-items:flex-start;padding:16px;min-height:100vh}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg-primary);color:var(--text-primary);display:flex;justify-content:center;align-items:flex-start;min-height:100vh}
         ::-webkit-scrollbar{width:5px;height:5px}
         ::-webkit-scrollbar-track{background:var(--bg-secondary)}
         ::-webkit-scrollbar-thumb{background:var(--green);border-radius:10px}
@@ -44,7 +44,7 @@
         .auth-box .msg.success{display:block;background:rgba(34,197,94,.15);color:var(--green)}
         .auth-box .msg.error{display:block;background:rgba(239,68,68,.15);color:var(--red)}
 
-        .app{display:none;width:100%;max-width:1440px;min-height:100vh;background:var(--bg-secondary);border-radius:var(--radius);overflow:hidden;border:1px solid var(--border-color)}
+        .app{display:none;width:100%;max-width:1440px;min-height:100vh;background:var(--bg-secondary);overflow:hidden;border:1px solid var(--border-color)}
         .app.active{display:block;animation:fadeUp .4s ease}
         .header{background:var(--bg-card);padding:12px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;border-bottom:1px solid var(--border-color);position:sticky;top:0;z-index:100}
         .header .logo{font-size:18px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px}
@@ -509,12 +509,15 @@
         <div class="msg" id="authMsg"></div>
         <div class="form-group">
             <label>Email</label>
-            <input type="email" id="loginEmail" placeholder="seu@email.com" autocomplete="email">
+            <input type="email" id="loginEmail" placeholder="seu@email.com" autocomplete="email" onkeydown="if(event.key==='Enter'){document.getElementById('loginSenha').focus();}">
         </div>
         <div class="form-group">
             <label>Senha</label>
-            <input type="password" id="loginSenha" placeholder="••••••••" autocomplete="current-password">
+            <input type="password" id="loginSenha" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter'){event.preventDefault();fazerLogin();}">
         </div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary);cursor:pointer;margin-bottom:12px;">
+            <input type="checkbox" id="lembrarLogin" checked style="width:16px;height:16px;accent-color:var(--green);cursor:pointer;"> Lembrar meu login e senha
+        </label>
         <button class="btn-primary" id="btnLoginEntrar" onclick="fazerLogin()"><i class="fas fa-sign-in-alt"></i> Entrar</button>
         <div class="auth-link">Não tem conta? <span onclick="mostrarRegistro()">Criar conta grátis</span></div>
     </div>
@@ -1266,6 +1269,19 @@ async function fazerLogin(){
         const res=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({email,senha})});
         const data=await res.json();
         if(data.success){
+            // Salva ou limpa as credenciais conforme o checkbox "lembrar"
+            try{
+                const lembrar=document.getElementById('lembrarLogin');
+                if(lembrar && lembrar.checked){
+                    localStorage.setItem('sd_login_email', email);
+                    localStorage.setItem('sd_login_senha', btoa(senha)); // ofuscação leve
+                    localStorage.setItem('sd_login_lembrar', '1');
+                }else{
+                    localStorage.removeItem('sd_login_email');
+                    localStorage.removeItem('sd_login_senha');
+                    localStorage.removeItem('sd_login_lembrar');
+                }
+            }catch(e){}
             state.db_id=data.db_id;state.usuario_id=data.id;state.nome=data.nome;state.cargo=data.cargo;
             state.nome_loja=data.nome_loja||'Minha Loja';state.cnpj=data.cnpj||'';state.cnpj_dados=data.cnpj_dados||{};
             state.plano_ativo=data.plano_ativo!==false;
@@ -2711,13 +2727,31 @@ document.addEventListener('DOMContentLoaded',function(){
             }else{
                 document.getElementById('authPage').classList.remove('hidden');
                 document.getElementById('app').classList.remove('active');
+                preencherLoginSalvo();
             }
         })
         .catch(()=>{
             document.getElementById('authPage').classList.remove('hidden');
             document.getElementById('app').classList.remove('active');
+            preencherLoginSalvo();
         });
 });
+
+function preencherLoginSalvo(){
+    try{
+        if(localStorage.getItem('sd_login_lembrar')==='1'){
+            const email=localStorage.getItem('sd_login_email')||'';
+            const senhaB64=localStorage.getItem('sd_login_senha')||'';
+            const senha=senhaB64?atob(senhaB64):'';
+            const cE=document.getElementById('loginEmail');
+            const cS=document.getElementById('loginSenha');
+            const cL=document.getElementById('lembrarLogin');
+            if(cE) cE.value=email;
+            if(cS) cS.value=senha;
+            if(cL) cL.checked=true;
+        }
+    }catch(e){}
+}
 
 if(!String.prototype.center){
     String.prototype.center=function(len){
