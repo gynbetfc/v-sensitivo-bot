@@ -2205,7 +2205,8 @@ async function removerBgVendas(){
     }catch(e){}
     showToast('🗑️ Fundo removido','info');
 }
-async function carregarBgVendasSalvo(){
+async function carregarBgVendasSalvo(tentativa){
+    tentativa=tentativa||1;
     try{
         const res=await fetch('/api/loja/background',{credentials:'include',cache:'no-store'});
         const data=await res.json();
@@ -2218,8 +2219,13 @@ async function carregarBgVendasSalvo(){
             const lbl=document.getElementById('bgOpacidadeLabel');
             if(lbl) lbl.textContent=op;
             aplicarBgVendas(data.img, op);
+        }else if(tentativa<3){
+            // Ainda não veio (sync do Firebase pode não ter terminado): tenta de novo
+            setTimeout(()=>carregarBgVendasSalvo(tentativa+1), 4000);
         }
-    }catch(e){}
+    }catch(e){
+        if(tentativa<3) setTimeout(()=>carregarBgVendasSalvo(tentativa+1), 4000);
+    }
 }
 
 // ============================================================
