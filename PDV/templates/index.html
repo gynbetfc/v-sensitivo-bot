@@ -1269,12 +1269,15 @@ async function fazerLogin(){
         const res=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({email,senha})});
         const data=await res.json();
         if(data.success){
-            // Salva ou limpa as credenciais conforme o checkbox "lembrar"
+            // Salva ou limpa as credenciais no servidor (persiste no webview também)
             try{
                 const lembrar=document.getElementById('lembrarLogin');
-                if(lembrar && lembrar.checked){
+                const querLembrar = lembrar && lembrar.checked;
+                fetch('/api/login/lembrar',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({email:email, senha:senha, lembrar:querLembrar})}).catch(()=>{});
+                // também no localStorage (fallback rápido no navegador comum)
+                if(querLembrar){
                     localStorage.setItem('sd_login_email', email);
-                    localStorage.setItem('sd_login_senha', btoa(senha)); // ofuscação leve
+                    localStorage.setItem('sd_login_senha', btoa(senha));
                     localStorage.setItem('sd_login_lembrar', '1');
                 }else{
                     localStorage.removeItem('sd_login_email');
@@ -2738,6 +2741,24 @@ document.addEventListener('DOMContentLoaded',function(){
 });
 
 function preencherLoginSalvo(){
+    // 1) tenta o servidor (funciona no webview, onde o localStorage some ao fechar)
+    fetch('/api/login/lembrar',{credentials:'include',cache:'no-store'})
+        .then(r=>r.json())
+        .then(d=>{
+            if(d.success && d.email){
+                const cE=document.getElementById('loginEmail');
+                const cS=document.getElementById('loginSenha');
+                const cL=document.getElementById('lembrarLogin');
+                if(cE) cE.value=d.email;
+                if(cS) cS.value=d.senha||'';
+                if(cL) cL.checked=true;
+                return;
+            }
+            _preencherLoginLocal();
+        })
+        .catch(()=>_preencherLoginLocal());
+}
+function _preencherLoginLocal(){
     try{
         if(localStorage.getItem('sd_login_lembrar')==='1'){
             const email=localStorage.getItem('sd_login_email')||'';
