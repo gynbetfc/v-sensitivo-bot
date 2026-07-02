@@ -252,6 +252,7 @@
         .estoque-table td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.03);cursor:pointer}
         .estoque-table tr:hover td{background:rgba(34,197,94,.05)}
         .estoque-baixo{color:var(--red)!important;font-weight:600}.estoque-medio{color:var(--orange)!important}.estoque-alto{color:var(--green)!important}
+        .linha-estoque.linha-ativa{background:rgba(34,197,94,.15)!important;outline:1px solid var(--green)}
 
         .planos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:16px}
         .plano-card{background:var(--bg-card);border-radius:var(--radius);padding:20px;border:2px solid var(--border-color);transition:var(--transition);position:relative;text-align:center}
@@ -714,7 +715,7 @@
                 </div>
                 <div class="card">
                     <h3><i class="fas fa-list"></i> Lista de Produtos</h3>
-                    <div class="input-group"><label>Buscar</label><input type="text" id="buscaEstoque" placeholder="Nome ou código..." oninput="carregarProdutos()"></div>
+                    <div class="input-group"><label>Buscar</label><input type="text" id="buscaEstoque" placeholder="Nome ou código..." oninput="carregarProdutos()" onkeydown="navegarEstoque(event)"></div>
                     <div class="estoque-wrapper">
                         <table class="estoque-table">
                             <thead><tr><th>Código</th><th>Nome</th><th style="text-align:right;">Preço</th><th style="text-align:right;">Custo</th><th style="text-align:center;">Margem</th><th style="text-align:center;">Est.</th></tr></thead>
@@ -803,6 +804,13 @@
                         <p style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;"><strong>Servidor:</strong> <span id="servidorIdConfig" style="font-family:monospace;">---</span></p>
                     </div>
                     <div style="margin-top:12px;"><button onclick="sincronizarAgora(true)" style="width:100%;padding:8px;background:rgba(59,130,246,.15);color:var(--blue);border:1px solid var(--blue);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">🔄 Sincronizar Agora</button></div>
+                    <div style="margin-top:14px;border-top:1px solid var(--border-color);padding-top:10px;">
+                        <div id="devStatus" style="font-size:11px;color:var(--text-muted);cursor:pointer;" onclick="toggleAreaDev()">🛠️ modo desenvolvedor</div>
+                        <div id="devArea" style="display:none;margin-top:8px;">
+                            <input type="password" id="devSenha" placeholder="senha do modo dev" style="width:100%;font-size:12px;padding:6px;margin-bottom:6px;" onkeydown="if(event.key==='Enter')ativarModoDev()">
+                            <button onclick="ativarModoDev()" style="width:100%;padding:6px;background:rgba(168,85,247,.15);color:var(--purple);border:1px solid var(--purple);border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">Ativar / Desativar</button>
+                        </div>
+                    </div>
                 </div>
                 <div class="card">
                     <h3><i class="fas fa-universal-access" style="color:var(--blue);"></i> Acessibilidade</h3>
@@ -1358,6 +1366,7 @@ async function fazerLogin(){
             setTimeout(verificarStatusPlano, 500);
             carregarBgVendasSalvo();
             carregarEscalaSalva();
+            checarModoDev();
             showToast('👋 Bem-vindo, '+data.nome+'!','success');
         }else{
             msg.className='msg error';msg.textContent=data.error||'Erro ao fazer login.';msg.style.display='block';
@@ -1476,6 +1485,34 @@ async function carregarKitsParaVenda(){
     }catch(e){ state.kits=state.kits||[]; }
 }
 
+let estoqueNavIndex=-1;
+function navegarEstoque(e){
+    const tbody=document.getElementById('tabelaEstoque');
+    if(!tbody)return;
+    const linhas=tbody.querySelectorAll('.linha-estoque');
+    if(!linhas.length)return;
+    if(e.key==='ArrowDown'){
+        e.preventDefault();
+        estoqueNavIndex=Math.min(estoqueNavIndex+1, linhas.length-1);
+    }else if(e.key==='ArrowUp'){
+        e.preventDefault();
+        estoqueNavIndex=Math.max(estoqueNavIndex-1, 0);
+    }else if(e.key==='Enter'){
+        // Enter seleciona a linha destacada para edição
+        if(estoqueNavIndex>=0 && linhas[estoqueNavIndex]){
+            e.preventDefault();
+            const cod=linhas[estoqueNavIndex].dataset.codigo;
+            if(cod) selecionarProdutoParaEdicao(cod);
+            return;
+        }
+        return;
+    }else{
+        return;
+    }
+    linhas.forEach((l,i)=>l.classList.toggle('linha-ativa', i===estoqueNavIndex));
+    if(linhas[estoqueNavIndex]) linhas[estoqueNavIndex].scrollIntoView({block:'nearest'});
+}
+
 async function carregarProdutos(){
     try{
         const elBusca=document.getElementById('buscaEstoque');
@@ -1487,10 +1524,10 @@ async function carregarProdutos(){
             const tbody=document.getElementById('tabelaEstoque');
             if(state.produtos.length===0){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:16px;">Nenhum produto</td></tr>';return;}
             let html='';
-            state.produtos.forEach(p=>{
+            state.produtos.forEach((p,idx)=>{
                 const cls=p.estoque<=0?'estoque-baixo':p.estoque<=5?'estoque-medio':'estoque-alto';
                 const margem = p.preco > 0 ? ((p.preco - p.custo) / p.preco * 100) : 0;
-                html+=`<tr onclick="selecionarProdutoParaEdicao('${p.codigo}')">
+                html+=`<tr class="linha-estoque" data-idx="${idx}" data-codigo="${p.codigo}" onclick="selecionarProdutoParaEdicao('${p.codigo}')">
                     <td style="font-size:11px;color:var(--text-muted);">${p.codigo}</td>
                     <td>${p.nome}</td>
                     <td style="text-align:right;">R$ ${p.preco.toFixed(2)}</td>
@@ -1500,6 +1537,7 @@ async function carregarProdutos(){
                 </tr>`;
             });
             tbody.innerHTML=html;
+            estoqueNavIndex=-1; // reseta a navegação a cada recarga
         }
     }catch(e){console.error(e);}
 }
@@ -2850,6 +2888,45 @@ async function sincronizarAgora(show){
         document.getElementById('statusSincronizacao').textContent='⚠️ Offline';
         document.getElementById('statusSincronizacao').style.background='rgba(239,68,68,.15)';
     }
+}
+
+// ============================================================
+// MODO DESENVOLVEDOR
+// ============================================================
+function toggleAreaDev(){
+    const a=document.getElementById('devArea');
+    if(a) a.style.display = a.style.display==='none' ? 'block' : 'none';
+}
+async function ativarModoDev(){
+    const senha=document.getElementById('devSenha').value;
+    if(!senha){showToast('Digite a senha','warning');return;}
+    try{
+        const res=await fetch('/api/dev/toggle',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({senha})});
+        const data=await res.json();
+        if(data.success){
+            document.getElementById('devSenha').value='';
+            if(data.ativo){
+                showToast('🛠️ Modo desenvolvedor ATIVADO! Recarregue (Ctrl+F5) e tudo estará liberado.','success');
+                document.getElementById('devStatus').innerHTML='🛠️ modo desenvolvedor: <span style="color:var(--green);font-weight:700;">ATIVO</span>';
+            }else{
+                showToast('Modo desenvolvedor desativado.','info');
+                document.getElementById('devStatus').innerHTML='🛠️ modo desenvolvedor';
+            }
+            verificarStatusPlano();carregarProdutos();
+        }else{
+            showToast('❌ '+(data.error||'Erro'),'error');
+        }
+    }catch(e){showToast('❌ Erro ao ativar modo dev','error');}
+}
+async function checarModoDev(){
+    try{
+        const res=await fetch('/api/dev/status',{credentials:'include'});
+        const data=await res.json();
+        if(data.success && data.ativo){
+            const s=document.getElementById('devStatus');
+            if(s) s.innerHTML='🛠️ modo desenvolvedor: <span style="color:var(--green);font-weight:700;">ATIVO</span>';
+        }
+    }catch(e){}
 }
 
 // ============================================================
