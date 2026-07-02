@@ -963,7 +963,12 @@
         </div>
 
         <div style="background:var(--bg-primary);border-radius:10px;padding:14px;margin-bottom:14px;">
-            <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">✨ O QUE VOCÊ RECEBE</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">📋 O QUE ESTE PLANO INCLUI</div>
+            <div style="font-size:13px;color:var(--text-secondary);line-height:1.8;" id="confPlanoFuncionalidades"></div>
+        </div>
+
+        <div style="background:var(--bg-primary);border-radius:10px;padding:14px;margin-bottom:14px;">
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">✨ E MAIS</div>
             <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;">
                 ⚡ Sistema sempre atualizado automaticamente<br>
                 ☁️ Seus dados sincronizados na nuvem<br>
@@ -1576,8 +1581,8 @@ document.addEventListener('DOMContentLoaded',function(){
         if(!container.classList.contains('active'))return;
         const items=container.querySelectorAll('.result-item');
         if(!items.length)return;
-        if(e.key==='ArrowDown'){e.preventDefault();const next=Math.min(kitSearchIndex+1,items.length-1);items.forEach((el,i)=>el.classList.toggle('active',i===next));kitSearchIndex=next;}
-        else if(e.key==='ArrowUp'){e.preventDefault();const prev=Math.max(kitSearchIndex-1,0);items.forEach((el,i)=>el.classList.toggle('active',i===prev));kitSearchIndex=prev;}
+        if(e.key==='ArrowDown'){e.preventDefault();const next=Math.min(kitSearchIndex+1,items.length-1);items.forEach((el,i)=>el.classList.toggle('active',i===next));kitSearchIndex=next;if(items[next])items[next].scrollIntoView({block:'nearest'});}
+        else if(e.key==='ArrowUp'){e.preventDefault();const prev=Math.max(kitSearchIndex-1,0);items.forEach((el,i)=>el.classList.toggle('active',i===prev));kitSearchIndex=prev;if(items[prev])items[prev].scrollIntoView({block:'nearest'});}
         else if(e.key==='Enter'){e.preventDefault();const active=container.querySelector('.result-item.active')||items[0];if(active&&active.dataset.codigo){adicionarItemKit(active.dataset.codigo);}}
     });
 });
@@ -1938,8 +1943,8 @@ document.getElementById('codigoInput').addEventListener('keydown',function(e){
     const dropdownAberto=results.classList.contains('active');
     const items=results.querySelectorAll('.result-item');
     if(dropdownAberto && items.length){
-        if(e.key==='ArrowDown'){e.preventDefault();const next=Math.min(state.searchIndex+1,items.length-1);items.forEach((el,i)=>el.classList.toggle('active',i===next));state.searchIndex=next;return;}
-        if(e.key==='ArrowUp'){e.preventDefault();const prev=Math.max(state.searchIndex-1,0);items.forEach((el,i)=>el.classList.toggle('active',i===prev));state.searchIndex=prev;return;}
+        if(e.key==='ArrowDown'){e.preventDefault();const next=Math.min(state.searchIndex+1,items.length-1);items.forEach((el,i)=>el.classList.toggle('active',i===next));state.searchIndex=next;if(items[next])items[next].scrollIntoView({block:'nearest'});return;}
+        if(e.key==='ArrowUp'){e.preventDefault();const prev=Math.max(state.searchIndex-1,0);items.forEach((el,i)=>el.classList.toggle('active',i===prev));state.searchIndex=prev;if(items[prev])items[prev].scrollIntoView({block:'nearest'});return;}
     }
     if(e.key==='Enter'){
         e.preventDefault();
@@ -2589,6 +2594,19 @@ function abrirConfirmacao(planoId, meses){
     document.getElementById('confPlanoValor').textContent='R$ '+dur.preco_total.toFixed(2);
     document.getElementById('confPlanoDuracao').textContent=dur.label+(meses>1?` (equivale a R$ ${dur.preco_mensal_equivalente.toFixed(2)}/mês)`:'');
     document.getElementById('confPlanoEconomia').textContent=dur.economia>0?`💰 Você economiza R$ ${dur.economia.toFixed(2)} nesse plano`:'';
+    // Monta a lista do que ESTE plano oferece (funcionalidades + limites)
+    const perm=plano.permissoes||{};
+    let itens=['✅ 🛒 Vendas e Caixa (PDV completo)'];
+    if(perm.clientes) itens.push('✅ 👥 Cadastro de Clientes');
+    if(perm.fiado) itens.push('✅ 📝 Controle de Fiado');
+    if(perm.kit_combo) itens.push('✅ 📦 Kits, Combos e Promoções');
+    if(perm.dashboard) itens.push('✅ 📊 Dashboard e Relatórios');
+    if(perm.busca_estoque) itens.push('✅ 🔍 Busca Inteligente de Produtos');
+    if(perm.margem) itens.push('✅ 💰 Controle de Margem de Lucro');
+    const prod = plano.produtos===-1 ? 'ilimitados' : plano.produtos;
+    itens.push(`✅ 📦 Até ${prod} produtos cadastrados`);
+    itens.push(`✅ 👤 ${plano.usuarios} usuário${plano.usuarios>1?'s':''} (operadores)`);
+    document.getElementById('confPlanoFuncionalidades').innerHTML=itens.join('<br>');
     document.getElementById('modalConfirmacao').classList.add('active');
 }
 function fecharModalConfirmacao(){
