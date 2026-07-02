@@ -2658,15 +2658,30 @@ def criar_pix():
             # TRAVA: o teste só pode ser ativado UMA vez por conta (evita renovação infinita)
             if plano.is_teste:
                 ja_usou = False
+                # 1) Verifica no banco local
                 with get_db_context() as conn:
                     cur = conn.execute("SELECT valor FROM config WHERE chave='teste_usado'")
                     row = cur.fetchone()
                     if row and str(row[0]) == '1':
                         ja_usou = True
+                # 2) Verifica no Firebase (fonte de verdade entre dispositivos)
+                firebase_confirmou = False
                 if not ja_usou:
-                    dados_fb = carregar_usuario_firebase(db_id, timeout=3)
-                    if dados_fb and dados_fb.get('teste_usado'):
-                        ja_usou = True
+                    dados_fb = carregar_usuario_firebase(db_id, timeout=5)
+                    if dados_fb is not None:
+                        firebase_confirmou = True
+                        if dados_fb.get('teste_usado'):
+                            ja_usou = True
+                            # espelha no local para acelerar as próximas checagens
+                            try:
+                                with get_db_context() as conn:
+                                    conn.execute("INSERT OR REPLACE INTO config (chave, valor) VALUES ('teste_usado', '1')")
+                            except Exception:
+                                pass
+                # 3) FAIL-CLOSED: se o local não confirma E não conseguimos falar com o Firebase
+                #    (ex: internet caiu), NÃO liberamos o teste — evita renovação infinita offline.
+                if not ja_usou and not firebase_confirmou:
+                    return jsonify({"success": False, "error": "Não foi possível validar o período de teste sem internet. Conecte-se à internet e tente novamente."}), 403
                 if ja_usou:
                     return jsonify({"success": False, "error": "O período de teste já foi utilizado nesta conta. Escolha um plano pago para continuar."}), 403
             pix_id = f"gratis_{uuid.uuid4().hex}"
