@@ -1,4 +1,15 @@
 # pdv.py - SMART PDV v11.0.0 - VERSÃO COM PLANOS REVISADOS
+"""
+🏪 SMART PDV v11.0.0
+
+🔹 NOVIDADES v10.3:
+- 15 DIAS DE TESTE GRÁTIS (EMPRESARIAL COMPLETO) ✅
+- NOVOS VALORES DE PLANOS (R$ 29,99 a R$ 129,99) ✅
+- CORREÇÃO DA REIMPRESSÃO DE CUPONS ✅
+- CAMPO CÓDIGO DE BARRAS RESTAURADO ✅
+- FIADO BLOQUEADO PARA PLANOS SEM CLIENTES ✅
+- SISTEMA DE CLIENTES CORRIGIDO ✅
+"""
 
 import sys
 import os
@@ -190,7 +201,7 @@ PLANOS: List[Plano] = [
         'fiado': True,
         'kit_combo': True,
     }),
-    Plano(4, 10, 129.99, '👑 EMPRESARIAL', 30, -1, {
+    Plano(4, 10, 149.99, '👑 EMPRESARIAL', 30, -1, {
         'clientes': True,
         'dashboard': True,
         'busca_estoque': True,
@@ -208,6 +219,24 @@ PLANOS: List[Plano] = [
         'kit_combo': True,
     }, is_teste=True),
 ]
+
+# ============================================================
+# DURAÇÕES DOS PLANOS (com desconto progressivo)
+# ============================================================
+DURACOES_PLANO = [
+    {"meses": 1,  "dias": 30,  "desconto": 0.00, "label": "Mensal"},
+    {"meses": 3,  "dias": 90,  "desconto": 0.10, "label": "3 meses"},
+    {"meses": 6,  "dias": 180, "desconto": 0.20, "label": "6 meses"},
+    {"meses": 12, "dias": 365, "desconto": 0.30, "label": "1 ano"},
+]
+
+def calcular_preco_duracao(preco_mensal: float, meses: int):
+    """Retorna (preco_total, dias, desconto, economia) para uma duração."""
+    dur = next((d for d in DURACOES_PLANO if d["meses"] == meses), DURACOES_PLANO[0])
+    preco_cheio = preco_mensal * meses
+    preco_final = preco_cheio * (1 - dur["desconto"])
+    economia = preco_cheio - preco_final
+    return round(preco_final, 2), dur["dias"], dur["desconto"], round(economia, 2)
 
 pagamentos_pendentes: Dict[str, Dict] = {}
 rate_limits: Dict[str, List[float]] = {}
@@ -1434,16 +1463,13 @@ def gerar_texto_cupom(dados: Dict) -> str:
         linhas.append(f"{str(idx).ljust(3)}{nome.ljust(25)}{str(qtd).rjust(4)}{f'R$ {total_item:.2f}'.rjust(16)}")
         if qtd > 1 and preco_unit:
             linhas.append(f"   R$ {preco_unit:.2f} x {qtd}")
-        if lucro_item > 0:
-            linhas.append(f"   Lucro: R$ {lucro_item:.2f}".ljust(40))
+        # O lucro NÃO é impresso no cupom (informação interna)
 
     linhas.append('-' * L)
     linhas.append(f"{'SUBTOTAL:'.ljust(32)}R$ {subtotal:.2f}".rjust(L))
     if desconto > 0:
         linhas.append(f"{'DESCONTO:'.ljust(32)}R$ {desconto:.2f}".rjust(L))
     linhas.append(f"{'TOTAL:'.ljust(32)}R$ {total:.2f}".rjust(L))
-    if lucro_total > 0:
-        linhas.append(f"{'LUCRO:'.ljust(32)}R$ {lucro_total:.2f}".rjust(L))
     linhas.append('-' * L)
     linhas.append(f"PAGAMENTO: {metodo}".center(L))
     if recebido > 0:
@@ -1929,6 +1955,9 @@ def save_produto():
                 ultima_atualizacao=excluded.ultima_atualizacao""",
                 (data['codigo'], data['nome'], preco, custo, margem, data.get('estoque', 0),
                 data.get('categoria', 'Geral'), data.get('imagem_url', ''), db_id, get_timestamp()))
+            # Remove qualquer tombstone (exclusão) deste código: o produto existe de novo,
+            # então o sync NÃO deve apagá-lo. (Corrige "salvou mas some da lista".)
+            conn.execute("DELETE FROM exclusoes WHERE tipo='produto' AND item_id=? AND db_id=?", (data['codigo'], db_id))
         sincronizar_automatico(db_id)
         return jsonify({"success": True, "message": "Produto salvo"})
     except Exception as e:
@@ -2106,6 +2135,7 @@ def save_cliente():
                 conn.execute("""UPDATE clientes SET nome=?, telefone=?, email=?, divida=?, ultima_atualizacao=?
                     WHERE id=? AND db_id=?""", (data['nome'], data.get('telefone', ''), data.get('email', ''),
                     data.get('divida', 0), get_timestamp(), data['id'], db_id))
+                conn.execute("DELETE FROM exclusoes WHERE tipo='cliente' AND item_id=? AND db_id=?", (str(data['id']), db_id))
             else:
                 conn.execute("""INSERT INTO clientes (nome, telefone, email, divida, db_id, ultima_atualizacao)
                     VALUES (?, ?, ?, ?, ?, ?)""", (data['nome'], data.get('telefone', ''), data.get('email', ''),
@@ -2570,7 +2600,25 @@ def get_estatisticas():
 # ============================================================
 @app.route('/api/planos')
 def get_planos():
-    return jsonify({"success": True, "planos": [asdict(p) for p in PLANOS]})
+    planos_out = []
+    for p in PLANOS:
+        pd = asdict(p)
+        if not p.is_teste and p.preco > 0:
+            duracoes = []
+            for dur in DURACOES_PLANO:
+                preco_final, dias, desconto, economia = calcular_preco_duracao(p.preco, dur["meses"])
+                duracoes.append({
+                    "meses": dur["meses"],
+                    "label": dur["label"],
+                    "dias": dias,
+                    "desconto_pct": int(dur["desconto"] * 100),
+                    "preco_total": preco_final,
+                    "preco_mensal_equivalente": round(preco_final / dur["meses"], 2),
+                    "economia": economia,
+                })
+            pd["duracoes"] = duracoes
+        planos_out.append(pd)
+    return jsonify({"success": True, "planos": planos_out})
 
 @app.route('/api/plano/status')
 def get_plano_status():
@@ -2642,6 +2690,12 @@ def criar_pix():
         if not plano:
             return jsonify({"success": False, "error": "Plano inválido"})
 
+        # Duração escolhida (em meses): 1, 3, 6 ou 12. Padrão: 1 mês.
+        meses = int(data.get('duracao', data.get('meses', 1)) or 1)
+        if meses not in (1, 3, 6, 12):
+            meses = 1
+        preco_final, dias_plano, desconto, economia = calcular_preco_duracao(plano.preco, meses)
+
         # Plano gratuito/teste: não existe cobrança real, ativa direto sem chamar o Mercado Pago
         if plano.is_teste or plano.preco <= 0:
             # TRAVA: o teste só pode ser ativado UMA vez por conta (evita renovação infinita)
@@ -2689,13 +2743,15 @@ def criar_pix():
                     logger.error(f"⚠️ Erro ao marcar teste usado: {e}")
             return jsonify({"success": True, "pix_id": pix_id, "gratis": True, "valor": 0, "plano": asdict(plano)})
 
-        resultado_pix = criar_pix_mercadopago(float(plano.preco), f"SMART PDV - {plano.nome}")
+        resultado_pix = criar_pix_mercadopago(float(preco_final), f"SMART PDV - {plano.nome} ({meses}m)")
         if resultado_pix:
             pix_id = resultado_pix['pix_id']
-            pagamentos_pendentes[pix_id] = {'db_id': db_id, 'plano_id': plano_id, 'valor': plano.preco, 'pago': False,
-                'criado_em': get_timestamp(), 'expira_em': (datetime.now() + timedelta(days=plano.dias)).isoformat()}
+            pagamentos_pendentes[pix_id] = {'db_id': db_id, 'plano_id': plano_id, 'valor': preco_final, 'pago': False,
+                'meses': meses, 'dias': dias_plano,
+                'criado_em': get_timestamp(), 'expira_em': (datetime.now() + timedelta(days=dias_plano)).isoformat()}
             return jsonify({"success": True, "pix_id": pix_id, "qr_code": resultado_pix['qr_code'],
-                "qr_code_base64": resultado_pix['qr_code_base64'], "valor": plano.preco, "plano": asdict(plano)})
+                "qr_code_base64": resultado_pix['qr_code_base64'], "valor": preco_final, "meses": meses,
+                "economia": economia, "plano": asdict(plano)})
         return jsonify({"success": False, "error": "Erro ao gerar PIX"})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
@@ -2770,7 +2826,9 @@ def _confirmar_pagamento_plano(pix_id: str) -> None:
     plano = next((p for p in PLANOS if p.id == plano_id), None)
     if not plano:
         return
-    expira_em = (datetime.now() + timedelta(days=plano.dias)).isoformat()
+    # Usa os dias da duração comprada (1, 3, 6 ou 12 meses); senão, padrão do plano
+    dias = info.get('dias') or plano.dias
+    expira_em = (datetime.now() + timedelta(days=dias)).isoformat()
     plano_obj = PlanoSincronizado(db_id, CHAVE_SECRETA_PLANO)
     resultado = plano_obj.renovar_plano(expira_em, plano_id)
     if resultado.get('success'):
@@ -2933,6 +2991,19 @@ def get_background():
         db_id = get_db_id()
         if not db_id:
             return jsonify({"success": False, "error": "Não autenticado"}), 401
+        # Firebase é a fonte de verdade: se ele responder, a imagem dele vence
+        # e atualizamos o local. Assim todos os dispositivos ficam iguais.
+        try:
+            dados = carregar_usuario_firebase(db_id, timeout=4)
+            if dados is not None and dados.get('bg_vendas_img') is not None:
+                img_fb = dados.get('bg_vendas_img', '')
+                opac_fb = dados.get('bg_vendas_opacidade', 50)
+                with get_db_context() as conn:
+                    conn.execute("UPDATE users SET bg_vendas_img=?, bg_vendas_opacidade=? WHERE db_id=?", (img_fb, opac_fb, db_id))
+                return jsonify({"success": True, "img": img_fb, "opacidade": opac_fb})
+        except Exception:
+            pass
+        # Offline: usa o valor local
         img, opac = '', 50
         with get_db_context() as conn:
             cursor = conn.execute("SELECT bg_vendas_img, bg_vendas_opacidade FROM users WHERE db_id=? LIMIT 1", (db_id,))
@@ -2940,17 +3011,6 @@ def get_background():
             if row:
                 img = row[0] or ''
                 opac = row[1] if row[1] is not None else 50
-        # Se não tem local, tenta o Firebase (ex: primeiro acesso em outro dispositivo)
-        if not img:
-            try:
-                dados = carregar_usuario_firebase(db_id, timeout=4)
-                if dados and dados.get('bg_vendas_img'):
-                    img = dados.get('bg_vendas_img', '')
-                    opac = dados.get('bg_vendas_opacidade', 50)
-                    with get_db_context() as conn:
-                        conn.execute("UPDATE users SET bg_vendas_img=?, bg_vendas_opacidade=? WHERE db_id=?", (img, opac, db_id))
-            except Exception:
-                pass
         return jsonify({"success": True, "img": img, "opacidade": opac})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
@@ -2982,6 +3042,18 @@ def get_escala():
         db_id = get_db_id()
         if not db_id:
             return jsonify({"success": False, "error": "Não autenticado"}), 401
+        # Firebase é a fonte de verdade (mesma conta, vários dispositivos).
+        # Se ele responder, usamos o valor dele e atualizamos o local.
+        try:
+            dados = carregar_usuario_firebase(db_id, timeout=4)
+            if dados is not None and dados.get('escala_sistema'):
+                escala_fb = int(dados.get('escala_sistema'))
+                with get_db_context() as conn:
+                    conn.execute("UPDATE users SET escala_sistema=? WHERE db_id=?", (escala_fb, db_id))
+                return jsonify({"success": True, "escala": escala_fb})
+        except Exception:
+            pass
+        # Offline: usa o valor local
         escala = 100
         with get_db_context() as conn:
             cursor = conn.execute("SELECT escala_sistema FROM users WHERE db_id=? LIMIT 1", (db_id,))
