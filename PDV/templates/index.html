@@ -418,6 +418,8 @@
         }
 
         .pix-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);z-index:9999;justify-content:center;align-items:center;padding:12px}
+        .duracao-opcao{background:var(--bg-primary);border:2px solid var(--border-color);border-radius:12px;padding:14px 16px;cursor:pointer;transition:var(--transition)}
+        .duracao-opcao:hover{border-color:var(--green);transform:translateY(-2px)}
         .pix-modal.active{display:flex}
         .pix-modal .modal{background:var(--bg-card);border-radius:var(--radius);padding:20px;max-width:380px;width:100%;border:1px solid var(--border-color);animation:fadeUp .3s ease;text-align:center}
         .pix-info .valor{font-size:28px;font-weight:700;color:var(--green);margin-bottom:8px}
@@ -929,6 +931,15 @@
 <!-- PIX MODAL -->
 <div class="pix-modal" id="modalPix">
     <div class="modal"><h3 style="margin-bottom:12px;"><i class="fas fa-qrcode" style="color:var(--green);"></i> Pagamento PIX</h3><div id="pixContent"></div></div>
+</div>
+
+<div class="pix-modal" id="modalDuracoes">
+    <div class="modal">
+        <h3 style="margin-bottom:4px;"><i class="fas fa-crown" style="color:var(--green);"></i> <span id="modalDuracoesTitulo"></span></h3>
+        <p style="color:var(--text-secondary);font-size:13px;margin-bottom:14px;">Escolha por quanto tempo quer assinar. Quanto maior o período, maior o desconto!</p>
+        <div id="modalDuracoesOpcoes" style="display:flex;flex-direction:column;gap:10px;"></div>
+        <button class="btn-cancelar" onclick="fecharModalDuracoes()" style="margin-top:14px;">Fechar</button>
+    </div>
 </div>
 
 <script>
@@ -2114,13 +2125,13 @@ function mostrarCupom(dados){
     document.getElementById('cupomSubtotal').textContent='R$ '+dados.subtotal.toFixed(2);
     document.getElementById('cupomDesconto').textContent='R$ '+dados.desconto.toFixed(2);
     document.getElementById('cupomTotal').textContent='R$ '+dados.total.toFixed(2);
-    document.getElementById('cupomLucro').textContent='R$ '+(dados.lucro_total||0).toFixed(2);
     document.getElementById('cupomMetodo').textContent=dados.metodo||'Dinheiro';
     document.getElementById('cupomRecebido').textContent=dados.recebido?'R$ '+dados.recebido.toFixed(2):'—';
     document.getElementById('cupomTroco').textContent=dados.troco?'R$ '+dados.troco.toFixed(2):'—';
     document.getElementById('cupomCliente').textContent=dados.cliente||'—';
     document.getElementById('cupomOperador').textContent=dados.usuario||'—';
-    document.getElementById('cupomLucroLinha').style.display=(dados.lucro_total||0)>0?'flex':'none';
+    // O lucro NUNCA aparece no cupom (informação interna, não deve ir para o cliente)
+    document.getElementById('cupomLucroLinha').style.display='none';
     
     state.cupomEscolha='imprimir';
     document.querySelectorAll('.cupom-opt').forEach(b=>b.classList.remove('active'));
@@ -2269,12 +2280,26 @@ function ajustarOpacidadeBg(val){
 function aplicarBgVendas(url, opacidadeOverlay){
     const card=document.getElementById('cardProduto');
     if(!card)return;
-    // opacidadeOverlay = 0..100 (quanto o quadrado escuro cobre a foto)
     const op=(parseInt(opacidadeOverlay));
     const opFinal=(isNaN(op)?50:op)/100;
     card.style.setProperty('--bg-vendas-img', `url('${url}')`);
     card.style.setProperty('--bg-vendas-op', opFinal);
     card.classList.add('com-bg');
+    // Ajusta a altura do card conforme a PROPORÇÃO da imagem:
+    // imagem mais alta -> card mais alto; mais larga -> card mais baixo.
+    // A largura do card é fixa (ele fica na coluna), então mexemos só na altura.
+    try{
+        const im=new Image();
+        im.onload=()=>{
+            const prop = im.naturalHeight / im.naturalWidth; // >1 = vertical, <1 = horizontal
+            const larguraRef = card.clientWidth || 360;
+            // altura proporcional, limitada entre 240px e 620px para não exagerar
+            let altura = Math.round(larguraRef * prop);
+            altura = Math.max(240, Math.min(620, altura));
+            card.style.minHeight = altura + 'px';
+        };
+        im.src=url;
+    }catch(e){}
 }
 async function salvarBgVendas(){
     const url=document.getElementById('bgVendasUrl').value.trim();
@@ -2446,6 +2471,7 @@ async function carregarPlanos(){
         const res=await fetch('/api/planos',{credentials:'include'});
         const data=await res.json();
         if(data.success){
+            window._planosCache = data.planos; // guarda para o modal
             const grid=document.getElementById('planosGrid');
             let html='';
             data.planos.forEach(p=>{
@@ -2458,23 +2484,52 @@ async function carregarPlanos(){
                 if(permissoes.dashboard) perms.push('📊 Dashboard');
                 if(permissoes.busca_estoque) perms.push('🔍 Busca Estoque');
                 if(permissoes.margem) perms.push('💰 Margem de Lucro');
-                const permsText = perms.join(' • ');
                 const isTeste = p.is_teste || false;
                 const badgeTeste = isTeste ? '<span class="badge-teste">🎁 TESTE</span>' : '';
+                // NÃO mostra preço no card: mostra o que o plano OFERECE. O preço aparece no modal.
                 html+=`<div class="plano-card">
-                    ${isTeste ? '<div class="plano-teste">15 dias grátis</div>' : `<div class="plano-teste">${p.dias} dias</div>`}
+                    ${isTeste ? '<div class="plano-teste">15 dias grátis</div>' : `<div class="plano-teste">a partir de ${p.usuarios} usuário${p.usuarios>1?'s':''}</div>`}
                     <div class="nome">${p.nome} ${badgeTeste}</div>
-                    <div class="preco">${p.preco === 0 ? 'GRÁTIS' : `R$ ${p.preco.toFixed(2)}`} ${p.preco > 0 ? '<small>/mês</small>' : ''}</div>
-                    <div class="desc">${p.usuarios} usuário${p.usuarios>1?'s':''}</div>
-                    <div class="detalhes"><span class="limite-produtos">📦 ${produtos} produtos</span></div>
+                    <div class="detalhes"><span class="limite-produtos">📦 ${produtos} produtos • 👤 ${p.usuarios} usuário${p.usuarios>1?'s':''}</span></div>
                     <div class="plano-features">${perms.map(f=>`<div class="feat-line">${f}</div>`).join('')}</div>
-                    ${p.preco > 0 ? `<button class="btn-assinar" onclick="assinarPlano(${p.id})">💳 Assinar</button>` : `<button class="btn-assinar" onclick="assinarPlano(${p.id})" style="background:var(--orange);">🎁 Iniciar Teste</button>`}
+                    ${isTeste
+                        ? `<button class="btn-assinar" onclick="assinarPlano(${p.id},1)" style="background:var(--orange);">🎁 Iniciar Teste</button>`
+                        : `<button class="btn-assinar" onclick="abrirModalDuracoes(${p.id})">Ver planos e preços →</button>`}
                 </div>`;
             });
             grid.innerHTML=html;
             carregarStatusConta();
         }
     }catch(e){console.error(e);}
+}
+
+// Modal com as durações (mensal, 3, 6, 12 meses) de um plano
+function abrirModalDuracoes(planoId){
+    const plano=(window._planosCache||[]).find(p=>p.id===planoId);
+    if(!plano || !plano.duracoes){showToast('Plano não encontrado','error');return;}
+    let opcoes='';
+    plano.duracoes.forEach(d=>{
+        const destaque = d.meses===12 ? 'style="border-color:var(--green);box-shadow:0 0 0 2px rgba(34,197,94,.3);"' : '';
+        const selo = d.desconto_pct>0 ? `<span style="background:var(--green);color:#fff;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:700;">-${d.desconto_pct}%</span>` : '';
+        const economiaTxt = d.economia>0 ? `<div style="font-size:12px;color:var(--green);font-weight:600;">💰 Economize R$ ${d.economia.toFixed(2)}</div>` : '';
+        const equivalente = d.meses>1 ? `<div style="font-size:11px;color:var(--text-muted);">equivale a R$ ${d.preco_mensal_equivalente.toFixed(2)}/mês</div>` : '';
+        opcoes+=`<div class="duracao-opcao" ${destaque} onclick="assinarPlano(${planoId},${d.meses})">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-weight:700;font-size:15px;">${d.label}</span>
+                ${selo}
+            </div>
+            <div style="font-size:22px;font-weight:800;color:var(--green);margin:4px 0;">R$ ${d.preco_total.toFixed(2)}</div>
+            ${equivalente}
+            ${economiaTxt}
+        </div>`;
+    });
+    const modal=document.getElementById('modalDuracoes');
+    document.getElementById('modalDuracoesTitulo').textContent=plano.nome;
+    document.getElementById('modalDuracoesOpcoes').innerHTML=opcoes;
+    modal.classList.add('active');
+}
+function fecharModalDuracoes(){
+    document.getElementById('modalDuracoes').classList.remove('active');
 }
 
 async function carregarStatusConta(){
@@ -2524,10 +2579,12 @@ async function carregarStatusConta(){
     }catch(e){console.error(e);}
 }
 
-async function assinarPlano(planoId){
+async function assinarPlano(planoId, meses){
+    meses = meses || 1;
     try{
+        fecharModalDuracoes();
         showToast('🔄 Gerando pagamento...','info');
-        const res=await fetch('/api/pix/criar',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({plano_id:planoId})});
+        const res=await fetch('/api/pix/criar',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({plano_id:planoId, duracao:meses})});
         const data=await res.json();
         if(data.success){
             if(data.gratis){
@@ -2535,10 +2592,12 @@ async function assinarPlano(planoId){
                 carregarPlanos();verificarStatusPlano();
                 return;
             }
+            const economiaTxt = data.economia>0 ? `<p style="color:var(--green);font-size:12px;font-weight:600;">💰 Você economizou R$ ${data.economia.toFixed(2)}</p>` : '';
             document.getElementById('pixContent').innerHTML=`
                 <div class="pix-info">
                     <div class="valor">${data.valor === 0 ? 'GRÁTIS' : 'R$ '+data.valor.toFixed(2)}</div>
-                    <p style="color:var(--text-secondary);font-size:13px;">${data.plano.nome}</p>
+                    <p style="color:var(--text-secondary);font-size:13px;">${data.plano.nome} • ${data.meses||1} ${(data.meses||1)>1?'meses':'mês'}</p>
+                    ${economiaTxt}
                     ${data.qr_code_base64 ? `<img src="data:image/png;base64,${data.qr_code_base64}" style="max-width:200px;border-radius:8px;background:#fff;padding:10px;margin:8px 0;">` : ''}
                     ${data.qr_code ? `<div class="chave" onclick="copiarPix('${data.qr_code}')">📋 Clique para copiar o código PIX</div>
                     <div style="font-size:11px;color:var(--text-muted);word-break:break-all;background:var(--bg-primary);padding:8px;border-radius:6px;">${data.qr_code}</div>` : ''}
