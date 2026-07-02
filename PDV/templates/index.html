@@ -2159,13 +2159,34 @@ function previewBgVendas(){
 function carregarBgArquivo(event){
     const file=event.target.files[0];
     if(!file)return;
-    if(file.size > 900*1024){
-        showToast('⚠️ Imagem grande demais. Use uma até ~900KB ou um link.','warning');
-    }
+    showToast('🔄 Otimizando imagem...','info');
     const reader=new FileReader();
     reader.onload=e=>{
-        document.getElementById('bgVendasUrl').value=e.target.result; // data URL
-        aplicarBgVendas(e.target.result, document.getElementById('bgVendasOpacidade').value);
+        const img=new Image();
+        img.onload=()=>{
+            // Redimensiona para no máximo 1000px no maior lado e comprime em JPEG,
+            // para o resultado ficar leve o suficiente para salvar no Firebase.
+            const maxLado=1000;
+            let w=img.width, h=img.height;
+            if(w>h && w>maxLado){ h=Math.round(h*maxLado/w); w=maxLado; }
+            else if(h>=w && h>maxLado){ w=Math.round(w*maxLado/h); h=maxLado; }
+            const canvas=document.createElement('canvas');
+            canvas.width=w; canvas.height=h;
+            const ctx=canvas.getContext('2d');
+            ctx.drawImage(img,0,0,w,h);
+            // qualidade 0.72 costuma dar um bom equilíbrio tamanho x nitidez
+            let dataUrl=canvas.toDataURL('image/jpeg',0.72);
+            // Se ainda ficar grande (>500KB), reduz a qualidade de novo
+            if(dataUrl.length > 500*1024){
+                dataUrl=canvas.toDataURL('image/jpeg',0.55);
+            }
+            document.getElementById('bgVendasUrl').value=dataUrl;
+            aplicarBgVendas(dataUrl, document.getElementById('bgVendasOpacidade').value);
+            const kb=Math.round(dataUrl.length/1024);
+            showToast(`✅ Imagem pronta (${kb}KB). Clique em Aplicar para salvar.`,'success');
+        };
+        img.onerror=()=>showToast('❌ Não consegui ler essa imagem','error');
+        img.src=e.target.result;
     };
     reader.readAsDataURL(file);
 }
@@ -2188,6 +2209,11 @@ async function salvarBgVendas(){
     const url=document.getElementById('bgVendasUrl').value.trim();
     const op=document.getElementById('bgVendasOpacidade').value;
     if(!url){showToast('⚠️ Informe um link ou envie uma imagem','warning');return;}
+    // Se for imagem embutida (base64) muito grande, avisa (não sobe bem no Firebase)
+    if(url.startsWith('data:') && url.length > 800*1024){
+        showToast('⚠️ Imagem ainda grande. Tente uma imagem menor ou use um link.','warning');
+        return;
+    }
     aplicarBgVendas(url, op);
     try{
         const res=await fetch('/api/loja/background',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({img:url, opacidade:parseInt(op)})});
