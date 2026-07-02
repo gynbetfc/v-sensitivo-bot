@@ -1,7 +1,4 @@
 # pdv.py - SMART PDV v11.0.0 - VERSÃO COM PLANOS REVISADOS
-"""
-🏪 SMART PDV v11.0.0
-"""
 
 import sys
 import os
@@ -2994,6 +2991,56 @@ def get_escala():
         return jsonify({"success": True, "escala": escala})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
+
+# ============================================================
+# LEMBRAR LOGIN - salva as credenciais num arquivo local do app
+# (persiste mesmo que o webview limpe o localStorage ao fechar)
+# ============================================================
+_ARQUIVO_LOGIN = os.path.join(APP_DATA_DIR, 'login_lembrado.enc')
+
+@app.route('/api/login/lembrar', methods=['POST'])
+def salvar_login_lembrado():
+    try:
+        data = request.json or {}
+        email = data.get('email', '')
+        senha = data.get('senha', '')
+        lembrar = data.get('lembrar', True)
+        if not lembrar or not email:
+            # limpar
+            try:
+                if os.path.exists(_ARQUIVO_LOGIN):
+                    os.remove(_ARQUIVO_LOGIN)
+            except Exception:
+                pass
+            return jsonify({"success": True})
+        # ofuscação leve com base64 (arquivo fica só na máquina local)
+        conteudo = json.dumps({"email": email, "senha": senha})
+        try:
+            with open(_ARQUIVO_LOGIN, 'w', encoding='utf-8') as f:
+                f.write(base64.b64encode(conteudo.encode('utf-8')).decode('ascii'))
+        except Exception:
+            pass
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/login/lembrar')
+def get_login_lembrado():
+    try:
+        if not os.path.exists(_ARQUIVO_LOGIN):
+            return jsonify({"success": True, "email": "", "senha": ""})
+        dados_raw = open(_ARQUIVO_LOGIN, 'rb').read()
+        conteudo = None
+        try:
+            conteudo = base64.b64decode(dados_raw).decode('utf-8')
+        except Exception:
+            conteudo = None
+        if not conteudo:
+            return jsonify({"success": True, "email": "", "senha": ""})
+        d = json.loads(conteudo)
+        return jsonify({"success": True, "email": d.get("email", ""), "senha": d.get("senha", "")})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e), "email": "", "senha": ""})
 
 # ============================================================
 # CNPJ
