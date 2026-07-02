@@ -2677,21 +2677,25 @@ def get_plano_status():
         percentual = 0
         if limite_produtos != -1 and limite_produtos > 0:
             percentual = min(100, (total_produtos / limite_produtos) * 100)
-        permissoes = plano_obj.permissoes if plano_obj else {}
+        # Usa get_permissoes (respeita o modo desenvolvedor)
+        permissoes = get_permissoes(db_id)
         is_teste = plano_obj.is_teste if plano_obj else False
+        # No modo dev, o plano nunca está expirado
+        dev = modo_dev_ligado(db_id)
+        ativo_final = True if dev else info.get('ativo', False)
         return jsonify({
             "success": True,
             "plano": asdict(plano_obj) if plano_obj else None,
             "expira_em": expira,
             "dias_restantes": dias_restantes,
-            "expirado": not info.get('ativo', False),
+            "expirado": (False if dev else not info.get('ativo', False)),
             "limite_produtos": limite_produtos,
             "produtos_atuais": total_produtos,
             "produtos_restantes": produtos_restantes,
             "percentual_produtos": percentual,
             "usuarios_limite": plano_obj.usuarios if plano_obj else 1,
             "usuarios_atuais": usuarios_atuais,
-            "ativo": info.get('ativo', False),
+            "ativo": ativo_final,
             "precisa_aviso": precisa_aviso,
             "dias_para_aviso": dias_para_aviso,
             "permissoes": permissoes,
