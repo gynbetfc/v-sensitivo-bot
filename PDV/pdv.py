@@ -177,7 +177,7 @@ class Plano:
     is_teste: bool = False
 
 PLANOS: List[Plano] = [
-    Plano(1, 1, 29.99, '🔰 BÁSICO', 30, 300, {
+    Plano(1, 1, 0.01, '🔰 BÁSICO', 30, 300, {
         'clientes': False,
         'dashboard': False,
         'busca_estoque': False,
