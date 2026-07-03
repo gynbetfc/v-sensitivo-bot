@@ -92,6 +92,8 @@
         .kit-item-row .kit-item-preco-orig{font-size:11px;color:var(--text-muted);text-decoration:line-through}
         .kit-item-row input.kit-item-preco{width:70px;padding:4px 6px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-card);color:var(--green);font-weight:600;font-size:12px;text-align:right}
         .kit-item-row input.kit-item-preco:focus{outline:0;border-color:var(--green)}
+        .kit-item-row input.kit-item-qtd{padding:4px 6px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-card);color:var(--text-primary);font-weight:600;font-size:12px}
+        .kit-item-row input.kit-item-qtd:focus{outline:0;border-color:var(--green)}
         .kit-item-row .kit-item-remove{background:0;border:0;color:var(--red);cursor:pointer;font-size:14px;padding:2px 6px}
         .kit-card{background:var(--bg-primary);border-radius:8px;padding:12px;margin-bottom:8px;border:1px solid var(--border-color)}
         .kit-card .kit-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
@@ -514,8 +516,8 @@
         <p class="sub">Sistema de Ponto de Venda</p>
         <div class="msg" id="authMsg"></div>
         <div class="form-group">
-            <label>Email</label>
-            <input type="email" id="loginEmail" placeholder="seu@email.com" autocomplete="email" onkeydown="if(event.key==='Enter'){document.getElementById('loginSenha').focus();}">
+            <label>Email ou usuário</label>
+            <input type="text" id="loginEmail" placeholder="seu email ou usuário" autocomplete="username" onkeydown="if(event.key==='Enter'){document.getElementById('loginSenha').focus();}">
         </div>
         <div class="form-group">
             <label>Senha</label>
@@ -534,7 +536,7 @@
         <p class="sub">15 dias de teste grátis!</p>
         <div class="msg" id="registerMsg"></div>
         <div class="form-group"><label>Nome completo</label><input type="text" id="registerNome" placeholder="Seu nome"></div>
-        <div class="form-group"><label>Email</label><input type="email" id="registerEmail" placeholder="seu@email.com"></div>
+        <div class="form-group"><label>Email ou usuário</label><input type="text" id="registerEmail" placeholder="escolha um email ou usuário"></div>
         <div class="form-group"><label>Senha</label><input type="password" id="registerSenha" placeholder="Mínimo 4 caracteres"></div>
         <div class="form-group">
             <label>CNPJ (opcional)</label>
@@ -795,10 +797,9 @@
                 </div>
                 <div class="card">
                     <h3><i class="fas fa-store-alt" style="color:var(--orange);"></i> Loja</h3>
-                    <div class="input-group"><label>Nome da Loja</label><input type="text" id="lojaNomeConfig" placeholder="Nome da loja"></div>
-                    <div class="input-group"><label>CNPJ</label><input type="text" id="lojaCnpjConfig" placeholder="00.000.000/0000-00" oninput="formatarCnpjInput(this)" onchange="buscarDadosCNPJ(this.value)"></div>
+                    <div class="input-group"><label>Nome da Loja <span style="font-size:11px;color:var(--text-muted);">(vem do CNPJ)</span></label><input type="text" id="lojaNomeConfig" placeholder="Preencha o CNPJ abaixo" readonly style="background:var(--bg-primary);cursor:not-allowed;"></div>
+                    <div class="input-group"><label>CNPJ <span style="font-size:11px;color:var(--text-muted);">(salva sozinho quando válido)</span></label><input type="text" id="lojaCnpjConfig" placeholder="00.000.000/0000-00" oninput="formatarCnpjInput(this);buscarCnpjSeCompleto(this.value)" onchange="buscarDadosCNPJ(this.value)"></div>
                     <div id="dadosCnpjConfig" style="display:none;background:var(--bg-primary);padding:10px;border-radius:8px;margin-bottom:10px;font-size:12px;color:var(--text-secondary);"></div>
-                    <button class="btn btn-primary" onclick="salvarNomeLoja()" style="margin-top:10px;"><i class="fas fa-save"></i> Salvar</button>
                     <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border-color);">
                         <p style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;"><strong>Versão:</strong> <span id="versaoSistema">11.0.0</span></p>
                         <p style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;"><strong>ID do Banco:</strong> <span id="dbIdConfig" style="font-family:monospace;cursor:pointer;color:var(--green);" onclick="copiarId()">---</span></p>
@@ -1632,14 +1633,20 @@ document.addEventListener('DOMContentLoaded',function(){
 function adicionarItemKit(codigo){
     const p=(state.produtos||[]).find(x=>x.codigo===codigo);
     if(!p){showToast('❌ Produto não encontrado','error');return;}
-    if(kitItensAtuais.find(i=>i.codigo===codigo)){showToast('⚠️ Item já está no kit','warning');return;}
-    kitItensAtuais.push({
-        codigo:p.codigo,
-        nome:p.nome,
-        custo_original:p.custo||0,
-        preco_original:p.preco||0,
-        preco_combo:p.preco||0
-    });
+    // Se o item já existe no kit, aumenta a quantidade em vez de bloquear
+    const existente=kitItensAtuais.find(i=>i.codigo===codigo);
+    if(existente){
+        existente.quantidade=(existente.quantidade||1)+1;
+    }else{
+        kitItensAtuais.push({
+            codigo:p.codigo,
+            nome:p.nome,
+            custo_original:p.custo||0,
+            preco_original:p.preco||0,
+            preco_combo:p.preco||0,
+            quantidade:1
+        });
+    }
     document.getElementById('kitBuscaProduto').value='';
     document.getElementById('kitSearchResults').classList.remove('active');
     document.getElementById('kitSearchResults').innerHTML='';
@@ -1661,32 +1668,51 @@ function alterarPrecoItemKit(codigo,valor){
     atualizarSomaKit();
 }
 
+function alterarQtdItemKit(codigo,valor){
+    const item=kitItensAtuais.find(i=>i.codigo===codigo);
+    if(!item)return;
+    let q=parseInt(valor)||1;
+    if(q<1)q=1;
+    item.quantidade=q;
+    atualizarSomaKit();
+}
+
 function renderizarItensKit(){
     const container=document.getElementById('kitItensContainer');
     if(kitItensAtuais.length===0){
         container.innerHTML='<p style="font-size:12px;color:var(--text-muted);text-align:center;padding:10px;">Nenhum item adicionado ainda</p>';
         atualizarSomaKit();return;
     }
-    container.innerHTML=kitItensAtuais.map(i=>
-        `<div class="kit-item-row">
-            <div class="kit-item-nome">${i.nome}<br><span class="kit-item-preco-orig">R$ ${i.preco_original.toFixed(2)}</span></div>
-            <input type="text" class="kit-item-preco" value="${i.preco_combo.toFixed(2).replace('.',',')}" onchange="alterarPrecoItemKit('${i.codigo}',this.value)" onfocus="this.select()">
+    container.innerHTML=kitItensAtuais.map(i=>{
+        const qtd=i.quantidade||1;
+        return `<div class="kit-item-row">
+            <div class="kit-item-nome">${i.nome}<br><span class="kit-item-preco-orig">R$ ${i.preco_original.toFixed(2)} un.</span></div>
+            <div style="display:flex;align-items:center;gap:4px;">
+                <span style="font-size:10px;color:var(--text-muted);">qtd</span>
+                <input type="number" min="1" class="kit-item-qtd" value="${qtd}" onchange="alterarQtdItemKit('${i.codigo}',this.value)" onfocus="this.select()" style="width:48px;text-align:center;">
+            </div>
+            <div style="display:flex;align-items:center;gap:4px;">
+                <span style="font-size:10px;color:var(--text-muted);">R$</span>
+                <input type="text" class="kit-item-preco" value="${i.preco_combo.toFixed(2).replace('.',',')}" onchange="alterarPrecoItemKit('${i.codigo}',this.value)" onfocus="this.select()">
+            </div>
             <button class="kit-item-remove" onclick="removerItemKit('${i.codigo}')">✕</button>
-        </div>`).join('');
+        </div>`;
+    }).join('');
     atualizarSomaKit();
 }
 
 function atualizarSomaKit(){
-    const soma=kitItensAtuais.reduce((acc,i)=>acc+(i.preco_combo||0),0);
+    // soma considera quantidade de cada item
+    const soma=kitItensAtuais.reduce((acc,i)=>acc+((i.preco_combo||0)*(i.quantidade||1)),0);
     document.getElementById('kitSomaAvulso').textContent='R$ '+soma.toFixed(2);
-    const custo=kitItensAtuais.reduce((acc,i)=>acc+(i.custo_original||0),0);
+    const custo=kitItensAtuais.reduce((acc,i)=>acc+((i.custo_original||0)*(i.quantidade||1)),0);
     const elCusto=document.getElementById('kitCustoTotal');
     if(elCusto) elCusto.textContent='R$ '+custo.toFixed(2);
     atualizarLucroKit();
 }
 
 function atualizarLucroKit(){
-    const custo=kitItensAtuais.reduce((acc,i)=>acc+(i.custo_original||0),0);
+    const custo=kitItensAtuais.reduce((acc,i)=>acc+((i.custo_original||0)*(i.quantidade||1)),0);
     const preco=parseFloat((document.getElementById('kitPreco').value||'').replace(',','.'))||0;
     const lucro=preco-custo;
     const el=document.getElementById('kitLucro');
@@ -1827,7 +1853,7 @@ function buscarProdutoAutomatico(codigo){
     if(toggle && !toggle.checked) return;
     clearTimeout(timeoutBuscaCodigo);
     if(codigo.length < 8) return;
-    timeoutBuscaCodigo = setTimeout(() => buscarProdutoPorCodigo(), 500);
+    timeoutBuscaCodigo = setTimeout(() => buscarProdutoPorCodigo(), 300);
 }
 
 function toggleBuscaEstoque(){
@@ -2039,6 +2065,12 @@ function buscarProdutoPorCodigoVenda(codigo){
 }
 
 function adicionarAoCarrinho(produto){
+    // Caixa fechado: não permite vender. Avisa e leva para a aba Caixa.
+    if(!state.caixa_aberto){
+        showToast('🔒 O caixa está fechado! Abra o caixa para vender.','warning');
+        trocarTab('caixa');
+        return;
+    }
     if(state.itens.some(i=>i.codigo===produto.codigo)){
         const item=state.itens.find(i=>i.codigo===produto.codigo);
         item.quantidade++;item.total=item.quantidade*item.preco_unitario;
@@ -2695,10 +2727,12 @@ async function carregarStatusConta(){
             const permsDisplay = permsText.length ? permsText.join(' • ') : 'Vendas e Caixa';
             const isTeste = data.is_teste || false;
             const testeBadge = isTeste ? '<span class="badge-teste">🎁 TESTE ATIVO</span>' : '';
+            const planoNomeExib = isTeste ? '🎁 Teste (recursos Premium)' : (data.plano?.nome||'—');
             status.innerHTML=`
                 <h4 style="font-size:14px;margin-bottom:10px;"><i class="fas fa-info-circle"></i> Status da Conta ${testeBadge}</h4>
+                ${isTeste ? '<div style="margin-bottom:10px;padding:8px 12px;background:rgba(34,197,94,.12);border-radius:8px;font-size:12px;color:var(--green);">Você está no período de teste com <strong>todos os recursos do plano Premium</strong> liberados. Aproveite!</div>' : ''}
                 <div class="info-grid">
-                    <div class="info-item"><div class="label">Plano</div><div class="value">${data.plano?.nome||'—'}</div></div>
+                    <div class="info-item"><div class="label">Plano</div><div class="value">${planoNomeExib}</div></div>
                     <div class="info-item"><div class="label">Status</div><div class="value ${ativo?'ativo':'expirado'}">${ativo?'✅ Ativo':'🔴 Expirado'}</div></div>
                     <div class="info-item"><div class="label">Dias Restantes</div><div class="value ${dias<=3?'expirado':'ativo'}">${dias.toFixed(1)} dias</div></div>
                     <div class="info-item"><div class="label">Produtos</div><div class="value">${data.produtos_atuais||0}/${limiteProdutos}</div></div>
@@ -2857,6 +2891,14 @@ async function salvarNomeLoja(){
     }catch(e){showToast('❌ Erro ao salvar','error');}
 }
 
+let _cnpjTimer=null;
+function buscarCnpjSeCompleto(valor){
+    const limpo=(valor||'').replace(/\D/g,'');
+    if(limpo.length===14){
+        clearTimeout(_cnpjTimer);
+        _cnpjTimer=setTimeout(()=>buscarDadosCNPJ(valor), 400);
+    }
+}
 async function buscarDadosCNPJ(cnpj){
     const el=document.getElementById('dadosCnpjConfig')||document.getElementById('dadosCnpjRegistro');
     const limpo=cnpj.replace(/\D/g,'');
@@ -2882,8 +2924,29 @@ async function buscarDadosCNPJ(cnpj){
             if(d.data_abertura) html+=`📅 Abertura: ${d.data_abertura}<br>`;
             if(d.porte) html+=`📊 Porte: ${d.porte}<br>`;
             el.innerHTML=html;el.style.display='block';el.dataset.dados=JSON.stringify(d);
+            // Preenche o nome da loja com a razão social e SALVA automaticamente
+            const nomeLoja = d.razao_social || d.nome_fantasia || '';
+            const campoNome=document.getElementById('lojaNomeConfig');
+            if(campoNome && nomeLoja){
+                campoNome.value=nomeLoja;
+                // salva sozinho (nome + cnpj + dados)
+                salvarLojaAutomatico(nomeLoja, limpo, d);
+            }
         }else{el.style.display='none';}
     }catch(e){el.style.display='none';}
+}
+
+async function salvarLojaAutomatico(nome, cnpj, cnpj_dados){
+    try{
+        const res=await fetch('/api/loja/nome',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({nome,cnpj,cnpj_dados})});
+        const data=await res.json();
+        if(data.success){
+            state.nome_loja=nome;state.cnpj=cnpj;
+            const disp=document.getElementById('lojaNomeDisplay');
+            if(disp) disp.textContent='🏬 '+nome;
+            showToast('✅ CNPJ válido! Loja salva automaticamente.','success');
+        }
+    }catch(e){}
 }
 
 // ============================================================
