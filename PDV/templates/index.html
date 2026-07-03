@@ -2886,9 +2886,43 @@ async function carregarLojaInfo(){
                 if(cnpjDados.porte) html+=`📊 Porte: ${cnpjDados.porte}<br>`;
                 if(cnpjDados.natureza_juridica) html+=`⚖️ Natureza: ${cnpjDados.natureza_juridica}<br>`;
                 divDados.innerHTML=html;divDados.style.display='block';divDados.dataset.dados=JSON.stringify(cnpjDados);
-            } else {divDados.style.display='none';}
+            } else {
+                divDados.style.display='none';
+                // Tem um CNPJ salvo mas SEM os dados (ou nome ainda é "Minha Loja")?
+                // Busca automaticamente e atualiza o nome da loja.
+                const cnpjLimpo=(data.cnpj||'').replace(/\D/g,'');
+                if(cnpjLimpo.length===14){
+                    buscarECompletarCnpj(cnpjLimpo, (data.nome_loja||'')==='Minha Loja' || !data.nome_loja);
+                }
+            }
         }
     }catch(e){console.error(e);}
+}
+
+// Busca o CNPJ e, se necessário, preenche o nome da loja e salva
+async function buscarECompletarCnpj(cnpjLimpo, atualizarNome){
+    try{
+        const rc=await fetch('/api/cnpj/'+cnpjLimpo,{cache:'no-store'});
+        const dc=await rc.json();
+        if(dc.success && dc.dados){
+            const d=dc.dados;
+            // mostra os dados na tela
+            buscarDadosCNPJ(cnpjLimpo);
+            // se o nome estava genérico, atualiza com a razão social e salva
+            if(atualizarNome){
+                const nomeLoja=d.razao_social || d.nome_fantasia || '';
+                if(nomeLoja){
+                    const campo=document.getElementById('lojaNomeConfig');
+                    if(campo) campo.value=nomeLoja;
+                    await fetch('/api/loja/nome',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({nome:nomeLoja,cnpj:cnpjLimpo,cnpj_dados:d})});
+                    state.nome_loja=nomeLoja;
+                    const disp=document.getElementById('lojaNomeDisplay');
+                    if(disp) disp.textContent='🏬 '+nomeLoja;
+                    showToast('✅ Dados do CNPJ carregados! Loja: '+nomeLoja,'success');
+                }
+            }
+        }
+    }catch(e){}
 }
 
 async function salvarNomeLoja(){
