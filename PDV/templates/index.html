@@ -829,6 +829,11 @@
                     <h3><i class="fas fa-image" style="color:var(--purple);"></i> Personalização</h3>
                     <div class="input-group">
                         <label>Imagem de fundo da tela de Vendas</label>
+                        <div id="bgStatusBox" style="display:none;align-items:center;gap:8px;padding:10px 12px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:8px;margin-bottom:6px;">
+                            <span style="font-size:18px;">🖼️</span>
+                            <span style="flex:1;font-size:13px;color:var(--green);font-weight:600;">Imagem definida</span>
+                            <button onclick="trocarImagemBg()" style="font-size:12px;padding:4px 10px;background:rgba(59,130,246,.15);color:var(--blue);border:1px solid var(--blue);border-radius:6px;cursor:pointer;">Trocar</button>
+                        </div>
                         <input type="text" id="bgVendasUrl" placeholder="Cole o link de uma imagem (https://...)" oninput="previewBgVendas()">
                         <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">💡 Cole um link de imagem OU escolha um arquivo do seu dispositivo</div>
                     </div>
@@ -2375,6 +2380,25 @@ function previewBgVendas(){
     const url=document.getElementById('bgVendasUrl').value.trim();
     if(url) aplicarBgVendas(url, document.getElementById('bgVendasOpacidade').value);
 }
+// Mostra "Imagem definida" e esconde o campo com a URL crua (fica mais limpo)
+function mostrarStatusImagem(temImagem){
+    const box=document.getElementById('bgStatusBox');
+    const campo=document.getElementById('bgVendasUrl');
+    if(temImagem){
+        if(box) box.style.display='flex';
+        if(campo) campo.style.display='none';
+    }else{
+        if(box) box.style.display='none';
+        if(campo) campo.style.display='block';
+    }
+}
+// Botão "Trocar": libera o campo para colar um novo link ou escolher arquivo
+function trocarImagemBg(){
+    const campo=document.getElementById('bgVendasUrl');
+    if(campo){ campo.value=''; }
+    mostrarStatusImagem(false);
+    if(campo) campo.focus();
+}
 function carregarBgArquivo(event){
     const file=event.target.files[0];
     if(!file)return;
@@ -2467,7 +2491,7 @@ async function salvarBgVendas(){
     try{
         const res=await fetch('/api/loja/background',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({img:url, opacidade:parseInt(op)})});
         const data=await res.json();
-        if(data.success) showToast('✅ Fundo salvo!','success');
+        if(data.success){ showToast('✅ Fundo salvo!','success'); mostrarStatusImagem(true); }
         else showToast('❌ '+(data.error||'Erro ao salvar'),'error');
     }catch(e){showToast('❌ Erro ao salvar fundo','error');}
 }
@@ -2476,6 +2500,7 @@ async function removerBgVendas(){
     if(card) card.classList.remove('com-bg');
     removerAjusteBgGrid();
     document.getElementById('bgVendasUrl').value='';
+    mostrarStatusImagem(false);
     try{
         await fetch('/api/loja/background',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({img:'', opacidade:50})});
     }catch(e){}
@@ -2495,6 +2520,7 @@ async function carregarBgVendasSalvo(tentativa){
             const lbl=document.getElementById('bgOpacidadeLabel');
             if(lbl) lbl.textContent=op;
             aplicarBgVendas(data.img, op);
+            mostrarStatusImagem(true);  // esconde a URL crua, mostra "Imagem definida"
         }else if(tentativa<3){
             // Ainda não veio (sync do Firebase pode não ter terminado): tenta de novo
             setTimeout(()=>carregarBgVendasSalvo(tentativa+1), 4000);
