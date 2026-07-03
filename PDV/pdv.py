@@ -194,7 +194,7 @@ PLANOS: List[Plano] = [
         'fiado': True,
         'kit_combo': True,
     }),
-    Plano(3, 5, 99.99, '💎 PREMIUM', 30, -1, {
+    Plano(3, 10, 99.99, '💎 PREMIUM', 30, -1, {
         'clientes': True,
         'dashboard': True,
         'busca_estoque': True,
@@ -544,6 +544,19 @@ def salvar_usuario_firebase(db_id: str, dados: Dict) -> bool:
         return response.status_code == 200
     except Exception as e:
         logger.error(f"⚠️ Erro Firebase save: {e}")
+        return False
+
+def salvar_campos_firebase(db_id: str, campos: Dict) -> bool:
+    """Atualiza APENAS os campos informados no Firebase (PATCH), sem precisar
+    carregar e reescrever todo o registro. Mais robusto para preferências
+    como background, opacidade e escala."""
+    try:
+        key = _fb_key(db_id)
+        url = f'{FB_URL}/pdv/usuarios/{key}.json'
+        response = requests.patch(url, json=campos, timeout=15)
+        return response.status_code == 200
+    except Exception as e:
+        logger.error(f"⚠️ Erro Firebase patch: {e}")
         return False
 
 def carregar_usuario_firebase(db_id: str, timeout: int = 10) -> Optional[Dict]:
@@ -1503,7 +1516,21 @@ def imprimir_cupom_escpos(dados: Dict) -> Dict:
         ESC = chr(27)
         GS = chr(29)
         cmd_init = (ESC + '@').encode('latin-1', 'replace')
+        # Seleciona a tabela de caracteres CP850 (código 2) — é a que a maioria
+        # das impressoras térmicas usa para acentos do português. Sem isso,
+        # "Ã", "Ç", "É" etc saem trocados (o famoso "N|O" no lugar de "NÃO").
+        cmd_charset = (ESC + 't' + chr(2)).encode('latin-1', 'replace')
         cmd_cut = (GS + 'V' + chr(66) + chr(0)).encode('latin-1', 'replace')
+
+        # Codifica o texto em CP850. Se algum caractere não existir na tabela,
+        # cai para uma versão sem acento (não trava a impressão).
+        def _codificar(t):
+            try:
+                return t.encode('cp850')
+            except Exception:
+                import unicodedata
+                sem_acento = unicodedata.normalize('NFKD', t).encode('ascii', 'ignore').decode('ascii')
+                return sem_acento.encode('cp850', 'replace')
 
         impressora_nome = win32print.GetDefaultPrinter()
         if not impressora_nome:
@@ -1514,7 +1541,8 @@ def imprimir_cupom_escpos(dados: Dict) -> Dict:
             win32print.StartDocPrinter(hprinter, 1, ("Cupom Fiscal", None, "RAW"))
             win32print.StartPagePrinter(hprinter)
             win32print.WritePrinter(hprinter, cmd_init)
-            win32print.WritePrinter(hprinter, texto.encode('latin-1', 'replace'))
+            win32print.WritePrinter(hprinter, cmd_charset)
+            win32print.WritePrinter(hprinter, _codificar(texto))
             win32print.WritePrinter(hprinter, b'\n\n\n')
             win32print.WritePrinter(hprinter, cmd_cut)
             win32print.EndPagePrinter(hprinter)
@@ -3008,13 +3036,9 @@ def salvar_background():
         with get_db_context() as conn:
             conn.execute("UPDATE users SET bg_vendas_img=?, bg_vendas_opacidade=? WHERE db_id=?",
                 (img, opacidade, db_id))
-        # Salva também no Firebase para aparecer em outros dispositivos
+        # Salva no Firebase via PATCH (atualiza só estes campos, sem depender de carregar tudo)
         try:
-            dados = carregar_usuario_firebase(db_id)
-            if dados is not None:
-                dados['bg_vendas_img'] = img
-                dados['bg_vendas_opacidade'] = opacidade
-                salvar_usuario_firebase(db_id, dados)
+            salvar_campos_firebase(db_id, {'bg_vendas_img': img, 'bg_vendas_opacidade': opacidade})
         except Exception as e:
             logger.error(f"⚠️ Erro ao salvar background no Firebase: {e}")
         return jsonify({"success": True, "message": "Fundo salvo!"})
@@ -3062,10 +3086,7 @@ def salvar_escala():
         with get_db_context() as conn:
             conn.execute("UPDATE users SET escala_sistema=? WHERE db_id=?", (escala, db_id))
         try:
-            dados = carregar_usuario_firebase(db_id)
-            if dados is not None:
-                dados['escala_sistema'] = escala
-                salvar_usuario_firebase(db_id, dados)
+            salvar_campos_firebase(db_id, {'escala_sistema': escala})
         except Exception:
             pass
         return jsonify({"success": True})
