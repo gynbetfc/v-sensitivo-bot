@@ -1,15 +1,5 @@
 # pdv.py - SMART PDV v11.0.0 - VERSÃO COM PLANOS REVISADOS
-"""
-🏪 SMART PDV v11.0.0
 
-🔹 NOVIDADES v10.3:
-- 15 DIAS DE TESTE GRÁTIS (EMPRESARIAL COMPLETO) ✅
-- NOVOS VALORES DE PLANOS (R$ 29,99 a R$ 129,99) ✅
-- CORREÇÃO DA REIMPRESSÃO DE CUPONS ✅
-- CAMPO CÓDIGO DE BARRAS RESTAURADO ✅
-- FIADO BLOQUEADO PARA PLANOS SEM CLIENTES ✅
-- SISTEMA DE CLIENTES CORRIGIDO ✅
-"""
 
 import sys
 import os
@@ -178,7 +168,7 @@ class Plano:
     oculto: bool = False
 
 PLANOS: List[Plano] = [
-    Plano(1, 1, 29.99, '🔰 BÁSICO', 30, 500, {
+    Plano(1, 1, 49.99, '🔰 BÁSICO', 30, 500, {
         'clientes': False,
         'dashboard': False,
         'busca_estoque': False,
@@ -186,7 +176,7 @@ PLANOS: List[Plano] = [
         'fiado': False,
         'kit_combo': False,
     }),
-    Plano(2, 3, 69.99, '⭐ STANDARD', 30, 1000, {
+    Plano(2, 3, 99.99, '⭐ STANDARD', 30, 3000, {
         'clientes': True,
         'dashboard': False,
         'busca_estoque': True,
@@ -194,7 +184,7 @@ PLANOS: List[Plano] = [
         'fiado': True,
         'kit_combo': True,
     }),
-    Plano(3, 10, 99.99, '💎 PREMIUM', 30, -1, {
+    Plano(3, 10, 119.99, '💎 PREMIUM', 30, -1, {
         'clientes': True,
         'dashboard': True,
         'busca_estoque': True,
@@ -211,7 +201,7 @@ PLANOS: List[Plano] = [
         'kit_combo': True,
     }, oculto=True),
     # Plano de TESTE (15 dias, todas as permissões liberadas, limite de 300 produtos e 1 usuário)
-    Plano(5, 1, 0.00, '🎁 TESTE', 15, 300, {
+    Plano(5, 1, 0.00, '🎁 TESTE', 15, 100, {
         'clientes': True,
         'dashboard': True,
         'busca_estoque': True,
