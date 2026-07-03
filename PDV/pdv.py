@@ -175,9 +175,10 @@ class Plano:
     produtos: int
     permissoes: Dict
     is_teste: bool = False
+    oculto: bool = False
 
 PLANOS: List[Plano] = [
-    Plano(1, 1, 29.99, '🔰 BÁSICO', 30, 300, {
+    Plano(1, 1, 29.99, '🔰 BÁSICO', 30, 500, {
         'clientes': False,
         'dashboard': False,
         'busca_estoque': False,
@@ -188,12 +189,12 @@ PLANOS: List[Plano] = [
     Plano(2, 3, 69.99, '⭐ STANDARD', 30, 1000, {
         'clientes': True,
         'dashboard': False,
-        'busca_estoque': False,
+        'busca_estoque': True,
         'margem': False,
         'fiado': True,
         'kit_combo': True,
     }),
-    Plano(3, 5, 99.99, '💎 PREMIUM', 30, 5000, {
+    Plano(3, 5, 99.99, '💎 PREMIUM', 30, -1, {
         'clientes': True,
         'dashboard': True,
         'busca_estoque': True,
@@ -208,7 +209,7 @@ PLANOS: List[Plano] = [
         'margem': True,
         'fiado': True,
         'kit_combo': True,
-    }),
+    }, oculto=True),
     # Plano de TESTE (15 dias, todas as permissões liberadas, limite de 300 produtos e 1 usuário)
     Plano(5, 1, 0.00, '🎁 TESTE', 15, 300, {
         'clientes': True,
@@ -2630,6 +2631,9 @@ def dev_toggle():
 def get_planos():
     planos_out = []
     for p in PLANOS:
+        # Planos ocultos (ex: Empresarial, reservado para o delivery) não aparecem na loja
+        if getattr(p, 'oculto', False):
+            continue
         pd = asdict(p)
         if not p.is_teste and p.preco > 0:
             duracoes = []
