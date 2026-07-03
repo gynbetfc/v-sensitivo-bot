@@ -497,7 +497,7 @@ def init_db() -> None:
 
         # Adicionar colunas faltantes
         for tabela, colunas in {
-            'users': {'sincronizado_em': 'TIMESTAMP', 'bg_vendas_img': 'TEXT DEFAULT ""', 'bg_vendas_opacidade': 'INTEGER DEFAULT 50', 'escala_sistema': 'INTEGER DEFAULT 100'},
+            'users': {'sincronizado_em': 'TIMESTAMP', 'bg_vendas_img': 'TEXT DEFAULT ""', 'bg_vendas_opacidade': 'INTEGER DEFAULT 50', 'escala_sistema': 'INTEGER DEFAULT 100', 'bg_vendas_img_ts': 'INTEGER DEFAULT 0', 'bg_vendas_opacidade_ts': 'INTEGER DEFAULT 0', 'escala_sistema_ts': 'INTEGER DEFAULT 0'},
             'produtos': {'custo': 'REAL DEFAULT 0', 'margem': 'REAL DEFAULT 0', 'ultima_atualizacao': 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP', 'sincronizado_em': 'TIMESTAMP'},
             'clientes': {'ultima_atualizacao': 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP', 'sincronizado_em': 'TIMESTAMP'},
             'vendas': {'lucro_total': 'REAL DEFAULT 0', 'recebido': 'REAL DEFAULT 0', 'troco': 'REAL DEFAULT 0', 'sincronizado_em': 'TIMESTAMP'},
@@ -558,6 +558,38 @@ def salvar_campos_firebase(db_id: str, campos: Dict) -> bool:
     except Exception as e:
         logger.error(f"⚠️ Erro Firebase patch: {e}")
         return False
+
+# Valor mágico do Firebase: ao gravar, ele troca por um número com a HORA DO SERVIDOR
+# (em milissegundos). Assim o timestamp não depende do relógio do dispositivo.
+FIREBASE_TIMESTAMP = {".sv": "timestamp"}
+
+def salvar_preferencia_firebase(db_id: str, campo: str, valor) -> bool:
+    """Salva uma preferência (ex: bg_vendas_img) junto com um timestamp da hora
+    do SERVIDOR Firebase. Grava dois campos: '<campo>' e '<campo>_ts'.
+    Assim, na hora de sincronizar, o dispositivo com a versão mais NOVA vence,
+    usando uma hora confiável (do servidor, não do aparelho)."""
+    try:
+        key = _fb_key(db_id)
+        url = f'{FB_URL}/pdv/usuarios/{key}.json'
+        payload = {campo: valor, f'{campo}_ts': FIREBASE_TIMESTAMP}
+        response = requests.patch(url, json=payload, timeout=15)
+        return response.status_code == 200
+    except Exception as e:
+        logger.error(f"⚠️ Erro Firebase preferência: {e}")
+        return False
+
+def ler_timestamp_online() -> Optional[int]:
+    """Grava o timestamp do servidor Firebase num local temporário e lê de volta,
+    para obter a hora do servidor em milissegundos. Usado para carimbar o valor
+    LOCAL com uma hora confiável quando salvamos uma preferência."""
+    try:
+        url = f'{FB_URL}/pdv/_hora_servidor.json'
+        r = requests.put(url, json=FIREBASE_TIMESTAMP, timeout=8)
+        if r.status_code == 200:
+            return r.json()  # o Firebase retorna o número já resolvido
+    except Exception:
+        pass
+    return None
 
 def carregar_usuario_firebase(db_id: str, timeout: int = 10) -> Optional[Dict]:
     if not db_id:
@@ -1281,8 +1313,9 @@ def enviar_para_firebase(db_id: str) -> bool:
                     dados_firebase['cnpj_dados'] = json.loads(loja[2]) if loja[2] else {}
                 except:
                     dados_firebase['cnpj_dados'] = {}
-                dados_firebase['bg_vendas_img'] = loja[3] or ''
-                dados_firebase['bg_vendas_opacidade'] = loja[4] if loja[4] is not None else 50
+                # NÃO subimos bg_vendas_img/opacidade/escala aqui. Essas preferências
+                # têm seu próprio mecanismo com timestamp (salvar_preferencia_firebase),
+                # senão um dispositivo sem foto apagaria a foto salva por outro.
             cursor = conn.execute("SELECT id, nome, preco, itens, ativo, ultima_atualizacao FROM kits WHERE db_id=?", (db_id,))
             kits = {}
             for row in cursor.fetchall():
@@ -1293,6 +1326,19 @@ def enviar_para_firebase(db_id: str) -> bool:
                 kits[str(row[0])] = {'nome': row[1], 'preco': row[2] or 0, 'itens': itens_kit,
                     'ativo': bool(row[4]), 'ultima_atualizacao': row[5] or get_timestamp()}
             dados_firebase['kits'] = kits
+        # Preserva as preferências (foto, opacidade, escala) que já estão no Firebase,
+        # junto com seus timestamps. Como o sync usa PUT (substitui tudo), sem isso
+        # essas preferências seriam apagadas. Elas são gerenciadas à parte por timestamp.
+        try:
+            atual_fb = carregar_usuario_firebase(db_id, timeout=4)
+            if atual_fb:
+                for campo in ('bg_vendas_img', 'bg_vendas_img_ts',
+                              'bg_vendas_opacidade', 'bg_vendas_opacidade_ts',
+                              'escala_sistema', 'escala_sistema_ts'):
+                    if campo in atual_fb:
+                        dados_firebase[campo] = atual_fb[campo]
+        except Exception:
+            pass
         ok = salvar_usuario_firebase(db_id, dados_firebase)
         if ok:
             logger.info(f"✅ Dados enviados para Firebase: {db_id} ({len(vendas)} vendas, {len(produtos)} produtos)")
@@ -3073,12 +3119,15 @@ def salvar_background():
         img = data.get('img', '')  # URL ou data-URL (base64)
         opacidade = int(data.get('opacidade', 50))
         opacidade = max(0, min(100, opacidade))
+        # Pega uma hora confiável do servidor para carimbar a alteração
+        ts = ler_timestamp_online() or int(_time.time() * 1000)
         with get_db_context() as conn:
-            conn.execute("UPDATE users SET bg_vendas_img=?, bg_vendas_opacidade=? WHERE db_id=?",
-                (img, opacidade, db_id))
-        # Salva no Firebase via PATCH (atualiza só estes campos, sem depender de carregar tudo)
+            conn.execute("UPDATE users SET bg_vendas_img=?, bg_vendas_opacidade=?, bg_vendas_img_ts=?, bg_vendas_opacidade_ts=? WHERE db_id=?",
+                (img, opacidade, ts, ts, db_id))
+        # Salva no Firebase com timestamp do servidor (para o mais novo vencer no sync)
         try:
-            salvar_campos_firebase(db_id, {'bg_vendas_img': img, 'bg_vendas_opacidade': opacidade})
+            salvar_preferencia_firebase(db_id, 'bg_vendas_img', img)
+            salvar_preferencia_firebase(db_id, 'bg_vendas_opacidade', opacidade)
         except Exception as e:
             logger.error(f"⚠️ Erro ao salvar background no Firebase: {e}")
         return jsonify({"success": True, "message": "Fundo salvo!"})
@@ -3091,27 +3140,43 @@ def get_background():
         db_id = get_db_id()
         if not db_id:
             return jsonify({"success": False, "error": "Não autenticado"}), 401
-        # Firebase é a fonte de verdade: se ele responder, a imagem dele vence
-        # e atualizamos o local. Assim todos os dispositivos ficam iguais.
+        # Lê o valor LOCAL e seu timestamp
+        img_local, opac_local, img_ts_local, opac_ts_local = '', 50, 0, 0
+        with get_db_context() as conn:
+            cursor = conn.execute("SELECT bg_vendas_img, bg_vendas_opacidade, bg_vendas_img_ts, bg_vendas_opacidade_ts FROM users WHERE db_id=? LIMIT 1", (db_id,))
+            row = cursor.fetchone()
+            if row:
+                img_local = row[0] or ''
+                opac_local = row[1] if row[1] is not None else 50
+                img_ts_local = row[2] or 0
+                opac_ts_local = row[3] or 0
+        # Tenta o Firebase e resolve por TIMESTAMP (o mais novo vence)
         try:
             dados = carregar_usuario_firebase(db_id, timeout=4)
-            if dados is not None and dados.get('bg_vendas_img') is not None:
-                img_fb = dados.get('bg_vendas_img', '')
-                opac_fb = dados.get('bg_vendas_opacidade', 50)
+            if dados is not None:
+                img_fb = dados.get('bg_vendas_img', None)
+                img_ts_fb = dados.get('bg_vendas_img_ts', 0) or 0
+                opac_fb = dados.get('bg_vendas_opacidade', None)
+                opac_ts_fb = dados.get('bg_vendas_opacidade_ts', 0) or 0
+                # Resolve a imagem: mais novo vence, mas vazio NÃO apaga cheio
+                img_final, img_ts_final = img_local, img_ts_local
+                if img_fb is not None and img_ts_fb > img_ts_local:
+                    # o Firebase é mais novo. Só aceita se não for "apagar cheio com vazio"
+                    if img_fb or not img_local:
+                        img_final, img_ts_final = img_fb, img_ts_fb
+                # Resolve a opacidade: mais novo vence
+                opac_final, opac_ts_final = opac_local, opac_ts_local
+                if opac_fb is not None and opac_ts_fb > opac_ts_local:
+                    opac_final, opac_ts_final = opac_fb, opac_ts_fb
+                # Atualiza o local com o resultado
                 with get_db_context() as conn:
-                    conn.execute("UPDATE users SET bg_vendas_img=?, bg_vendas_opacidade=? WHERE db_id=?", (img_fb, opac_fb, db_id))
-                return jsonify({"success": True, "img": img_fb, "opacidade": opac_fb})
+                    conn.execute("UPDATE users SET bg_vendas_img=?, bg_vendas_opacidade=?, bg_vendas_img_ts=?, bg_vendas_opacidade_ts=? WHERE db_id=?",
+                        (img_final, opac_final, img_ts_final, opac_ts_final, db_id))
+                return jsonify({"success": True, "img": img_final, "opacidade": opac_final})
         except Exception:
             pass
         # Offline: usa o valor local
-        img, opac = '', 50
-        with get_db_context() as conn:
-            cursor = conn.execute("SELECT bg_vendas_img, bg_vendas_opacidade FROM users WHERE db_id=? LIMIT 1", (db_id,))
-            row = cursor.fetchone()
-            if row:
-                img = row[0] or ''
-                opac = row[1] if row[1] is not None else 50
-        return jsonify({"success": True, "img": img, "opacidade": opac})
+        return jsonify({"success": True, "img": img_local, "opacidade": opac_local})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
@@ -3123,10 +3188,11 @@ def salvar_escala():
         db_id = get_db_id()
         escala = int(data.get('escala', 100))
         escala = max(100, min(180, escala))
+        ts = ler_timestamp_online() or int(_time.time() * 1000)
         with get_db_context() as conn:
-            conn.execute("UPDATE users SET escala_sistema=? WHERE db_id=?", (escala, db_id))
+            conn.execute("UPDATE users SET escala_sistema=?, escala_sistema_ts=? WHERE db_id=?", (escala, ts, db_id))
         try:
-            salvar_campos_firebase(db_id, {'escala_sistema': escala})
+            salvar_preferencia_firebase(db_id, 'escala_sistema', escala)
         except Exception:
             pass
         return jsonify({"success": True})
@@ -3139,25 +3205,27 @@ def get_escala():
         db_id = get_db_id()
         if not db_id:
             return jsonify({"success": False, "error": "Não autenticado"}), 401
-        # Firebase é a fonte de verdade (mesma conta, vários dispositivos).
-        # Se ele responder, usamos o valor dele e atualizamos o local.
+        # Lê local + timestamp
+        escala_local, ts_local = 100, 0
+        with get_db_context() as conn:
+            cursor = conn.execute("SELECT escala_sistema, escala_sistema_ts FROM users WHERE db_id=? LIMIT 1", (db_id,))
+            row = cursor.fetchone()
+            if row:
+                escala_local = row[0] or 100
+                ts_local = row[1] or 0
+        # Firebase: mais novo vence
         try:
             dados = carregar_usuario_firebase(db_id, timeout=4)
-            if dados is not None and dados.get('escala_sistema'):
-                escala_fb = int(dados.get('escala_sistema'))
-                with get_db_context() as conn:
-                    conn.execute("UPDATE users SET escala_sistema=? WHERE db_id=?", (escala_fb, db_id))
-                return jsonify({"success": True, "escala": escala_fb})
+            if dados is not None:
+                escala_fb = dados.get('escala_sistema', None)
+                ts_fb = dados.get('escala_sistema_ts', 0) or 0
+                if escala_fb is not None and ts_fb > ts_local:
+                    with get_db_context() as conn:
+                        conn.execute("UPDATE users SET escala_sistema=?, escala_sistema_ts=? WHERE db_id=?", (int(escala_fb), ts_fb, db_id))
+                    return jsonify({"success": True, "escala": int(escala_fb)})
         except Exception:
             pass
-        # Offline: usa o valor local
-        escala = 100
-        with get_db_context() as conn:
-            cursor = conn.execute("SELECT escala_sistema FROM users WHERE db_id=? LIMIT 1", (db_id,))
-            row = cursor.fetchone()
-            if row and row[0]:
-                escala = row[0]
-        return jsonify({"success": True, "escala": escala})
+        return jsonify({"success": True, "escala": escala_local})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
