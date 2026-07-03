@@ -1673,11 +1673,16 @@ def baixar_html_github() -> bool:
     try:
         caminho_html = os.path.join(TEMPLATES_DIR, "index.html")
         logger.info("🔄 Baixando HTML do GitHub...")
-        response = requests.get(HTML_URL, timeout=8)
+        # cache-busting: evita que a rede/CDN devolva uma versão antiga em cache
+        url = HTML_URL + ("&" if "?" in HTML_URL else "?") + "_=" + str(int(_time.time()))
+        response = requests.get(url, timeout=8, headers={"Cache-Control": "no-cache"})
         response.raise_for_status()
-        with open(caminho_html, "w", encoding="utf-8") as f:
+        # grava num arquivo temporário e só troca se baixou 100% (evita HTML corrompido)
+        tmp = caminho_html + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
             f.write(response.text)
-        logger.info(f"✅ HTML baixado ({len(response.text)} chars)")
+        os.replace(tmp, caminho_html)  # troca atômica
+        logger.info(f"✅ HTML atualizado do GitHub ({len(response.text)} chars)")
         return True
     except Exception as e:
         logger.error(f"❌ Erro ao baixar HTML: {e}")
@@ -3273,8 +3278,8 @@ def salvar_login_lembrado():
             except Exception:
                 pass
             return jsonify({"success": True})
-        # ofuscação leve com base64 (arquivo fica só na máquina local)
-        conteudo = json.dumps({"email": email, "senha": senha})
+        # Guarda APENAS o usuário (nunca a senha), por segurança.
+        conteudo = json.dumps({"email": email, "senha": ""})
         try:
             with open(_ARQUIVO_LOGIN, 'w', encoding='utf-8') as f:
                 f.write(base64.b64encode(conteudo.encode('utf-8')).decode('ascii'))
@@ -3580,15 +3585,16 @@ if __name__ == '__main__':
     init_db()
 
     print("📥 Verificando HTML em segundo plano...")
-    # Download do HTML roda em THREAD para NÃO travar o boot quando offline ou rede lenta.
-    # Só atualiza o index.html local se já existir um (primeira instalação baixa de forma síncrona).
+    # Estratégia: SEMPRE tentar baixar a versão mais nova da interface do GitHub.
+    # O templates/ não guarda dados (só a tela), então pode ser reescrito à vontade.
+    # Se conseguir baixar, o index.html é substituído pela versão mais recente.
+    # Se estiver offline, mantém o que já existe (para não quebrar sem internet).
     caminho_html_local = os.path.join(TEMPLATES_DIR, "index.html")
-    if not os.path.exists(caminho_html_local):
-        # Primeira vez: precisa do HTML para funcionar, baixa síncrono (com proteção de timeout interna)
+    baixou = baixar_html_github()  # síncrono: garante a versão nova ANTES de servir
+    if not baixou and not os.path.exists(caminho_html_local):
+        # Offline E sem cópia local: tenta de novo (sem isso o sistema não abre)
+        logger.warning("⚠️ Sem HTML local e sem internet. Tentando novamente...")
         baixar_html_github()
-    else:
-        # Já existe HTML local: atualiza em background sem bloquear o início do servidor
-        threading.Thread(target=baixar_html_github, daemon=True).start()
 
     threading.Thread(target=_verificador_automatico_pix, daemon=True).start()
     threading.Thread(target=limpar_sessoes_inativas, daemon=True).start()
