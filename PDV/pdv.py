@@ -3158,15 +3158,20 @@ def get_background():
                 img_ts_fb = dados.get('bg_vendas_img_ts', 0) or 0
                 opac_fb = dados.get('bg_vendas_opacidade', None)
                 opac_ts_fb = dados.get('bg_vendas_opacidade_ts', 0) or 0
-                # Resolve a imagem: mais novo vence, mas vazio NÃO apaga cheio
+                # Resolve a imagem:
                 img_final, img_ts_final = img_local, img_ts_local
-                if img_fb is not None and img_ts_fb > img_ts_local:
-                    # o Firebase é mais novo. Só aceita se não for "apagar cheio com vazio"
-                    if img_fb or not img_local:
+                if img_fb:
+                    # Firebase TEM uma foto. Puxa se:
+                    #  (a) o local está vazio (ter foto é melhor que não ter), OU
+                    #  (b) o Firebase é mais novo pelo timestamp
+                    if (not img_local) or (img_ts_fb > img_ts_local):
                         img_final, img_ts_final = img_fb, img_ts_fb
-                # Resolve a opacidade: mais novo vence
+                elif img_fb == '' and img_ts_fb > img_ts_local:
+                    # Firebase foi explicitamente esvaziado e é mais novo: aceita a remoção
+                    img_final, img_ts_final = '', img_ts_fb
+                # Resolve a opacidade: mais novo vence; se não há ts, aceita o valor do FB
                 opac_final, opac_ts_final = opac_local, opac_ts_local
-                if opac_fb is not None and opac_ts_fb > opac_ts_local:
+                if opac_fb is not None and (opac_ts_fb > opac_ts_local or (opac_ts_fb == 0 and img_final == img_fb)):
                     opac_final, opac_ts_final = opac_fb, opac_ts_fb
                 # Atualiza o local com o resultado
                 with get_db_context() as conn:
