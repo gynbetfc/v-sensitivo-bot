@@ -1810,11 +1810,11 @@ def register():
         with get_db_context() as conn:
             conn.execute("""INSERT INTO users (id, nome, email, senha, cargo, db_id, servidor_id, nome_loja, cnpj, cnpj_dados, bg_vendas_img, bg_vendas_img_ts, bg_vendas_opacidade, bg_vendas_opacidade_ts)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (user_id, nome, email, senha_hash, "Gerente", db_id, SERVIDOR_ID, nome_loja, cnpj, json.dumps(cnpj_dados), BG_PADRAO_URL, ts_bg, 50, ts_bg))
+                (user_id, nome, email, senha_hash, "Gerente", db_id, SERVIDOR_ID, nome_loja, cnpj, json.dumps(cnpj_dados), BG_PADRAO_URL, ts_bg, 0, ts_bg))
         # Sobe a foto padrão para o Firebase (com timestamp) para aparecer em todos os dispositivos
         try:
             salvar_preferencia_firebase(db_id, 'bg_vendas_img', BG_PADRAO_URL)
-            salvar_preferencia_firebase(db_id, 'bg_vendas_opacidade', 50)
+            salvar_preferencia_firebase(db_id, 'bg_vendas_opacidade', 0)
         except Exception:
             pass
 
