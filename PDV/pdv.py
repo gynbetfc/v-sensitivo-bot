@@ -148,6 +148,8 @@ logger: logging.Logger = logging.getLogger(__name__)
 # ============================================================
 FB_URL: str = "https://droidguard-10597-default-rtdb.firebaseio.com"
 HTML_URL: str = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/refs/heads/main/PDV/templates/index.html"
+# Imagem de fundo padrão para contas novas (tela de vendas)
+BG_PADRAO_URL: str = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/PDV/bg.png"
 SESSOES_ATIVAS: Dict[str, str] = {}
 CACHE_CNPJ: Dict[str, Dict] = {}
 CACHE_PRODUTO_BARRAS: Dict[str, Dict] = {}
@@ -1111,19 +1113,25 @@ def _baixar_firebase_para_local(db_id: str, dados_firebase: Dict, resultado: Dic
                 resultado['produtos_adicionados'] += 1
             except Exception as e:
                 logger.error(f"⚠️ Erro ao inserir produto {codigo}: {e}")
+        # Lista de clientes excluídos (tombstones) para NÃO ressuscitá-los no merge
+        cur_exc_cli = conn.execute("SELECT item_id FROM exclusoes WHERE tipo='cliente' AND db_id=?", (db_id,))
+        clientes_excluidos_ids = {str(r[0]) for r in cur_exc_cli.fetchall()}
         for id_cli, dados_cli in (dados_firebase.get('clientes') or {}).items():
             try:
+                # Se este cliente foi excluído localmente, não o traz de volta do Firebase
+                if str(id_cli) in clientes_excluidos_ids:
+                    continue
                 id_int = int(id_cli) if str(id_cli).isdigit() else None
+                if id_int is not None and str(id_int) in clientes_excluidos_ids:
+                    continue
                 nome_c = dados_cli.get('nome', '')
                 tel_c = dados_cli.get('telefone', '')
-                # Evita duplicar: se já existe um cliente com mesmo nome (e telefone),
-                # não insere de novo. (Corrige clientes duplicados a cada sync.)
+                # Evita duplicar: se já existe um cliente com mesmo nome (e telefone), não insere de novo
                 if nome_c:
                     dup = conn.execute("SELECT id FROM clientes WHERE nome=? AND IFNULL(telefone,'')=? AND db_id=?",
                         (nome_c, tel_c, db_id)).fetchone()
                     if dup:
                         continue
-                # Também evita conflito de id: se o id já existe, deixa o INSERT OR IGNORE cuidar
                 conn.execute("""INSERT OR IGNORE INTO clientes (id, nome, telefone, email, divida, db_id, ultima_atualizacao)
                     VALUES (?, ?, ?, ?, ?, ?, ?)""", (id_int, nome_c, tel_c,
                     dados_cli.get('email', ''), dados_cli.get('divida', 0), db_id, dados_cli.get('ultima_atualizacao', get_timestamp())))
@@ -1798,10 +1806,17 @@ def register():
                 return jsonify({"success": False, "error": "CNPJ já cadastrado em outra conta."})
 
         user_id = str(uuid.uuid4())[:8]
+        ts_bg = ler_timestamp_online() or int(_time.time() * 1000)
         with get_db_context() as conn:
-            conn.execute("""INSERT INTO users (id, nome, email, senha, cargo, db_id, servidor_id, nome_loja, cnpj, cnpj_dados)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (user_id, nome, email, senha_hash, "Gerente", db_id, SERVIDOR_ID, nome_loja, cnpj, json.dumps(cnpj_dados)))
+            conn.execute("""INSERT INTO users (id, nome, email, senha, cargo, db_id, servidor_id, nome_loja, cnpj, cnpj_dados, bg_vendas_img, bg_vendas_img_ts, bg_vendas_opacidade, bg_vendas_opacidade_ts)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (user_id, nome, email, senha_hash, "Gerente", db_id, SERVIDOR_ID, nome_loja, cnpj, json.dumps(cnpj_dados), BG_PADRAO_URL, ts_bg, 50, ts_bg))
+        # Sobe a foto padrão para o Firebase (com timestamp) para aparecer em todos os dispositivos
+        try:
+            salvar_preferencia_firebase(db_id, 'bg_vendas_img', BG_PADRAO_URL)
+            salvar_preferencia_firebase(db_id, 'bg_vendas_opacidade', 50)
+        except Exception:
+            pass
 
         usuario_firebase = carregar_usuario_firebase(db_id)
         if not usuario_firebase:
