@@ -524,7 +524,7 @@
             <input type="password" id="loginSenha" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter'){event.preventDefault();fazerLogin();}">
         </div>
         <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary);cursor:pointer;margin-bottom:12px;">
-            <input type="checkbox" id="lembrarLogin" checked style="width:16px;height:16px;accent-color:var(--green);cursor:pointer;"> Lembrar meu login e senha
+            <input type="checkbox" id="lembrarLogin" checked style="width:16px;height:16px;accent-color:var(--green);cursor:pointer;"> Lembrar meu usuário
         </label>
         <button class="btn-primary" id="btnLoginEntrar" onclick="fazerLogin()"><i class="fas fa-sign-in-alt"></i> Entrar</button>
         <div class="auth-link">Não tem conta? <span onclick="mostrarRegistro()">Criar conta grátis</span></div>
@@ -1342,21 +1342,20 @@ async function fazerLogin(){
         const res=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({email,senha})});
         const data=await res.json();
         if(data.success){
-            // Salva ou limpa as credenciais no servidor (persiste no webview também)
+            // Salva apenas o USUÁRIO (nunca a senha). Assim, ao sair, o usuário
+            // vem preenchido mas a senha é sempre exigida de novo (mais seguro).
             try{
                 const lembrar=document.getElementById('lembrarLogin');
                 const querLembrar = lembrar && lembrar.checked;
-                fetch('/api/login/lembrar',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({email:email, senha:senha, lembrar:querLembrar})}).catch(()=>{});
-                // também no localStorage (fallback rápido no navegador comum)
+                fetch('/api/login/lembrar',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({email:email, senha:'', lembrar:querLembrar})}).catch(()=>{});
                 if(querLembrar){
                     localStorage.setItem('sd_login_email', email);
-                    localStorage.setItem('sd_login_senha', btoa(senha));
                     localStorage.setItem('sd_login_lembrar', '1');
                 }else{
                     localStorage.removeItem('sd_login_email');
-                    localStorage.removeItem('sd_login_senha');
                     localStorage.removeItem('sd_login_lembrar');
                 }
+                localStorage.removeItem('sd_login_senha'); // garante que nenhuma senha antiga fique salva
             }catch(e){}
             state.db_id=data.db_id;state.usuario_id=data.id;state.nome=data.nome;state.cargo=data.cargo;
             state.nome_loja=data.nome_loja||'Minha Loja';state.cnpj=data.cnpj||'';state.cnpj_dados=data.cnpj_dados||{};
@@ -1416,16 +1415,9 @@ function atualizarHeader(){
 }
 
 async function fazerLogout(){
-    // Limpa o "lembrar login" no servidor e no navegador ANTES de sair,
-    // para que nada faça login automático depois.
-    try{
-        await fetch('/api/login/lembrar',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({email:'',senha:'',lembrar:false})});
-    }catch(e){}
-    try{
-        localStorage.removeItem('sd_login_email');
-        localStorage.removeItem('sd_login_senha');
-        localStorage.removeItem('sd_login_lembrar');
-    }catch(e){}
+    // Encerra a sessão no servidor. Não precisamos limpar o "lembrar", porque
+    // agora só o usuário é guardado (nunca a senha) — então ao voltar à tela de
+    // login o usuário vem preenchido, mas a senha é sempre exigida.
     try{
         await fetch('/api/auth/logout',{method:'POST',credentials:'include',cache:'no-store'});
     }catch(e){}
@@ -1433,14 +1425,13 @@ async function fazerLogout(){
     state.db_id=null;state.usuario_id=null;state.nome='';state.cargo='';
     state.permissoes={clientes:false,dashboard:false,busca_estoque:false,margem:false,fiado:false,kit_combo:false};
     state.itens=[];state.produtos=[];state.kits=[];state.clientes=[];
-    // Mostra a tela de login LIMPA (sem recarregar a página, para o webview
+    // Mostra a tela de login (sem recarregar a página, para o webview
     // não restaurar a sessão anterior e relogar sozinho)
     document.getElementById('app').classList.remove('active');
     document.getElementById('authPage').classList.remove('hidden');
-    const emailC=document.getElementById('loginEmail');if(emailC)emailC.value='';
-    const senha=document.getElementById('loginSenha');if(senha)senha.value='';
-    const lembrar=document.getElementById('lembrarLogin');if(lembrar)lembrar.checked=false;
+    const senha=document.getElementById('loginSenha');if(senha){senha.value='';}
     showToast('👋 Até logo!','info');
+    preencherLoginSalvo();  // traz o usuário de volta, com a senha vazia e focada
 }
 
 // ============================================================
@@ -3061,7 +3052,7 @@ document.addEventListener('DOMContentLoaded',function(){
 });
 
 function preencherLoginSalvo(){
-    // 1) tenta o servidor (funciona no webview, onde o localStorage some ao fechar)
+    // Preenche apenas o USUÁRIO. A senha é sempre exigida (não é salva).
     fetch('/api/login/lembrar',{credentials:'include',cache:'no-store'})
         .then(r=>r.json())
         .then(d=>{
@@ -3070,7 +3061,7 @@ function preencherLoginSalvo(){
                 const cS=document.getElementById('loginSenha');
                 const cL=document.getElementById('lembrarLogin');
                 if(cE) cE.value=d.email;
-                if(cS) cS.value=d.senha||'';
+                if(cS){ cS.value=''; cS.focus(); }  // senha vazia, foco nela
                 if(cL) cL.checked=true;
                 return;
             }
@@ -3082,13 +3073,11 @@ function _preencherLoginLocal(){
     try{
         if(localStorage.getItem('sd_login_lembrar')==='1'){
             const email=localStorage.getItem('sd_login_email')||'';
-            const senhaB64=localStorage.getItem('sd_login_senha')||'';
-            const senha=senhaB64?atob(senhaB64):'';
             const cE=document.getElementById('loginEmail');
             const cS=document.getElementById('loginSenha');
             const cL=document.getElementById('lembrarLogin');
             if(cE) cE.value=email;
-            if(cS) cS.value=senha;
+            if(cS){ cS.value=''; cS.focus(); }  // senha nunca é preenchida
             if(cL) cL.checked=true;
         }
     }catch(e){}
