@@ -1,5 +1,15 @@
 # pdv.py - SMART PDV v11.0.0 - VERSÃO COM PLANOS REVISADOS
+"""
+🏪 SMART PDV v11.0.0
 
+🔹 NOVIDADES v10.3:
+- 15 DIAS DE TESTE GRÁTIS (EMPRESARIAL COMPLETO) ✅
+- NOVOS VALORES DE PLANOS (R$ 29,99 a R$ 129,99) ✅
+- CORREÇÃO DA REIMPRESSÃO DE CUPONS ✅
+- CAMPO CÓDIGO DE BARRAS RESTAURADO ✅
+- FIADO BLOQUEADO PARA PLANOS SEM CLIENTES ✅
+- SISTEMA DE CLIENTES CORRIGIDO ✅
+"""
 
 import sys
 import os
@@ -168,7 +178,7 @@ class Plano:
     oculto: bool = False
 
 PLANOS: List[Plano] = [
-    Plano(1, 1, 49.99, '🔰 BÁSICO', 30, 500, {
+    Plano(1, 1, 29.99, '🔰 BÁSICO', 30, 500, {
         'clientes': False,
         'dashboard': False,
         'busca_estoque': False,
@@ -176,7 +186,7 @@ PLANOS: List[Plano] = [
         'fiado': False,
         'kit_combo': False,
     }),
-    Plano(2, 3, 99.99, '⭐ STANDARD', 30, 3000, {
+    Plano(2, 3, 69.99, '⭐ STANDARD', 30, 1000, {
         'clientes': True,
         'dashboard': False,
         'busca_estoque': True,
@@ -184,7 +194,7 @@ PLANOS: List[Plano] = [
         'fiado': True,
         'kit_combo': True,
     }),
-    Plano(3, 10, 119.99, '💎 PREMIUM', 30, -1, {
+    Plano(3, 10, 99.99, '💎 PREMIUM', 30, -1, {
         'clientes': True,
         'dashboard': True,
         'busca_estoque': True,
@@ -201,7 +211,7 @@ PLANOS: List[Plano] = [
         'kit_combo': True,
     }, oculto=True),
     # Plano de TESTE (15 dias, todas as permissões liberadas, limite de 300 produtos e 1 usuário)
-    Plano(5, 1, 0.00, '🎁 TESTE', 15, 100, {
+    Plano(5, 1, 0.00, '🎁 TESTE', 15, 300, {
         'clientes': True,
         'dashboard': True,
         'busca_estoque': True,
@@ -1343,7 +1353,7 @@ def buscar_produto_por_codigo_barras(codigo_barras: str) -> Dict:
             return {"success": True, "dados": cache_data['dados'], "fonte": "cache"}
     try:
         url = f"https://www.dotcompany.com.br/api/catalogo/public/buscar?q={codigo_limpo}"
-        response = requests.get(url, timeout=8, headers={"User-Agent": "SMART-PDV/10.0"})
+        response = requests.get(url, timeout=4, headers={"User-Agent": "SMART-PDV/10.0"})
         if response.status_code == 200:
             data = response.json()
             if data.get('sucesso') and data.get('produto'):
@@ -1363,7 +1373,7 @@ def buscar_produto_por_codigo_barras(codigo_barras: str) -> Dict:
         pass
     try:
         url = f"https://world.openfoodfacts.org/api/v0/product/{codigo_limpo}.json"
-        response = requests.get(url, timeout=10, headers={"User-Agent": "SMART-PDV/10.0"})
+        response = requests.get(url, timeout=4, headers={"User-Agent": "SMART-PDV/10.0"})
         if response.status_code == 200:
             data = response.json()
             if data.get('status') == 1 and data.get('product'):
@@ -1380,7 +1390,7 @@ def buscar_produto_por_codigo_barras(codigo_barras: str) -> Dict:
         pass
     try:
         url = f"https://brasilapi.com.br/api/gtin/v1/{codigo_limpo}"
-        response = requests.get(url, timeout=10)
+        response = requests.get(url, timeout=4)
         if response.status_code == 200:
             data = response.json()
             if data.get('gtin'):
@@ -2649,8 +2659,9 @@ def dev_toggle():
 def get_planos():
     planos_out = []
     for p in PLANOS:
-        # Planos ocultos (ex: Empresarial, reservado para o delivery) não aparecem na loja
-        if getattr(p, 'oculto', False):
+        # Planos ocultos (Empresarial) e o TESTE não aparecem na loja.
+        # O teste já vem ativo por padrão ao criar a conta, então não precisa de card.
+        if getattr(p, 'oculto', False) or p.is_teste:
             continue
         pd = asdict(p)
         if not p.is_teste and p.preco > 0:
