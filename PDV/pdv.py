@@ -1114,8 +1114,18 @@ def _baixar_firebase_para_local(db_id: str, dados_firebase: Dict, resultado: Dic
         for id_cli, dados_cli in (dados_firebase.get('clientes') or {}).items():
             try:
                 id_int = int(id_cli) if str(id_cli).isdigit() else None
+                nome_c = dados_cli.get('nome', '')
+                tel_c = dados_cli.get('telefone', '')
+                # Evita duplicar: se já existe um cliente com mesmo nome (e telefone),
+                # não insere de novo. (Corrige clientes duplicados a cada sync.)
+                if nome_c:
+                    dup = conn.execute("SELECT id FROM clientes WHERE nome=? AND IFNULL(telefone,'')=? AND db_id=?",
+                        (nome_c, tel_c, db_id)).fetchone()
+                    if dup:
+                        continue
+                # Também evita conflito de id: se o id já existe, deixa o INSERT OR IGNORE cuidar
                 conn.execute("""INSERT OR IGNORE INTO clientes (id, nome, telefone, email, divida, db_id, ultima_atualizacao)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)""", (id_int, dados_cli.get('nome', ''), dados_cli.get('telefone', ''),
+                    VALUES (?, ?, ?, ?, ?, ?, ?)""", (id_int, nome_c, tel_c,
                     dados_cli.get('email', ''), dados_cli.get('divida', 0), db_id, dados_cli.get('ultima_atualizacao', get_timestamp())))
                 resultado['clientes_adicionados'] += 1
             except Exception as e:
@@ -1202,6 +1212,14 @@ def _merge_bidirecional_sem_duplicar(db_id: str, dados_firebase: Dict, resultado
                     logger.error(f"⚠️ Erro ao atualizar cliente {id_int}: {e}")
             else:
                 try:
+                    # Antes de inserir, confere se já existe um cliente com mesmo nome+telefone
+                    nome_novo = dados_cli.get('nome', '')
+                    tel_novo = dados_cli.get('telefone', '')
+                    if nome_novo:
+                        dup2 = conn.execute("SELECT id FROM clientes WHERE nome=? AND IFNULL(telefone,'')=? AND db_id=?",
+                            (nome_novo, tel_novo, db_id)).fetchone()
+                        if dup2:
+                            continue
                     conn.execute("""INSERT INTO clientes (id, nome, telefone, email, divida, db_id, ultima_atualizacao)
                         VALUES (?, ?, ?, ?, ?, ?, ?)""", (id_int, dados_cli.get('nome', ''), dados_cli.get('telefone', ''),
                         dados_cli.get('email', ''), dados_cli.get('divida', 0), db_id, dados_cli.get('ultima_atualizacao', get_timestamp())))
