@@ -3032,6 +3032,9 @@ document.addEventListener('DOMContentLoaded',function(){
                 carregarStatusCaixa();carregarDash('hoje');carregarLojaInfo();
                 atualizarPermissoesUI();
                 setTimeout(verificarStatusPlano, 500);
+                carregarBgVendasSalvo();
+                carregarEscalaSalva();
+                checarModoDev();
             }else{
                 document.getElementById('authPage').classList.remove('hidden');
                 document.getElementById('app').classList.remove('active');
