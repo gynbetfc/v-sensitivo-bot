@@ -178,7 +178,7 @@ class Plano:
     oculto: bool = False
 
 PLANOS: List[Plano] = [
-    Plano(1, 1, 29.99, '🔰 BÁSICO', 30, 500, {
+    Plano(1, 1, 49.99, '🔰 BÁSICO', 30, 1000, {
         'clientes': False,
         'dashboard': False,
         'busca_estoque': False,
@@ -186,7 +186,7 @@ PLANOS: List[Plano] = [
         'fiado': False,
         'kit_combo': False,
     }),
-    Plano(2, 3, 69.99, '⭐ STANDARD', 30, 1000, {
+    Plano(2, 3, 89.99, '⭐ STANDARD', 30, 5000, {
         'clientes': True,
         'dashboard': False,
         'busca_estoque': True,
@@ -194,7 +194,7 @@ PLANOS: List[Plano] = [
         'fiado': True,
         'kit_combo': True,
     }),
-    Plano(3, 10, 99.99, '💎 PREMIUM', 30, -1, {
+    Plano(3, 10, 119.99, '💎 PREMIUM', 30, -1, {
         'clientes': True,
         'dashboard': True,
         'busca_estoque': True,
@@ -211,7 +211,7 @@ PLANOS: List[Plano] = [
         'kit_combo': True,
     }, oculto=True),
     # Plano de TESTE (15 dias, todas as permissões liberadas, limite de 300 produtos e 1 usuário)
-    Plano(5, 1, 0.00, '🎁 TESTE', 15, 300, {
+    Plano(5, 1, 0.00, '🎁 TESTE', 15, 50, {
         'clientes': True,
         'dashboard': True,
         'busca_estoque': True,
@@ -2242,6 +2242,22 @@ def delete_cliente(cliente_id: int):
 # ============================================================
 # VENDAS - COM LUCRO TOTAL
 # ============================================================
+def _componentes_do_kit(conn, codigo_kit, db_id):
+    """Retorna a lista de componentes (itens) de um kit a partir do código 'KIT:<id>'."""
+    try:
+        if not isinstance(codigo_kit, str) or not codigo_kit.startswith('KIT:'):
+            return []
+        kit_id = codigo_kit.split(':', 1)[1]
+        cur = conn.execute("SELECT itens FROM kits WHERE id=? AND db_id=?", (kit_id, db_id))
+        row = cur.fetchone()
+        if not row or not row[0]:
+            return []
+        itens = json.loads(row[0]) if isinstance(row[0], str) else row[0]
+        return itens if isinstance(itens, list) else []
+    except Exception as e:
+        logger.error(f"Erro ao ler componentes do kit: {e}")
+        return []
+
 @app.route('/api/vendas', methods=['POST'])
 @verificar_plano
 def registrar_venda():
@@ -2257,13 +2273,26 @@ def registrar_venda():
         with get_db_context() as conn:
             conn.execute("BEGIN TRANSACTION")
             try:
+                # Primeira passada: VALIDAR estoque (produtos normais e componentes de kits)
                 for item in itens:
                     codigo = item.get('codigo')
                     is_kit = item.get('is_kit') or (isinstance(codigo, str) and codigo.startswith('KIT:'))
-                    # Kits têm preço próprio e não baixam estoque de componentes: pula validação de estoque,
-                    # mas MANTÉM o custo enviado (soma dos custos dos componentes) para o lucro real.
                     if is_kit:
+                        # Mantém o custo do kit para o lucro
                         item['custo_unitario'] = item.get('custo_unitario', item.get('custo', 0)) or 0
+                        # Verifica o estoque de CADA componente do kit
+                        qtd_kit = item.get('quantidade', 1)
+                        componentes = _componentes_do_kit(conn, codigo, db_id)
+                        for comp in componentes:
+                            comp_cod = comp.get('codigo')
+                            comp_qtd = (comp.get('quantidade', 1) or 1) * qtd_kit
+                            if not comp_cod or comp_cod == 'AVULSO':
+                                continue
+                            cur = conn.execute("SELECT estoque, nome FROM produtos WHERE codigo=? AND db_id=?", (comp_cod, db_id))
+                            prod = cur.fetchone()
+                            if prod and prod[0] < comp_qtd:
+                                conn.execute("ROLLBACK")
+                                return jsonify({"success": False, "error": f"Estoque insuficiente para '{prod[1]}' (usado no combo '{item.get('nome','')}'): disponível {prod[0]}, necessário {comp_qtd}"})
                         continue
                     if codigo and codigo != 'AVULSO':
                         cursor = conn.execute("SELECT estoque, nome, custo FROM produtos WHERE codigo=? AND db_id=?", (codigo, db_id))
@@ -2276,10 +2305,20 @@ def registrar_venda():
                             conn.execute("ROLLBACK")
                             return jsonify({"success": False, "error": f"Estoque insuficiente para '{produto[1]}': disponível {produto[0]}, necessário {qtd}"})
                         item['custo_unitario'] = produto[2] or 0
+                # Segunda passada: BAIXAR estoque (produtos normais e componentes de kits)
                 for item in itens:
                     codigo = item.get('codigo')
                     is_kit = item.get('is_kit') or (isinstance(codigo, str) and codigo.startswith('KIT:'))
                     if is_kit:
+                        qtd_kit = item.get('quantidade', 1)
+                        componentes = _componentes_do_kit(conn, codigo, db_id)
+                        for comp in componentes:
+                            comp_cod = comp.get('codigo')
+                            comp_qtd = (comp.get('quantidade', 1) or 1) * qtd_kit
+                            if not comp_cod or comp_cod == 'AVULSO':
+                                continue
+                            conn.execute("UPDATE produtos SET estoque=estoque-?, ultima_atualizacao=? WHERE codigo=? AND db_id=?",
+                                (comp_qtd, get_timestamp(), comp_cod, db_id))
                         continue
                     if codigo and codigo != 'AVULSO':
                         qtd = item.get('quantidade', 1)
