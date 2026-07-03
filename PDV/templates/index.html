@@ -108,7 +108,7 @@
         .card h3 .btn-excluir-produto{margin-left:auto;background:var(--red);color:#fff;border:0;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600}
         .card h3 .btn-excluir-produto:hover{background:#dc2626}
 
-        .pdv-grid{display:grid;grid-template-columns:1fr 1.5fr;gap:16px}
+        .pdv-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
         .pdv-grid .input-group{margin-bottom:10px}
         .pdv-grid .input-group label{display:block;font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px}
         .pdv-grid .input-group input{width:100%;padding:9px 12px;border:1px solid var(--border-color);border-radius:8px;font-size:14px;transition:var(--transition);background:var(--bg-primary);color:#fff}
@@ -254,7 +254,8 @@
         .estoque-baixo{color:var(--red)!important;font-weight:600}.estoque-medio{color:var(--orange)!important}.estoque-alto{color:var(--green)!important}
         .linha-estoque.linha-ativa{background:rgba(34,197,94,.15)!important;outline:1px solid var(--green)}
 
-        .planos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:16px}
+        .planos-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:16px;margin-bottom:16px}
+        .planos-grid .plano-card{width:230px;flex:0 0 auto}
         .plano-card{background:var(--bg-card);border-radius:var(--radius);padding:20px;border:2px solid var(--border-color);transition:var(--transition);position:relative;text-align:center}
         .plano-card:hover{border-color:var(--green);transform:translateY(-2px);box-shadow:0 12px 40px rgba(34,197,94,.15)}
         .plano-card .preco{font-size:24px;font-weight:700;color:#fff}.plano-card .preco small{font-size:13px;color:var(--text-secondary);font-weight:400}
@@ -2375,21 +2376,37 @@ function aplicarBgVendas(url, opacidadeOverlay){
     card.style.setProperty('--bg-vendas-img', `url('${url}')`);
     card.style.setProperty('--bg-vendas-op', opFinal);
     card.classList.add('com-bg');
-    // Ajusta a altura do card conforme a PROPORÇÃO da imagem:
-    // imagem mais alta -> card mais alto; mais larga -> card mais baixo.
-    // A largura do card é fixa (ele fica na coluna), então mexemos só na altura.
+    // Ajusta o card conforme a PROPORÇÃO da imagem, mexendo na ALTURA e na
+    // largura das colunas (o carrinho encolhe quando a foto é mais larga).
     try{
+        const grid=card.closest('.pdv-grid');
         const im=new Image();
         im.onload=()=>{
             const prop = im.naturalHeight / im.naturalWidth; // >1 = vertical, <1 = horizontal
-            const larguraRef = card.clientWidth || 360;
-            // altura proporcional, limitada entre 240px e 620px para não exagerar
+            const larguraRef = card.clientWidth || 400;
+            // Altura proporcional (limite maior agora: até 780px)
             let altura = Math.round(larguraRef * prop);
-            altura = Math.max(240, Math.min(620, altura));
+            altura = Math.max(300, Math.min(780, altura));
             card.style.minHeight = altura + 'px';
+            // Largura: se a foto é mais larga que alta, o card do produto ganha
+            // mais espaço e o carrinho encolhe. Senão, fica meio a meio.
+            if(grid){
+                if(prop < 0.85){
+                    // imagem horizontal: produto maior (60%), carrinho menor (40%)
+                    grid.style.gridTemplateColumns = '1.4fr 0.9fr';
+                }else{
+                    grid.style.gridTemplateColumns = '1fr 1fr';
+                }
+            }
         };
         im.src=url;
     }catch(e){}
+}
+function removerAjusteBgGrid(){
+    const grid=document.querySelector('.pdv-grid');
+    if(grid) grid.style.gridTemplateColumns='1fr 1fr';
+    const card=document.getElementById('cardProduto');
+    if(card) card.style.minHeight='';
 }
 async function salvarBgVendas(){
     const url=document.getElementById('bgVendasUrl').value.trim();
@@ -2411,6 +2428,7 @@ async function salvarBgVendas(){
 async function removerBgVendas(){
     const card=document.getElementById('cardProduto');
     if(card) card.classList.remove('com-bg');
+    removerAjusteBgGrid();
     document.getElementById('bgVendasUrl').value='';
     try{
         await fetch('/api/loja/background',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({img:'', opacidade:50})});
