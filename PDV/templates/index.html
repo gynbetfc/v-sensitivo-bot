@@ -1416,19 +1416,31 @@ function atualizarHeader(){
 }
 
 async function fazerLogout(){
+    // Limpa o "lembrar login" no servidor e no navegador ANTES de sair,
+    // para que nada faça login automático depois.
+    try{
+        await fetch('/api/login/lembrar',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({email:'',senha:'',lembrar:false})});
+    }catch(e){}
+    try{
+        localStorage.removeItem('sd_login_email');
+        localStorage.removeItem('sd_login_senha');
+        localStorage.removeItem('sd_login_lembrar');
+    }catch(e){}
     try{
         await fetch('/api/auth/logout',{method:'POST',credentials:'include',cache:'no-store'});
     }catch(e){}
-    // Limpa o estado local independentemente da resposta do servidor
+    // Limpa o estado local
     state.db_id=null;state.usuario_id=null;state.nome='';state.cargo='';
     state.permissoes={clientes:false,dashboard:false,busca_estoque:false,margem:false,fiado:false,kit_combo:false};
     state.itens=[];state.produtos=[];state.kits=[];state.clientes=[];
+    // Mostra a tela de login LIMPA (sem recarregar a página, para o webview
+    // não restaurar a sessão anterior e relogar sozinho)
     document.getElementById('app').classList.remove('active');
     document.getElementById('authPage').classList.remove('hidden');
+    const emailC=document.getElementById('loginEmail');if(emailC)emailC.value='';
     const senha=document.getElementById('loginSenha');if(senha)senha.value='';
+    const lembrar=document.getElementById('lembrarLogin');if(lembrar)lembrar.checked=false;
     showToast('👋 Até logo!','info');
-    // Recarrega a página limpa para garantir que nada de logado permaneça em cache/memória
-    setTimeout(()=>{ window.location.reload(); }, 300);
 }
 
 // ============================================================
