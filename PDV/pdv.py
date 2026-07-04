@@ -517,7 +517,7 @@ def init_db() -> None:
             )
         ''')
         for tabela, colunas in {
-            'users': {'sincronizado_em': 'TIMESTAMP', 'bg_vendas_img': 'TEXT DEFAULT ""', 'bg_vendas_opacidade': 'INTEGER DEFAULT 50', 'escala_sistema': 'INTEGER DEFAULT 100', 'bg_vendas_img_ts': 'INTEGER DEFAULT 0', 'bg_vendas_opacidade_ts': 'INTEGER DEFAULT 0', 'escala_sistema_ts': 'INTEGER DEFAULT 0', 'fiscal_ativo': 'INTEGER DEFAULT 0', 'fiscal_token': 'TEXT DEFAULT ""', 'fiscal_csc': 'TEXT DEFAULT ""', 'fiscal_csc_id': 'TEXT DEFAULT ""', 'fiscal_ie': 'TEXT DEFAULT ""', 'fiscal_regime': 'INTEGER DEFAULT 1', 'fiscal_serie': 'INTEGER DEFAULT 1', 'fiscal_ambiente': 'INTEGER DEFAULT 2', 'fiscal_ultimo_numero': 'INTEGER DEFAULT 0'},
+            'users': {'sincronizado_em': 'TIMESTAMP', 'bg_vendas_img': 'TEXT DEFAULT ""', 'bg_vendas_opacidade': 'INTEGER DEFAULT 50', 'escala_sistema': 'INTEGER DEFAULT 100', 'bg_vendas_img_ts': 'INTEGER DEFAULT 0', 'bg_vendas_opacidade_ts': 'INTEGER DEFAULT 0', 'escala_sistema_ts': 'INTEGER DEFAULT 0', 'fiscal_ativo': 'INTEGER DEFAULT 0', 'fiscal_token': 'TEXT DEFAULT ""', 'fiscal_csc': 'TEXT DEFAULT ""', 'fiscal_csc_id': 'TEXT DEFAULT ""', 'fiscal_ie': 'TEXT DEFAULT ""', 'fiscal_regime': 'INTEGER DEFAULT 1', 'fiscal_serie': 'INTEGER DEFAULT 1', 'fiscal_ambiente': 'INTEGER DEFAULT 2', 'fiscal_ultimo_numero': 'INTEGER DEFAULT 0', 'fiscal_emitir_sempre': 'INTEGER DEFAULT 0'},
             'produtos': {'custo': 'REAL DEFAULT 0', 'margem': 'REAL DEFAULT 0', 'ultima_atualizacao': 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP', 'sincronizado_em': 'TIMESTAMP', 'ncm': 'TEXT DEFAULT ""', 'cfop': 'TEXT DEFAULT "5102"', 'csosn': 'TEXT DEFAULT "102"', 'origem': 'INTEGER DEFAULT 0', 'unidade': 'TEXT DEFAULT "UN"'},
             'clientes': {'ultima_atualizacao': 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP', 'sincronizado_em': 'TIMESTAMP'},
             'vendas': {'lucro_total': 'REAL DEFAULT 0', 'recebido': 'REAL DEFAULT 0', 'troco': 'REAL DEFAULT 0', 'sincronizado_em': 'TIMESTAMP'},
@@ -3456,7 +3456,7 @@ def get_fiscal_config():
             return jsonify({"success": False, "error": "Não autenticado"}), 401
         with get_db_context() as conn:
             cur = conn.execute("""SELECT fiscal_ativo, fiscal_token, fiscal_csc, fiscal_csc_id,
-                fiscal_ie, fiscal_regime, fiscal_serie, fiscal_ambiente, fiscal_ultimo_numero
+                fiscal_ie, fiscal_regime, fiscal_serie, fiscal_ambiente, fiscal_ultimo_numero, fiscal_emitir_sempre
                 FROM users WHERE db_id=? LIMIT 1""", (db_id,))
             row = cur.fetchone()
         if not row:
@@ -3475,6 +3475,7 @@ def get_fiscal_config():
             "serie": row[6] if row[6] is not None else 1,
             "ambiente": row[7] if row[7] is not None else 2,
             "ultimo_numero": row[8] or 0,
+            "emitir_sempre": bool(row[9]),
         }})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
@@ -3498,6 +3499,7 @@ def salvar_fiscal_config():
             'regime': ('fiscal_regime', lambda v: int(v)),
             'serie': ('fiscal_serie', lambda v: int(v)),
             'ambiente': ('fiscal_ambiente', lambda v: int(v)),
+            'emitir_sempre': ('fiscal_emitir_sempre', lambda v: 1 if v else 0),
         }
         for chave, (coluna, conv) in mapa.items():
             if chave in data:
