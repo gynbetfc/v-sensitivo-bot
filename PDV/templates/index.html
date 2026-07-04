@@ -915,6 +915,16 @@
         </div>
     </div>
 </div>
+<div class="payment-modal" id="nfceModal">
+    <div class="modal" style="max-width:420px;text-align:center;">
+        <div style="font-size:20px;font-weight:800;margin-bottom:14px;" id="nfceStatus">NFC-e</div>
+        <div id="nfceQrBox" style="display:flex;justify-content:center;margin:14px 0;"></div>
+        <div id="nfceInfo" style="background:var(--bg-primary);border-radius:8px;padding:12px;margin-bottom:14px;text-align:left;font-size:13px;line-height:1.6;"></div>
+        <button class="btn btn-primary" id="nfceDanfeBtn" style="width:100%;margin-bottom:8px;display:none;"><i class="fas fa-file-pdf"></i> Ver comprovante (DANFE)</button>
+        <button class="btn" onclick="fecharNfceModal()" style="width:100%;background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border-color);">Fechar</button>
+    </div>
+</div>
+
 <div class="payment-modal" id="paymentModal">
     <div class="modal">
         <div class="modal-header"><h3>💳 Pagamento</h3><button class="close" onclick="fecharPagamento()">✕</button></div>
@@ -924,6 +934,9 @@
             <div class="troco-display" id="paymentTrocoDisplay"><div class="label">TROCO</div><div class="value" id="paymentTroco">R$ 0,00</div></div>
         </div>
         <div class="cliente-input"><input type="text" id="clientePagamento" placeholder="👤 Cliente (opcional)" autocomplete="off"></div>
+        <div class="cliente-input" id="cpfNotaGrupo" style="display:none;margin-top:8px;">
+            <input type="text" id="cpfNota" placeholder="📄 CPF na nota (opcional)" autocomplete="off" maxlength="14" oninput="formatarCpfNota(this)">
+        </div>
         <div class="payment-methods" id="paymentMethods">
             <button data-metodo="Dinheiro" onclick="selecionarMetodo('Dinheiro')" class="active"><i class="fas fa-money-bill-wave"></i> Dinheiro</button>
             <button data-metodo="PIX" onclick="selecionarMetodo('PIX')"><i class="fas fa-qrcode"></i> PIX</button>
@@ -2229,6 +2242,7 @@ function abrirPagamento(){
     document.getElementById('trocoLabel').textContent='Troco: R$ 0,00';
     document.getElementById('paymentTrocoDisplay').style.display='none';
     document.getElementById('clientePagamento').value='';
+    const cpfN=document.getElementById('cpfNota'); if(cpfN) cpfN.value='';
     document.getElementById('btnConfirmarPagamento').disabled=false;
     selecionarMetodo('Dinheiro');
     document.getElementById('paymentModal').classList.add('active');
@@ -2254,6 +2268,82 @@ function calcularTroco(){
     const display=document.getElementById('paymentTrocoDisplay');
     if(troco>0&&recebido>0){display.style.display='block';document.getElementById('paymentTroco').textContent='R$ '+troco.toFixed(2);}
     else{display.style.display='none';}
+}
+
+// ============================================================
+// NFC-e (emissão fiscal)
+// ============================================================
+function formatarCpfNota(el){
+    let v=el.value.replace(/\D/g,'').slice(0,11);
+    if(v.length>9) v=v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/,'$1.$2.$3-$4');
+    else if(v.length>6) v=v.replace(/(\d{3})(\d{3})(\d{1,3})/,'$1.$2.$3');
+    else if(v.length>3) v=v.replace(/(\d{3})(\d{1,3})/,'$1.$2');
+    el.value=v;
+}
+
+async function emitirNfceSegundoPlano(vendaId, itens, metodo, total, cpf){
+    // Avisa que está emitindo (sem travar o caixa)
+    showToast('📄 Emitindo NFC-e...','info');
+    try{
+        const formas_pagamento=[{metodo:metodo, valor:total}];
+        const res=await fetch('/api/fiscal/emitir',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({
+            venda_id:vendaId, itens:itens, formas_pagamento:formas_pagamento, cpf:cpf||''
+        })});
+        const data=await res.json();
+        if(data.success && data.status==='autorizado'){
+            showToast('✅ NFC-e autorizada!','success');
+            mostrarResultadoNfce(data.dados);
+        }else{
+            const msg=data.error||'Não foi possível emitir a NFC-e';
+            showToast('⚠️ NFC-e: '+msg,'warning');
+            mostrarErroNfce(msg);
+        }
+    }catch(e){
+        showToast('⚠️ Erro ao emitir NFC-e (a venda foi salva normalmente)','warning');
+    }
+}
+
+function mostrarResultadoNfce(dados){
+    const modal=document.getElementById('nfceModal');
+    if(!modal)return;
+    document.getElementById('nfceStatus').innerHTML='✅ <span style="color:var(--green);">NFC-e Autorizada</span>';
+    document.getElementById('nfceInfo').innerHTML=`
+        <div><strong>Número:</strong> ${dados.numero||'—'} / Série ${dados.serie||'—'}</div>
+        <div style="font-size:11px;word-break:break-all;margin-top:6px;"><strong>Chave:</strong> ${dados.chave_nfe||'—'}</div>
+    `;
+    const qrBox=document.getElementById('nfceQrBox');
+    if(dados.qrcode_url){
+        // gera o QR code a partir da URL que o Focus retorna
+        qrBox.innerHTML=`<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(dados.qrcode_url)}" alt="QR Code NFC-e" style="width:200px;height:200px;">`;
+    }else{
+        qrBox.innerHTML='';
+    }
+    const danfeBtn=document.getElementById('nfceDanfeBtn');
+    if(dados.caminho_danfe){
+        danfeBtn.style.display='block';
+        danfeBtn.onclick=()=>window.open('https://api.focusnfe.com.br'+dados.caminho_danfe,'_blank');
+    }else{
+        danfeBtn.style.display='none';
+    }
+    modal.classList.add('active');
+}
+
+function mostrarErroNfce(msg){
+    const modal=document.getElementById('nfceModal');
+    if(!modal)return;
+    document.getElementById('nfceStatus').innerHTML='⚠️ <span style="color:var(--orange);">NFC-e não autorizada</span>';
+    document.getElementById('nfceInfo').innerHTML=`
+        <div style="color:var(--text-secondary);font-size:13px;">${msg}</div>
+        <div style="color:var(--text-muted);font-size:12px;margin-top:8px;">A venda foi registrada normalmente. Você pode tentar emitir a nota depois ou verificar a configuração fiscal.</div>
+    `;
+    document.getElementById('nfceQrBox').innerHTML='';
+    document.getElementById('nfceDanfeBtn').style.display='none';
+    modal.classList.add('active');
+}
+
+function fecharNfceModal(){
+    const modal=document.getElementById('nfceModal');
+    if(modal) modal.classList.remove('active');
 }
 
 async function confirmarPagamento(){
@@ -2288,10 +2378,18 @@ async function confirmarPagamento(){
         const data=await res.json();
         if(data.success){
             ultimaVendaId=data.id;ultimoCupomData=data.dados_impressao;
+            const itensVenda=state.itens.slice(); // guarda antes de limpar
+            const cpfNota=(document.getElementById('cpfNota')?.value||'').replace(/\D/g,'');
+            const totalVenda=state.total;
+            const metodoVenda=metodo;
             state.itens=[];atualizarCarrinho();fecharPagamento();
             mostrarCupom(data.dados_impressao);
             carregarDash(state.periodo);carregarStatusCaixa();
             showToast('✅ Venda finalizada!','success');
+            // Se a emissão fiscal está ativa, emite a NFC-e em segundo plano
+            if(state.fiscalAtivo){
+                emitirNfceSegundoPlano(data.id, itensVenda, metodoVenda, totalVenda, cpfNota);
+            }
         }else{showToast('❌ '+data.error,'error');document.getElementById('btnConfirmarPagamento').disabled=false;}
     }catch(e){showToast('❌ Erro na venda','error');document.getElementById('btnConfirmarPagamento').disabled=false;}
 }
@@ -2962,6 +3060,8 @@ async function carregarConfigFiscal(){
         state.fiscalAtivo = !!c.ativo;
         const ncmGrupo=document.getElementById('prodNcmGrupo');
         if(ncmGrupo) ncmGrupo.style.display = c.ativo ? 'block' : 'none';
+        const cpfGrupo=document.getElementById('cpfNotaGrupo');
+        if(cpfGrupo) cpfGrupo.style.display = c.ativo ? 'block' : 'none';
         set('fiscalCsc', c.csc||'');
         set('fiscalCscId', c.csc_id||'');
         set('fiscalIe', c.ie||'');
