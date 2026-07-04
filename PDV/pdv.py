@@ -497,7 +497,25 @@ def init_db() -> None:
             )
         ''')
 
-        # Adicionar colunas faltantes
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS notas_fiscais (
+                ref TEXT PRIMARY KEY,
+                venda_id INTEGER,
+                db_id TEXT,
+                status TEXT DEFAULT 'processando',
+                status_sefaz TEXT DEFAULT '',
+                mensagem_sefaz TEXT DEFAULT '',
+                chave_nfe TEXT DEFAULT '',
+                numero TEXT DEFAULT '',
+                serie TEXT DEFAULT '',
+                qrcode_url TEXT DEFAULT '',
+                caminho_danfe TEXT DEFAULT '',
+                caminho_xml TEXT DEFAULT '',
+                cpf_destinatario TEXT DEFAULT '',
+                total REAL DEFAULT 0,
+                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
         for tabela, colunas in {
             'users': {'sincronizado_em': 'TIMESTAMP', 'bg_vendas_img': 'TEXT DEFAULT ""', 'bg_vendas_opacidade': 'INTEGER DEFAULT 50', 'escala_sistema': 'INTEGER DEFAULT 100', 'bg_vendas_img_ts': 'INTEGER DEFAULT 0', 'bg_vendas_opacidade_ts': 'INTEGER DEFAULT 0', 'escala_sistema_ts': 'INTEGER DEFAULT 0', 'fiscal_ativo': 'INTEGER DEFAULT 0', 'fiscal_token': 'TEXT DEFAULT ""', 'fiscal_csc': 'TEXT DEFAULT ""', 'fiscal_csc_id': 'TEXT DEFAULT ""', 'fiscal_ie': 'TEXT DEFAULT ""', 'fiscal_regime': 'INTEGER DEFAULT 1', 'fiscal_serie': 'INTEGER DEFAULT 1', 'fiscal_ambiente': 'INTEGER DEFAULT 2', 'fiscal_ultimo_numero': 'INTEGER DEFAULT 0'},
             'produtos': {'custo': 'REAL DEFAULT 0', 'margem': 'REAL DEFAULT 0', 'ultima_atualizacao': 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP', 'sincronizado_em': 'TIMESTAMP', 'ncm': 'TEXT DEFAULT ""', 'cfop': 'TEXT DEFAULT "5102"', 'csosn': 'TEXT DEFAULT "102"', 'origem': 'INTEGER DEFAULT 0', 'unidade': 'TEXT DEFAULT "UN"'},
@@ -2346,6 +2364,155 @@ def _componentes_do_kit(conn, codigo_kit, db_id):
         logger.error(f"Erro ao ler componentes do kit: {e}")
         return []
 
+# ============================================================
+# EMISSÃO DE NFC-e (Focus NFe)
+# Docs: https://doc.focusnfe.com.br/reference/emitir_nfce
+# ============================================================
+FOCUS_URL_PROD = "https://api.focusnfe.com.br/v2"
+FOCUS_URL_HOMOLOG = "https://homologacao.focusnfe.com.br/v2"
+
+# Mapeia o método de pagamento do PDV para o código da NFC-e
+_FORMA_PAGAMENTO_NFCE = {
+    'Dinheiro': '01', 'PIX': '17', 'Cartão': '03', 'Crédito': '03',
+    'Débito': '04', 'Fiado': '15', 'Outros': '99',
+}
+
+def _fiscal_config(db_id):
+    """Lê a configuração fiscal da loja."""
+    with get_db_context() as conn:
+        cur = conn.execute("""SELECT fiscal_ativo, fiscal_token, fiscal_csc, fiscal_csc_id,
+            fiscal_ie, fiscal_regime, fiscal_serie, fiscal_ambiente, cnpj
+            FROM users WHERE db_id=? LIMIT 1""", (db_id,))
+        row = cur.fetchone()
+    if not row:
+        return None
+    return {
+        'ativo': bool(row[0]), 'token': row[1] or '', 'csc': row[2] or '',
+        'csc_id': row[3] or '', 'ie': row[4] or '', 'regime': row[5] or 1,
+        'serie': row[6] or 1, 'ambiente': row[7] or 2, 'cnpj': (row[8] or '').replace('.', '').replace('/', '').replace('-', ''),
+    }
+
+def _montar_payload_nfce(db_id, cfg, venda_id, itens, formas_pagamento, cpf=None):
+    """Monta o JSON da NFC-e no formato do Focus NFe."""
+    from datetime import datetime, timezone, timedelta
+    # data de emissão com fuso (Brasília -03:00)
+    tz = timezone(timedelta(hours=-3))
+    data_emissao = datetime.now(tz).replace(microsecond=0).isoformat()
+
+    items_payload = []
+    for i, item in enumerate(itens, start=1):
+        # busca os dados fiscais do produto
+        ncm, cfop, csosn, origem, unidade = '', '5102', '102', 0, 'UN'
+        codigo = item.get('codigo', '')
+        if codigo and not str(codigo).startswith('KIT:'):
+            with get_db_context() as conn:
+                p = conn.execute("SELECT ncm, cfop, csosn, origem, unidade FROM produtos WHERE codigo=? AND db_id=?", (codigo, db_id)).fetchone()
+                if p:
+                    ncm = p[0] or ''
+                    cfop = p[1] or '5102'
+                    csosn = p[2] or '102'
+                    origem = p[3] if p[3] is not None else 0
+                    unidade = p[4] or 'UN'
+        qtd = item.get('quantidade', 1)
+        valor_unit = round(float(item.get('preco_unitario', item.get('preco', 0))), 2)
+        valor_bruto = round(valor_unit * qtd, 2)
+        items_payload.append({
+            "numero_item": str(i),
+            "codigo_produto": str(codigo or i),
+            "descricao": item.get('nome', 'Produto'),
+            "codigo_ncm": ncm,
+            "cfop": cfop,
+            "unidade_comercial": unidade,
+            "quantidade_comercial": qtd,
+            "valor_unitario_comercial": valor_unit,
+            "valor_bruto": valor_bruto,
+            "unidade_tributavel": unidade,
+            "quantidade_tributavel": qtd,
+            "valor_unitario_tributavel": valor_unit,
+            "icms_origem": str(origem),
+            "icms_situacao_tributaria": csosn,
+        })
+
+    pagamentos_payload = []
+    for fp in formas_pagamento:
+        metodo = fp.get('metodo', 'Dinheiro')
+        pagamentos_payload.append({
+            "forma_pagamento": _FORMA_PAGAMENTO_NFCE.get(metodo, '99'),
+            "valor_pagamento": round(float(fp.get('valor', 0)), 2),
+        })
+
+    payload = {
+        "cnpj_emitente": cfg['cnpj'],
+        "data_emissao": data_emissao,
+        "presenca_comprador": "1",       # 1 = operação presencial
+        "modalidade_frete": "9",          # 9 = sem frete
+        "local_destino": "1",             # 1 = operação interna (mesmo estado)
+        "natureza_operacao": "VENDA AO CONSUMIDOR",
+        "items": items_payload,
+        "formas_pagamento": pagamentos_payload,
+    }
+    # CPF na nota (opcional)
+    if cpf:
+        cpf_limpo = ''.join(filter(str.isdigit, str(cpf)))
+        if len(cpf_limpo) == 11:
+            payload["cpf_destinatario"] = cpf_limpo
+            payload["indicador_inscricao_estadual_destinatario"] = "9"
+    return payload
+
+def emitir_nfce_focus(db_id, venda_id, itens, formas_pagamento, cpf=None):
+    """Emite a NFC-e via Focus NFe. Roda em thread para não travar o caixa.
+    Grava o resultado na tabela notas_fiscais."""
+    ref = f"pdv_{db_id}_{venda_id}_{int(_time.time())}"
+    try:
+        cfg = _fiscal_config(db_id)
+        if not cfg or not cfg['ativo']:
+            return {"success": False, "error": "Emissão fiscal não está ativa"}
+        if not cfg['token']:
+            return {"success": False, "error": "Token do Focus NFe não configurado"}
+        if not cfg['cnpj']:
+            return {"success": False, "error": "CNPJ da loja não configurado"}
+
+        # registra a nota como "processando"
+        total = sum(round(float(fp.get('valor', 0)), 2) for fp in formas_pagamento)
+        with get_db_context() as conn:
+            conn.execute("""INSERT OR REPLACE INTO notas_fiscais (ref, venda_id, db_id, status, cpf_destinatario, total)
+                VALUES (?, ?, ?, 'processando', ?, ?)""", (ref, venda_id, db_id, cpf or '', total))
+
+        payload = _montar_payload_nfce(db_id, cfg, venda_id, itens, formas_pagamento, cpf)
+        base_url = FOCUS_URL_PROD if cfg['ambiente'] == 1 else FOCUS_URL_HOMOLOG
+        url = f"{base_url}/nfce?ref={ref}"
+        # autenticação: token como usuário do Basic Auth, senha vazia
+        resp = requests.post(url, json=payload, auth=(cfg['token'], ''), timeout=30)
+        try:
+            dados = resp.json()
+        except Exception:
+            dados = {}
+
+        status = dados.get('status', 'erro')
+        with get_db_context() as conn:
+            conn.execute("""UPDATE notas_fiscais SET status=?, status_sefaz=?, mensagem_sefaz=?,
+                chave_nfe=?, numero=?, serie=?, qrcode_url=?, caminho_danfe=?, caminho_xml=? WHERE ref=?""",
+                (status, dados.get('status_sefaz', ''), dados.get('mensagem_sefaz', ''),
+                 dados.get('chave_nfe', ''), dados.get('numero', ''), dados.get('serie', ''),
+                 dados.get('qrcode_url', ''), dados.get('caminho_danfe', ''),
+                 dados.get('caminho_xml_nota_fiscal', ''), ref))
+
+        if status == 'autorizado':
+            logger.info(f"✅ NFC-e autorizada: {dados.get('chave_nfe', '')}")
+            return {"success": True, "status": status, "ref": ref, "dados": dados}
+        else:
+            msg = dados.get('mensagem_sefaz') or dados.get('mensagem') or 'Erro ao emitir'
+            logger.error(f"❌ NFC-e não autorizada: {msg}")
+            return {"success": False, "status": status, "ref": ref, "error": msg, "dados": dados}
+    except Exception as e:
+        logger.error(f"❌ Erro ao emitir NFC-e: {e}")
+        try:
+            with get_db_context() as conn:
+                conn.execute("UPDATE notas_fiscais SET status='erro', mensagem_sefaz=? WHERE ref=?", (str(e), ref))
+        except Exception:
+            pass
+        return {"success": False, "error": str(e), "ref": ref}
+
 @app.route('/api/vendas', methods=['POST'])
 @verificar_plano
 def registrar_venda():
@@ -3348,6 +3515,41 @@ def salvar_fiscal_config():
         with get_db_context() as conn:
             conn.execute(f"UPDATE users SET {', '.join(campos)} WHERE db_id=?", valores)
         return jsonify({"success": True, "message": "Configuração fiscal salva!"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/fiscal/emitir', methods=['POST'])
+def emitir_nota():
+    try:
+        db_id = get_db_id()
+        if not db_id:
+            return jsonify({"success": False, "error": "Não autenticado"}), 401
+        data = request.json or {}
+        venda_id = data.get('venda_id', 0)
+        itens = data.get('itens', [])
+        formas_pagamento = data.get('formas_pagamento', [])
+        cpf = data.get('cpf', '')
+        if not itens:
+            return jsonify({"success": False, "error": "Sem itens para emitir"})
+        # Emite de forma síncrona (o Focus responde em segundos para NFC-e),
+        # mas o frontend chama isso em segundo plano para não travar o caixa.
+        resultado = emitir_nfce_focus(db_id, venda_id, itens, formas_pagamento, cpf)
+        return jsonify(resultado)
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/fiscal/notas', methods=['GET'])
+def listar_notas():
+    try:
+        db_id = get_db_id()
+        if not db_id:
+            return jsonify({"success": False, "error": "Não autenticado"}), 401
+        with get_db_context() as conn:
+            cur = conn.execute("""SELECT ref, venda_id, status, mensagem_sefaz, chave_nfe, numero,
+                serie, qrcode_url, caminho_danfe, total, criado_em FROM notas_fiscais
+                WHERE db_id=? ORDER BY criado_em DESC LIMIT 50""", (db_id,))
+            notas = [dict(row) for row in cur.fetchall()]
+        return jsonify({"success": True, "notas": notas})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
