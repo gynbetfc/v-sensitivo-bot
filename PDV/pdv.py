@@ -533,20 +533,30 @@ def get_timestamp() -> str:
     return datetime.now().isoformat()
 
 def _fb_key(db_id: str) -> str:
+    if not db_id:
+        return ""
     return db_id.replace(".", "_").replace("@", "_").replace("#", "").replace("$", "").replace("[", "").replace("]", "").replace("/", "_")
 
 # ============================================================
 # FIREBASE
 # ============================================================
 def salvar_usuario_firebase(db_id: str, dados: Dict) -> bool:
-    try:
-        key = _fb_key(db_id)
-        url = f'{FB_URL}/pdv/usuarios/{key}.json'
-        response = requests.put(url, json=dados, timeout=15)
-        return response.status_code == 200
-    except Exception as e:
-        logger.error(f"⚠️ Erro Firebase save: {e}")
+    if not db_id:
+        logger.error("⚠️ salvar_usuario_firebase chamado sem db_id")
         return False
+    key = _fb_key(db_id)
+    url = f'{FB_URL}/pdv/usuarios/{key}.json'
+    # tenta ate 3x: falha de rede pontual nao deve perder o cadastro
+    for tentativa in range(3):
+        try:
+            response = requests.put(url, json=dados, timeout=15)
+            if response.status_code == 200:
+                return True
+            logger.warning(f"⚠️ Firebase save status {response.status_code} (tentativa {tentativa+1})")
+        except Exception as e:
+            logger.error(f"⚠️ Erro Firebase save (tentativa {tentativa+1}): {e}")
+        _time.sleep(0.6)
+    return False
 
 def salvar_campos_firebase(db_id: str, campos: Dict) -> bool:
     """Atualiza APENAS os campos informados no Firebase (PATCH), sem precisar
@@ -596,16 +606,18 @@ def ler_timestamp_online() -> Optional[int]:
 def carregar_usuario_firebase(db_id: str, timeout: int = 10) -> Optional[Dict]:
     if not db_id:
         return None
-    try:
-        key = _fb_key(db_id)
-        url = f'{FB_URL}/pdv/usuarios/{key}.json'
-        response = requests.get(url, timeout=timeout)
-        if response.status_code == 200:
-            return response.json()
-        return None
-    except Exception as e:
-        logger.error(f"⚠️ Erro Firebase load: {e}")
-        return None
+    key = _fb_key(db_id)
+    url = f'{FB_URL}/pdv/usuarios/{key}.json'
+    for tentativa in range(2):
+        try:
+            response = requests.get(url, timeout=timeout)
+            if response.status_code == 200:
+                return response.json()
+            return None
+        except Exception as e:
+            logger.error(f"⚠️ Erro Firebase load (tentativa {tentativa+1}): {e}")
+            _time.sleep(0.5)
+    return None
 
 def carregar_todos_usuarios_firebase() -> Dict:
     try:
@@ -618,18 +630,27 @@ def carregar_todos_usuarios_firebase() -> Dict:
         return {}
 
 def buscar_usuario_por_email_firebase(email: str) -> Optional[Dict]:
-    try:
-        url = f'{FB_URL}/pdv/usuarios.json'
-        response = requests.get(url, timeout=10)
-        if response.status_code == 200:
-            usuarios = response.json()
-            if usuarios:
-                for key, dados in usuarios.items():
-                    if dados.get('email') == email:
-                        return dados
-        return None
-    except:
-        return None
+    email = (email or '').strip().lower()
+    url = f'{FB_URL}/pdv/usuarios.json'
+    for tentativa in range(3):
+        try:
+            response = requests.get(url, timeout=12)
+            if response.status_code == 200:
+                usuarios = response.json()
+                if usuarios:
+                    for key, dados in usuarios.items():
+                        if not isinstance(dados, dict):
+                            continue
+                        email_fb = (dados.get('email') or '').strip().lower()
+                        if email_fb == email:
+                            return dados
+                return None  # Firebase respondeu, mas email não existe lá
+        except Exception as e:
+            logger.error(f"⚠️ Erro ao buscar email no Firebase (tentativa {tentativa+1}): {e}")
+            _time.sleep(0.6)
+    # Todas as tentativas falharam: o Firebase não pôde ser consultado
+    logger.error("❌ Não foi possível consultar o Firebase para login (rede?)")
+    return None
 
 def validar_cnpj_firebase(cnpj: str) -> bool:
     try:
@@ -732,10 +753,14 @@ class PlanoSincronizado:
     
     def salvar_token_firebase(self, token_criptografado: str) -> bool:
         try:
-            dados_fb = carregar_usuario_firebase(self.db_id) or {}
-            dados_fb['token_plano'] = token_criptografado
-            dados_fb['token_atualizado_em'] = datetime.now().isoformat()
-            ok = salvar_usuario_firebase(self.db_id, dados_fb)
+            # PATCH (atualiza só estes campos) em vez de PUT. Com PUT, se a leitura
+            # inicial do Firebase falhasse, o nó inteiro do usuário seria substituído
+            # só pelo token — apagando email, senha, produtos, vendas, tudo. Foi esse
+            # o bug que deixou contas sem credenciais (não logavam em outro PC).
+            ok = salvar_campos_firebase(self.db_id, {
+                'token_plano': token_criptografado,
+                'token_atualizado_em': datetime.now().isoformat(),
+            })
             if ok:
                 logger.info(f"✅ Token salvo no Firebase para {self.db_id}")
             return ok
@@ -827,11 +852,12 @@ class PlanoSincronizado:
             token = self._criar_token(expira_em, plano_id)
             self.salvar_token_local(token)
             self.salvar_token_firebase(token)
-            dados_fb = carregar_usuario_firebase(self.db_id) or {}
-            dados_fb['expira_em'] = expira_em
-            dados_fb['plano'] = plano_id
-            dados_fb['plano_atualizado_em'] = datetime.now().isoformat()
-            salvar_usuario_firebase(self.db_id, dados_fb)
+            # PATCH (só estes campos) para não arriscar apagar o resto do nó
+            salvar_campos_firebase(self.db_id, {
+                'expira_em': expira_em,
+                'plano': plano_id,
+                'plano_atualizado_em': datetime.now().isoformat(),
+            })
             logger.info(f"✅ Plano renovado para {self.db_id} até {expira_em}")
             return {'success': True, 'message': f'Plano renovado até {expira_em}', 'expira_em': expira_em}
         except Exception as e:
@@ -1330,7 +1356,7 @@ def enviar_para_firebase(db_id: str) -> bool:
             if result:
                 dados_firebase['caixa'] = {'usuario_id': result[0], 'valor_abertura': result[1], 'data_abertura': result[2],
                     'data_fechamento': result[3], 'total': result[4] or 0, 'status': result[5]}
-            cursor = conn.execute("SELECT nome_loja, cnpj, cnpj_dados, bg_vendas_img, bg_vendas_opacidade FROM users WHERE db_id=? LIMIT 1", (db_id,))
+            cursor = conn.execute("SELECT nome_loja, cnpj, cnpj_dados, bg_vendas_img, bg_vendas_opacidade, email, senha, nome, db_id, servidor_id FROM users WHERE db_id=? LIMIT 1", (db_id,))
             loja = cursor.fetchone()
             if loja:
                 dados_firebase['nome_loja'] = loja[0] or ''
@@ -1339,6 +1365,20 @@ def enviar_para_firebase(db_id: str) -> bool:
                     dados_firebase['cnpj_dados'] = json.loads(loja[2]) if loja[2] else {}
                 except:
                     dados_firebase['cnpj_dados'] = {}
+                # CRÍTICO: sempre regravar as CREDENCIAIS a partir do banco local.
+                # Como o envio usa PUT (substitui o nó inteiro), se não incluíssemos
+                # estes campos e a leitura inicial do Firebase falhasse, o email/senha
+                # seriam APAGADOS da nuvem — e o login em outro PC (ou após reinstalar)
+                # pararia de funcionar. Regravar sempre impede essa perda.
+                if loja[5]:  # email
+                    dados_firebase['email'] = loja[5]
+                if loja[6]:  # senha (hash)
+                    dados_firebase['senha'] = loja[6]
+                if loja[7]:  # nome
+                    dados_firebase['nome'] = loja[7]
+                dados_firebase['db_id'] = loja[8] or db_id
+                if loja[9]:  # servidor_id
+                    dados_firebase['servidor_id'] = loja[9]
                 # NÃO subimos bg_vendas_img/opacidade/escala aqui. Essas preferências
                 # têm seu próprio mecanismo com timestamp (salvar_preferencia_firebase),
                 # senão um dispositivo sem foto apagaria a foto salva por outro.
@@ -1403,13 +1443,14 @@ def criar_usuario_firebase(db_id: str, nome: str, email: str, senha_hash: str, s
         'token_atualizado_em': get_timestamp(), 'teste_usado': True, 'produtos': {}, 'clientes': {},
         'vendas': [], 'caixa': {'status': 'fechado'}, 'config': {}
     }
-    salvar_usuario_firebase(db_id, dados)
+    salvou_ok = salvar_usuario_firebase(db_id, dados)
     plano.salvar_token_local(token)
     try:
         with get_db_context() as conn:
             conn.execute("INSERT OR REPLACE INTO config (chave, valor) VALUES ('teste_usado', '1')")
     except Exception as e:
         logger.error(f"⚠️ Erro ao marcar teste usado no registro: {e}")
+    dados['_salvou_firebase'] = salvou_ok
     return dados
 
 # ============================================================
@@ -1811,19 +1852,16 @@ def register():
             conn.execute("""INSERT INTO users (id, nome, email, senha, cargo, db_id, servidor_id, nome_loja, cnpj, cnpj_dados, bg_vendas_img, bg_vendas_img_ts, bg_vendas_opacidade, bg_vendas_opacidade_ts)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (user_id, nome, email, senha_hash, "Gerente", db_id, SERVIDOR_ID, nome_loja, cnpj, json.dumps(cnpj_dados), BG_PADRAO_URL, ts_bg, 0, ts_bg))
-        # Sobe a foto padrão para o Firebase (com timestamp) para aparecer em todos os dispositivos
-        try:
-            salvar_preferencia_firebase(db_id, 'bg_vendas_img', BG_PADRAO_URL)
-            salvar_preferencia_firebase(db_id, 'bg_vendas_opacidade', 0)
-        except Exception:
-            pass
 
+        # Cria/atualiza a conta no Firebase. Verifica se um usuário COMPLETO
+        # (com email e senha) já existe nessa key — não confundir com um nó
+        # parcial (ex: só preferências). Só assim decidimos criar ou atualizar.
         usuario_firebase = carregar_usuario_firebase(db_id)
-        if not usuario_firebase:
+        tem_usuario_completo = bool(usuario_firebase and usuario_firebase.get('email') and usuario_firebase.get('senha'))
+        if not tem_usuario_completo:
             criar_usuario_firebase(db_id, nome, email, senha_hash, SERVIDOR_ID, nome_loja, cnpj, cnpj_dados)
         else:
             if not usuario_firebase.get('token_plano'):
-                # Se já existe, mantém o plano atual
                 expira_em = usuario_firebase.get('expira_em', (datetime.now() + timedelta(days=15)).isoformat())
                 plano_id = usuario_firebase.get('plano', 5)
                 plano = PlanoSincronizado(db_id, CHAVE_SECRETA_PLANO)
@@ -1833,6 +1871,34 @@ def register():
             usuario_firebase.update({'nome': nome, 'email': email, 'senha': senha_hash, 'servidor_id': SERVIDOR_ID,
                 'nome_loja': nome_loja, 'cnpj': cnpj, 'cnpj_dados': cnpj_dados})
             salvar_usuario_firebase(db_id, usuario_firebase)
+
+        # VERIFICAÇÃO FINAL: confirma que a conta completa está mesmo no Firebase.
+        # Sem isso, uma falha de rede deixaria uma conta que não loga em outro PC.
+        verif = carregar_usuario_firebase(db_id, timeout=12)
+        conta_na_nuvem = bool(verif and (verif.get('email') or '').strip().lower() == email and verif.get('senha') == senha_hash)
+        if not conta_na_nuvem:
+            # tenta salvar de novo uma última vez
+            dados_full = {
+                'db_id': db_id, 'nome': nome, 'email': email, 'senha': senha_hash,
+                'servidor_id': SERVIDOR_ID, 'nome_loja': nome_loja, 'cnpj': cnpj,
+                'cnpj_dados': cnpj_dados, 'data_cadastro': get_timestamp(),
+            }
+            base = verif if isinstance(verif, dict) else {}
+            base.update(dados_full)
+            if not salvar_usuario_firebase(db_id, base):
+                try:
+                    with get_db_context() as conn:
+                        conn.execute("DELETE FROM users WHERE id=?", (user_id,))
+                except Exception:
+                    pass
+                return jsonify({"success": False, "error": "Não foi possível salvar a conta na nuvem. Verifique sua internet e tente de novo."})
+
+        # Agora que a conta está na nuvem, sobe a foto padrão (com timestamp)
+        try:
+            salvar_preferencia_firebase(db_id, 'bg_vendas_img', BG_PADRAO_URL)
+            salvar_preferencia_firebase(db_id, 'bg_vendas_opacidade', 0)
+        except Exception:
+            pass
 
         return jsonify({"success": True, "message": "Conta criada! 15 dias de teste grátis!", "db_id": db_id})
     except Exception as e:
@@ -2924,9 +2990,7 @@ def criar_pix():
                 try:
                     with get_db_context() as conn:
                         conn.execute("INSERT OR REPLACE INTO config (chave, valor) VALUES ('teste_usado', '1')")
-                    dados_fb = carregar_usuario_firebase(db_id, timeout=3) or {}
-                    dados_fb['teste_usado'] = True
-                    salvar_usuario_firebase(db_id, dados_fb)
+                    salvar_campos_firebase(db_id, {'teste_usado': True})
                 except Exception as e:
                     logger.error(f"⚠️ Erro ao marcar teste usado: {e}")
             return jsonify({"success": True, "pix_id": pix_id, "gratis": True, "valor": 0, "plano": asdict(plano)})
@@ -3113,10 +3177,8 @@ def salvar_nome_loja():
         session['nome_loja'] = nome
         session['cnpj'] = cnpj
         session['cnpj_dados'] = cnpj_dados
-        dados = carregar_usuario_firebase(db_id)
-        if dados:
-            dados.update({'nome_loja': nome, 'cnpj': cnpj, 'cnpj_dados': cnpj_dados})
-            salvar_usuario_firebase(db_id, dados)
+        # PATCH: atualiza só estes campos, sem risco de mexer no resto do nó
+        salvar_campos_firebase(db_id, {'nome_loja': nome, 'cnpj': cnpj, 'cnpj_dados': cnpj_dados})
         return jsonify({"success": True, "message": "Informações salvas!"})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
