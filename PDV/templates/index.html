@@ -852,11 +852,64 @@
                     </div>
                 </div>
             </div>
+
+            <div class="card" style="margin-top:16px;">
+                <h3><i class="fas fa-file-invoice-dollar" style="color:var(--green);"></i> Fiscal — Emissão de NFC-e</h3>
+                <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;line-height:1.6;">
+                    Para emitir cupom fiscal (NFC-e), a loja precisa de conta no <strong>Focus NFe</strong> (onde sobe o certificado digital A1), do <strong>CSC</strong> gerado no site da SEFAZ do seu estado, e da Inscrição Estadual. Recomendamos fazer isso com apoio da sua contabilidade.
+                </div>
+
+                <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--bg-primary);border-radius:8px;margin-bottom:14px;">
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;font-weight:600;">
+                        <input type="checkbox" id="fiscalAtivo" style="width:18px;height:18px;accent-color:var(--green);cursor:pointer;">
+                        Ativar emissão de NFC-e
+                    </label>
+                </div>
+
+                <div id="fiscalCampos" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="input-group" style="grid-column:1/-1;">
+                        <label>Token do Focus NFe <span id="fiscalTokenStatus" style="font-size:11px;color:var(--green);"></span></label>
+                        <input type="password" id="fiscalToken" placeholder="Cole aqui o token do Focus NFe" autocomplete="off">
+                    </div>
+                    <div class="input-group">
+                        <label>CSC (Código de Segurança do Contribuinte)</label>
+                        <input type="text" id="fiscalCsc" placeholder="Código gerado na SEFAZ" autocomplete="off">
+                    </div>
+                    <div class="input-group">
+                        <label>ID do CSC</label>
+                        <input type="text" id="fiscalCscId" placeholder="Ex: 000001" autocomplete="off">
+                    </div>
+                    <div class="input-group">
+                        <label>Inscrição Estadual</label>
+                        <input type="text" id="fiscalIe" placeholder="IE da loja" autocomplete="off">
+                    </div>
+                    <div class="input-group">
+                        <label>Regime tributário</label>
+                        <select id="fiscalRegime">
+                            <option value="1">Simples Nacional</option>
+                            <option value="3">Regime Normal (Lucro Presumido/Real)</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Série da nota</label>
+                        <input type="number" id="fiscalSerie" value="1" min="1" autocomplete="off">
+                    </div>
+                    <div class="input-group">
+                        <label>Ambiente</label>
+                        <select id="fiscalAmbiente">
+                            <option value="2">Homologação (testes — sem valor fiscal)</option>
+                            <option value="1">Produção (nota real, com valor fiscal)</option>
+                        </select>
+                    </div>
+                    <div style="grid-column:1/-1;padding:10px 12px;background:rgba(245,158,11,.1);border-radius:8px;font-size:12px;color:var(--orange);">
+                        ⚠️ Comece sempre em <strong>Homologação</strong> para testar. Só mude para Produção quando emitir uma nota de teste com sucesso.
+                    </div>
+                    <button class="btn btn-primary" onclick="salvarConfigFiscal()" style="grid-column:1/-1;margin-top:4px;"><i class="fas fa-save"></i> Salvar configuração fiscal</button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
-
-<!-- PAYMENT MODAL -->
 <div class="payment-modal" id="paymentModal">
     <div class="modal">
         <div class="modal-header"><h3>💳 Pagamento</h3><button class="close" onclick="fecharPagamento()">✕</button></div>
@@ -1370,7 +1423,7 @@ async function fazerLogin(){
             document.getElementById('app').classList.add('active');
             atualizarHeader();
             carregarPlanos();carregarProdutos().then(()=>carregarKitsParaVenda());carregarClientes();carregarUsuarios();
-            carregarStatusCaixa();carregarDash('hoje');carregarLojaInfo();
+            carregarStatusCaixa();carregarDash("hoje");carregarLojaInfo();carregarConfigFiscal();
             atualizarPermissoesUI();
             setTimeout(verificarStatusPlano, 500);
             carregarBgVendasSalvo();
@@ -2885,6 +2938,61 @@ async function excluirUsuario(id){
 // ============================================================
 // LOJA
 // ============================================================
+async function carregarConfigFiscal(){
+    try{
+        const res=await fetch('/api/fiscal/config',{credentials:'include',cache:'no-store'});
+        const data=await res.json();
+        if(!data.success||!data.config) return;
+        const c=data.config;
+        const set=(id,val)=>{const el=document.getElementById(id); if(el!==null&&el!==undefined&&el) el.value=val;};
+        const setChk=(id,val)=>{const el=document.getElementById(id); if(el) el.checked=!!val;};
+        setChk('fiscalAtivo', c.ativo);
+        set('fiscalCsc', c.csc||'');
+        set('fiscalCscId', c.csc_id||'');
+        set('fiscalIe', c.ie||'');
+        set('fiscalRegime', String(c.regime||1));
+        set('fiscalSerie', c.serie||1);
+        set('fiscalAmbiente', String(c.ambiente||2));
+        // Token: não preenche o campo (por segurança), só mostra que já existe
+        const status=document.getElementById('fiscalTokenStatus');
+        if(status){
+            if(c.tem_token){
+                status.textContent='✓ token salvo ('+(c.token_mascarado||'')+') — deixe em branco para manter';
+            }else{
+                status.textContent='';
+            }
+        }
+        const campoToken=document.getElementById('fiscalToken');
+        if(campoToken) campoToken.placeholder = c.tem_token ? 'Token salvo — cole um novo só se for trocar' : 'Cole aqui o token do Focus NFe';
+    }catch(e){}
+}
+
+async function salvarConfigFiscal(){
+    const payload={
+        ativo: document.getElementById('fiscalAtivo').checked,
+        csc: document.getElementById('fiscalCsc').value.trim(),
+        csc_id: document.getElementById('fiscalCscId').value.trim(),
+        ie: document.getElementById('fiscalIe').value.trim(),
+        regime: parseInt(document.getElementById('fiscalRegime').value)||1,
+        serie: parseInt(document.getElementById('fiscalSerie').value)||1,
+        ambiente: parseInt(document.getElementById('fiscalAmbiente').value)||2,
+    };
+    // token: só envia se o usuário digitou algo (senão mantém o que está salvo)
+    const tk=document.getElementById('fiscalToken').value.trim();
+    if(tk) payload.token=tk;
+    try{
+        const res=await fetch('/api/fiscal/config',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify(payload)});
+        const data=await res.json();
+        if(data.success){
+            showToast('✅ Configuração fiscal salva!','success');
+            document.getElementById('fiscalToken').value='';
+            carregarConfigFiscal();
+        }else{
+            showToast('❌ '+(data.error||'Erro ao salvar'),'error');
+        }
+    }catch(e){showToast('❌ Erro ao salvar configuração fiscal','error');}
+}
+
 async function carregarLojaInfo(){
     try{
         const res=await fetch('/api/loja/info',{credentials:'include'});
@@ -3103,7 +3211,7 @@ document.addEventListener('DOMContentLoaded',function(){
                 document.getElementById('app').classList.add('active');
                 atualizarHeader();
                 carregarPlanos();carregarProdutos();carregarClientes();carregarUsuarios();
-                carregarStatusCaixa();carregarDash('hoje');carregarLojaInfo();
+                carregarStatusCaixa();carregarDash("hoje");carregarLojaInfo();carregarConfigFiscal();
                 atualizarPermissoesUI();
                 setTimeout(verificarStatusPlano, 500);
                 carregarBgVendasSalvo();
