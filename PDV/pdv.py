@@ -499,7 +499,7 @@ def init_db() -> None:
 
         # Adicionar colunas faltantes
         for tabela, colunas in {
-            'users': {'sincronizado_em': 'TIMESTAMP', 'bg_vendas_img': 'TEXT DEFAULT ""', 'bg_vendas_opacidade': 'INTEGER DEFAULT 50', 'escala_sistema': 'INTEGER DEFAULT 100', 'bg_vendas_img_ts': 'INTEGER DEFAULT 0', 'bg_vendas_opacidade_ts': 'INTEGER DEFAULT 0', 'escala_sistema_ts': 'INTEGER DEFAULT 0'},
+            'users': {'sincronizado_em': 'TIMESTAMP', 'bg_vendas_img': 'TEXT DEFAULT ""', 'bg_vendas_opacidade': 'INTEGER DEFAULT 50', 'escala_sistema': 'INTEGER DEFAULT 100', 'bg_vendas_img_ts': 'INTEGER DEFAULT 0', 'bg_vendas_opacidade_ts': 'INTEGER DEFAULT 0', 'escala_sistema_ts': 'INTEGER DEFAULT 0', 'fiscal_ativo': 'INTEGER DEFAULT 0', 'fiscal_token': 'TEXT DEFAULT ""', 'fiscal_csc': 'TEXT DEFAULT ""', 'fiscal_csc_id': 'TEXT DEFAULT ""', 'fiscal_ie': 'TEXT DEFAULT ""', 'fiscal_regime': 'INTEGER DEFAULT 1', 'fiscal_serie': 'INTEGER DEFAULT 1', 'fiscal_ambiente': 'INTEGER DEFAULT 2', 'fiscal_ultimo_numero': 'INTEGER DEFAULT 0'},
             'produtos': {'custo': 'REAL DEFAULT 0', 'margem': 'REAL DEFAULT 0', 'ultima_atualizacao': 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP', 'sincronizado_em': 'TIMESTAMP'},
             'clientes': {'ultima_atualizacao': 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP', 'sincronizado_em': 'TIMESTAMP'},
             'vendas': {'lucro_total': 'REAL DEFAULT 0', 'recebido': 'REAL DEFAULT 0', 'troco': 'REAL DEFAULT 0', 'sincronizado_em': 'TIMESTAMP'},
@@ -3273,10 +3273,80 @@ def get_escala():
         return jsonify({"success": False, "error": str(e)})
 
 # ============================================================
-# LEMBRAR LOGIN - salva as credenciais num arquivo local do app
-# (persiste mesmo que o webview limpe o localStorage ao fechar)
+# CONFIGURAÇÃO FISCAL (NFC-e via Focus NFe)
+# A loja sobe o certificado no painel do Focus. Aqui guardamos só o token
+# do Focus e os dados que a nota precisa (CSC, IE, regime, série, ambiente).
 # ============================================================
-_ARQUIVO_LOGIN = os.path.join(APP_DATA_DIR, 'login_lembrado.enc')
+@app.route('/api/fiscal/config', methods=['GET'])
+def get_fiscal_config():
+    try:
+        db_id = get_db_id()
+        if not db_id:
+            return jsonify({"success": False, "error": "Não autenticado"}), 401
+        with get_db_context() as conn:
+            cur = conn.execute("""SELECT fiscal_ativo, fiscal_token, fiscal_csc, fiscal_csc_id,
+                fiscal_ie, fiscal_regime, fiscal_serie, fiscal_ambiente, fiscal_ultimo_numero
+                FROM users WHERE db_id=? LIMIT 1""", (db_id,))
+            row = cur.fetchone()
+        if not row:
+            return jsonify({"success": True, "config": {}})
+        # Por segurança, não devolvemos o token inteiro — só o finalzinho pra confirmar que existe
+        token = row[1] or ''
+        token_mascarado = ('•••• ' + token[-4:]) if len(token) > 4 else ''
+        return jsonify({"success": True, "config": {
+            "ativo": bool(row[0]),
+            "tem_token": bool(token),
+            "token_mascarado": token_mascarado,
+            "csc": row[2] or '',
+            "csc_id": row[3] or '',
+            "ie": row[4] or '',
+            "regime": row[5] if row[5] is not None else 1,
+            "serie": row[6] if row[6] is not None else 1,
+            "ambiente": row[7] if row[7] is not None else 2,
+            "ultimo_numero": row[8] or 0,
+        }})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/fiscal/config', methods=['POST'])
+def salvar_fiscal_config():
+    try:
+        db_id = get_db_id()
+        if not db_id:
+            return jsonify({"success": False, "error": "Não autenticado"}), 401
+        data = request.json or {}
+        # Monta os updates só com os campos enviados (permite atualização parcial)
+        campos = []
+        valores = []
+        mapa = {
+            'ativo': ('fiscal_ativo', lambda v: 1 if v else 0),
+            'token': ('fiscal_token', lambda v: str(v).strip()),
+            'csc': ('fiscal_csc', lambda v: str(v).strip()),
+            'csc_id': ('fiscal_csc_id', lambda v: str(v).strip()),
+            'ie': ('fiscal_ie', lambda v: str(v).strip()),
+            'regime': ('fiscal_regime', lambda v: int(v)),
+            'serie': ('fiscal_serie', lambda v: int(v)),
+            'ambiente': ('fiscal_ambiente', lambda v: int(v)),
+        }
+        for chave, (coluna, conv) in mapa.items():
+            if chave in data:
+                # token vazio no update não apaga o que já existe (a não ser que mande explicitamente)
+                if chave == 'token' and not str(data[chave]).strip():
+                    continue
+                try:
+                    campos.append(f"{coluna}=?")
+                    valores.append(conv(data[chave]))
+                except Exception:
+                    pass
+        if not campos:
+            return jsonify({"success": False, "error": "Nada para salvar"})
+        valores.append(db_id)
+        with get_db_context() as conn:
+            conn.execute(f"UPDATE users SET {', '.join(campos)} WHERE db_id=?", valores)
+        return jsonify({"success": True, "message": "Configuração fiscal salva!"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
 
 @app.route('/api/login/lembrar', methods=['POST'])
 def salvar_login_lembrado():
