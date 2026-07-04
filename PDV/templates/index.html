@@ -906,6 +906,14 @@
                             <option value="1">Produção (nota real, com valor fiscal)</option>
                         </select>
                     </div>
+                    <div class="input-group" style="grid-column:1/-1;">
+                        <label>Quando emitir a NFC-e</label>
+                        <select id="fiscalEmitirSempre">
+                            <option value="0">Só quando o cliente pedir (marco na hora da venda)</option>
+                            <option value="1">Em toda venda automaticamente</option>
+                        </select>
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">💡 Pela lei, o ideal é emitir sempre. Muitas lojas emitem só quando o cliente pede — decisão sua e da sua contabilidade.</div>
+                    </div>
                     <div style="grid-column:1/-1;padding:10px 12px;background:rgba(245,158,11,.1);border-radius:8px;font-size:12px;color:var(--orange);">
                         ⚠️ Comece sempre em <strong>Homologação</strong> para testar. Só mude para Produção quando emitir uma nota de teste com sucesso.
                     </div>
@@ -935,6 +943,10 @@
         </div>
         <div class="cliente-input"><input type="text" id="clientePagamento" placeholder="👤 Cliente (opcional)" autocomplete="off"></div>
         <div class="cliente-input" id="cpfNotaGrupo" style="display:none;margin-top:8px;">
+            <label id="emitirNotaLabel" style="display:none;align-items:center;gap:8px;cursor:pointer;font-size:14px;margin-bottom:8px;padding:8px 10px;background:var(--bg-primary);border-radius:8px;">
+                <input type="checkbox" id="emitirNotaCheck" style="width:18px;height:18px;accent-color:var(--green);cursor:pointer;">
+                📄 Emitir nota fiscal (NFC-e) desta venda
+            </label>
             <input type="text" id="cpfNota" placeholder="📄 CPF na nota (opcional)" autocomplete="off" maxlength="14" oninput="formatarCpfNota(this)">
         </div>
         <div class="payment-methods" id="paymentMethods">
@@ -2243,6 +2255,7 @@ function abrirPagamento(){
     document.getElementById('paymentTrocoDisplay').style.display='none';
     document.getElementById('clientePagamento').value='';
     const cpfN=document.getElementById('cpfNota'); if(cpfN) cpfN.value='';
+    const emitirC=document.getElementById('emitirNotaCheck'); if(emitirC) emitirC.checked=false;
     document.getElementById('btnConfirmarPagamento').disabled=false;
     selecionarMetodo('Dinheiro');
     document.getElementById('paymentModal').classList.add('active');
@@ -2386,9 +2399,13 @@ async function confirmarPagamento(){
             mostrarCupom(data.dados_impressao);
             carregarDash(state.periodo);carregarStatusCaixa();
             showToast('✅ Venda finalizada!','success');
-            // Se a emissão fiscal está ativa, emite a NFC-e em segundo plano
+            // Se a emissão fiscal está ativa, decide se emite a NFC-e
             if(state.fiscalAtivo){
-                emitirNfceSegundoPlano(data.id, itensVenda, metodoVenda, totalVenda, cpfNota);
+                const marcouEmitir=document.getElementById('emitirNotaCheck')?.checked;
+                // emite se: modo "sempre", OU o caixa marcou "emitir nota"
+                if(state.fiscalEmitirSempre || marcouEmitir){
+                    emitirNfceSegundoPlano(data.id, itensVenda, metodoVenda, totalVenda, cpfNota);
+                }
             }
         }else{showToast('❌ '+data.error,'error');document.getElementById('btnConfirmarPagamento').disabled=false;}
     }catch(e){showToast('❌ Erro na venda','error');document.getElementById('btnConfirmarPagamento').disabled=false;}
@@ -3062,12 +3079,17 @@ async function carregarConfigFiscal(){
         if(ncmGrupo) ncmGrupo.style.display = c.ativo ? 'block' : 'none';
         const cpfGrupo=document.getElementById('cpfNotaGrupo');
         if(cpfGrupo) cpfGrupo.style.display = c.ativo ? 'block' : 'none';
+        // O checkbox "emitir nota" só aparece no modo "quando pedir" (no modo sempre, emite automático)
+        const emitirLabel=document.getElementById('emitirNotaLabel');
+        if(emitirLabel) emitirLabel.style.display = (c.ativo && !c.emitir_sempre) ? 'flex' : 'none';
         set('fiscalCsc', c.csc||'');
         set('fiscalCscId', c.csc_id||'');
         set('fiscalIe', c.ie||'');
         set('fiscalRegime', String(c.regime||1));
         set('fiscalSerie', c.serie||1);
         set('fiscalAmbiente', String(c.ambiente||2));
+        set('fiscalEmitirSempre', String(c.emitir_sempre?1:0));
+        state.fiscalEmitirSempre = !!c.emitir_sempre;
         // Token: não preenche o campo (por segurança), só mostra que já existe
         const status=document.getElementById('fiscalTokenStatus');
         if(status){
@@ -3091,6 +3113,7 @@ async function salvarConfigFiscal(){
         regime: parseInt(document.getElementById('fiscalRegime').value)||1,
         serie: parseInt(document.getElementById('fiscalSerie').value)||1,
         ambiente: parseInt(document.getElementById('fiscalAmbiente').value)||2,
+        emitir_sempre: parseInt(document.getElementById('fiscalEmitirSempre').value)||0,
     };
     // token: só envia se o usuário digitou algo (senão mantém o que está salvo)
     const tk=document.getElementById('fiscalToken').value.trim();
