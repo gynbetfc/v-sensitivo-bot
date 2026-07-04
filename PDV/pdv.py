@@ -500,7 +500,7 @@ def init_db() -> None:
         # Adicionar colunas faltantes
         for tabela, colunas in {
             'users': {'sincronizado_em': 'TIMESTAMP', 'bg_vendas_img': 'TEXT DEFAULT ""', 'bg_vendas_opacidade': 'INTEGER DEFAULT 50', 'escala_sistema': 'INTEGER DEFAULT 100', 'bg_vendas_img_ts': 'INTEGER DEFAULT 0', 'bg_vendas_opacidade_ts': 'INTEGER DEFAULT 0', 'escala_sistema_ts': 'INTEGER DEFAULT 0', 'fiscal_ativo': 'INTEGER DEFAULT 0', 'fiscal_token': 'TEXT DEFAULT ""', 'fiscal_csc': 'TEXT DEFAULT ""', 'fiscal_csc_id': 'TEXT DEFAULT ""', 'fiscal_ie': 'TEXT DEFAULT ""', 'fiscal_regime': 'INTEGER DEFAULT 1', 'fiscal_serie': 'INTEGER DEFAULT 1', 'fiscal_ambiente': 'INTEGER DEFAULT 2', 'fiscal_ultimo_numero': 'INTEGER DEFAULT 0'},
-            'produtos': {'custo': 'REAL DEFAULT 0', 'margem': 'REAL DEFAULT 0', 'ultima_atualizacao': 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP', 'sincronizado_em': 'TIMESTAMP'},
+            'produtos': {'custo': 'REAL DEFAULT 0', 'margem': 'REAL DEFAULT 0', 'ultima_atualizacao': 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP', 'sincronizado_em': 'TIMESTAMP', 'ncm': 'TEXT DEFAULT ""', 'cfop': 'TEXT DEFAULT "5102"', 'csosn': 'TEXT DEFAULT "102"', 'origem': 'INTEGER DEFAULT 0', 'unidade': 'TEXT DEFAULT "UN"'},
             'clientes': {'ultima_atualizacao': 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP', 'sincronizado_em': 'TIMESTAMP'},
             'vendas': {'lucro_total': 'REAL DEFAULT 0', 'recebido': 'REAL DEFAULT 0', 'troco': 'REAL DEFAULT 0', 'sincronizado_em': 'TIMESTAMP'},
             'caixa': {'sincronizado_em': 'TIMESTAMP'}
@@ -2034,10 +2034,10 @@ def get_produtos():
         with get_db_context() as conn:
             if busca:
                 termo = f'%{busca}%'
-                cursor = conn.execute("""SELECT codigo, nome, preco, custo, margem, estoque, categoria, imagem_url FROM produtos
+                cursor = conn.execute("""SELECT codigo, nome, preco, custo, margem, estoque, categoria, imagem_url, ncm, cfop, csosn, origem, unidade FROM produtos
                     WHERE db_id=? AND (LOWER(nome) LIKE ? OR LOWER(codigo) LIKE ?) ORDER BY nome""", (db_id, termo, termo))
             else:
-                cursor = conn.execute("SELECT codigo, nome, preco, custo, margem, estoque, categoria, imagem_url FROM produtos WHERE db_id=? ORDER BY nome", (db_id,))
+                cursor = conn.execute("SELECT codigo, nome, preco, custo, margem, estoque, categoria, imagem_url, ncm, cfop, csosn, origem, unidade FROM produtos WHERE db_id=? ORDER BY nome", (db_id,))
             produtos = [dict(row) for row in cursor.fetchall()]
         return jsonify({"success": True, "produtos": produtos})
     except Exception as e:
@@ -2066,14 +2066,18 @@ def save_produto():
             if not pode:
                 return jsonify({"success": False, "error": msg}), 403
         with get_db_context() as conn:
-            conn.execute("""INSERT INTO produtos (codigo, nome, preco, custo, margem, estoque, categoria, imagem_url, db_id, ultima_atualizacao)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(codigo) DO UPDATE SET
+            conn.execute("""INSERT INTO produtos (codigo, nome, preco, custo, margem, estoque, categoria, imagem_url, db_id, ultima_atualizacao, ncm, cfop, csosn, origem, unidade)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(codigo) DO UPDATE SET
                 nome=excluded.nome, preco=excluded.preco, custo=excluded.custo, margem=excluded.margem,
                 estoque=excluded.estoque, categoria=excluded.categoria,
                 imagem_url=CASE WHEN excluded.imagem_url!='' THEN excluded.imagem_url ELSE produtos.imagem_url END,
-                ultima_atualizacao=excluded.ultima_atualizacao""",
+                ultima_atualizacao=excluded.ultima_atualizacao,
+                ncm=excluded.ncm, cfop=excluded.cfop, csosn=excluded.csosn, origem=excluded.origem, unidade=excluded.unidade""",
                 (data['codigo'], data['nome'], preco, custo, margem, data.get('estoque', 0),
-                data.get('categoria', 'Geral'), data.get('imagem_url', ''), db_id, get_timestamp()))
+                data.get('categoria', 'Geral'), data.get('imagem_url', ''), db_id, get_timestamp(),
+                (data.get('ncm', '') or '').strip(), (data.get('cfop', '5102') or '5102').strip(),
+                (data.get('csosn', '102') or '102').strip(), int(data.get('origem', 0) or 0),
+                (data.get('unidade', 'UN') or 'UN').strip()))
             # Remove qualquer tombstone (exclusão) deste código: o produto existe de novo,
             # então o sync NÃO deve apagá-lo. (Corrige "salvou mas some da lista".)
             conn.execute("DELETE FROM exclusoes WHERE tipo='produto' AND item_id=? AND db_id=?", (data['codigo'], db_id))
