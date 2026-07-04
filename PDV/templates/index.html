@@ -713,6 +713,11 @@
                     </div>
                     <div class="input-group"><label>Estoque</label><input type="number" id="prodEstoque" value="0"></div>
                     <div class="input-group"><label>Categoria</label><input type="text" id="prodCategoria" placeholder="Geral"></div>
+                    <div class="input-group" id="prodNcmGrupo" style="display:none;">
+                        <label>NCM <span style="font-size:11px;color:var(--text-muted);">(código fiscal — 8 dígitos, para NFC-e)</span></label>
+                        <input type="text" id="prodNcm" placeholder="Ex: 22021000" maxlength="8" autocomplete="off" oninput="this.value=this.value.replace(/\D/g,'')">
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">💡 O NCM define os impostos do produto. Pergunte à sua contabilidade se tiver dúvida.</div>
+                    </div>
                     <button class="btn-salvar" onclick="salvarProduto()"><i class="fas fa-save"></i> Salvar Produto</button>
                     <button class="btn-limpar" onclick="limparCamposProduto()">Limpar Campos</button>
                 </div>
@@ -1628,6 +1633,8 @@ function selecionarProdutoParaEdicao(codigo){
     document.getElementById('prodCusto').value=(p.custo||0).toFixed(2);
     document.getElementById('prodEstoque').value=p.estoque;
     document.getElementById('prodCategoria').value=p.categoria||'Geral';
+    const ncmEl=document.getElementById('prodNcm');
+    if(ncmEl) ncmEl.value=p.ncm||'';
     calcularMargem();
     document.getElementById('prodCodigo').focus();
     state.produtoSelecionado=p.codigo;
@@ -1642,6 +1649,8 @@ function limparCamposProduto(){
     document.getElementById('prodLucro').value='R$ 0,00';
     document.getElementById('prodEstoque').value='0';
     document.getElementById('prodCategoria').value='Geral';
+    const ncmEl=document.getElementById('prodNcm');
+    if(ncmEl) ncmEl.value='';
     state.produtoSelecionado=null;
     document.getElementById('prodCodigo').focus();
 }
@@ -1897,8 +1906,10 @@ async function salvarProduto(){
         const custo=temPermissao('margem') ? (parseFloat((document.getElementById('prodCusto').value||'').replace(',','.'))||0) : 0;
         const estoque=parseInt(document.getElementById('prodEstoque').value)||0;
         const categoria=(document.getElementById('prodCategoria').value||'').trim()||'Geral';
+        const ncmEl=document.getElementById('prodNcm');
+        const ncm=ncmEl?(ncmEl.value||'').trim():'';
         if(!codigo||!nome){showToast('❌ Código e nome são obrigatórios.','error');return;}
-        const res=await fetch('/api/produtos',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({codigo,nome,preco,custo,estoque,categoria})});
+        const res=await fetch('/api/produtos',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({codigo,nome,preco,custo,estoque,categoria,ncm})});
         const data=await res.json();
         if(data.success){showToast('✅ Produto salvo!','success');limparCamposProduto();carregarProdutos();}
         else{showToast('❌ '+(data.error||'Erro ao salvar'),'error');}
@@ -2947,6 +2958,10 @@ async function carregarConfigFiscal(){
         const set=(id,val)=>{const el=document.getElementById(id); if(el!==null&&el!==undefined&&el) el.value=val;};
         const setChk=(id,val)=>{const el=document.getElementById(id); if(el) el.checked=!!val;};
         setChk('fiscalAtivo', c.ativo);
+        // Guarda o estado fiscal e mostra/esconde o campo NCM nos produtos
+        state.fiscalAtivo = !!c.ativo;
+        const ncmGrupo=document.getElementById('prodNcmGrupo');
+        if(ncmGrupo) ncmGrupo.style.display = c.ativo ? 'block' : 'none';
         set('fiscalCsc', c.csc||'');
         set('fiscalCscId', c.csc_id||'');
         set('fiscalIe', c.ie||'');
