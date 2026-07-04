@@ -486,7 +486,7 @@
         #cupomPrintArea{display:none}
 
         @media(max-width:768px){
-            .pdv-grid{grid-template-columns:1fr}.estoque-grid{grid-template-columns:1fr}.chart-row{grid-template-columns:1fr}.config-grid{grid-template-columns:1fr}.stat-cards{grid-template-columns:repeat(2,1fr)}
+            .estoque-grid{grid-template-columns:1fr}.chart-row{grid-template-columns:1fr}.config-grid{grid-template-columns:1fr}.stat-cards{grid-template-columns:repeat(2,1fr)}
             body{padding:4px}
             .auth-box{padding:24px 16px}
             .payment-modal .modal{max-width:100%;margin:8px;padding:16px}
@@ -496,7 +496,7 @@
                atrapalha a leitura. Fica só no computador. */
             #cardProduto.com-bg{background-image:none!important;min-height:0!important;}
             #cardProduto.com-bg::before{display:none!important;}
-            .pdv-grid{gap:12px;padding-bottom:88px;} /* espaço pro botão fixo */
+            .pdv-grid{grid-template-columns:1fr!important;gap:12px;padding-bottom:88px;} /* empilha e dá espaço pro botão fixo */
 
             /* Busca de produto: barra limpa e destacada no topo */
             #cardProduto{padding:14px;}
@@ -2656,6 +2656,14 @@ function aplicarBgVendas(url, opacidadeOverlay){
     card.style.setProperty('--bg-vendas-img', `url('${url}')`);
     card.style.setProperty('--bg-vendas-op', opFinal);
     card.classList.add('com-bg');
+    // No CELULAR não mexemos no grid nem forçamos altura: o CSS empilha os
+    // cards e esconde a foto. Esse ajuste de proporção é só pro computador.
+    if(window.innerWidth <= 768){
+        card.style.minHeight = '';
+        const gridM=card.closest('.pdv-grid');
+        if(gridM) gridM.style.gridTemplateColumns = '';
+        return;
+    }
     // Ajusta o card conforme a PROPORÇÃO da imagem, mexendo na ALTURA e na
     // largura das colunas (o carrinho encolhe quando a foto é mais larga).
     try{
