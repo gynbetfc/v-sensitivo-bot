@@ -713,11 +713,6 @@
                     </div>
                     <div class="input-group"><label>Estoque</label><input type="number" id="prodEstoque" value="0"></div>
                     <div class="input-group"><label>Categoria</label><input type="text" id="prodCategoria" placeholder="Geral"></div>
-                    <div class="input-group" id="prodNcmGrupo" style="display:none;">
-                        <label>NCM <span style="font-size:11px;color:var(--text-muted);">(código fiscal — 8 dígitos, para NFC-e)</span></label>
-                        <input type="text" id="prodNcm" placeholder="Ex: 22021000" maxlength="8" autocomplete="off" oninput="this.value=this.value.replace(/\D/g,'')">
-                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">💡 O NCM define os impostos do produto. Pergunte à sua contabilidade se tiver dúvida.</div>
-                    </div>
                     <button class="btn-salvar" onclick="salvarProduto()"><i class="fas fa-save"></i> Salvar Produto</button>
                     <button class="btn-limpar" onclick="limparCamposProduto()">Limpar Campos</button>
                 </div>
@@ -857,82 +852,11 @@
                     </div>
                 </div>
             </div>
-
-            <div class="card" style="margin-top:16px;">
-                <h3><i class="fas fa-file-invoice-dollar" style="color:var(--green);"></i> Fiscal — Emissão de NFC-e</h3>
-                <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;line-height:1.6;">
-                    Para emitir cupom fiscal (NFC-e), a loja precisa de conta no <strong>Focus NFe</strong> (onde sobe o certificado digital A1), do <strong>CSC</strong> gerado no site da SEFAZ do seu estado, e da Inscrição Estadual. Recomendamos fazer isso com apoio da sua contabilidade.
-                </div>
-
-                <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--bg-primary);border-radius:8px;margin-bottom:14px;">
-                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;font-weight:600;">
-                        <input type="checkbox" id="fiscalAtivo" style="width:18px;height:18px;accent-color:var(--green);cursor:pointer;">
-                        Ativar emissão de NFC-e
-                    </label>
-                </div>
-
-                <div id="fiscalCampos" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                    <div class="input-group" style="grid-column:1/-1;">
-                        <label>Token do Focus NFe <span id="fiscalTokenStatus" style="font-size:11px;color:var(--green);"></span></label>
-                        <input type="password" id="fiscalToken" placeholder="Cole aqui o token do Focus NFe" autocomplete="off">
-                    </div>
-                    <div class="input-group">
-                        <label>CSC (Código de Segurança do Contribuinte)</label>
-                        <input type="text" id="fiscalCsc" placeholder="Código gerado na SEFAZ" autocomplete="off">
-                    </div>
-                    <div class="input-group">
-                        <label>ID do CSC</label>
-                        <input type="text" id="fiscalCscId" placeholder="Ex: 000001" autocomplete="off">
-                    </div>
-                    <div class="input-group">
-                        <label>Inscrição Estadual</label>
-                        <input type="text" id="fiscalIe" placeholder="IE da loja" autocomplete="off">
-                    </div>
-                    <div class="input-group">
-                        <label>Regime tributário</label>
-                        <select id="fiscalRegime">
-                            <option value="1">Simples Nacional</option>
-                            <option value="3">Regime Normal (Lucro Presumido/Real)</option>
-                        </select>
-                    </div>
-                    <div class="input-group">
-                        <label>Série da nota</label>
-                        <input type="number" id="fiscalSerie" value="1" min="1" autocomplete="off">
-                    </div>
-                    <div class="input-group">
-                        <label>Ambiente</label>
-                        <select id="fiscalAmbiente">
-                            <option value="2">Homologação (testes — sem valor fiscal)</option>
-                            <option value="1">Produção (nota real, com valor fiscal)</option>
-                        </select>
-                    </div>
-                    <div class="input-group" style="grid-column:1/-1;">
-                        <label>Quando emitir a NFC-e</label>
-                        <select id="fiscalEmitirSempre">
-                            <option value="0">Só quando o cliente pedir (marco na hora da venda)</option>
-                            <option value="1">Em toda venda automaticamente</option>
-                        </select>
-                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">💡 Pela lei, o ideal é emitir sempre. Muitas lojas emitem só quando o cliente pede — decisão sua e da sua contabilidade.</div>
-                    </div>
-                    <div style="grid-column:1/-1;padding:10px 12px;background:rgba(245,158,11,.1);border-radius:8px;font-size:12px;color:var(--orange);">
-                        ⚠️ Comece sempre em <strong>Homologação</strong> para testar. Só mude para Produção quando emitir uma nota de teste com sucesso.
-                    </div>
-                    <button class="btn btn-primary" onclick="salvarConfigFiscal()" style="grid-column:1/-1;margin-top:4px;"><i class="fas fa-save"></i> Salvar configuração fiscal</button>
-                </div>
-            </div>
         </div>
     </div>
 </div>
-<div class="payment-modal" id="nfceModal">
-    <div class="modal" style="max-width:420px;text-align:center;">
-        <div style="font-size:20px;font-weight:800;margin-bottom:14px;" id="nfceStatus">NFC-e</div>
-        <div id="nfceQrBox" style="display:flex;justify-content:center;margin:14px 0;"></div>
-        <div id="nfceInfo" style="background:var(--bg-primary);border-radius:8px;padding:12px;margin-bottom:14px;text-align:left;font-size:13px;line-height:1.6;"></div>
-        <button class="btn btn-primary" id="nfceDanfeBtn" style="width:100%;margin-bottom:8px;display:none;"><i class="fas fa-file-pdf"></i> Ver comprovante (DANFE)</button>
-        <button class="btn" onclick="fecharNfceModal()" style="width:100%;background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border-color);">Fechar</button>
-    </div>
-</div>
 
+<!-- PAYMENT MODAL -->
 <div class="payment-modal" id="paymentModal">
     <div class="modal">
         <div class="modal-header"><h3>💳 Pagamento</h3><button class="close" onclick="fecharPagamento()">✕</button></div>
@@ -942,13 +866,6 @@
             <div class="troco-display" id="paymentTrocoDisplay"><div class="label">TROCO</div><div class="value" id="paymentTroco">R$ 0,00</div></div>
         </div>
         <div class="cliente-input"><input type="text" id="clientePagamento" placeholder="👤 Cliente (opcional)" autocomplete="off"></div>
-        <div class="cliente-input" id="cpfNotaGrupo" style="display:none;margin-top:8px;">
-            <label id="emitirNotaLabel" style="display:none;align-items:center;gap:8px;cursor:pointer;font-size:14px;margin-bottom:8px;padding:8px 10px;background:var(--bg-primary);border-radius:8px;">
-                <input type="checkbox" id="emitirNotaCheck" style="width:18px;height:18px;accent-color:var(--green);cursor:pointer;">
-                📄 Emitir nota fiscal (NFC-e) desta venda
-            </label>
-            <input type="text" id="cpfNota" placeholder="📄 CPF na nota (opcional)" autocomplete="off" maxlength="14" oninput="formatarCpfNota(this)">
-        </div>
         <div class="payment-methods" id="paymentMethods">
             <button data-metodo="Dinheiro" onclick="selecionarMetodo('Dinheiro')" class="active"><i class="fas fa-money-bill-wave"></i> Dinheiro</button>
             <button data-metodo="PIX" onclick="selecionarMetodo('PIX')"><i class="fas fa-qrcode"></i> PIX</button>
@@ -1453,7 +1370,7 @@ async function fazerLogin(){
             document.getElementById('app').classList.add('active');
             atualizarHeader();
             carregarPlanos();carregarProdutos().then(()=>carregarKitsParaVenda());carregarClientes();carregarUsuarios();
-            carregarStatusCaixa();carregarDash("hoje");carregarLojaInfo();carregarConfigFiscal();
+            carregarStatusCaixa();carregarDash('hoje');carregarLojaInfo();
             atualizarPermissoesUI();
             setTimeout(verificarStatusPlano, 500);
             carregarBgVendasSalvo();
@@ -1658,8 +1575,6 @@ function selecionarProdutoParaEdicao(codigo){
     document.getElementById('prodCusto').value=(p.custo||0).toFixed(2);
     document.getElementById('prodEstoque').value=p.estoque;
     document.getElementById('prodCategoria').value=p.categoria||'Geral';
-    const ncmEl=document.getElementById('prodNcm');
-    if(ncmEl) ncmEl.value=p.ncm||'';
     calcularMargem();
     document.getElementById('prodCodigo').focus();
     state.produtoSelecionado=p.codigo;
@@ -1674,8 +1589,6 @@ function limparCamposProduto(){
     document.getElementById('prodLucro').value='R$ 0,00';
     document.getElementById('prodEstoque').value='0';
     document.getElementById('prodCategoria').value='Geral';
-    const ncmEl=document.getElementById('prodNcm');
-    if(ncmEl) ncmEl.value='';
     state.produtoSelecionado=null;
     document.getElementById('prodCodigo').focus();
 }
@@ -1931,10 +1844,8 @@ async function salvarProduto(){
         const custo=temPermissao('margem') ? (parseFloat((document.getElementById('prodCusto').value||'').replace(',','.'))||0) : 0;
         const estoque=parseInt(document.getElementById('prodEstoque').value)||0;
         const categoria=(document.getElementById('prodCategoria').value||'').trim()||'Geral';
-        const ncmEl=document.getElementById('prodNcm');
-        const ncm=ncmEl?(ncmEl.value||'').trim():'';
         if(!codigo||!nome){showToast('❌ Código e nome são obrigatórios.','error');return;}
-        const res=await fetch('/api/produtos',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({codigo,nome,preco,custo,estoque,categoria,ncm})});
+        const res=await fetch('/api/produtos',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({codigo,nome,preco,custo,estoque,categoria})});
         const data=await res.json();
         if(data.success){showToast('✅ Produto salvo!','success');limparCamposProduto();carregarProdutos();}
         else{showToast('❌ '+(data.error||'Erro ao salvar'),'error');}
@@ -2254,8 +2165,6 @@ function abrirPagamento(){
     document.getElementById('trocoLabel').textContent='Troco: R$ 0,00';
     document.getElementById('paymentTrocoDisplay').style.display='none';
     document.getElementById('clientePagamento').value='';
-    const cpfN=document.getElementById('cpfNota'); if(cpfN) cpfN.value='';
-    const emitirC=document.getElementById('emitirNotaCheck'); if(emitirC) emitirC.checked=false;
     document.getElementById('btnConfirmarPagamento').disabled=false;
     selecionarMetodo('Dinheiro');
     document.getElementById('paymentModal').classList.add('active');
@@ -2281,82 +2190,6 @@ function calcularTroco(){
     const display=document.getElementById('paymentTrocoDisplay');
     if(troco>0&&recebido>0){display.style.display='block';document.getElementById('paymentTroco').textContent='R$ '+troco.toFixed(2);}
     else{display.style.display='none';}
-}
-
-// ============================================================
-// NFC-e (emissão fiscal)
-// ============================================================
-function formatarCpfNota(el){
-    let v=el.value.replace(/\D/g,'').slice(0,11);
-    if(v.length>9) v=v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/,'$1.$2.$3-$4');
-    else if(v.length>6) v=v.replace(/(\d{3})(\d{3})(\d{1,3})/,'$1.$2.$3');
-    else if(v.length>3) v=v.replace(/(\d{3})(\d{1,3})/,'$1.$2');
-    el.value=v;
-}
-
-async function emitirNfceSegundoPlano(vendaId, itens, metodo, total, cpf){
-    // Avisa que está emitindo (sem travar o caixa)
-    showToast('📄 Emitindo NFC-e...','info');
-    try{
-        const formas_pagamento=[{metodo:metodo, valor:total}];
-        const res=await fetch('/api/fiscal/emitir',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({
-            venda_id:vendaId, itens:itens, formas_pagamento:formas_pagamento, cpf:cpf||''
-        })});
-        const data=await res.json();
-        if(data.success && data.status==='autorizado'){
-            showToast('✅ NFC-e autorizada!','success');
-            mostrarResultadoNfce(data.dados);
-        }else{
-            const msg=data.error||'Não foi possível emitir a NFC-e';
-            showToast('⚠️ NFC-e: '+msg,'warning');
-            mostrarErroNfce(msg);
-        }
-    }catch(e){
-        showToast('⚠️ Erro ao emitir NFC-e (a venda foi salva normalmente)','warning');
-    }
-}
-
-function mostrarResultadoNfce(dados){
-    const modal=document.getElementById('nfceModal');
-    if(!modal)return;
-    document.getElementById('nfceStatus').innerHTML='✅ <span style="color:var(--green);">NFC-e Autorizada</span>';
-    document.getElementById('nfceInfo').innerHTML=`
-        <div><strong>Número:</strong> ${dados.numero||'—'} / Série ${dados.serie||'—'}</div>
-        <div style="font-size:11px;word-break:break-all;margin-top:6px;"><strong>Chave:</strong> ${dados.chave_nfe||'—'}</div>
-    `;
-    const qrBox=document.getElementById('nfceQrBox');
-    if(dados.qrcode_url){
-        // gera o QR code a partir da URL que o Focus retorna
-        qrBox.innerHTML=`<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(dados.qrcode_url)}" alt="QR Code NFC-e" style="width:200px;height:200px;">`;
-    }else{
-        qrBox.innerHTML='';
-    }
-    const danfeBtn=document.getElementById('nfceDanfeBtn');
-    if(dados.caminho_danfe){
-        danfeBtn.style.display='block';
-        danfeBtn.onclick=()=>window.open('https://api.focusnfe.com.br'+dados.caminho_danfe,'_blank');
-    }else{
-        danfeBtn.style.display='none';
-    }
-    modal.classList.add('active');
-}
-
-function mostrarErroNfce(msg){
-    const modal=document.getElementById('nfceModal');
-    if(!modal)return;
-    document.getElementById('nfceStatus').innerHTML='⚠️ <span style="color:var(--orange);">NFC-e não autorizada</span>';
-    document.getElementById('nfceInfo').innerHTML=`
-        <div style="color:var(--text-secondary);font-size:13px;">${msg}</div>
-        <div style="color:var(--text-muted);font-size:12px;margin-top:8px;">A venda foi registrada normalmente. Você pode tentar emitir a nota depois ou verificar a configuração fiscal.</div>
-    `;
-    document.getElementById('nfceQrBox').innerHTML='';
-    document.getElementById('nfceDanfeBtn').style.display='none';
-    modal.classList.add('active');
-}
-
-function fecharNfceModal(){
-    const modal=document.getElementById('nfceModal');
-    if(modal) modal.classList.remove('active');
 }
 
 async function confirmarPagamento(){
@@ -2391,22 +2224,10 @@ async function confirmarPagamento(){
         const data=await res.json();
         if(data.success){
             ultimaVendaId=data.id;ultimoCupomData=data.dados_impressao;
-            const itensVenda=state.itens.slice(); // guarda antes de limpar
-            const cpfNota=(document.getElementById('cpfNota')?.value||'').replace(/\D/g,'');
-            const totalVenda=state.total;
-            const metodoVenda=metodo;
             state.itens=[];atualizarCarrinho();fecharPagamento();
             mostrarCupom(data.dados_impressao);
             carregarDash(state.periodo);carregarStatusCaixa();
             showToast('✅ Venda finalizada!','success');
-            // Se a emissão fiscal está ativa, decide se emite a NFC-e
-            if(state.fiscalAtivo){
-                const marcouEmitir=document.getElementById('emitirNotaCheck')?.checked;
-                // emite se: modo "sempre", OU o caixa marcou "emitir nota"
-                if(state.fiscalEmitirSempre || marcouEmitir){
-                    emitirNfceSegundoPlano(data.id, itensVenda, metodoVenda, totalVenda, cpfNota);
-                }
-            }
         }else{showToast('❌ '+data.error,'error');document.getElementById('btnConfirmarPagamento').disabled=false;}
     }catch(e){showToast('❌ Erro na venda','error');document.getElementById('btnConfirmarPagamento').disabled=false;}
 }
@@ -3064,73 +2885,6 @@ async function excluirUsuario(id){
 // ============================================================
 // LOJA
 // ============================================================
-async function carregarConfigFiscal(){
-    try{
-        const res=await fetch('/api/fiscal/config',{credentials:'include',cache:'no-store'});
-        const data=await res.json();
-        if(!data.success||!data.config) return;
-        const c=data.config;
-        const set=(id,val)=>{const el=document.getElementById(id); if(el!==null&&el!==undefined&&el) el.value=val;};
-        const setChk=(id,val)=>{const el=document.getElementById(id); if(el) el.checked=!!val;};
-        setChk('fiscalAtivo', c.ativo);
-        // Guarda o estado fiscal e mostra/esconde o campo NCM nos produtos
-        state.fiscalAtivo = !!c.ativo;
-        const ncmGrupo=document.getElementById('prodNcmGrupo');
-        if(ncmGrupo) ncmGrupo.style.display = c.ativo ? 'block' : 'none';
-        const cpfGrupo=document.getElementById('cpfNotaGrupo');
-        if(cpfGrupo) cpfGrupo.style.display = c.ativo ? 'block' : 'none';
-        // O checkbox "emitir nota" só aparece no modo "quando pedir" (no modo sempre, emite automático)
-        const emitirLabel=document.getElementById('emitirNotaLabel');
-        if(emitirLabel) emitirLabel.style.display = (c.ativo && !c.emitir_sempre) ? 'flex' : 'none';
-        set('fiscalCsc', c.csc||'');
-        set('fiscalCscId', c.csc_id||'');
-        set('fiscalIe', c.ie||'');
-        set('fiscalRegime', String(c.regime||1));
-        set('fiscalSerie', c.serie||1);
-        set('fiscalAmbiente', String(c.ambiente||2));
-        set('fiscalEmitirSempre', String(c.emitir_sempre?1:0));
-        state.fiscalEmitirSempre = !!c.emitir_sempre;
-        // Token: não preenche o campo (por segurança), só mostra que já existe
-        const status=document.getElementById('fiscalTokenStatus');
-        if(status){
-            if(c.tem_token){
-                status.textContent='✓ token salvo ('+(c.token_mascarado||'')+') — deixe em branco para manter';
-            }else{
-                status.textContent='';
-            }
-        }
-        const campoToken=document.getElementById('fiscalToken');
-        if(campoToken) campoToken.placeholder = c.tem_token ? 'Token salvo — cole um novo só se for trocar' : 'Cole aqui o token do Focus NFe';
-    }catch(e){}
-}
-
-async function salvarConfigFiscal(){
-    const payload={
-        ativo: document.getElementById('fiscalAtivo').checked,
-        csc: document.getElementById('fiscalCsc').value.trim(),
-        csc_id: document.getElementById('fiscalCscId').value.trim(),
-        ie: document.getElementById('fiscalIe').value.trim(),
-        regime: parseInt(document.getElementById('fiscalRegime').value)||1,
-        serie: parseInt(document.getElementById('fiscalSerie').value)||1,
-        ambiente: parseInt(document.getElementById('fiscalAmbiente').value)||2,
-        emitir_sempre: parseInt(document.getElementById('fiscalEmitirSempre').value)||0,
-    };
-    // token: só envia se o usuário digitou algo (senão mantém o que está salvo)
-    const tk=document.getElementById('fiscalToken').value.trim();
-    if(tk) payload.token=tk;
-    try{
-        const res=await fetch('/api/fiscal/config',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify(payload)});
-        const data=await res.json();
-        if(data.success){
-            showToast('✅ Configuração fiscal salva!','success');
-            document.getElementById('fiscalToken').value='';
-            carregarConfigFiscal();
-        }else{
-            showToast('❌ '+(data.error||'Erro ao salvar'),'error');
-        }
-    }catch(e){showToast('❌ Erro ao salvar configuração fiscal','error');}
-}
-
 async function carregarLojaInfo(){
     try{
         const res=await fetch('/api/loja/info',{credentials:'include'});
@@ -3349,7 +3103,7 @@ document.addEventListener('DOMContentLoaded',function(){
                 document.getElementById('app').classList.add('active');
                 atualizarHeader();
                 carregarPlanos();carregarProdutos();carregarClientes();carregarUsuarios();
-                carregarStatusCaixa();carregarDash("hoje");carregarLojaInfo();carregarConfigFiscal();
+                carregarStatusCaixa();carregarDash('hoje');carregarLojaInfo();
                 atualizarPermissoesUI();
                 setTimeout(verificarStatusPlano, 500);
                 carregarBgVendasSalvo();
