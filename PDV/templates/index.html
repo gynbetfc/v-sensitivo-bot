@@ -195,6 +195,7 @@
         .clientes-table td{padding:8px 6px;border-bottom:1px solid rgba(255,255,255,.03)}
         .clientes-table .divida{color:var(--red);font-weight:600}
         .clientes-table .btn-pagar{padding:3px 12px;background:var(--green);color:#fff;border:0;border-radius:6px;cursor:pointer;font-size:11px}.clientes-table .btn-pagar:hover{background:var(--green-dark)}
+        .clientes-table .btn-wpp{padding:3px 10px;background:#25D366;color:#fff;border:0;border-radius:6px;cursor:pointer;font-size:13px;margin-left:4px}.clientes-table .btn-wpp:hover{background:#1da851}
         .clientes-table .btn-delete{background:0;border:0;color:var(--red);cursor:pointer;font-size:14px;padding:2px 6px}.clientes-table .btn-delete:hover{background:rgba(239,68,68,.1);border-radius:4px}
 
         .caixa-center{text-align:center;padding:20px 10px}
@@ -1929,14 +1930,64 @@ async function carregarClientes(){
             }
             let html='', totalFiados=0;
             data.clientes.forEach(c=>{if(c.divida>0) totalFiados++;
+                const temTel = c.telefone && c.telefone.replace(/\D/g,'').length>=10;
+                const btnWpp = (temTel && c.divida>0)
+                    ? `<button class="btn-wpp" onclick="enviarRelatorioWhats(${c.id})" title="Enviar relatório no WhatsApp">💬</button>` : '';
                 html+=`<tr><td><strong>${c.nome}</strong></td><td>${c.telefone||'-'}</td><td class="divida">R$ ${c.divida.toFixed(2)}</td>
                     <td>${c.divida>0?`<button class="btn-pagar" onclick="pagarDivida(${c.id},'${c.nome}',${c.divida})">💰 Pagar</button>`:''}
+                    ${btnWpp}
                     <button class="btn-delete" onclick="excluirCliente(${c.id})">🗑️</button></td></tr>`;
             });
             tbody.innerHTML=html;
             if(totalFiados>0){badge.style.display='inline';badge.textContent=totalFiados;}else{badge.style.display='none';}
         }
     }catch(e){console.error(e);}
+}
+
+async function enviarRelatorioWhats(clienteId){
+    try{
+        const res=await fetch(`/api/clientes/${clienteId}/relatorio`,{credentials:'include'});
+        const data=await res.json();
+        if(!data.success){ alert(data.error||'Não foi possível gerar o relatório.'); return; }
+        const cli=data.cliente;
+        const tel=(cli.telefone||'').replace(/\D/g,'');
+        if(tel.length<10){ alert('Este cliente não tem um número de WhatsApp válido.'); return; }
+        // monta o "cupom geral" com todos os itens comprados fiado
+        let msg=`*${data.nome_loja}*\n`;
+        msg+=`Relatório de compras no fiado\n`;
+        msg+=`Cliente: *${cli.nome}*\n`;
+        msg+=`━━━━━━━━━━━━━━━━━━\n`;
+        if(!data.compras||data.compras.length===0){
+            msg+=`Nenhuma compra no fiado registrada.\n`;
+        }else{
+            data.compras.forEach(compra=>{
+                const dt=formatarDataBR(compra.data);
+                msg+=`\n🗓️ ${dt}\n`;
+                (compra.itens||[]).forEach(it=>{
+                    const q=it.quantidade||1;
+                    const nome=it.nome||'item';
+                    const preco=(it.preco_unitario!=null?it.preco_unitario:(it.total/q))||0;
+                    const totItem=it.total!=null?it.total:(preco*q);
+                    msg+=`• ${q}x ${nome} — R$ ${Number(preco).toFixed(2)} = R$ ${Number(totItem).toFixed(2)}\n`;
+                });
+            });
+        }
+        msg+=`━━━━━━━━━━━━━━━━━━\n`;
+        msg+=`*TOTAL EM ABERTO: R$ ${Number(cli.divida).toFixed(2)}*\n`;
+        msg+=`\nObrigado pela preferência! 🙏`;
+        // abre o WhatsApp do cliente já com a mensagem
+        const numero = tel.length<=11 ? ('55'+tel) : tel; // adiciona DDI Brasil se faltar
+        const url=`https://wa.me/${numero}?text=${encodeURIComponent(msg)}`;
+        window.open(url,'_blank');
+    }catch(e){ console.error(e); alert('Erro ao gerar o relatório.'); }
+}
+
+function formatarDataBR(iso){
+    try{
+        const d=new Date(iso);
+        if(isNaN(d)) return iso;
+        return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    }catch(e){ return iso; }
 }
 
 function pagarDivida(id, nome, divida){
