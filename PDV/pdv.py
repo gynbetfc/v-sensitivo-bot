@@ -663,6 +663,7 @@ def firebase_online() -> bool:
         return False
 
 def buscar_usuario_por_email_firebase(email: str) -> Optional[Dict]:
+    email = (email or '').strip().lower()
     try:
         url = f'{FB_URL}/pdv/usuarios.json'
         response = requests.get(url, timeout=10)
@@ -670,7 +671,14 @@ def buscar_usuario_por_email_firebase(email: str) -> Optional[Dict]:
             usuarios = response.json()
             if usuarios:
                 for key, dados in usuarios.items():
-                    if dados.get('email') == email:
+                    if not isinstance(dados, dict):
+                        continue
+                    if (dados.get('email') or '').strip().lower() == email:
+                        # AUTO-CONSERTO: o db_id É a própria chave do Firebase.
+                        # Contas antigas/quebradas podem estar sem o campo db_id —
+                        # aqui usamos a chave, para o login funcionar mesmo assim.
+                        if not dados.get('db_id'):
+                            dados['db_id'] = key
                         return dados
         return None
     except:
@@ -1856,28 +1864,35 @@ def register():
             conn.execute("""INSERT INTO users (id, nome, email, senha, cargo, db_id, servidor_id, nome_loja, cnpj, cnpj_dados, bg_vendas_img, bg_vendas_img_ts, bg_vendas_opacidade, bg_vendas_opacidade_ts)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (user_id, nome, email, senha_hash, "Gerente", db_id, SERVIDOR_ID, nome_loja, cnpj, json.dumps(cnpj_dados), BG_PADRAO_URL, ts_bg, 0, ts_bg))
-        # Sobe a foto padrão para o Firebase (com timestamp) para aparecer em todos os dispositivos
+
+        # 1º) Cria a conta COMPLETA no Firebase (db_id, plano, expira_em, token).
+        # Consideramos "já existe" só se houver um usuário COMPLETO (com email E
+        # senha) — não confundir com um nó parcial (ex.: só a foto). Antes, salvar
+        # a foto primeiro criava um nó parcial que enganava esta checagem e a conta
+        # nascia sem db_id/plano/expira_em (plano não carregava, PIX não gerava).
+        usuario_firebase = carregar_usuario_firebase(db_id)
+        tem_usuario_completo = bool(usuario_firebase and usuario_firebase.get('email') and usuario_firebase.get('senha'))
+        if not tem_usuario_completo:
+            criar_usuario_firebase(db_id, nome, email, senha_hash, SERVIDOR_ID, nome_loja, cnpj, cnpj_dados)
+        else:
+            usuario_firebase.update({'nome': nome, 'email': email, 'senha': senha_hash, 'servidor_id': SERVIDOR_ID,
+                'nome_loja': nome_loja, 'cnpj': cnpj, 'cnpj_dados': cnpj_dados, 'db_id': db_id})
+            if not usuario_firebase.get('token_plano'):
+                expira_em = usuario_firebase.get('expira_em', (datetime.now() + timedelta(days=15)).isoformat())
+                plano_id = usuario_firebase.get('plano', 5)
+                pl = PlanoSincronizado(db_id, CHAVE_SECRETA_PLANO)
+                usuario_firebase['token_plano'] = pl._criar_token(expira_em, plano_id)
+                usuario_firebase['token_atualizado_em'] = get_timestamp()
+                usuario_firebase['plano'] = plano_id
+                usuario_firebase['expira_em'] = expira_em
+            salvar_usuario_firebase(db_id, usuario_firebase)
+
+        # 2º) SÓ AGORA sobe a foto padrão (PATCH), depois da conta já existir.
         try:
             salvar_preferencia_firebase(db_id, 'bg_vendas_img', BG_PADRAO_URL)
             salvar_preferencia_firebase(db_id, 'bg_vendas_opacidade', 0)
         except Exception:
             pass
-
-        usuario_firebase = carregar_usuario_firebase(db_id)
-        if not usuario_firebase:
-            criar_usuario_firebase(db_id, nome, email, senha_hash, SERVIDOR_ID, nome_loja, cnpj, cnpj_dados)
-        else:
-            if not usuario_firebase.get('token_plano'):
-                # Se já existe, mantém o plano atual
-                expira_em = usuario_firebase.get('expira_em', (datetime.now() + timedelta(days=15)).isoformat())
-                plano_id = usuario_firebase.get('plano', 5)
-                plano = PlanoSincronizado(db_id, CHAVE_SECRETA_PLANO)
-                token = plano._criar_token(expira_em, plano_id)
-                usuario_firebase['token_plano'] = token
-                usuario_firebase['token_atualizado_em'] = get_timestamp()
-            usuario_firebase.update({'nome': nome, 'email': email, 'senha': senha_hash, 'servidor_id': SERVIDOR_ID,
-                'nome_loja': nome_loja, 'cnpj': cnpj, 'cnpj_dados': cnpj_dados})
-            salvar_usuario_firebase(db_id, usuario_firebase)
 
         return jsonify({"success": True, "message": "Conta criada! 15 dias de teste grátis!", "db_id": db_id})
     except Exception as e:
@@ -1996,6 +2011,33 @@ def login():
                     return jsonify({"success": False, "error": "Email ou senha inválidos"})
             elif senha_hash != firebase_senha:
                 return jsonify({"success": False, "error": "Email ou senha inválidos"})
+
+            # AUTO-CONSERTO de contas quebradas (criadas por versões antigas com bug):
+            # se faltam campos essenciais (db_id, plano, expira_em ou token), a conta
+            # não carrega o plano nem gera PIX. Aqui completamos e regravamos.
+            precisa_reparar = False
+            if not usuario_firebase.get('db_id'):
+                usuario_firebase['db_id'] = firebase_db_id
+                precisa_reparar = True
+            if not usuario_firebase.get('token_plano') or not usuario_firebase.get('expira_em') or usuario_firebase.get('plano') is None:
+                # tenta aproveitar o plano/validade que já existir; senão, teste de 15 dias
+                expira_em = usuario_firebase.get('expira_em') or (datetime.now() + timedelta(days=15)).isoformat()
+                plano_id = usuario_firebase.get('plano', 5) if usuario_firebase.get('plano') is not None else 5
+                try:
+                    pl = PlanoSincronizado(firebase_db_id, CHAVE_SECRETA_PLANO)
+                    usuario_firebase['token_plano'] = pl._criar_token(expira_em, plano_id)
+                    usuario_firebase['token_atualizado_em'] = get_timestamp()
+                except Exception:
+                    pass
+                usuario_firebase['expira_em'] = expira_em
+                usuario_firebase['plano'] = plano_id
+                precisa_reparar = True
+            if precisa_reparar:
+                try:
+                    salvar_usuario_firebase(firebase_db_id, usuario_firebase)
+                    logger.info(f"🛠️ Conta reparada no login: {firebase_db_id}")
+                except Exception:
+                    pass
 
             # Cria/atualiza a cópia local e faz login
             with get_db_context() as conn:
