@@ -196,6 +196,7 @@
         .clientes-table .divida{color:var(--red);font-weight:600}
         .clientes-table .btn-pagar{padding:3px 12px;background:var(--green);color:#fff;border:0;border-radius:6px;cursor:pointer;font-size:11px}.clientes-table .btn-pagar:hover{background:var(--green-dark)}
         .clientes-table .btn-wpp{padding:3px 10px;background:#25D366;color:#fff;border:0;border-radius:6px;cursor:pointer;font-size:13px;margin-left:4px}.clientes-table .btn-wpp:hover{background:#1da851}
+        .clientes-table .btn-editar{background:0;border:0;color:var(--blue);cursor:pointer;font-size:13px;padding:2px 6px}.clientes-table .btn-editar:hover{background:rgba(59,130,246,.1);border-radius:4px}
         .clientes-table .btn-delete{background:0;border:0;color:var(--red);cursor:pointer;font-size:14px;padding:2px 6px}.clientes-table .btn-delete:hover{background:rgba(239,68,68,.1);border-radius:4px}
 
         .caixa-center{text-align:center;padding:20px 10px}
@@ -929,7 +930,7 @@
 <!-- MODAL CLIENTE -->
 <div class="modal-cliente" id="modalCliente">
     <div class="modal">
-        <h3><i class="fas fa-user-plus" style="color:var(--green);"></i> Novo Cliente</h3>
+        <h3 id="modalClienteTitulo"><i class="fas fa-user-plus" style="color:var(--green);"></i> Novo Cliente</h3>
         <div class="input-group"><label>Nome</label><input type="text" id="clienteNome" placeholder="Nome completo"></div>
         <div class="input-group"><label>Telefone</label><input type="text" id="clienteTelefone" placeholder="(00) 00000-0000"></div>
         <div class="input-group"><label>Email</label><input type="email" id="clienteEmail" placeholder="email@exemplo.com"></div>
@@ -1934,8 +1935,9 @@ async function carregarClientes(){
                 const btnWpp = (temTel && c.divida>0)
                     ? `<button class="btn-wpp" onclick="enviarRelatorioWhats(${c.id})" title="Enviar relatório no WhatsApp">💬</button>` : '';
                 html+=`<tr><td><strong>${c.nome}</strong></td><td>${c.telefone||'-'}</td><td class="divida">R$ ${c.divida.toFixed(2)}</td>
-                    <td>${c.divida>0?`<button class="btn-pagar" onclick="pagarDivida(${c.id},'${c.nome}',${c.divida})">💰 Pagar</button>`:''}
+                    <td>${c.divida>0?`<button class="btn-pagar" onclick="pagarDivida(${c.id},'${(c.nome||'').replace(/'/g,"\\'")}',${c.divida})">💰 Pagar</button>`:''}
                     ${btnWpp}
+                    <button class="btn-editar" onclick='editarCliente(${JSON.stringify(c)})' title="Editar cliente">✏️</button>
                     <button class="btn-delete" onclick="excluirCliente(${c.id})">🗑️</button></td></tr>`;
             });
             tbody.innerHTML=html;
@@ -1952,13 +1954,14 @@ async function enviarRelatorioWhats(clienteId){
         const cli=data.cliente;
         const tel=(cli.telefone||'').replace(/\D/g,'');
         if(tel.length<10){ alert('Este cliente não tem um número de WhatsApp válido.'); return; }
-        // monta o "cupom geral" com todos os itens comprados fiado
+        // monta o EXTRATO: compras no fiado + pagamentos + saldo devedor
         let msg=`*${data.nome_loja}*\n`;
-        msg+=`Relatório de compras no fiado\n`;
+        msg+=`Extrato do fiado\n`;
         msg+=`Cliente: *${cli.nome}*\n`;
         msg+=`━━━━━━━━━━━━━━━━━━\n`;
+        msg+=`*COMPRAS NO FIADO:*\n`;
         if(!data.compras||data.compras.length===0){
-            msg+=`Nenhuma compra no fiado registrada.\n`;
+            msg+=`(nenhuma compra registrada)\n`;
         }else{
             data.compras.forEach(compra=>{
                 const dt=formatarDataBR(compra.data);
@@ -1971,9 +1974,17 @@ async function enviarRelatorioWhats(clienteId){
                     msg+=`• ${q}x ${nome} — R$ ${Number(preco).toFixed(2)} = R$ ${Number(totItem).toFixed(2)}\n`;
                 });
             });
+            msg+=`\n_Total comprado: R$ ${Number(data.total_comprado||0).toFixed(2)}_\n`;
+        }
+        if(data.pagamentos && data.pagamentos.length>0){
+            msg+=`\n*PAGAMENTOS:*\n`;
+            data.pagamentos.forEach(pg=>{
+                msg+=`✅ ${formatarDataBR(pg.data)} — R$ ${Number(pg.valor).toFixed(2)}\n`;
+            });
+            msg+=`_Total pago: R$ ${Number(data.total_pago||0).toFixed(2)}_\n`;
         }
         msg+=`━━━━━━━━━━━━━━━━━━\n`;
-        msg+=`*TOTAL EM ABERTO: R$ ${Number(cli.divida).toFixed(2)}*\n`;
+        msg+=`*SALDO DEVEDOR: R$ ${Number(cli.divida).toFixed(2)}*\n`;
         msg+=`\nObrigado pela preferência! 🙏`;
         // abre o WhatsApp do cliente já com a mensagem
         const numero = tel.length<=11 ? ('55'+tel) : tel; // adiciona DDI Brasil se faltar
@@ -2027,11 +2038,22 @@ async function excluirCliente(id){
 }
 
 function abrirModalCliente(){
+    state._clienteEditandoId=null;
+    document.getElementById('modalClienteTitulo').innerHTML='<i class="fas fa-user-plus" style="color:var(--green);"></i> Novo Cliente';
     document.getElementById('clienteNome').value='';
     document.getElementById('clienteTelefone').value='';
     document.getElementById('clienteEmail').value='';
     document.getElementById('modalCliente').classList.add('active');
     setTimeout(()=>document.getElementById('clienteNome').focus(),100);
+}
+function editarCliente(c){
+    state._clienteEditandoId=c.id;
+    document.getElementById('modalClienteTitulo').innerHTML='<i class="fas fa-user-edit" style="color:var(--green);"></i> Editar Cliente';
+    document.getElementById('clienteNome').value=c.nome||'';
+    document.getElementById('clienteTelefone').value=c.telefone||'';
+    document.getElementById('clienteEmail').value=c.email||'';
+    document.getElementById('modalCliente').classList.add('active');
+    setTimeout(()=>document.getElementById('clienteTelefone').focus(),100);
 }
 function fecharModalCliente(){document.getElementById('modalCliente').classList.remove('active');}
 
@@ -2040,10 +2062,18 @@ async function salvarCliente(){
     const telefone=document.getElementById('clienteTelefone').value.trim();
     const email=document.getElementById('clienteEmail').value.trim();
     if(!nome){showToast('❌ Nome é obrigatório.','error');return;}
+    const editandoId=state._clienteEditandoId;
     try{
-        const res=await fetch('/api/clientes',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({nome,telefone,email})});
+        let res;
+        if(editandoId){
+            // EDITAR cliente existente
+            res=await fetch(`/api/clientes/${editandoId}`,{method:'PUT',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({nome,telefone,email})});
+        }else{
+            // CRIAR novo cliente
+            res=await fetch('/api/clientes',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({nome,telefone,email})});
+        }
         const data=await res.json();
-        if(data.success){showToast('✅ Cliente salvo!','success');fecharModalCliente();carregarClientes();}
+        if(data.success){showToast(editandoId?'✅ Cliente atualizado!':'✅ Cliente salvo!','success');state._clienteEditandoId=null;fecharModalCliente();carregarClientes();}
         else showToast('❌ '+data.error,'error');
     }catch(e){showToast('❌ Erro ao salvar','error');}
 }
