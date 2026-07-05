@@ -651,6 +651,17 @@ def carregar_todos_usuarios_firebase() -> Dict:
     except:
         return {}
 
+def firebase_online() -> bool:
+    """Retorna True se o Firebase está acessível agora (temos internet).
+    Usado no login para decidir: online = o Firebase manda (fonte da verdade);
+    offline = permitimos login local como cortesia para não travar a loja."""
+    try:
+        # consulta bem leve (shallow) só para testar a conexão, com timeout curto
+        r = requests.get(f'{FB_URL}/pdv/_hora_servidor.json', timeout=5)
+        return r.status_code == 200
+    except Exception:
+        return False
+
 def buscar_usuario_por_email_firebase(email: str) -> Optional[Dict]:
     try:
         url = f'{FB_URL}/pdv/usuarios.json'
@@ -1949,31 +1960,46 @@ def login():
                 "url_renovacao": "#/planos" if not plano_ativo else None
             })
 
-        # OFFLINE-FIRST: tenta autenticar com o banco LOCAL antes de consultar o Firebase.
-        # Assim o login funciona instantaneamente offline (sem esperar timeout de rede).
-        with get_db_context() as conn:
-            cursor = conn.execute("""SELECT id, nome, cargo, db_id, servidor_id, nome_loja, cnpj, cnpj_dados
-                FROM users WHERE email=? AND senha=?""", (email, senha_hash))
-            user_offline = cursor.fetchone()
-        if user_offline:
-            return _fazer_login(user_offline[3], user_offline[0], user_offline[1], user_offline[2],
-                user_offline[4], user_offline[5], user_offline[6], user_offline[7])
+        # ============================================================
+        # AUTENTICAÇÃO: o FIREBASE é a fonte da verdade.
+        # - ONLINE: a conta PRECISA existir no Firebase. Se não existe lá,
+        #   é inválida/desativada (você pode cortar acesso apagando de lá).
+        # - OFFLINE: permitimos login com o banco local (cortesia), para a
+        #   loja não parar quando a internet cai.
+        # ============================================================
+        online = firebase_online()
 
-        usuario_firebase = buscar_usuario_por_email_firebase(email)
-        if usuario_firebase:
+        if online:
+            usuario_firebase = buscar_usuario_por_email_firebase(email)
+            if not usuario_firebase:
+                # Online e a conta NÃO existe no Firebase → conta inválida.
+                # Remove a cópia local para não deixar acesso "órfão" neste PC.
+                try:
+                    with get_db_context() as conn:
+                        conn.execute("DELETE FROM users WHERE email=?", (email,))
+                except Exception:
+                    pass
+                return jsonify({"success": False, "error": "Conta não encontrada ou desativada."})
+
             firebase_db_id = usuario_firebase.get('db_id')
             firebase_senha = usuario_firebase.get('senha')
-            if firebase_senha and senha_hash != firebase_senha:
+
+            # Valida a senha (o Firebase manda). Se a conta no Firebase estiver
+            # sem senha (conta antiga/quebrada), reparamos com a senha local.
+            if not firebase_senha:
                 with get_db_context() as conn:
-                    cursor = conn.execute("SELECT senha FROM users WHERE email=?", (email,))
-                    local = cursor.fetchone()
-                    if local and local[0] == senha_hash:
-                        usuario_firebase['senha'] = senha_hash
-                        salvar_usuario_firebase(firebase_db_id, usuario_firebase)
-                    else:
-                        return jsonify({"success": False, "error": "Email ou senha inválidos"})
+                    row = conn.execute("SELECT senha FROM users WHERE email=?", (email,)).fetchone()
+                if row and row[0] == senha_hash:
+                    usuario_firebase['senha'] = senha_hash
+                    salvar_usuario_firebase(firebase_db_id, usuario_firebase)
+                else:
+                    return jsonify({"success": False, "error": "Email ou senha inválidos"})
+            elif senha_hash != firebase_senha:
+                return jsonify({"success": False, "error": "Email ou senha inválidos"})
+
+            # Cria/atualiza a cópia local e faz login
             with get_db_context() as conn:
-                cursor = conn.execute("SELECT * FROM users WHERE email=?", (email,))
+                cursor = conn.execute("SELECT id FROM users WHERE email=?", (email,))
                 user_local = cursor.fetchone()
                 if user_local:
                     user_id = user_local['id']
@@ -2000,15 +2026,15 @@ def login():
                 usuario_firebase.get('nome_loja', 'Minha Loja'), usuario_firebase.get('cnpj', ''),
                 usuario_firebase.get('cnpj_dados', {}))
 
+        # OFFLINE: sem internet, autentica com o banco local (cortesia)
         with get_db_context() as conn:
             cursor = conn.execute("""SELECT id, nome, cargo, db_id, servidor_id, nome_loja, cnpj, cnpj_dados
                 FROM users WHERE email=? AND senha=?""", (email, senha_hash))
             user = cursor.fetchone()
-
         if user:
             return _fazer_login(user[3], user[0], user[1], user[2], user[4], user[5], user[6], user[7])
 
-        return jsonify({"success": False, "error": "Email ou senha inválidos"})
+        return jsonify({"success": False, "error": "Sem internet e conta não encontrada neste dispositivo."})
     except Exception as e:
         logger.error(f"Erro no login: {e}")
         return jsonify({"success": False, "error": str(e)})
@@ -2339,6 +2365,40 @@ def pagar_cliente(cliente_id: int):
             "cliente": {"id": cliente['id'], "nome": cliente['nome'], "divida": cliente['divida']}})
     except Exception as e:
         logger.error(f"❌ Erro ao registrar pagamento: {e}")
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/clientes/<int:cliente_id>/relatorio')
+@verificar_permissao('fiado')
+@verificar_plano
+def relatorio_cliente(cliente_id: int):
+    """Monta o relatório de tudo que o cliente comprou fiado (itens, preços e
+    total), para enviar no WhatsApp. O total devido é a dívida atual do cliente."""
+    try:
+        db_id = get_db_id()
+        with get_db_context() as conn:
+            cur = conn.execute("SELECT nome, telefone, divida FROM clientes WHERE id=? AND db_id=?", (cliente_id, db_id))
+            cli = cur.fetchone()
+            if not cli:
+                return jsonify({"success": False, "error": "Cliente não encontrado"})
+            nome, telefone, divida = cli[0], (cli[1] or ''), (cli[2] or 0)
+            cur = conn.execute("""SELECT data_hora, total, itens FROM vendas
+                WHERE cliente=? AND metodo='Fiado' AND db_id=? ORDER BY data_hora""", (nome, db_id))
+            vendas = cur.fetchall()
+            # dados da loja para o cabeçalho do relatório
+            cur2 = conn.execute("SELECT nome_loja FROM users WHERE db_id=? LIMIT 1", (db_id,))
+            loja_row = cur2.fetchone()
+            nome_loja = (loja_row[0] if loja_row else '') or 'Minha Loja'
+        compras = []
+        for v in vendas:
+            try:
+                itens = json.loads(v[2]) if v[2] else []
+            except Exception:
+                itens = []
+            compras.append({"data": v[0], "total": v[1] or 0, "itens": itens})
+        return jsonify({"success": True, "nome_loja": nome_loja,
+            "cliente": {"nome": nome, "telefone": telefone, "divida": divida},
+            "compras": compras})
+    except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
 @app.route('/api/clientes/<int:cliente_id>', methods=['DELETE'])
