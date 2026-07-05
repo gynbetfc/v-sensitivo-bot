@@ -2413,8 +2413,9 @@ def pagar_cliente(cliente_id: int):
 @verificar_permissao('fiado')
 @verificar_plano
 def relatorio_cliente(cliente_id: int):
-    """Monta o relatório de tudo que o cliente comprou fiado (itens, preços e
-    total), para enviar no WhatsApp. O total devido é a dívida atual do cliente."""
+    """Monta o EXTRATO do cliente (como uma caderneta): as compras no fiado, os
+    pagamentos feitos, e o saldo devedor atual. Assim o relatório é honesto e
+    completo — não manda 'dívidas já pagas', pois mostra também o que foi pago."""
     try:
         db_id = get_db_id()
         with get_db_context() as conn:
@@ -2423,23 +2424,68 @@ def relatorio_cliente(cliente_id: int):
             if not cli:
                 return jsonify({"success": False, "error": "Cliente não encontrado"})
             nome, telefone, divida = cli[0], (cli[1] or ''), (cli[2] or 0)
+            # COMPRAS no fiado: metodo exatamente 'Fiado'
             cur = conn.execute("""SELECT data_hora, total, itens FROM vendas
                 WHERE cliente=? AND metodo='Fiado' AND db_id=? ORDER BY data_hora""", (nome, db_id))
             vendas = cur.fetchall()
-            # dados da loja para o cabeçalho do relatório
+            # PAGAMENTOS: registrados como venda com metodo 'Fiado (forma)'
+            cur = conn.execute("""SELECT data_hora, total FROM vendas
+                WHERE cliente=? AND metodo LIKE 'Fiado (%' AND db_id=? ORDER BY data_hora""", (nome, db_id))
+            pgs = cur.fetchall()
             cur2 = conn.execute("SELECT nome_loja FROM users WHERE db_id=? LIMIT 1", (db_id,))
             loja_row = cur2.fetchone()
             nome_loja = (loja_row[0] if loja_row else '') or 'Minha Loja'
         compras = []
+        total_comprado = 0
         for v in vendas:
             try:
                 itens = json.loads(v[2]) if v[2] else []
             except Exception:
                 itens = []
             compras.append({"data": v[0], "total": v[1] or 0, "itens": itens})
+            total_comprado += (v[1] or 0)
+        pagamentos = []
+        total_pago = 0
+        for p in pgs:
+            pagamentos.append({"data": p[0], "valor": p[1] or 0})
+            total_pago += (p[1] or 0)
         return jsonify({"success": True, "nome_loja": nome_loja,
             "cliente": {"nome": nome, "telefone": telefone, "divida": divida},
-            "compras": compras})
+            "compras": compras, "pagamentos": pagamentos,
+            "total_comprado": total_comprado, "total_pago": total_pago})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/clientes/<int:cliente_id>', methods=['PUT'])
+@verificar_permissao('clientes')
+@verificar_plano
+def editar_cliente(cliente_id: int):
+    """Edita nome, telefone e email do cliente. Útil para adicionar o WhatsApp
+    de um cliente que foi criado só com nome na hora da venda no fiado."""
+    try:
+        data = request.json or {}
+        db_id = get_db_id()
+        nome = (data.get('nome') or '').strip()
+        telefone = (data.get('telefone') or '').strip()
+        email = (data.get('email') or '').strip()
+        if not nome:
+            return jsonify({"success": False, "error": "O nome é obrigatório"})
+        with get_db_context() as conn:
+            # nome duplicado? (evita dois clientes com o mesmo nome, que bagunça o fiado)
+            outro = conn.execute("SELECT id FROM clientes WHERE nome=? AND db_id=? AND id<>?", (nome, db_id, cliente_id)).fetchone()
+            if outro:
+                return jsonify({"success": False, "error": "Já existe outro cliente com esse nome"})
+            # se o nome mudou, atualiza também as vendas ligadas a ele (o fiado usa o nome)
+            atual = conn.execute("SELECT nome FROM clientes WHERE id=? AND db_id=?", (cliente_id, db_id)).fetchone()
+            if not atual:
+                return jsonify({"success": False, "error": "Cliente não encontrado"})
+            nome_antigo = atual[0]
+            conn.execute("UPDATE clientes SET nome=?, telefone=?, email=?, ultima_atualizacao=? WHERE id=? AND db_id=?",
+                (nome, telefone, email, get_timestamp(), cliente_id, db_id))
+            if nome_antigo and nome_antigo != nome:
+                conn.execute("UPDATE vendas SET cliente=? WHERE cliente=? AND db_id=?", (nome, nome_antigo, db_id))
+        sincronizar_automatico(db_id)
+        return jsonify({"success": True, "message": "Cliente atualizado"})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
