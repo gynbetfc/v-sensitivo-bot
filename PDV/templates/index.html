@@ -256,7 +256,7 @@
         .estoque-baixo{color:var(--red)!important;font-weight:600}.estoque-medio{color:var(--orange)!important}.estoque-alto{color:var(--green)!important}
         .linha-estoque.linha-ativa{background:rgba(34,197,94,.15)!important;outline:1px solid var(--green)}
 
-        .planos-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:56px;margin-bottom:16px}
+        .planos-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:16px;margin-bottom:16px}
         .planos-grid .plano-card{width:230px;flex:0 0 auto}
         .plano-card{background:var(--bg-card);border-radius:var(--radius);padding:20px;border:2px solid var(--border-color);transition:var(--transition);position:relative;text-align:center}
         .plano-card:hover{border-color:var(--green);transform:translateY(-2px);box-shadow:0 12px 40px rgba(34,197,94,.15)}
@@ -3120,6 +3120,28 @@ document.addEventListener('DOMContentLoaded',function(){
             document.getElementById('app').classList.remove('active');
             preencherLoginSalvo();
         });
+
+    // Verifica a cada 20s se esta conta foi aberta em outro caixa/dispositivo.
+    // Se foi, esta sessão foi derrubada → volta ao login com aviso. Isso impede
+    // rodar vários caixas com a mesma conta (o que furava o limite do plano).
+    setInterval(function(){
+        if(!document.getElementById('app').classList.contains('active')) return;
+        fetch('/api/auth/status',{credentials:'include',cache:'no-store'})
+            .then(r=>r.json())
+            .then(d=>{
+                if(d.sessao_substituida || d.logged_in===false){
+                    document.getElementById('app').classList.remove('active');
+                    document.getElementById('authPage').classList.remove('hidden');
+                    if(typeof mostrarToast==='function'){
+                        mostrarToast(d.error || 'Sua conta foi acessada em outro dispositivo.', 'erro');
+                    }else{
+                        alert(d.error || 'Sua conta foi acessada em outro dispositivo. Faça login novamente.');
+                    }
+                    preencherLoginSalvo();
+                }
+            })
+            .catch(()=>{});
+    }, 20000);
 });
 
 function preencherLoginSalvo(){
