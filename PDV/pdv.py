@@ -1157,8 +1157,13 @@ def _aplicar_tombstones_firebase(db_id: str, dados_firebase: Dict) -> None:
 def _baixar_firebase_para_local(db_id: str, dados_firebase: Dict, resultado: Dict) -> None:
     _aplicar_tombstones_firebase(db_id, dados_firebase)
     with get_db_context() as conn:
+        # Produtos EXCLUÍDOS (tombstones) — não trazer de volta do Firebase
+        cur_exc_prod = conn.execute("SELECT item_id FROM exclusoes WHERE tipo='produto' AND db_id=?", (db_id,))
+        produtos_excluidos_ids = {str(r[0]) for r in cur_exc_prod.fetchall()}
         for codigo, dados_prod in (dados_firebase.get('produtos') or {}).items():
             try:
+                if str(codigo) in produtos_excluidos_ids:
+                    continue  # apagado de propósito — não ressuscita
                 conn.execute("""INSERT OR IGNORE INTO produtos (codigo, nome, preco, custo, margem, estoque, categoria, db_id, ultima_atualizacao)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""", (codigo, dados_prod.get('nome', ''), dados_prod.get('preco', 0),
                     dados_prod.get('custo', 0), dados_prod.get('margem', 0), dados_prod.get('estoque', 0),
@@ -1217,7 +1222,14 @@ def _merge_bidirecional_sem_duplicar(db_id: str, dados_firebase: Dict, resultado
     with get_db_context() as conn:
         cursor = conn.execute("SELECT codigo FROM produtos WHERE db_id=?", (db_id,))
         codigos_locais = {row[0] for row in cursor.fetchall()}
+        # Lista de produtos EXCLUÍDOS (tombstones) para NÃO ressuscitá-los.
+        # Sem isso, o produto apagado voltava do Firebase no merge (era o bug
+        # do "apago um e o outro volta").
+        cursor = conn.execute("SELECT item_id FROM exclusoes WHERE tipo='produto' AND db_id=?", (db_id,))
+        codigos_excluidos = {row[0] for row in cursor.fetchall()}
         for codigo, dados_prod in (dados_firebase.get('produtos') or {}).items():
+            if str(codigo) in codigos_excluidos:
+                continue  # foi apagado de propósito — não traz de volta
             if codigo not in codigos_locais:
                 try:
                     conn.execute("""INSERT INTO produtos (codigo, nome, preco, custo, margem, estoque, categoria, db_id, ultima_atualizacao)
@@ -2199,6 +2211,12 @@ def delete_produto(codigo: str):
         db_id = get_db_id()
         with get_db_context() as conn:
             conn.execute("DELETE FROM produtos WHERE codigo=? AND db_id=?", (codigo, db_id))
+            # Registra o TOMBSTONE (marca de exclusão). Sem isso, o produto ainda
+            # está no Firebase e a próxima sincronização o baixa de volta — era
+            # esse o bug do "apago um e volta o outro". O tombstone avisa o sync
+            # que este produto foi apagado de propósito, e ele não ressuscita.
+            conn.execute("INSERT OR REPLACE INTO exclusoes (tipo, item_id, db_id, excluido_em) VALUES (?, ?, ?, ?)",
+                ('produto', str(codigo), db_id, get_timestamp()))
         sincronizar_automatico(db_id)
         return jsonify({"success": True, "message": "Produto excluído"})
     except Exception as e:
