@@ -197,6 +197,12 @@
         .clientes-table .btn-pagar{padding:3px 12px;background:var(--green);color:#fff;border:0;border-radius:6px;cursor:pointer;font-size:11px}.clientes-table .btn-pagar:hover{background:var(--green-dark)}
         .clientes-table .btn-wpp{padding:3px 10px;background:#25D366;color:#fff;border:0;border-radius:6px;cursor:pointer;font-size:13px;margin-left:4px}.clientes-table .btn-wpp:hover{background:#1da851}
         .clientes-table .btn-editar{background:0;border:0;color:var(--blue);cursor:pointer;font-size:13px;padding:2px 6px}.clientes-table .btn-editar:hover{background:rgba(59,130,246,.1);border-radius:4px}
+        .cliente-sugestoes{position:absolute;top:100%;left:0;right:0;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;margin-top:4px;max-height:180px;overflow-y:auto;z-index:100;display:none;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+        .cliente-sugestoes.active{display:block}
+        .cliente-sugestoes .item{padding:10px 12px;cursor:pointer;font-size:14px;border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center}
+        .cliente-sugestoes .item:last-child{border-bottom:0}
+        .cliente-sugestoes .item:hover,.cliente-sugestoes .item.sel{background:rgba(34,197,94,.12)}
+        .cliente-sugestoes .item .dv{color:var(--red);font-size:12px;font-weight:600}
         .clientes-table .btn-delete{background:0;border:0;color:var(--red);cursor:pointer;font-size:14px;padding:2px 6px}.clientes-table .btn-delete:hover{background:rgba(239,68,68,.1);border-radius:4px}
 
         .caixa-center{text-align:center;padding:20px 10px}
@@ -870,7 +876,10 @@
             <div class="value" id="paymentTotal">R$ 0,00</div>
             <div class="troco-display" id="paymentTrocoDisplay"><div class="label">TROCO</div><div class="value" id="paymentTroco">R$ 0,00</div></div>
         </div>
-        <div class="cliente-input"><input type="text" id="clientePagamento" placeholder="👤 Cliente (opcional)" autocomplete="off"></div>
+        <div class="cliente-input" style="position:relative;">
+            <input type="text" id="clientePagamento" placeholder="👤 Cliente (opcional)" autocomplete="off" oninput="buscarClientesPagamento(this.value)" onblur="setTimeout(()=>fecharSugestoesCliente(),200)">
+            <div class="cliente-sugestoes" id="clienteSugestoes"></div>
+        </div>
         <div class="payment-methods" id="paymentMethods">
             <button data-metodo="Dinheiro" onclick="selecionarMetodo('Dinheiro')" class="active"><i class="fas fa-money-bill-wave"></i> Dinheiro</button>
             <button data-metodo="PIX" onclick="selecionarMetodo('PIX')"><i class="fas fa-qrcode"></i> PIX</button>
@@ -1922,6 +1931,7 @@ async function carregarClientes(){
         const res=await fetch(`/api/clientes?busca=${encodeURIComponent(busca)}`,{credentials:'include'});
         const data=await res.json();
         if(data.success){
+            state.clientes = data.clientes || [];
             const tbody=document.getElementById('tabelaClientes');
             const badge=document.getElementById('badgeFiados');
             if(!data.clientes||data.clientes.length===0){
@@ -1986,9 +1996,12 @@ async function enviarRelatorioWhats(clienteId){
         msg+=`━━━━━━━━━━━━━━━━━━\n`;
         msg+=`*SALDO DEVEDOR: R$ ${Number(cli.divida).toFixed(2)}*\n`;
         msg+=`\nObrigado pela preferência! 🙏`;
-        // abre o WhatsApp do cliente já com a mensagem
+        // Abre a conversa do cliente já com a mensagem pronta. O wa.me abre no
+        // APP do WhatsApp quando ele está instalado (senão, no WhatsApp Web).
+        // Basta o lojista apertar o botão verde de enviar.
         const numero = tel.length<=11 ? ('55'+tel) : tel; // adiciona DDI Brasil se faltar
         const url=`https://wa.me/${numero}?text=${encodeURIComponent(msg)}`;
+        if(typeof showToast==='function') showToast('💬 Abrindo o WhatsApp de '+cli.nome+'...','success');
         window.open(url,'_blank');
     }catch(e){ console.error(e); alert('Erro ao gerar o relatório.'); }
 }
@@ -1999,6 +2012,40 @@ function formatarDataBR(iso){
         if(isNaN(d)) return iso;
         return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
     }catch(e){ return iso; }
+}
+
+async function buscarClientesPagamento(termo){
+    const box=document.getElementById('clienteSugestoes');
+    if(!box) return;
+    termo=(termo||'').trim().toLowerCase();
+    if(termo.length<1){ box.classList.remove('active'); box.innerHTML=''; return; }
+    // se ainda não temos clientes carregados, busca do servidor
+    if(!state.clientes || state.clientes.length===0){
+        try{
+            const res=await fetch('/api/clientes?busca=',{credentials:'include'});
+            const data=await res.json();
+            if(data.success) state.clientes=data.clientes||[];
+        }catch(e){}
+    }
+    const lista=(state.clientes||[]).filter(c=>(c.nome||'').toLowerCase().includes(termo));
+    if(lista.length===0){ box.classList.remove('active'); box.innerHTML=''; return; }
+    let html='';
+    lista.slice(0,8).forEach(c=>{
+        const dv=(c.divida>0)?`<span class="dv">deve R$ ${Number(c.divida).toFixed(2)}</span>`:'';
+        html+=`<div class="item" onclick="selecionarClientePagamento('${(c.nome||'').replace(/'/g,"\\'")}')">
+            <span>${c.nome}</span>${dv}</div>`;
+    });
+    box.innerHTML=html;
+    box.classList.add('active');
+}
+function selecionarClientePagamento(nome){
+    const inp=document.getElementById('clientePagamento');
+    if(inp) inp.value=nome;
+    fecharSugestoesCliente();
+}
+function fecharSugestoesCliente(){
+    const box=document.getElementById('clienteSugestoes');
+    if(box){ box.classList.remove('active'); box.innerHTML=''; }
 }
 
 function pagarDivida(id, nome, divida){
