@@ -36,7 +36,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import hmac
 import base64
-
+GITHUB_TOKEN = "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"
 # ============================================================
 # CORREÇÃO DE ENCODING PARA WINDOWS
 # ============================================================
@@ -1744,22 +1744,33 @@ def _normalizar_cnpj_dados(data: Dict) -> Dict:
 # ============================================================
 def baixar_html_github() -> bool:
     try:
+        
         caminho_html = os.path.join(TEMPLATES_DIR, "index.html")
         logger.info("🔄 Baixando HTML do GitHub...")
-        # cache-busting: evita que a rede/CDN devolva uma versão antiga em cache
+        
+        # 🔑 ADICIONA AUTENTICAÇÃO COM TOKEN
+        headers = {
+            "User-Agent": "SMART-PDV-Launcher",
+            "Authorization": f"Bearer {GITHUB_TOKEN}"  # Para Fine-grained PAT
+        }
+        
         url = HTML_URL + ("&" if "?" in HTML_URL else "?") + "_=" + str(int(_time.time()))
-        response = requests.get(url, timeout=8, headers={"Cache-Control": "no-cache"})
+        response = requests.get(url, timeout=8, headers=headers)  # <-- ADICIONOU headers
         response.raise_for_status()
-        # grava num arquivo temporário e só troca se baixou 100% (evita HTML corrompido)
+        
         tmp = caminho_html + ".tmp"
         with open(tmp, "w", encoding="utf-8") as f:
             f.write(response.text)
-        os.replace(tmp, caminho_html)  # troca atômica
+        os.replace(tmp, caminho_html)
         logger.info(f"✅ HTML atualizado do GitHub ({len(response.text)} chars)")
         return True
     except Exception as e:
         logger.error(f"❌ Erro ao baixar HTML: {e}")
         return False
+
+
+
+
 
 # ============================================================
 # ROTAS FLASK
