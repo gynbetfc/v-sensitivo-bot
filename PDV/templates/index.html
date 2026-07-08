@@ -1872,6 +1872,9 @@ async function excluirKit(id){
 
 async function salvarProduto(){
     try{
+        // cancela qualquer busca inteligente pendente, pra ela não sobrescrever
+        // os campos no meio do salvamento (evita a condição de corrida)
+        if(timeoutBuscaCodigo){ clearTimeout(timeoutBuscaCodigo); timeoutBuscaCodigo=null; }
         const elCod=document.getElementById('prodCodigo');
         const elNome=document.getElementById('prodNome');
         if(!elCod||!elNome){showToast('❌ Erro: recarregue a página (Ctrl+F5)','error');return;}
@@ -1936,9 +1939,13 @@ async function buscarProdutoPorCodigo(){
         const res=await fetch(`/api/produto/buscar/${encodeURIComponent(codigo)}`,{credentials:'include'});
         const data=await res.json();
         if(data.success && data.dados){
-            document.getElementById('prodNome').value=data.dados.nome||'';
-            document.getElementById('prodCategoria').value=data.dados.categoria||'Geral';
-            document.getElementById('prodCodigo').value=data.dados.gtin||codigo;
+            // SÓ preenche campos que estão VAZIOS. Nunca sobrescreve o que o
+            // lojista já digitou — era isso que causava o bug de "não adiciona":
+            // a busca apagava o nome digitado (com vazio) e o salvar falhava.
+            const elNome=document.getElementById('prodNome');
+            const elCat=document.getElementById('prodCategoria');
+            if(elNome && !elNome.value.trim() && data.dados.nome) elNome.value=data.dados.nome;
+            if(elCat && !elCat.value.trim() && data.dados.categoria) elCat.value=data.dados.categoria;
             showToast('✅ Dados preenchidos!','success');
         }else{showToast('⚠️ Produto não encontrado. Cadastre manualmente.','warning');}
     }catch(e){showToast('❌ Erro na busca','error');}
