@@ -36,7 +36,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import hmac
 import base64
-GITHUB_TOKEN = "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"
+
 # ============================================================
 # CORREÇÃO DE ENCODING PARA WINDOWS
 # ============================================================
@@ -149,7 +149,7 @@ logger: logging.Logger = logging.getLogger(__name__)
 FB_URL: str = "https://droidguard-10597-default-rtdb.firebaseio.com"
 HTML_URL: str = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/refs/heads/main/PDV/templates/index.html"
 # Imagem de fundo padrão para contas novas (tela de vendas)
-BG_PADRAO_URL: str = "https://i.imgur.com/ok53lns.png"
+BG_PADRAO_URL: str = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/PDV/bg.png"
 SESSOES_ATIVAS: Dict[str, str] = {}
 CACHE_CNPJ: Dict[str, Dict] = {}
 CACHE_PRODUTO_BARRAS: Dict[str, Dict] = {}
@@ -494,6 +494,24 @@ def init_db() -> None:
                 ativo INTEGER DEFAULT 1,
                 ultima_atualizacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 sincronizado_em TIMESTAMP
+            )
+        ''')
+
+        # MOVIMENTAÇÕES DE ESTOQUE (modelo de FATOS imutáveis).
+        # Cada linha é um fato com ID único que NUNCA muda: um ajuste, uma entrada
+        # ou uma saída (venda). O estoque de um produto = SOMA dos deltas dos seus
+        # fatos. Como cada fato tem ID único, dois caixas vendendo ao mesmo tempo
+        # SOMAM suas saídas (nunca se sobrescrevem) — o estoque fica sempre certo,
+        # online, offline e em vários dispositivos. Sincroniza igual às vendas.
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS estoque_mov (
+                id TEXT PRIMARY KEY,
+                codigo TEXT,
+                delta INTEGER,
+                tipo TEXT,
+                origem TEXT DEFAULT '',
+                db_id TEXT,
+                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
 
@@ -1080,6 +1098,14 @@ def _normalizar_dados_firebase(dados_fb: Dict) -> Dict:
         resultado['vendas'] = list(vendas.values())
     else:
         resultado['vendas'] = []
+    # Preserva os campos que o merge também usa (senão eram descartados aqui):
+    resultado['kits'] = dados_fb.get('kits') or {}
+    resultado['exclusoes'] = dados_fb.get('exclusoes') or {}
+    resultado['estoque_mov'] = dados_fb.get('estoque_mov') or {}
+    # mantém também caixa/loja se existirem (não atrapalham o merge)
+    for extra in ('caixa', 'nome_loja', 'cnpj', 'cnpj_dados'):
+        if extra in dados_fb:
+            resultado[extra] = dados_fb[extra]
     return resultado
 
 def contar_dados_firebase(dados_fb: Dict) -> Dict:
@@ -1357,6 +1383,31 @@ def _merge_bidirecional_sem_duplicar(db_id: str, dados_firebase: Dict, resultado
                 except Exception as e:
                     logger.error(f"⚠️ Erro ao inserir kit {kit_id}: {e}")
 
+        # MOVIMENTAÇÕES DE ESTOQUE (fatos): insere as novas por ID único (nunca
+        # duplica, nunca sobrescreve). Depois recalcula o estoque dos produtos
+        # afetados pela SOMA dos fatos — fica igual em todos os dispositivos.
+        movs_fb = dados_firebase.get('estoque_mov') or {}
+        codigos_afetados = set()
+        if movs_fb:
+            cursor = conn.execute("SELECT id FROM estoque_mov WHERE db_id=?", (db_id,))
+            ids_locais = {row[0] for row in cursor.fetchall()}
+            for mov_id, m in movs_fb.items():
+                if str(mov_id) in ids_locais:
+                    continue  # já temos esse fato
+                try:
+                    conn.execute("""INSERT OR IGNORE INTO estoque_mov (id, codigo, delta, tipo, origem, db_id, criado_em)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)""", (str(mov_id), m.get('codigo'), int(m.get('delta', 0)),
+                        m.get('tipo', 'saida'), m.get('origem', ''), db_id, m.get('criado_em', get_timestamp())))
+                    codigos_afetados.add(m.get('codigo'))
+                except Exception as e:
+                    logger.error(f"⚠️ Erro ao inserir mov estoque {mov_id}: {e}")
+        # recalcula a coluna estoque dos produtos que receberam fatos novos
+        for cod in codigos_afetados:
+            if cod:
+                valor = conn.execute("SELECT COALESCE(SUM(delta),0) FROM estoque_mov WHERE codigo=? AND db_id=?",
+                    (str(cod), db_id)).fetchone()[0]
+                conn.execute("UPDATE produtos SET estoque=? WHERE codigo=? AND db_id=?", (int(valor), str(cod), db_id))
+
         conn.commit()
 
 def enviar_para_firebase(db_id: str) -> bool:
@@ -1417,6 +1468,15 @@ def enviar_para_firebase(db_id: str) -> bool:
                 kits[str(row[0])] = {'nome': row[1], 'preco': row[2] or 0, 'itens': itens_kit,
                     'ativo': bool(row[4]), 'ultima_atualizacao': row[5] or get_timestamp()}
             dados_firebase['kits'] = kits
+            # MOVIMENTAÇÕES DE ESTOQUE (fatos). Sobem como as vendas: cada uma com
+            # ID único, só adiciona, nunca sobrescreve. Assim o estoque calculado
+            # a partir delas fica igual em todos os dispositivos.
+            cursor = conn.execute("SELECT id, codigo, delta, tipo, origem, criado_em FROM estoque_mov WHERE db_id=?", (db_id,))
+            movs = {}
+            for row in cursor.fetchall():
+                movs[str(row[0])] = {'codigo': row[1], 'delta': row[2], 'tipo': row[3],
+                    'origem': row[4] or '', 'criado_em': row[5] or get_timestamp()}
+            dados_firebase['estoque_mov'] = movs
         # Preserva as preferências (foto, opacidade, escala) que já estão no Firebase,
         # junto com seus timestamps. Como o sync usa PUT (substitui tudo), sem isso
         # essas preferências seriam apagadas. Elas são gerenciadas à parte por timestamp.
@@ -1744,33 +1804,22 @@ def _normalizar_cnpj_dados(data: Dict) -> Dict:
 # ============================================================
 def baixar_html_github() -> bool:
     try:
-        
         caminho_html = os.path.join(TEMPLATES_DIR, "index.html")
         logger.info("🔄 Baixando HTML do GitHub...")
-        
-        # 🔑 ADICIONA AUTENTICAÇÃO COM TOKEN
-        headers = {
-            "User-Agent": "SMART-PDV-Launcher",
-            "Authorization": f"Bearer {GITHUB_TOKEN}"  # Para Fine-grained PAT
-        }
-        
+        # cache-busting: evita que a rede/CDN devolva uma versão antiga em cache
         url = HTML_URL + ("&" if "?" in HTML_URL else "?") + "_=" + str(int(_time.time()))
-        response = requests.get(url, timeout=8, headers=headers)  # <-- ADICIONOU headers
+        response = requests.get(url, timeout=8, headers={"Cache-Control": "no-cache"})
         response.raise_for_status()
-        
+        # grava num arquivo temporário e só troca se baixou 100% (evita HTML corrompido)
         tmp = caminho_html + ".tmp"
         with open(tmp, "w", encoding="utf-8") as f:
             f.write(response.text)
-        os.replace(tmp, caminho_html)
+        os.replace(tmp, caminho_html)  # troca atômica
         logger.info(f"✅ HTML atualizado do GitHub ({len(response.text)} chars)")
         return True
     except Exception as e:
         logger.error(f"❌ Erro ao baixar HTML: {e}")
         return False
-
-
-
-
 
 # ============================================================
 # ROTAS FLASK
@@ -2158,6 +2207,43 @@ def logout():
 # ============================================================
 # PRODUTOS
 # ============================================================
+# ============================================================
+# ESTOQUE POR FATOS (movimentações imutáveis)
+# ============================================================
+def registrar_mov_estoque(conn, db_id, codigo, delta, tipo, origem=''):
+    """Registra um FATO de estoque (imutável, com ID único). delta positivo =
+    entrada/ajuste pra cima; negativo = saída/venda. O estoque do produto é
+    sempre a SOMA dos deltas. Como cada fato tem ID único, sincroniza igual às
+    vendas — dois caixas somam suas saídas em vez de se sobrescreverem."""
+    mov_id = str(uuid.uuid4())
+    conn.execute("""INSERT INTO estoque_mov (id, codigo, delta, tipo, origem, db_id, criado_em)
+        VALUES (?, ?, ?, ?, ?, ?, ?)""",
+        (mov_id, str(codigo), int(delta), tipo, origem, db_id, get_timestamp()))
+    return mov_id
+
+def calcular_estoque(conn, db_id, codigo):
+    """Estoque atual = soma de todos os fatos daquele produto."""
+    row = conn.execute("SELECT COALESCE(SUM(delta),0) FROM estoque_mov WHERE codigo=? AND db_id=?",
+        (str(codigo), db_id)).fetchone()
+    return int(row[0]) if row else 0
+
+def definir_estoque_absoluto(conn, db_id, codigo, novo_valor):
+    """Quando o usuário digita um estoque TOTAL (ex: 'tenho 50'), criamos um fato
+    de AJUSTE com a diferença entre o que ele quer e o que os fatos somam hoje.
+    Assim o resultado bate com o número digitado, mas sem sobrescrever os fatos."""
+    atual = calcular_estoque(conn, db_id, codigo)
+    diferenca = int(novo_valor) - atual
+    if diferenca != 0:
+        registrar_mov_estoque(conn, db_id, codigo, diferenca, 'ajuste', 'ajuste manual')
+    # espelha na coluna estoque (usada pela exibição rápida)
+    conn.execute("UPDATE produtos SET estoque=? WHERE codigo=? AND db_id=?", (int(novo_valor), str(codigo), db_id))
+
+def sincronizar_coluna_estoque(conn, db_id, codigo):
+    """Atualiza a coluna 'estoque' do produto com a soma dos fatos (pra exibição)."""
+    valor = calcular_estoque(conn, db_id, codigo)
+    conn.execute("UPDATE produtos SET estoque=? WHERE codigo=? AND db_id=?", (valor, str(codigo), db_id))
+    return valor
+
 @app.route('/api/produtos')
 @verificar_plano
 def get_produtos():
@@ -2199,14 +2285,20 @@ def save_produto():
             if not pode:
                 return jsonify({"success": False, "error": msg}), 403
         with get_db_context() as conn:
+            estoque_desejado = int(data.get('estoque', 0) or 0)
             conn.execute("""INSERT INTO produtos (codigo, nome, preco, custo, margem, estoque, categoria, imagem_url, db_id, ultima_atualizacao)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(codigo) DO UPDATE SET
                 nome=excluded.nome, preco=excluded.preco, custo=excluded.custo, margem=excluded.margem,
-                estoque=excluded.estoque, categoria=excluded.categoria,
+                categoria=excluded.categoria,
                 imagem_url=CASE WHEN excluded.imagem_url!='' THEN excluded.imagem_url ELSE produtos.imagem_url END,
                 ultima_atualizacao=excluded.ultima_atualizacao""",
-                (data['codigo'], data['nome'], preco, custo, margem, data.get('estoque', 0),
+                (data['codigo'], data['nome'], preco, custo, margem, estoque_desejado,
                 data.get('categoria', 'Geral'), data.get('imagem_url', ''), db_id, get_timestamp()))
+            # ESTOQUE POR FATOS: em vez de gravar o número direto (que dois caixas
+            # sobrescreveriam), registramos um AJUSTE com a diferença. O estoque
+            # final é sempre a soma dos fatos. Nota: no ON CONFLICT acima NÃO
+            # atualizamos a coluna estoque — quem manda nela é a função abaixo.
+            definir_estoque_absoluto(conn, db_id, data['codigo'], estoque_desejado)
             # Remove qualquer tombstone (exclusão) deste código: o produto existe de novo,
             # então o sync NÃO deve apagá-lo. (Corrige "salvou mas some da lista".)
             conn.execute("DELETE FROM exclusoes WHERE tipo='produto' AND item_id=? AND db_id=?", (data['codigo'], db_id))
@@ -2608,7 +2700,9 @@ def registrar_venda():
                             conn.execute("ROLLBACK")
                             return jsonify({"success": False, "error": f"Estoque insuficiente para '{produto[1]}': disponível {produto[0]}, necessário {qtd}"})
                         item['custo_unitario'] = produto[2] or 0
-                # Segunda passada: BAIXAR estoque (produtos normais e componentes de kits)
+                # Segunda passada: BAIXAR estoque criando FATOS de saída (não
+                # sobrescreve o número — registra "saiu N", que soma com as saídas
+                # de outros caixas). A coluna estoque é atualizada pela soma.
                 for item in itens:
                     codigo = item.get('codigo')
                     is_kit = item.get('is_kit') or (isinstance(codigo, str) and codigo.startswith('KIT:'))
@@ -2620,13 +2714,13 @@ def registrar_venda():
                             comp_qtd = (comp.get('quantidade', 1) or 1) * qtd_kit
                             if not comp_cod or comp_cod == 'AVULSO':
                                 continue
-                            conn.execute("UPDATE produtos SET estoque=estoque-?, ultima_atualizacao=? WHERE codigo=? AND db_id=?",
-                                (comp_qtd, get_timestamp(), comp_cod, db_id))
+                            registrar_mov_estoque(conn, db_id, comp_cod, -comp_qtd, 'saida', 'venda')
+                            sincronizar_coluna_estoque(conn, db_id, comp_cod)
                         continue
                     if codigo and codigo != 'AVULSO':
                         qtd = item.get('quantidade', 1)
-                        conn.execute("UPDATE produtos SET estoque=estoque-?, ultima_atualizacao=? WHERE codigo=? AND db_id=?",
-                            (qtd, get_timestamp(), codigo, db_id))
+                        registrar_mov_estoque(conn, db_id, codigo, -qtd, 'saida', 'venda')
+                        sincronizar_coluna_estoque(conn, db_id, codigo)
                 conn.execute("COMMIT")
             except Exception as e:
                 conn.execute("ROLLBACK")
