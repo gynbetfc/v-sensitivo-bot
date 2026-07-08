@@ -265,7 +265,7 @@
         .estoque-baixo{color:var(--red)!important;font-weight:600}.estoque-medio{color:var(--orange)!important}.estoque-alto{color:var(--green)!important}
         .linha-estoque.linha-ativa{background:rgba(34,197,94,.15)!important;outline:1px solid var(--green)}
 
-        .planos-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:56px;margin-bottom:16px}
+        .planos-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:80px;margin-bottom:16px}
         .planos-grid .plano-card{width:230px;flex:0 0 auto}
         .plano-card{background:var(--bg-card);border-radius:var(--radius);padding:20px;border:2px solid var(--border-color);transition:var(--transition);position:relative;text-align:center}
         .plano-card:hover{border-color:var(--green);transform:translateY(-2px);box-shadow:0 12px 40px rgba(34,197,94,.15)}
@@ -1290,7 +1290,20 @@ document.addEventListener('keydown',function(e){
     }
 
     if(e.key==='Enter'){
-        if(modalPgto){e.preventDefault();confirmarPagamento();return;}
+        if(modalPgto){
+            // Se a lista de clientes está aberta com um cliente destacado,
+            // Enter ESCOLHE o cliente (não confirma a venda ainda). Isso evita
+            // o bug de "vender" com o nome pela metade em vez de pegar o cliente.
+            const boxCli=document.getElementById('clienteSugestoes');
+            if(boxCli && boxCli.classList.contains('active')){
+                const sel=boxCli.querySelector('.item.sel');
+                if(sel){ e.preventDefault(); sel.click(); return; }
+                // lista aberta mas nenhum item destacado: só fecha a lista,
+                // não confirma (senão venderia com o texto digitado)
+                e.preventDefault(); fecharSugestoesCliente(); return;
+            }
+            e.preventDefault();confirmarPagamento();return;
+        }
         if(modalCupom){e.preventDefault();const ativo=document.querySelector('.cupom-opt.active');if(ativo) ativo.click();return;}
         if(modalPgtoCliente){e.preventDefault();confirmarPagamentoCliente();return;}
         const active=document.activeElement;
@@ -1324,14 +1337,6 @@ document.addEventListener('keydown',function(e){
         if(e.key==='ArrowDown'){const ni=(ci+1)%metodos.length;selecionarMetodo(metodos[ni].dataset.metodo);metodos[ni].focus();}
         else{const pi=(ci-1+metodos.length)%metodos.length;selecionarMetodo(metodos[pi].dataset.metodo);metodos[pi].focus();}
         return;
-    }
-    // Enter na lista de clientes escolhe o cliente destacado (em vez de confirmar)
-    if(modalPgto && e.key==='Enter'){
-        const boxCli=document.getElementById('clienteSugestoes');
-        if(boxCli && boxCli.classList.contains('active')){
-            const sel=boxCli.querySelector('.item.sel');
-            if(sel){ e.preventDefault(); sel.click(); return; }
-        }
     }
 });
 
