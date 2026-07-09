@@ -157,18 +157,9 @@ _ULTIMO_SYNC_TOKEN: Dict[str, float] = {}
 CACHE_CNPJ: Dict[str, Dict] = {}
 CACHE_PRODUTO_BARRAS: Dict[str, Dict] = {}
 
-MERCADO_PAGO_ACCESS_TOKEN: str = ""  # vazio de propósito: o token vive só no backend
-
-# ============================================================
-# BACKEND DE PAGAMENTOS (Cloudflare Worker)
-# ============================================================
-# O token do Mercado Pago NÃO fica mais aqui. Este arquivo vai para a máquina de
-# cada lojista, então qualquer segredo escrito aqui estaria exposto. Em vez disso,
-# o PDV pede a cobrança ao nosso servidor, que é o único que conhece o token.
-# Depois de publicar o worker, troque pela URL dele.
-BACKEND_PAGAMENTOS_URL: str = os.environ.get(
-    "PDV_BACKEND_URL",
-    "https://smartpdv-pay.gyn-bet-fc.workers.dev"
+MERCADO_PAGO_ACCESS_TOKEN: str = os.environ.get(
+    "MP_ACCESS_TOKEN",
+    "APP_USR-4548266140377032-050311-6589fc22b166e4cb2cfad0379b28dcdf-1059299796"
 )
 
 # ============================================================
@@ -3278,7 +3269,7 @@ def criar_pix():
                     logger.error(f"⚠️ Erro ao marcar teste usado: {e}")
             return jsonify({"success": True, "pix_id": pix_id, "gratis": True, "valor": 0, "plano": asdict(plano)})
 
-        resultado_pix = criar_pix_backend(db_id, plano_id, meses)
+        resultado_pix = criar_pix_mercadopago(float(preco_final), f"SMART PDV - {plano.nome} ({meses}m)")
         if resultado_pix:
             pix_id = resultado_pix['pix_id']
             pagamentos_pendentes[pix_id] = {'db_id': db_id, 'plano_id': plano_id, 'valor': preco_final, 'pago': False,
@@ -3300,45 +3291,56 @@ def verificar_pix():
             return jsonify({"success": False, "error": "Pagamento não encontrado"})
         if pagamentos_pendentes[pix_id]['pago']:
             return jsonify({"pago": True})
-        if verificar_pagamento_backend(pix_id):
+        url = f"https://api.mercadopago.com/v1/payments/{pix_id}"
+        headers = {"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"}
+        res = requests.get(url, headers=headers, timeout=10)
+        res_data = res.json()
+        if res.status_code == 200 and res_data.get('status') == 'approved':
             _confirmar_pagamento_plano(pix_id)
             return jsonify({"pago": True})
-        return jsonify({"pago": False, "status": "pending"})
+        return jsonify({"pago": False, "status": res_data.get('status', 'pending')})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
-def criar_pix_backend(db_id: str, plano_id: int, meses: int = 1) -> Optional[Dict]:
-    """Pede ao NOSSO backend que crie a cobrança PIX do plano.
-    O backend é quem fala com o Mercado Pago (só ele tem o token). Enviamos o
-    db_id junto: é assim que o pagamento fica amarrado à conta certa, mesmo com
-    várias lojas comprando ao mesmo tempo (cada cobrança tem a sua referência)."""
+def criar_pix_mercadopago(valor: float, descricao: str) -> Optional[Dict]:
+    """Cria uma cobrança PIX no Mercado Pago para QUALQUER valor.
+    Reutilizável tanto para planos quanto para pedidos online.
+    Cada chamada usa idempotency-key único, então suporta MÚLTIPLOS PIX simultâneos."""
     try:
-        res = requests.post(f"{BACKEND_PAGAMENTOS_URL}/criar",
-            json={"db_id": db_id, "plano_id": plano_id, "meses": meses}, timeout=25)
-        d = res.json()
-        if res.status_code == 200 and d.get('success'):
-            return {"pix_id": d['pix_id'], "qr_code": d.get('qr_code', ''),
-                "qr_code_base64": d.get('qr_code_base64', '')}
-        logger.error(f"❌ Backend recusou criar PIX: {d.get('error')}")
+        url = "https://api.mercadopago.com/v1/payments"
+        headers = {"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}", "Content-Type": "application/json",
+            "X-Idempotency-Key": str(uuid.uuid4())}
+        payment_data = {
+            "transaction_amount": round(float(valor), 2),
+            "description": descricao,
+            "payment_method_id": "pix",
+            "payer": {"email": "cliente@pdv.com", "first_name": "Cliente", "last_name": "PDV",
+                "identification": {"type": "CPF", "number": "00000000000"}}
+        }
+        res = requests.post(url, json=payment_data, headers=headers, timeout=20)
+        res_data = res.json()
+        if res.status_code == 201 and res_data.get('id'):
+            td = res_data['point_of_interaction']['transaction_data']
+            return {"pix_id": str(res_data['id']), "qr_code": td['qr_code'],
+                "qr_code_base64": td.get('qr_code_base64', '')}
+        logger.error(f"❌ Erro MP ao criar PIX: {res_data.get('message', res_data)}")
         return None
     except Exception as e:
-        logger.error(f"❌ Erro ao falar com o backend de pagamentos: {e}")
+        logger.error(f"❌ Exceção ao criar PIX: {e}")
         return None
 
-def verificar_pagamento_backend(pix_id: str) -> bool:
-    """Pergunta ao nosso backend se aquele PIX já foi pago."""
-    try:
-        res = requests.get(f"{BACKEND_PAGAMENTOS_URL}/verificar", params={"id": pix_id}, timeout=15)
-        if res.status_code == 200:
-            return bool(res.json().get('pago'))
-        return False
-    except Exception as e:
-        logger.error(f"❌ Erro ao verificar pagamento no backend: {e}")
-        return False
-
-# Nomes antigos mantidos para não quebrar chamadas existentes
 def verificar_pagamento_mercadopago(pix_id: str) -> bool:
-    return verificar_pagamento_backend(pix_id)
+    """Consulta o Mercado Pago e retorna True se o pagamento foi aprovado."""
+    try:
+        url = f"https://api.mercadopago.com/v1/payments/{pix_id}"
+        headers = {"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"}
+        res = requests.get(url, headers=headers, timeout=10)
+        if res.status_code == 200:
+            return res.json().get('status') == 'approved'
+        return False
+    except Exception as e:
+        logger.error(f"❌ Erro ao verificar pagamento: {e}")
+        return False
 
 def _confirmar_pagamento_plano(pix_id: str) -> None:
     info = pagamentos_pendentes.get(pix_id)
@@ -3828,7 +3830,11 @@ def _verificador_automatico_pix() -> None:
                 if dados.get('pago'):
                     continue
                 try:
-                    if verificar_pagamento_backend(pix_id):
+                    url = f"https://api.mercadopago.com/v1/payments/{pix_id}"
+                    headers = {"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"}
+                    res = requests.get(url, headers=headers, timeout=10)
+                    res_data = res.json()
+                    if res.status_code == 200 and res_data.get('status') == 'approved':
                         _confirmar_pagamento_plano(pix_id)
                 except:
                     pass
