@@ -168,7 +168,7 @@ MERCADO_PAGO_ACCESS_TOKEN: str = ""  # vazio de propósito: o token vive só no 
 # Depois de publicar o worker, troque pela URL dele.
 BACKEND_PAGAMENTOS_URL: str = os.environ.get(
     "PDV_BACKEND_URL",
-    "https://smartpdv-pay.SEU-USUARIO.workers.dev"
+    "https://smartpdv-pay.gyn-bet-fc.workers.dev"
 )
 
 # ============================================================
