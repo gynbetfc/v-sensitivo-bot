@@ -151,6 +151,9 @@ HTML_URL: str = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/refs
 # Imagem de fundo padrão para contas novas (tela de vendas)
 BG_PADRAO_URL: str = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/PDV/bg.png"
 SESSOES_ATIVAS: Dict[str, str] = {}
+# Controla quando cada conta sincronizou o token do plano pela última vez.
+# Evita que toda operação (venda, exclusão) dispare uma chamada ao Firebase.
+_ULTIMO_SYNC_TOKEN: Dict[str, float] = {}
 CACHE_CNPJ: Dict[str, Dict] = {}
 CACHE_PRODUTO_BARRAS: Dict[str, Dict] = {}
 
@@ -814,6 +817,25 @@ class PlanoSincronizado:
             logger.error(f"❌ Erro ao salvar token no Firebase: {e}")
             return False
     
+    def _agendar_sync_token_bg(self) -> None:
+        """Dispara a sincronização do token do plano em SEGUNDO PLANO, no máximo
+        uma vez a cada 5 minutos por conta. Assim nenhuma operação do caixa espera
+        a rede, mas o plano continua sendo atualizado (renovação, corte de acesso)."""
+        try:
+            agora = _time.time()
+            ultimo = _ULTIMO_SYNC_TOKEN.get(self.db_id, 0)
+            if agora - ultimo < 300:  # 5 minutos
+                return
+            _ULTIMO_SYNC_TOKEN[self.db_id] = agora
+            def _bg():
+                try:
+                    self.sincronizar_token()
+                except Exception:
+                    pass
+            threading.Thread(target=_bg, daemon=True).start()
+        except Exception:
+            pass
+
     def sincronizar_token(self) -> Dict:
         resultado = {'success': True, 'token_atualizado': False, 'mensagem': ''}
         try:
@@ -852,10 +874,13 @@ class PlanoSincronizado:
     
     def get_info_plano(self) -> Dict:
         try:
-            try:
-                self.sincronizar_token()
-            except:
-                pass
+            # OFFLINE-FIRST: NÃO esperamos o Firebase aqui. Este método roda em
+            # TODA operação (venda, exclusão, cadastro) por causa do @verificar_plano.
+            # Se ele consultasse a rede, cada venda esperaria o Firebase e o caixa
+            # travaria com internet ruim. O token local já é assinado e tem a data
+            # de expiração, então basta lê-lo. A sincronização do token acontece
+            # em SEGUNDO PLANO, no máximo a cada 5 minutos.
+            self._agendar_sync_token_bg()
             if not os.path.exists(self.arquivo_token):
                 return {'ativo': False, 'dias_restantes': 0, 'expirado': True, 'mensagem': 'Plano não encontrado'}
             with open(self.arquivo_token, 'r') as f:
