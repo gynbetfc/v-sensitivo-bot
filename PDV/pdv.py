@@ -151,15 +151,26 @@ HTML_URL: str = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/refs
 # Imagem de fundo padrão para contas novas (tela de vendas)
 BG_PADRAO_URL: str = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/PDV/bg.png"
 SESSOES_ATIVAS: Dict[str, str] = {}
+# Porta usada só para um PDV avisar o outro que já existe um servidor rodando
+PORTA_DESCOBERTA: int = 50505
 # Controla quando cada conta sincronizou o token do plano pela última vez.
 # Evita que toda operação (venda, exclusão) dispare uma chamada ao Firebase.
 _ULTIMO_SYNC_TOKEN: Dict[str, float] = {}
 CACHE_CNPJ: Dict[str, Dict] = {}
 CACHE_PRODUTO_BARRAS: Dict[str, Dict] = {}
 
-MERCADO_PAGO_ACCESS_TOKEN: str = os.environ.get(
-    "MP_ACCESS_TOKEN",
-    "APP_USR-4548266140377032-050311-6589fc22b166e4cb2cfad0379b28dcdf-1059299796"
+MERCADO_PAGO_ACCESS_TOKEN: str = ""  # vazio de propósito: o token vive só no backend
+
+# ============================================================
+# BACKEND DE PAGAMENTOS (Cloudflare Worker)
+# ============================================================
+# O token do Mercado Pago NÃO fica mais aqui. Este arquivo vai para a máquina de
+# cada lojista, então qualquer segredo escrito aqui estaria exposto. Em vez disso,
+# o PDV pede a cobrança ao nosso servidor, que é o único que conhece o token.
+# Depois de publicar o worker, troque pela URL dele.
+BACKEND_PAGAMENTOS_URL: str = os.environ.get(
+    "PDV_BACKEND_URL",
+    "https://smartpdv-pay.gyn-bet-fc.workers.dev"
 )
 
 # ============================================================
@@ -3269,7 +3280,7 @@ def criar_pix():
                     logger.error(f"⚠️ Erro ao marcar teste usado: {e}")
             return jsonify({"success": True, "pix_id": pix_id, "gratis": True, "valor": 0, "plano": asdict(plano)})
 
-        resultado_pix = criar_pix_mercadopago(float(preco_final), f"SMART PDV - {plano.nome} ({meses}m)")
+        resultado_pix = criar_pix_backend(db_id, plano_id, meses)
         if resultado_pix:
             pix_id = resultado_pix['pix_id']
             pagamentos_pendentes[pix_id] = {'db_id': db_id, 'plano_id': plano_id, 'valor': preco_final, 'pago': False,
@@ -3291,56 +3302,45 @@ def verificar_pix():
             return jsonify({"success": False, "error": "Pagamento não encontrado"})
         if pagamentos_pendentes[pix_id]['pago']:
             return jsonify({"pago": True})
-        url = f"https://api.mercadopago.com/v1/payments/{pix_id}"
-        headers = {"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"}
-        res = requests.get(url, headers=headers, timeout=10)
-        res_data = res.json()
-        if res.status_code == 200 and res_data.get('status') == 'approved':
+        if verificar_pagamento_backend(pix_id):
             _confirmar_pagamento_plano(pix_id)
             return jsonify({"pago": True})
-        return jsonify({"pago": False, "status": res_data.get('status', 'pending')})
+        return jsonify({"pago": False, "status": "pending"})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
-def criar_pix_mercadopago(valor: float, descricao: str) -> Optional[Dict]:
-    """Cria uma cobrança PIX no Mercado Pago para QUALQUER valor.
-    Reutilizável tanto para planos quanto para pedidos online.
-    Cada chamada usa idempotency-key único, então suporta MÚLTIPLOS PIX simultâneos."""
+def criar_pix_backend(db_id: str, plano_id: int, meses: int = 1) -> Optional[Dict]:
+    """Pede ao NOSSO backend que crie a cobrança PIX do plano.
+    O backend é quem fala com o Mercado Pago (só ele tem o token). Enviamos o
+    db_id junto: é assim que o pagamento fica amarrado à conta certa, mesmo com
+    várias lojas comprando ao mesmo tempo (cada cobrança tem a sua referência)."""
     try:
-        url = "https://api.mercadopago.com/v1/payments"
-        headers = {"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}", "Content-Type": "application/json",
-            "X-Idempotency-Key": str(uuid.uuid4())}
-        payment_data = {
-            "transaction_amount": round(float(valor), 2),
-            "description": descricao,
-            "payment_method_id": "pix",
-            "payer": {"email": "cliente@pdv.com", "first_name": "Cliente", "last_name": "PDV",
-                "identification": {"type": "CPF", "number": "00000000000"}}
-        }
-        res = requests.post(url, json=payment_data, headers=headers, timeout=20)
-        res_data = res.json()
-        if res.status_code == 201 and res_data.get('id'):
-            td = res_data['point_of_interaction']['transaction_data']
-            return {"pix_id": str(res_data['id']), "qr_code": td['qr_code'],
-                "qr_code_base64": td.get('qr_code_base64', '')}
-        logger.error(f"❌ Erro MP ao criar PIX: {res_data.get('message', res_data)}")
+        res = requests.post(f"{BACKEND_PAGAMENTOS_URL}/criar",
+            json={"db_id": db_id, "plano_id": plano_id, "meses": meses}, timeout=25)
+        d = res.json()
+        if res.status_code == 200 and d.get('success'):
+            return {"pix_id": d['pix_id'], "qr_code": d.get('qr_code', ''),
+                "qr_code_base64": d.get('qr_code_base64', '')}
+        logger.error(f"❌ Backend recusou criar PIX: {d.get('error')}")
         return None
     except Exception as e:
-        logger.error(f"❌ Exceção ao criar PIX: {e}")
+        logger.error(f"❌ Erro ao falar com o backend de pagamentos: {e}")
         return None
 
-def verificar_pagamento_mercadopago(pix_id: str) -> bool:
-    """Consulta o Mercado Pago e retorna True se o pagamento foi aprovado."""
+def verificar_pagamento_backend(pix_id: str) -> bool:
+    """Pergunta ao nosso backend se aquele PIX já foi pago."""
     try:
-        url = f"https://api.mercadopago.com/v1/payments/{pix_id}"
-        headers = {"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"}
-        res = requests.get(url, headers=headers, timeout=10)
+        res = requests.get(f"{BACKEND_PAGAMENTOS_URL}/verificar", params={"id": pix_id}, timeout=15)
         if res.status_code == 200:
-            return res.json().get('status') == 'approved'
+            return bool(res.json().get('pago'))
         return False
     except Exception as e:
-        logger.error(f"❌ Erro ao verificar pagamento: {e}")
+        logger.error(f"❌ Erro ao verificar pagamento no backend: {e}")
         return False
+
+# Nomes antigos mantidos para não quebrar chamadas existentes
+def verificar_pagamento_mercadopago(pix_id: str) -> bool:
+    return verificar_pagamento_backend(pix_id)
 
 def _confirmar_pagamento_plano(pix_id: str) -> None:
     info = pagamentos_pendentes.get(pix_id)
@@ -3830,16 +3830,36 @@ def _verificador_automatico_pix() -> None:
                 if dados.get('pago'):
                     continue
                 try:
-                    url = f"https://api.mercadopago.com/v1/payments/{pix_id}"
-                    headers = {"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"}
-                    res = requests.get(url, headers=headers, timeout=10)
-                    res_data = res.json()
-                    if res.status_code == 200 and res_data.get('status') == 'approved':
+                    if verificar_pagamento_backend(pix_id):
                         _confirmar_pagamento_plano(pix_id)
                 except:
                     pass
         except:
             pass
+
+def _responder_descoberta_rede() -> None:
+    """Fica ouvindo na rede local. Quando outro SMART PDV está sendo aberto, ele
+    pergunta 'tem algum servidor aí?' e nós respondemos. Assim o novo consegue
+    avisar o usuário de que já existe um PDV rodando (e evitar dois servidores).
+
+    Só responde a essa pergunta específica; não expõe nenhum dado."""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.bind(('', PORTA_DESCOBERTA))
+        logger.info(f"📡 Anunciando na rede (porta {PORTA_DESCOBERTA})")
+        while True:
+            try:
+                dados, origem = s.recvfrom(512)
+                if dados.strip() == b'SMART_PDV_DISCOVER':
+                    nome_pc = socket.gethostname()
+                    s.sendto(f'SMART_PDV|{nome_pc}'.encode('utf-8'), origem)
+            except Exception:
+                _time.sleep(0.2)
+    except Exception as e:
+        # Se a porta já está ocupada, é porque outro PDV desta máquina já responde.
+        logger.info(f"📡 Descoberta de rede não iniciada: {e}")
+
 
 def limpar_sessoes_inativas() -> None:
     while True:
@@ -3954,6 +3974,7 @@ if __name__ == '__main__':
     threading.Thread(target=limpar_sessoes_inativas, daemon=True).start()
     threading.Thread(target=_sync_pendente_background, daemon=True).start()
     threading.Thread(target=sincronizar_planos_periodicamente, daemon=True).start()
+    threading.Thread(target=_responder_descoberta_rede, daemon=True).start()
     print("🔄 Thread de sincronização de planos iniciada")
 
     print(f"\n🆔 Servidor: {SERVIDOR_ID}")
