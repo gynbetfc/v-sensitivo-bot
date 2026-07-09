@@ -3312,42 +3312,62 @@ def verificar_pix():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
+def _sessao_http() -> requests.Session:
+    """Sessão HTTP com retry automático. Conexões cortadas (erro 10054 no Windows,
+    comum com antivírus/firewall inspecionando HTTPS) são muito frequentes: sem
+    retry, o PIX falha 'aleatoriamente'."""
+    s = requests.Session()
+    s.headers.update({"User-Agent": "SMART-PDV/11", "Connection": "close"})
+    return s
+
 def criar_pix_backend(db_id: str, plano_id: int, meses: int = 1) -> Optional[Dict]:
     """Pede ao NOSSO backend que crie a cobrança PIX do plano.
     O backend é quem fala com o Mercado Pago (só ele tem o token). Enviamos o
     db_id junto: é assim que o pagamento fica amarrado à conta certa, mesmo com
     várias lojas comprando ao mesmo tempo (cada cobrança tem a sua referência).
 
-    Em caso de falha, devolve {'erro': '<motivo>'} para o usuário ver o que houve
-    (antes aparecia só 'Erro ao gerar PIX', o que escondia a causa)."""
-    try:
-        res = requests.post(f"{BACKEND_PAGAMENTOS_URL}/criar",
-            json={"db_id": db_id, "plano_id": plano_id, "meses": meses}, timeout=25)
+    Tenta até 3 vezes: quedas de conexão pontuais não podem impedir a venda."""
+    ultimo_erro = "erro desconhecido"
+    for tentativa in range(3):
         try:
-            d = res.json()
-        except Exception:
-            logger.error(f"❌ Backend respondeu algo inesperado (HTTP {res.status_code})")
-            return {"erro": f"Backend respondeu HTTP {res.status_code}"}
-        if res.status_code == 200 and d.get('success'):
-            return {"pix_id": d['pix_id'], "qr_code": d.get('qr_code', ''),
-                "qr_code_base64": d.get('qr_code_base64', '')}
-        motivo = d.get('error') or f"HTTP {res.status_code}"
-        logger.error(f"❌ Backend recusou criar PIX: {motivo}")
-        return {"erro": motivo}
-    except Exception as e:
-        logger.error(f"❌ Erro ao falar com o backend de pagamentos: {e}")
-        return {"erro": f"Não foi possível falar com o servidor de pagamentos: {e}"}
+            with _sessao_http() as s:
+                res = s.post(f"{BACKEND_PAGAMENTOS_URL}/criar",
+                    json={"db_id": db_id, "plano_id": plano_id, "meses": meses}, timeout=30)
+            try:
+                d = res.json()
+            except Exception:
+                ultimo_erro = f"resposta inesperada do servidor (HTTP {res.status_code})"
+                logger.error(f"❌ {ultimo_erro}")
+                _time.sleep(1.0)
+                continue
+            if res.status_code == 200 and d.get('success'):
+                return {"pix_id": d['pix_id'], "qr_code": d.get('qr_code', ''),
+                    "qr_code_base64": d.get('qr_code_base64', '')}
+            # o servidor respondeu, mas recusou: não adianta tentar de novo
+            ultimo_erro = d.get('error') or f"HTTP {res.status_code}"
+            logger.error(f"❌ Backend recusou criar PIX: {ultimo_erro}")
+            return {"erro": ultimo_erro}
+        except Exception as e:
+            ultimo_erro = str(e)
+            logger.warning(f"⚠️ Falha de conexão ao criar PIX (tentativa {tentativa+1}/3): {e}")
+            _time.sleep(1.2 * (tentativa + 1))  # espera crescente
+    return {"erro": f"não foi possível falar com o servidor de pagamentos após 3 tentativas ({ultimo_erro})"}
 
 def verificar_pagamento_backend(pix_id: str) -> bool:
-    """Pergunta ao nosso backend se aquele PIX já foi pago."""
-    try:
-        res = requests.get(f"{BACKEND_PAGAMENTOS_URL}/verificar", params={"id": pix_id}, timeout=15)
-        if res.status_code == 200:
-            return bool(res.json().get('pago'))
+    """Pergunta ao nosso backend se aquele PIX já foi pago (com retry)."""
+    if not pix_id or str(pix_id).startswith('gratis_'):
         return False
-    except Exception as e:
-        logger.error(f"❌ Erro ao verificar pagamento no backend: {e}")
-        return False
+    for tentativa in range(3):
+        try:
+            with _sessao_http() as s:
+                res = s.get(f"{BACKEND_PAGAMENTOS_URL}/verificar", params={"id": pix_id}, timeout=20)
+            if res.status_code == 200:
+                return bool(res.json().get('pago'))
+            return False
+        except Exception as e:
+            logger.warning(f"⚠️ Falha ao verificar pagamento (tentativa {tentativa+1}/3): {e}")
+            _time.sleep(1.0 * (tentativa + 1))
+    return False
 
 # Nomes antigos mantidos para não quebrar chamadas existentes
 def verificar_pagamento_mercadopago(pix_id: str) -> bool:
