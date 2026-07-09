@@ -149,7 +149,7 @@ logger: logging.Logger = logging.getLogger(__name__)
 FB_URL: str = "https://droidguard-10597-default-rtdb.firebaseio.com"
 HTML_URL: str = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/refs/heads/main/PDV/templates/index.html"
 # Imagem de fundo padrão para contas novas (tela de vendas)
-BG_PADRAO_URL: str = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/PDV/bg.png"
+BG_PADRAO_URL: str = "https://i.imgur.com/ok53lns.png"
 SESSOES_ATIVAS: Dict[str, str] = {}
 # Porta usada só para um PDV avisar o outro que já existe um servidor rodando
 PORTA_DESCOBERTA: int = 50505
