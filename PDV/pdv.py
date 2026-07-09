@@ -149,7 +149,7 @@ logger: logging.Logger = logging.getLogger(__name__)
 FB_URL: str = "https://droidguard-10597-default-rtdb.firebaseio.com"
 HTML_URL: str = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/refs/heads/main/PDV/templates/index.html"
 # Imagem de fundo padrão para contas novas (tela de vendas)
-BG_PADRAO_URL: str = "https://i.imgur.com/ok53lns.png"
+BG_PADRAO_URL: str = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/PDV/bg.png"
 SESSOES_ATIVAS: Dict[str, str] = {}
 # Porta usada só para um PDV avisar o outro que já existe um servidor rodando
 PORTA_DESCOBERTA: int = 50505
@@ -3273,15 +3273,16 @@ def criar_pix():
                 try:
                     with get_db_context() as conn:
                         conn.execute("INSERT OR REPLACE INTO config (chave, valor) VALUES ('teste_usado', '1')")
-                    dados_fb = carregar_usuario_firebase(db_id, timeout=3) or {}
-                    dados_fb['teste_usado'] = True
-                    salvar_usuario_firebase(db_id, dados_fb)
+                    # PATCH (só este campo). Com PUT, se a leitura do Firebase
+                    # falhasse, o nó do usuário seria substituído só por
+                    # 'teste_usado' — apagando email, senha, produtos e vendas.
+                    salvar_campos_firebase(db_id, {'teste_usado': True})
                 except Exception as e:
                     logger.error(f"⚠️ Erro ao marcar teste usado: {e}")
             return jsonify({"success": True, "pix_id": pix_id, "gratis": True, "valor": 0, "plano": asdict(plano)})
 
         resultado_pix = criar_pix_backend(db_id, plano_id, meses)
-        if resultado_pix:
+        if resultado_pix and resultado_pix.get('pix_id'):
             pix_id = resultado_pix['pix_id']
             pagamentos_pendentes[pix_id] = {'db_id': db_id, 'plano_id': plano_id, 'valor': preco_final, 'pago': False,
                 'meses': meses, 'dias': dias_plano,
@@ -3289,7 +3290,9 @@ def criar_pix():
             return jsonify({"success": True, "pix_id": pix_id, "qr_code": resultado_pix['qr_code'],
                 "qr_code_base64": resultado_pix['qr_code_base64'], "valor": preco_final, "meses": meses,
                 "economia": economia, "plano": asdict(plano)})
-        return jsonify({"success": False, "error": "Erro ao gerar PIX"})
+        # Mostra o motivo real (vindo do backend/Mercado Pago) em vez de esconder
+        motivo = (resultado_pix or {}).get('erro', 'Erro desconhecido')
+        return jsonify({"success": False, "error": f"Erro ao gerar PIX: {motivo}"})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
@@ -3313,19 +3316,27 @@ def criar_pix_backend(db_id: str, plano_id: int, meses: int = 1) -> Optional[Dic
     """Pede ao NOSSO backend que crie a cobrança PIX do plano.
     O backend é quem fala com o Mercado Pago (só ele tem o token). Enviamos o
     db_id junto: é assim que o pagamento fica amarrado à conta certa, mesmo com
-    várias lojas comprando ao mesmo tempo (cada cobrança tem a sua referência)."""
+    várias lojas comprando ao mesmo tempo (cada cobrança tem a sua referência).
+
+    Em caso de falha, devolve {'erro': '<motivo>'} para o usuário ver o que houve
+    (antes aparecia só 'Erro ao gerar PIX', o que escondia a causa)."""
     try:
         res = requests.post(f"{BACKEND_PAGAMENTOS_URL}/criar",
             json={"db_id": db_id, "plano_id": plano_id, "meses": meses}, timeout=25)
-        d = res.json()
+        try:
+            d = res.json()
+        except Exception:
+            logger.error(f"❌ Backend respondeu algo inesperado (HTTP {res.status_code})")
+            return {"erro": f"Backend respondeu HTTP {res.status_code}"}
         if res.status_code == 200 and d.get('success'):
             return {"pix_id": d['pix_id'], "qr_code": d.get('qr_code', ''),
                 "qr_code_base64": d.get('qr_code_base64', '')}
-        logger.error(f"❌ Backend recusou criar PIX: {d.get('error')}")
-        return None
+        motivo = d.get('error') or f"HTTP {res.status_code}"
+        logger.error(f"❌ Backend recusou criar PIX: {motivo}")
+        return {"erro": motivo}
     except Exception as e:
         logger.error(f"❌ Erro ao falar com o backend de pagamentos: {e}")
-        return None
+        return {"erro": f"Não foi possível falar com o servidor de pagamentos: {e}"}
 
 def verificar_pagamento_backend(pix_id: str) -> bool:
     """Pergunta ao nosso backend se aquele PIX já foi pago."""
