@@ -3942,12 +3942,13 @@ if __name__ == '__main__':
     # O templates/ não guarda dados (só a tela), então pode ser reescrito à vontade.
     # Se conseguir baixar, o index.html é substituído pela versão mais recente.
     # Se estiver offline, mantém o que já existe (para não quebrar sem internet).
+    # O LAUNCHER baixa o index.html (ele tem o token do repositório privado).
+    # O pdv.py NÃO baixa mais: ele não tem token, e não deve ter — o pdv.py vai
+    # para a máquina de cada cliente, então qualquer segredo aqui vazaria.
+    # Aqui só conferimos se a interface está no lugar; o servidor sobe na hora.
     caminho_html_local = os.path.join(TEMPLATES_DIR, "index.html")
-    baixou = baixar_html_github()  # síncrono: garante a versão nova ANTES de servir
-    if not baixou and not os.path.exists(caminho_html_local):
-        # Offline E sem cópia local: tenta de novo (sem isso o sistema não abre)
-        logger.warning("⚠️ Sem HTML local e sem internet. Tentando novamente...")
-        baixar_html_github()
+    if not os.path.exists(caminho_html_local):
+        logger.error("❌ index.html não encontrado. Abra o sistema pelo SMART_PDV.exe (ele baixa a interface).")
 
     threading.Thread(target=_verificador_automatico_pix, daemon=True).start()
     threading.Thread(target=limpar_sessoes_inativas, daemon=True).start()
