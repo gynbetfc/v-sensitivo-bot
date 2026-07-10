@@ -2552,7 +2552,18 @@ def pagar_cliente(cliente_id: int):
                 return jsonify({"success": False, "error": "Cliente não encontrado"})
             # Registra o pagamento do fiado como uma VENDA (aparece no dashboard, pois agora o dinheiro entrou)
             metodo_pg = data.get('metodo', 'Dinheiro')
-            itens_quit = json.dumps([{"nome": f"Quitação de fiado - {cliente['nome']}", "quantidade": 1, "preco": valor, "codigo": ""}], ensure_ascii=False)
+            # Grava o item da quitação no MESMO formato das vendas normais
+            # (preco_unitario + total). Antes só tinha 'preco', e o cupom quebrava
+            # ao tentar ler i.total (undefined.toFixed).
+            itens_quit = json.dumps([{
+                "nome": f"Quitação de fiado - {cliente['nome']}",
+                "codigo": "",
+                "quantidade": 1,
+                "preco_unitario": valor,
+                "preco": valor,
+                "total": valor,
+                "lucro": 0
+            }], ensure_ascii=False)
             usuario_atual = session.get('usuario_id', '')
             conn.execute("""INSERT INTO vendas (data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente, usuario_id, db_id, recebido, troco)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
