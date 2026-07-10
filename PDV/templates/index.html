@@ -2430,18 +2430,25 @@ function mostrarCupom(dados){
     document.getElementById('cupomVendaIdLine').textContent='Venda: #'+ultimaVendaId;
     
     let itensHtml='';
-    dados.itens.forEach(i=>{
-        const lucro = i.lucro || 0;
-        itensHtml+=`<div class="cupom-linha"><span>${i.nome} x ${i.quantidade}</span><span>R$ ${i.total.toFixed(2)}</span></div>`;
+    (dados.itens||[]).forEach(i=>{
+        const lucro = Number(i.lucro) || 0;
+        const qtd = Number(i.quantidade) || 1;
+        // Itens antigos de "Quitação de fiado" só tinham 'preco' (sem 'total').
+        // Lemos com fallback para não quebrar o cupom dessas vendas.
+        let tot = i.total;
+        if(tot === undefined || tot === null) tot = (i.preco_unitario != null ? i.preco_unitario * qtd : i.preco);
+        tot = Number(tot) || 0;
+        itensHtml+=`<div class="cupom-linha"><span>${i.nome} x ${qtd}</span><span>R$ ${tot.toFixed(2)}</span></div>`;
         if(lucro > 0) itensHtml+=`<div style="font-size:9px;color:#92400e;text-align:right;padding-right:4px;">💰 Lucro: R$ ${lucro.toFixed(2)}</div>`;
     });
     document.getElementById('cupomItens').innerHTML=itensHtml;
-    document.getElementById('cupomSubtotal').textContent='R$ '+dados.subtotal.toFixed(2);
-    document.getElementById('cupomDesconto').textContent='R$ '+dados.desconto.toFixed(2);
-    document.getElementById('cupomTotal').textContent='R$ '+dados.total.toFixed(2);
+    const num = v => Number(v) || 0;  // qualquer valor faltando vira 0 (não quebra o cupom)
+    document.getElementById('cupomSubtotal').textContent='R$ '+num(dados.subtotal).toFixed(2);
+    document.getElementById('cupomDesconto').textContent='R$ '+num(dados.desconto).toFixed(2);
+    document.getElementById('cupomTotal').textContent='R$ '+num(dados.total).toFixed(2);
     document.getElementById('cupomMetodo').textContent=dados.metodo||'Dinheiro';
-    document.getElementById('cupomRecebido').textContent=dados.recebido?'R$ '+dados.recebido.toFixed(2):'—';
-    document.getElementById('cupomTroco').textContent=dados.troco?'R$ '+dados.troco.toFixed(2):'—';
+    document.getElementById('cupomRecebido').textContent=dados.recebido?'R$ '+num(dados.recebido).toFixed(2):'—';
+    document.getElementById('cupomTroco').textContent=dados.troco?'R$ '+num(dados.troco).toFixed(2):'—';
     document.getElementById('cupomCliente').textContent=dados.cliente||'—';
     document.getElementById('cupomOperador').textContent=dados.usuario||'—';
     // O lucro NUNCA aparece no cupom (informação interna, não deve ir para o cliente)
