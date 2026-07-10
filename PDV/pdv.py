@@ -703,6 +703,21 @@ def salvar_preferencia_firebase(db_id: str, campo: str, valor) -> bool:
         logger.error(f"⚠️ Erro Firebase preferência: {e}")
         return False
 
+def em_segundo_plano(fn, *args, **kwargs) -> None:
+    """Executa algo que depende da INTERNET sem fazer o usuário esperar.
+
+    Princípio do PDV: o caixa é offline-first. Nenhuma ação do lojista (vender,
+    cadastrar, salvar preferência) pode ficar parada esperando o Firebase. O que
+    importa é gravar no banco LOCAL e responder na hora; subir para a nuvem é
+    tarefa de fundo, e se falhar o próximo sync resolve."""
+    def _rodar():
+        try:
+            fn(*args, **kwargs)
+        except Exception as e:
+            logger.warning(f"⚠️ Tarefa de fundo falhou (será refeita no próximo sync): {e}")
+    threading.Thread(target=_rodar, daemon=True).start()
+
+
 def ler_timestamp_online() -> Optional[int]:
     """Grava o timestamp do servidor Firebase num local temporário e lê de volta,
     para obter a hora do servidor em milissegundos. Usado para carimbar o valor
@@ -3443,19 +3458,15 @@ def get_plano_status():
         db_id = get_db_id()
         if not db_id:
             return jsonify({"success": False, "error": "Não autenticado"}), 401
-        # Fonte primária: token LOCAL (funciona offline). Firebase é só complemento.
+        # OFFLINE-FIRST: o token local é assinado e já traz plano_id e expira_em.
+        # Antes consultávamos o Firebase aqui, e a tela dos Planos ficava presa
+        # esperando a internet. Agora respondemos na hora; a atualização do token
+        # (renovação, corte) acontece em segundo plano dentro de get_info_plano.
         info = get_info_plano_completa(db_id)
-        dados = carregar_usuario_firebase(db_id, timeout=2)  # timeout curto: token local já cobre o essencial
 
-        # plano_id: tenta Firebase; se offline, usa o que está no token local; senão, 1
-        if dados and dados.get('plano'):
-            plano_id = dados.get('plano', 1)
-        else:
-            plano_id = info.get('plano_id', 1)
+        plano_id = info.get('plano_id', 1)
         plano_obj = next((p for p in PLANOS if p.id == plano_id), PLANOS[0])
-
-        # expira: Firebase tem prioridade; offline cai pro token local
-        expira = dados.get('expira_em') if dados else info.get('expira_em')
+        expira = info.get('expira_em')
 
         dias_restantes = info.get('dias_restantes', 0)
         limite_produtos = plano_obj.produtos if plano_obj else 0
@@ -3489,7 +3500,7 @@ def get_plano_status():
             "dias_para_aviso": dias_para_aviso,
             "permissoes": permissoes,
             "is_teste": is_teste,
-            "offline": dados is None,
+            "offline": not _ULTIMO_SYNC_TOKEN.get(db_id),
             "mensagem": info.get('mensagem', ''),
             "url_renovacao": "#/planos"
         })
@@ -3611,12 +3622,16 @@ def criar_pix_backend(db_id: str, plano_id: int, meses: int = 1) -> Optional[Dic
     várias lojas comprando ao mesmo tempo (cada cobrança tem a sua referência).
 
     Tenta até 3 vezes: quedas de conexão pontuais não podem impedir a venda."""
+    # Tempos CURTOS de propósito: esta chamada acontece enquanto o usuário espera
+    # olhando a tela. Com timeout de 30s e 3 tentativas, um clique podia travar o
+    # navegador por ~95s — e o navegador só permite 6 conexões simultâneas, então
+    # alguns cliques congelavam o sistema inteiro. Melhor falhar rápido e avisar.
     ultimo_erro = "erro desconhecido"
-    for tentativa in range(3):
+    for tentativa in range(2):
         try:
             with _sessao_http() as s:
                 res = s.post(f"{BACKEND_PAGAMENTOS_URL}/criar",
-                    json={"db_id": db_id, "plano_id": plano_id, "meses": meses}, timeout=30)
+                    json={"db_id": db_id, "plano_id": plano_id, "meses": meses}, timeout=10)
             try:
                 d = res.json()
             except Exception:
@@ -3633,24 +3648,26 @@ def criar_pix_backend(db_id: str, plano_id: int, meses: int = 1) -> Optional[Dic
             return {"erro": ultimo_erro}
         except Exception as e:
             ultimo_erro = str(e)
-            logger.warning(f"⚠️ Falha de conexão ao criar PIX (tentativa {tentativa+1}/3): {e}")
-            _time.sleep(1.2 * (tentativa + 1))  # espera crescente
-    return {"erro": f"não foi possível falar com o servidor de pagamentos após 3 tentativas ({ultimo_erro})"}
+            logger.warning(f"⚠️ Falha de conexão ao criar PIX (tentativa {tentativa+1}/2): {e}")
+            _time.sleep(0.8)
+    return {"erro": f"não foi possível falar com o servidor de pagamentos ({ultimo_erro})"}
 
 def verificar_pagamento_backend(pix_id: str) -> bool:
     """Pergunta ao nosso backend se aquele PIX já foi pago (com retry)."""
     if not pix_id or str(pix_id).startswith('gratis_'):
         return False
-    for tentativa in range(3):
+    # Também curto: o frontend chama isto de tempos em tempos enquanto o QR está
+    # na tela. Se demorar, ele volta a perguntar na próxima rodada.
+    for tentativa in range(2):
         try:
             with _sessao_http() as s:
-                res = s.get(f"{BACKEND_PAGAMENTOS_URL}/verificar", params={"id": pix_id}, timeout=20)
+                res = s.get(f"{BACKEND_PAGAMENTOS_URL}/verificar", params={"id": pix_id}, timeout=8)
             if res.status_code == 200:
                 return bool(res.json().get('pago'))
             return False
         except Exception as e:
-            logger.warning(f"⚠️ Falha ao verificar pagamento (tentativa {tentativa+1}/3): {e}")
-            _time.sleep(1.0 * (tentativa + 1))
+            logger.warning(f"⚠️ Falha ao verificar pagamento (tentativa {tentativa+1}/2): {e}")
+            _time.sleep(0.6)
     return False
 
 # Nomes antigos mantidos para não quebrar chamadas existentes
@@ -3749,6 +3766,20 @@ def delete_usuario(user_id: str):
 # ============================================================
 # LOJA
 # ============================================================
+def _sincronizar_preferencia_bg(db_id: str, campo: str, valor, campo_ts: str) -> None:
+    """Sobe a preferência para o Firebase e corrige o carimbo de hora com a hora
+    do SERVIDOR (para o "mais recente vence" funcionar mesmo se o relógio do PC
+    estiver errado). Roda em segundo plano: o usuário já viu a mudança aplicada."""
+    ts = ler_timestamp_online()
+    if ts:
+        try:
+            with get_db_context() as conn:
+                conn.execute(f"UPDATE users SET {campo_ts}=? WHERE db_id=?", (ts, db_id))
+        except Exception as e:
+            logger.warning(f"⚠️ Não consegui carimbar a hora de {campo}: {e}")
+    salvar_preferencia_firebase(db_id, campo, valor)
+
+
 @app.route('/api/loja/nome', methods=['POST'])
 @verificar_plano
 def salvar_nome_loja():
@@ -3766,9 +3797,11 @@ def salvar_nome_loja():
         session['nome_loja'] = nome
         session['cnpj'] = cnpj
         session['cnpj_dados'] = cnpj_dados
-        # PATCH: grava só os campos da loja. Um PUT aqui poderia sobrescrever
-        # alterações feitas em outro caixa entre a leitura e a gravação.
-        salvar_campos_firebase(db_id, {'nome_loja': nome, 'cnpj': cnpj, 'cnpj_dados': cnpj_dados})
+        # OFFLINE-FIRST: o nome já está no banco local; subir para a nuvem é
+        # tarefa de fundo. Usamos PATCH (não PUT) para não sobrescrever alterações
+        # feitas em outro caixa entre a leitura e a gravação.
+        em_segundo_plano(salvar_campos_firebase, db_id,
+            {'nome_loja': nome, 'cnpj': cnpj, 'cnpj_dados': cnpj_dados})
         return jsonify({"success": True, "message": "Informações salvas!"})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
@@ -3809,20 +3842,53 @@ def salvar_background():
         img = data.get('img', '')  # URL ou data-URL (base64)
         opacidade = int(data.get('opacidade', 50))
         opacidade = max(0, min(100, opacidade))
-        # Pega uma hora confiável do servidor para carimbar a alteração
-        ts = ler_timestamp_online() or int(_time.time() * 1000)
+        # OFFLINE-FIRST: aplica local e responde JÁ. Antes esperava TRÊS chamadas
+        # de rede (hora do servidor + 2 gravações) — ~6s com internet ruim.
+        ts_local = int(_time.time() * 1000)
         with get_db_context() as conn:
             conn.execute("UPDATE users SET bg_vendas_img=?, bg_vendas_opacidade=?, bg_vendas_img_ts=?, bg_vendas_opacidade_ts=? WHERE db_id=?",
-                (img, opacidade, ts, ts, db_id))
-        # Salva no Firebase com timestamp do servidor (para o mais novo vencer no sync)
-        try:
-            salvar_preferencia_firebase(db_id, 'bg_vendas_img', img)
-            salvar_preferencia_firebase(db_id, 'bg_vendas_opacidade', opacidade)
-        except Exception as e:
-            logger.error(f"⚠️ Erro ao salvar background no Firebase: {e}")
+                (img, opacidade, ts_local, ts_local, db_id))
+        def _subir_fundo():
+            _sincronizar_preferencia_bg(db_id, 'bg_vendas_img', img, 'bg_vendas_img_ts')
+            _sincronizar_preferencia_bg(db_id, 'bg_vendas_opacidade', opacidade, 'bg_vendas_opacidade_ts')
+        em_segundo_plano(_subir_fundo)
         return jsonify({"success": True, "message": "Fundo salvo!"})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
+
+def _atualizar_background_do_firebase(db_id: str) -> None:
+    """Puxa a preferência de fundo do Firebase e guarda no banco local se ela for
+    mais nova. Roda em SEGUNDO PLANO: quem abre a tela vê o valor local na hora,
+    e o valor de outro aparelho aparece no próximo carregamento."""
+    dados = carregar_usuario_firebase(db_id, timeout=6)
+    if dados is None:
+        return
+    with get_db_context() as conn:
+        row = conn.execute("SELECT bg_vendas_img, bg_vendas_opacidade, bg_vendas_img_ts, bg_vendas_opacidade_ts FROM users WHERE db_id=? LIMIT 1", (db_id,)).fetchone()
+        img_local = (row[0] if row else '') or ''
+        opac_local = (row[1] if row and row[1] is not None else 50)
+        img_ts_local = (row[2] if row else 0) or 0
+        opac_ts_local = (row[3] if row else 0) or 0
+
+        img_fb = dados.get('bg_vendas_img', None)
+        img_ts_fb = dados.get('bg_vendas_img_ts', 0) or 0
+        opac_fb = dados.get('bg_vendas_opacidade', None)
+        opac_ts_fb = dados.get('bg_vendas_opacidade_ts', 0) or 0
+
+        img_final, img_ts_final = img_local, img_ts_local
+        if img_fb:
+            if (not img_local) or (img_ts_fb > img_ts_local):
+                img_final, img_ts_final = img_fb, img_ts_fb
+        elif img_fb == '' and img_ts_fb > img_ts_local:
+            img_final, img_ts_final = '', img_ts_fb
+
+        opac_final, opac_ts_final = opac_local, opac_ts_local
+        if opac_fb is not None and (opac_ts_fb > opac_ts_local or (opac_ts_fb == 0 and img_final == img_fb)):
+            opac_final, opac_ts_final = opac_fb, opac_ts_fb
+
+        conn.execute("UPDATE users SET bg_vendas_img=?, bg_vendas_opacidade=?, bg_vendas_img_ts=?, bg_vendas_opacidade_ts=? WHERE db_id=?",
+            (img_final, opac_final, img_ts_final, opac_ts_final, db_id))
+
 
 @app.route('/api/loja/background')
 def get_background():
@@ -3830,50 +3896,20 @@ def get_background():
         db_id = get_db_id()
         if not db_id:
             return jsonify({"success": False, "error": "Não autenticado"}), 401
-        # Lê o valor LOCAL e seu timestamp
-        img_local, opac_local, img_ts_local, opac_ts_local = '', 50, 0, 0
+        # OFFLINE-FIRST: responde com o valor LOCAL na hora. Antes esperávamos o
+        # Firebase aqui, e a tela de vendas demorava a abrir com internet ruim.
+        # A checagem do que veio de outro aparelho roda em segundo plano.
+        img_local, opac_local = '', 50
         with get_db_context() as conn:
-            cursor = conn.execute("SELECT bg_vendas_img, bg_vendas_opacidade, bg_vendas_img_ts, bg_vendas_opacidade_ts FROM users WHERE db_id=? LIMIT 1", (db_id,))
-            row = cursor.fetchone()
+            row = conn.execute("SELECT bg_vendas_img, bg_vendas_opacidade FROM users WHERE db_id=? LIMIT 1", (db_id,)).fetchone()
             if row:
                 img_local = row[0] or ''
                 opac_local = row[1] if row[1] is not None else 50
-                img_ts_local = row[2] or 0
-                opac_ts_local = row[3] or 0
-        # Tenta o Firebase e resolve por TIMESTAMP (o mais novo vence)
-        try:
-            dados = carregar_usuario_firebase(db_id, timeout=4)
-            if dados is not None:
-                img_fb = dados.get('bg_vendas_img', None)
-                img_ts_fb = dados.get('bg_vendas_img_ts', 0) or 0
-                opac_fb = dados.get('bg_vendas_opacidade', None)
-                opac_ts_fb = dados.get('bg_vendas_opacidade_ts', 0) or 0
-                # Resolve a imagem:
-                img_final, img_ts_final = img_local, img_ts_local
-                if img_fb:
-                    # Firebase TEM uma foto. Puxa se:
-                    #  (a) o local está vazio (ter foto é melhor que não ter), OU
-                    #  (b) o Firebase é mais novo pelo timestamp
-                    if (not img_local) or (img_ts_fb > img_ts_local):
-                        img_final, img_ts_final = img_fb, img_ts_fb
-                elif img_fb == '' and img_ts_fb > img_ts_local:
-                    # Firebase foi explicitamente esvaziado e é mais novo: aceita a remoção
-                    img_final, img_ts_final = '', img_ts_fb
-                # Resolve a opacidade: mais novo vence; se não há ts, aceita o valor do FB
-                opac_final, opac_ts_final = opac_local, opac_ts_local
-                if opac_fb is not None and (opac_ts_fb > opac_ts_local or (opac_ts_fb == 0 and img_final == img_fb)):
-                    opac_final, opac_ts_final = opac_fb, opac_ts_fb
-                # Atualiza o local com o resultado
-                with get_db_context() as conn:
-                    conn.execute("UPDATE users SET bg_vendas_img=?, bg_vendas_opacidade=?, bg_vendas_img_ts=?, bg_vendas_opacidade_ts=? WHERE db_id=?",
-                        (img_final, opac_final, img_ts_final, opac_ts_final, db_id))
-                return jsonify({"success": True, "img": img_final, "opacidade": opac_final})
-        except Exception:
-            pass
-        # Offline: usa o valor local
+        em_segundo_plano(_atualizar_background_do_firebase, db_id)
         return jsonify({"success": True, "img": img_local, "opacidade": opac_local})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
+
 
 @app.route('/api/loja/escala', methods=['POST'])
 @verificar_plano
@@ -3883,16 +3919,33 @@ def salvar_escala():
         db_id = get_db_id()
         escala = int(data.get('escala', 100))
         escala = max(100, min(180, escala))
-        ts = ler_timestamp_online() or int(_time.time() * 1000)
+        # OFFLINE-FIRST: grava local com a hora do PC e responde JÁ. A hora do
+        # servidor e o envio ao Firebase acontecem em segundo plano. Antes, salvar
+        # o tamanho da letra esperava DUAS chamadas de rede (~4s com internet ruim).
+        ts_local = int(_time.time() * 1000)
         with get_db_context() as conn:
-            conn.execute("UPDATE users SET escala_sistema=?, escala_sistema_ts=? WHERE db_id=?", (escala, ts, db_id))
-        try:
-            salvar_preferencia_firebase(db_id, 'escala_sistema', escala)
-        except Exception:
-            pass
+            conn.execute("UPDATE users SET escala_sistema=?, escala_sistema_ts=? WHERE db_id=?", (escala, ts_local, db_id))
+        em_segundo_plano(_sincronizar_preferencia_bg, db_id, 'escala_sistema', escala, 'escala_sistema_ts')
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
+
+def _atualizar_escala_do_firebase(db_id: str) -> None:
+    """Puxa a escala do Firebase em segundo plano; o mais recente vence."""
+    dados = carregar_usuario_firebase(db_id, timeout=6)
+    if dados is None:
+        return
+    escala_fb = dados.get('escala_sistema', None)
+    ts_fb = dados.get('escala_sistema_ts', 0) or 0
+    if escala_fb is None:
+        return
+    with get_db_context() as conn:
+        row = conn.execute("SELECT escala_sistema_ts FROM users WHERE db_id=? LIMIT 1", (db_id,)).fetchone()
+        ts_local = (row[0] if row else 0) or 0
+        if ts_fb > ts_local:
+            conn.execute("UPDATE users SET escala_sistema=?, escala_sistema_ts=? WHERE db_id=?",
+                (int(escala_fb), ts_fb, db_id))
+
 
 @app.route('/api/loja/escala')
 def get_escala():
@@ -3900,35 +3953,18 @@ def get_escala():
         db_id = get_db_id()
         if not db_id:
             return jsonify({"success": False, "error": "Não autenticado"}), 401
-        # Lê local + timestamp
-        escala_local, ts_local = 100, 0
+        # OFFLINE-FIRST: devolve o valor local imediatamente; a conferência com o
+        # Firebase acontece em segundo plano (aparece no próximo carregamento).
+        escala_local = 100
         with get_db_context() as conn:
-            cursor = conn.execute("SELECT escala_sistema, escala_sistema_ts FROM users WHERE db_id=? LIMIT 1", (db_id,))
-            row = cursor.fetchone()
-            if row:
-                escala_local = row[0] or 100
-                ts_local = row[1] or 0
-        # Firebase: mais novo vence
-        try:
-            dados = carregar_usuario_firebase(db_id, timeout=4)
-            if dados is not None:
-                escala_fb = dados.get('escala_sistema', None)
-                ts_fb = dados.get('escala_sistema_ts', 0) or 0
-                if escala_fb is not None and ts_fb > ts_local:
-                    with get_db_context() as conn:
-                        conn.execute("UPDATE users SET escala_sistema=?, escala_sistema_ts=? WHERE db_id=?", (int(escala_fb), ts_fb, db_id))
-                    return jsonify({"success": True, "escala": int(escala_fb)})
-        except Exception:
-            pass
-        return jsonify({"success": True, "escala": escala_local})
+            row = conn.execute("SELECT escala_sistema FROM users WHERE db_id=? LIMIT 1", (db_id,)).fetchone()
+            if row and row[0]:
+                escala_local = row[0]
+        em_segundo_plano(_atualizar_escala_do_firebase, db_id)
+        return jsonify({"success": True, "escala": int(escala_local)})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
-# ============================================================
-# LEMBRAR LOGIN - salva as credenciais num arquivo local do app
-# (persiste mesmo que o webview limpe o localStorage ao fechar)
-# ============================================================
-_ARQUIVO_LOGIN = os.path.join(APP_DATA_DIR, 'login_lembrado.enc')
 
 @app.route('/api/login/lembrar', methods=['POST'])
 def salvar_login_lembrado():
