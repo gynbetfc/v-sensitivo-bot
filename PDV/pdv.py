@@ -1271,7 +1271,22 @@ def _aplicar_tombstones_firebase(db_id: str, dados_firebase: Dict) -> None:
                     (tipo, item_id, db_id, excluido_em))
                 # Remove o item do banco local, se ele existir
                 if tipo == 'cliente':
-                    conn.execute("DELETE FROM clientes WHERE id=? AND db_id=?", (item_id, db_id))
+                    if item_id.isdigit():
+                        # Tombstone ANTIGO (por id). Não aplicamos: o id é local,
+                        # apagaríamos outro cliente neste aparelho.
+                        logger.info(f"ℹ️ Ignorando exclusão antiga por id ({item_id}) — hoje excluímos por nome")
+                    else:
+                        # Só apaga se o cliente local for ANTERIOR à exclusão.
+                        # Se alguém recadastrou esse nome depois, ele fica.
+                        row = conn.execute("SELECT ultima_atualizacao FROM clientes WHERE nome=? AND db_id=?",
+                            (item_id, db_id)).fetchone()
+                        if row and (row[0] or '') > excluido_em:
+                            pass  # cliente recriado depois da exclusão: preservar
+                        else:
+                            conn.execute("DELETE FROM clientes WHERE nome=? AND db_id=?", (item_id, db_id))
+                        # os fatos anteriores à exclusão nunca voltam
+                        conn.execute("DELETE FROM fiado_mov WHERE cliente_nome=? AND db_id=? AND criado_em<=?",
+                            (item_id, db_id, excluido_em))
                 elif tipo == 'produto':
                     conn.execute("DELETE FROM produtos WHERE codigo=? AND db_id=?", (item_id, db_id))
                 elif tipo == 'kit':
@@ -1301,28 +1316,24 @@ def _baixar_firebase_para_local(db_id: str, dados_firebase: Dict, resultado: Dic
         # Lista de clientes excluídos (tombstones) para NÃO ressuscitá-los no merge
         cur_exc_cli = conn.execute("SELECT item_id FROM exclusoes WHERE tipo='cliente' AND db_id=?", (db_id,))
         clientes_excluidos_ids = {str(r[0]) for r in cur_exc_cli.fetchall()}
-        for id_cli, dados_cli in (dados_firebase.get('clientes') or {}).items():
+        for _chave, dados_cli in (dados_firebase.get('clientes') or {}).items():
             try:
-                # Se este cliente foi excluído localmente, não o traz de volta do Firebase
-                if str(id_cli) in clientes_excluidos_ids:
+                nome_c = (dados_cli.get('nome') or '').strip()
+                if not nome_c:
                     continue
-                id_int = int(id_cli) if str(id_cli).isdigit() else None
-                if id_int is not None and str(id_int) in clientes_excluidos_ids:
+                # Excluído? não traz de volta (identidade é o NOME, não o id local)
+                if nome_c in clientes_excluidos_ids:
                     continue
-                nome_c = dados_cli.get('nome', '')
-                tel_c = dados_cli.get('telefone', '')
-                # Evita duplicar: se já existe um cliente com mesmo nome (e telefone), não insere de novo
-                if nome_c:
-                    dup = conn.execute("SELECT id FROM clientes WHERE nome=? AND IFNULL(telefone,'')=? AND db_id=?",
-                        (nome_c, tel_c, db_id)).fetchone()
-                    if dup:
-                        continue
-                conn.execute("""INSERT OR IGNORE INTO clientes (id, nome, telefone, email, divida, db_id, ultima_atualizacao)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)""", (id_int, nome_c, tel_c,
-                    dados_cli.get('email', ''), dados_cli.get('divida', 0), db_id, dados_cli.get('ultima_atualizacao', get_timestamp())))
+                # Evita duplicar
+                dup = conn.execute("SELECT id FROM clientes WHERE nome=? AND db_id=?", (nome_c, db_id)).fetchone()
+                if dup:
+                    continue
+                conn.execute("""INSERT INTO clientes (nome, telefone, email, divida, db_id, ultima_atualizacao)
+                    VALUES (?, ?, ?, ?, ?, ?)""", (nome_c, dados_cli.get('telefone', ''),
+                    dados_cli.get('email', ''), 0, db_id, dados_cli.get('ultima_atualizacao', get_timestamp())))
                 resultado['clientes_adicionados'] += 1
             except Exception as e:
-                logger.error(f"⚠️ Erro ao inserir cliente {id_cli}: {e}")
+                logger.error(f"⚠️ Erro ao inserir cliente {dados_cli.get('nome')}: {e}")
         cur_exc_v = conn.execute("SELECT item_id FROM exclusoes WHERE tipo='venda' AND db_id=?", (db_id,))
         vendas_excluidas = {r[0] for r in cur_exc_v.fetchall()}
         for venda_fb in (dados_firebase.get('vendas') or []):
@@ -1341,6 +1352,41 @@ def _baixar_firebase_para_local(db_id: str, dados_firebase: Dict, resultado: Dic
                 resultado['vendas_adicionadas'] += 1
             except Exception as e:
                 logger.error(f"⚠️ Erro ao inserir venda {venda_id}: {e}")
+
+        # FATOS (fiado e estoque): precisam vir junto, senão este dispositivo
+        # ficaria só com o número final e a migração criaria um "saldo inicial"
+        # que SOMARIA em cima dos fatos reais — dobrando a dívida/estoque.
+        cur_exc_f = conn.execute("SELECT item_id, excluido_em FROM exclusoes WHERE tipo='cliente' AND db_id=?", (db_id,))
+        cortes_cli = {str(r[0]): (r[1] or '') for r in cur_exc_f.fetchall()}
+        for mov_id, m in (dados_firebase.get('fiado_mov') or {}).items():
+            corte = cortes_cli.get(str(m.get('cliente_nome')))
+            if corte and str(m.get('criado_em', '')) <= corte:
+                continue  # cliente foi excluído: não traz a dívida antiga de volta
+            try:
+                conn.execute("""INSERT OR IGNORE INTO fiado_mov (id, cliente_nome, delta, tipo, origem, db_id, criado_em)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)""", (str(mov_id), m.get('cliente_nome'), float(m.get('delta', 0)),
+                    m.get('tipo', 'fiado'), m.get('origem', ''), db_id, m.get('criado_em', get_timestamp())))
+            except Exception as e:
+                logger.error(f"⚠️ Erro ao inserir mov fiado {mov_id}: {e}")
+        for mov_id, m in (dados_firebase.get('estoque_mov') or {}).items():
+            try:
+                conn.execute("""INSERT OR IGNORE INTO estoque_mov (id, codigo, delta, tipo, origem, db_id, criado_em)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)""", (str(mov_id), m.get('codigo'), int(m.get('delta', 0)),
+                    m.get('tipo', 'saida'), m.get('origem', ''), db_id, m.get('criado_em', get_timestamp())))
+            except Exception as e:
+                logger.error(f"⚠️ Erro ao inserir mov estoque {mov_id}: {e}")
+        # valores derivados: recalcula a partir dos fatos recém-baixados
+        for (nome_c,) in conn.execute("SELECT DISTINCT cliente_nome FROM fiado_mov WHERE db_id=?", (db_id,)).fetchall():
+            if nome_c:
+                v = conn.execute("SELECT COALESCE(SUM(delta),0) FROM fiado_mov WHERE cliente_nome=? AND db_id=?",
+                    (nome_c, db_id)).fetchone()[0]
+                conn.execute("UPDATE clientes SET divida=? WHERE nome=? AND db_id=?",
+                    (max(0.0, round(float(v), 2)), nome_c, db_id))
+        for (cod,) in conn.execute("SELECT DISTINCT codigo FROM estoque_mov WHERE db_id=?", (db_id,)).fetchall():
+            if cod:
+                v = conn.execute("SELECT COALESCE(SUM(delta),0) FROM estoque_mov WHERE codigo=? AND db_id=?",
+                    (cod, db_id)).fetchone()[0]
+                conn.execute("UPDATE produtos SET estoque=? WHERE codigo=? AND db_id=?", (int(v), cod, db_id))
         conn.commit()
 
 def _merge_bidirecional_sem_duplicar(db_id: str, dados_firebase: Dict, resultado: Dict) -> None:
@@ -1380,55 +1426,44 @@ def _merge_bidirecional_sem_duplicar(db_id: str, dados_firebase: Dict, resultado
                                 dados_prod.get('categoria', 'Geral'), firebase_ts, codigo, db_id))
                         except Exception as e:
                             logger.error(f"⚠️ Erro ao atualizar produto {codigo}: {e}")
-        cursor = conn.execute("SELECT id FROM clientes WHERE db_id=?", (db_id,))
-        ids_clientes_locais = {row[0] for row in cursor.fetchall()}
-        cursor = conn.execute("SELECT item_id FROM exclusoes WHERE tipo='cliente' AND db_id=?", (db_id,))
-        ids_clientes_excluidos = {row[0] for row in cursor.fetchall()}
-        for id_cli, dados_cli in (dados_firebase.get('clientes') or {}).items():
-            if str(id_cli) in ids_clientes_excluidos:
+        # CLIENTES: casamos pelo NOME, nunca pelo id.
+        # O id é INTEGER AUTOINCREMENT — LOCAL de cada aparelho. O "id 1" do PC
+        # pode ser outra pessoa no celular. Casar por id fazia um cliente
+        # sobrescrever o outro (o João virava Maria, e a dívida trocava de dono).
+        # O nome já é a chave do negócio: vendas, fatos de fiado e exclusões
+        # todos usam o nome, e o sistema impede nomes duplicados.
+        cur_cn = conn.execute("SELECT item_id, excluido_em FROM exclusoes WHERE tipo='cliente' AND db_id=?", (db_id,))
+        cortes_nome = {str(r[0]): (r[1] or '') for r in cur_cn.fetchall()}
+        for _chave_fb, dados_cli in (dados_firebase.get('clientes') or {}).items():
+            nome_cliente = (dados_cli.get('nome') or '').strip()
+            if not nome_cliente:
                 continue
-            id_int = int(id_cli) if str(id_cli).isdigit() else None
-            nome_cliente = dados_cli.get('nome', '')
-            if nome_cliente and id_int is None:
-                cursor2 = conn.execute("SELECT id FROM clientes WHERE nome=? AND db_id=?", (nome_cliente, db_id))
-                existente = cursor2.fetchone()
-                if existente:
-                    id_int = existente[0]
-            if id_int is not None and str(id_int) in ids_clientes_excluidos:
-                continue
-            if id_int is not None and id_int in ids_clientes_locais:
-                firebase_ts = dados_cli.get('ultima_atualizacao')
-                cursor2 = conn.execute("SELECT ultima_atualizacao FROM clientes WHERE id=? AND db_id=?", (id_int, db_id))
-                row = cursor2.fetchone()
-                local_ts = row[0] if row else None
-                # Só sobrescreve com o dado do Firebase se ele for de fato mais recente que o local
+            corte_c = cortes_nome.get(nome_cliente)
+            if corte_c and str(dados_cli.get('ultima_atualizacao', '')) <= corte_c:
+                continue  # cliente foi excluído; a versão do Firebase é antiga
+            firebase_ts = dados_cli.get('ultima_atualizacao')
+            local = conn.execute("SELECT id, ultima_atualizacao FROM clientes WHERE nome=? AND db_id=?",
+                (nome_cliente, db_id)).fetchone()
+            if local:
+                local_ts = local[1]
                 if firebase_ts and local_ts and firebase_ts <= local_ts:
-                    continue
+                    continue  # o local é mais novo: mantém
                 try:
-                    # NÃO atualizamos 'divida' aqui: ela é DERIVADA dos fatos
-                    # (fiado_mov). Se copiássemos o número do Firebase, um caixa
-                    # sobrescreveria a dívida do outro — o bug que queremos matar.
-                    conn.execute("""UPDATE clientes SET nome=?, telefone=?, email=?, ultima_atualizacao=?
-                        WHERE id=? AND db_id=?""", (dados_cli.get('nome', ''), dados_cli.get('telefone', ''),
-                        dados_cli.get('email', ''), firebase_ts or get_timestamp(), id_int, db_id))
+                    # NÃO atualizamos 'divida': ela é DERIVADA dos fatos (fiado_mov).
+                    conn.execute("""UPDATE clientes SET telefone=?, email=?, ultima_atualizacao=?
+                        WHERE id=? AND db_id=?""", (dados_cli.get('telefone', ''),
+                        dados_cli.get('email', ''), firebase_ts or get_timestamp(), local[0], db_id))
                 except Exception as e:
-                    logger.error(f"⚠️ Erro ao atualizar cliente {id_int}: {e}")
+                    logger.error(f"⚠️ Erro ao atualizar cliente {nome_cliente}: {e}")
             else:
                 try:
-                    # Antes de inserir, confere se já existe um cliente com mesmo nome+telefone
-                    nome_novo = dados_cli.get('nome', '')
-                    tel_novo = dados_cli.get('telefone', '')
-                    if nome_novo:
-                        dup2 = conn.execute("SELECT id FROM clientes WHERE nome=? AND IFNULL(telefone,'')=? AND db_id=?",
-                            (nome_novo, tel_novo, db_id)).fetchone()
-                        if dup2:
-                            continue
-                    conn.execute("""INSERT INTO clientes (id, nome, telefone, email, divida, db_id, ultima_atualizacao)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)""", (id_int, dados_cli.get('nome', ''), dados_cli.get('telefone', ''),
-                        dados_cli.get('email', ''), dados_cli.get('divida', 0), db_id, dados_cli.get('ultima_atualizacao', get_timestamp())))
+                    # id local novo (autoincrement); a identidade é o nome
+                    conn.execute("""INSERT INTO clientes (nome, telefone, email, divida, db_id, ultima_atualizacao)
+                        VALUES (?, ?, ?, ?, ?, ?)""", (nome_cliente, dados_cli.get('telefone', ''),
+                        dados_cli.get('email', ''), 0, db_id, dados_cli.get('ultima_atualizacao', get_timestamp())))
                     resultado['clientes_adicionados'] += 1
                 except Exception as e:
-                    logger.error(f"⚠️ Erro ao inserir cliente {id_cli}: {e}")
+                    logger.error(f"⚠️ Erro ao inserir cliente {nome_cliente}: {e}")
         cursor = conn.execute("SELECT id FROM vendas WHERE db_id=?", (db_id,))
         ids_vendas_locais = {row[0] for row in cursor.fetchall()}
         cur_exc_v2 = conn.execute("SELECT item_id FROM exclusoes WHERE tipo='venda' AND db_id=?", (db_id,))
@@ -1490,12 +1525,19 @@ def _merge_bidirecional_sem_duplicar(db_id: str, dados_firebase: Dict, resultado
         # MOVIMENTAÇÕES DE FIADO (fatos): insere as novas por ID único.
         movs_fiado = dados_firebase.get('fiado_mov') or {}
         clientes_afetados = set()
+        # clientes excluídos: {nome: hora_da_exclusao}. Fatos criados ANTES dessa
+        # hora não voltam (senão a dívida de um cliente apagado ressuscitaria).
+        cur_exc = conn.execute("SELECT item_id, excluido_em FROM exclusoes WHERE tipo='cliente' AND db_id=?", (db_id,))
+        cortes_cliente = {str(r[0]): (r[1] or '') for r in cur_exc.fetchall()}
         if movs_fiado:
             cursor = conn.execute("SELECT id FROM fiado_mov WHERE db_id=?", (db_id,))
             ids_f_locais = {row[0] for row in cursor.fetchall()}
             for mov_id, m in movs_fiado.items():
                 if str(mov_id) in ids_f_locais:
                     continue
+                corte = cortes_cliente.get(str(m.get('cliente_nome')))
+                if corte and str(m.get('criado_em', '')) <= corte:
+                    continue  # fato anterior à exclusão do cliente
                 try:
                     conn.execute("""INSERT OR IGNORE INTO fiado_mov (id, cliente_nome, delta, tipo, origem, db_id, criado_em)
                         VALUES (?, ?, ?, ?, ?, ?, ?)""", (str(mov_id), m.get('cliente_nome'), float(m.get('delta', 0)),
@@ -1540,7 +1582,17 @@ def _merge_bidirecional_sem_duplicar(db_id: str, dados_firebase: Dict, resultado
 
 def enviar_para_firebase(db_id: str) -> bool:
     try:
-        dados_firebase = carregar_usuario_firebase(db_id) or {}
+        dados_firebase = carregar_usuario_firebase(db_id)
+        if dados_firebase is None:
+            # Atenção: None é ambíguo — pode ser "a rede caiu" OU "o nó ainda não
+            # existe" (conta recém-criada). Se for rede fora e mesmo assim
+            # fizéssemos o PUT abaixo, o nó seria SUBSTITUÍDO só pelos dados
+            # locais, apagando email, senha, plano e token. Então checamos.
+            if not firebase_online():
+                logger.warning("⚠️ Sem conexão; envio adiado (evita apagar a conta)")
+                return False
+            # Online, mas o nó não existe: seguro criar do zero.
+            dados_firebase = {}
         with get_db_context() as conn:
             cursor = conn.execute("""SELECT codigo, nome, preco, custo, margem, estoque, categoria, ultima_atualizacao FROM produtos WHERE db_id=?""", (db_id,))
             produtos = {}
@@ -1551,7 +1603,8 @@ def enviar_para_firebase(db_id: str) -> bool:
             cursor = conn.execute("""SELECT id, nome, telefone, email, divida, ultima_atualizacao FROM clientes WHERE db_id=?""", (db_id,))
             clientes = {}
             for row in cursor.fetchall():
-                clientes[str(row[0])] = {'nome': row[1], 'telefone': row[2] or '', 'email': row[3] or '', 'divida': row[4] or 0, 'ultima_atualizacao': row[5] or get_timestamp()}
+                # chave estável derivada do NOME: o id é local e colidiria entre aparelhos
+                clientes[chave_cliente(db_id, row[1])] = {'nome': row[1], 'telefone': row[2] or '', 'email': row[3] or '', 'divida': row[4] or 0, 'ultima_atualizacao': row[5] or get_timestamp()}
             dados_firebase['clientes'] = clientes
             cursor = conn.execute("""SELECT id, data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente, usuario_id, recebido, troco
                 FROM vendas WHERE db_id=?""", (db_id,))
@@ -1641,8 +1694,11 @@ def sincronizar_automatico(db_id: str) -> None:
     def _sync():
         try:
             _time.sleep(0.5)
-            migrar_dividas_para_fatos(db_id)  # converte dívidas antigas (roda 1x por cliente)
+            # A migração roda DEPOIS de sincronizar: assim os fatos que já existem
+            # em outros dispositivos chegam primeiro, e ela não cria um "saldo
+            # inicial" que somaria em cima deles (dívida dobrada).
             sincronizar_dados(db_id)
+            migrar_dividas_para_fatos(db_id)
         except Exception as e:
             logger.error(f"⚠️ Erro sync automático: {e}")
     threading.Thread(target=_sync, daemon=True).start()
@@ -2362,6 +2418,12 @@ def logout():
 # ============================================================
 # FIADO POR FATOS (movimentações imutáveis da dívida)
 # ============================================================
+def chave_cliente(db_id: str, nome: str) -> str:
+    """Chave ESTÁVEL do cliente no Firebase, derivada do nome (não do id local).
+    Dois aparelhos que conhecem o mesmo cliente geram a mesma chave, então nunca
+    um sobrescreve o outro. O id do banco continua sendo só local."""
+    return 'c_' + hashlib.sha256(f"{db_id}|{(nome or '').strip()}".encode()).hexdigest()[:16]
+
 def registrar_mov_fiado(conn, db_id, cliente_nome, delta, tipo, origem=''):
     """Registra um FATO de fiado. delta positivo = comprou fiado (dívida sobe);
     negativo = pagou (dívida desce). A dívida é sempre a SOMA dos fatos."""
@@ -2683,18 +2745,30 @@ def save_cliente():
     try:
         data = request.json or {}
         db_id = get_db_id()
-        if not data.get('nome'):
+        nome = (data.get('nome') or '').strip()
+        if not nome:
             return jsonify({"success": False, "error": "Nome é obrigatório"})
         with get_db_context() as conn:
+            # O NOME é a identidade do cliente em todo o sistema (vendas, fatos de
+            # fiado, exclusões e sincronização). Dois clientes com o mesmo nome
+            # compartilhariam a mesma dívida — por isso não permitimos duplicar.
             if data.get('id'):
-                conn.execute("""UPDATE clientes SET nome=?, telefone=?, email=?, divida=?, ultima_atualizacao=?
-                    WHERE id=? AND db_id=?""", (data['nome'], data.get('telefone', ''), data.get('email', ''),
-                    data.get('divida', 0), get_timestamp(), data['id'], db_id))
-                conn.execute("DELETE FROM exclusoes WHERE tipo='cliente' AND item_id=? AND db_id=?", (str(data['id']), db_id))
+                dup = conn.execute("SELECT id FROM clientes WHERE LOWER(nome)=LOWER(?) AND db_id=? AND id<>?",
+                    (nome, db_id, data['id'])).fetchone()
+            else:
+                dup = conn.execute("SELECT id FROM clientes WHERE LOWER(nome)=LOWER(?) AND db_id=?",
+                    (nome, db_id)).fetchone()
+            if dup:
+                return jsonify({"success": False, "error": f"Já existe um cliente chamado '{nome}'"})
+            if data.get('id'):
+                # 'divida' NÃO vem do formulário: ela é a soma dos fatos (fiado_mov)
+                conn.execute("""UPDATE clientes SET nome=?, telefone=?, email=?, ultima_atualizacao=?
+                    WHERE id=? AND db_id=?""", (nome, data.get('telefone', ''), data.get('email', ''),
+                    get_timestamp(), data['id'], db_id))
             else:
                 conn.execute("""INSERT INTO clientes (nome, telefone, email, divida, db_id, ultima_atualizacao)
-                    VALUES (?, ?, ?, ?, ?, ?)""", (data['nome'], data.get('telefone', ''), data.get('email', ''),
-                    data.get('divida', 0), db_id, get_timestamp()))
+                    VALUES (?, ?, ?, ?, ?, ?)""", (nome, data.get('telefone', ''), data.get('email', ''),
+                    0, db_id, get_timestamp()))
         sincronizar_automatico(db_id)
         return jsonify({"success": True, "message": "Cliente salvo"})
     except Exception as e:
@@ -2716,6 +2790,13 @@ def pagar_cliente(cliente_id: int):
             if not cliente:
                 return jsonify({"success": False, "error": "Cliente não encontrado"}), 404
             nome_cli = cliente['nome']
+            # Não deixa pagar MAIS do que a dívida. Sem isso, o excesso viraria um
+            # fato negativo "escondido" (a dívida é limitada a zero na exibição) e
+            # as próximas compras no fiado sairiam de graça.
+            divida_atual = calcular_divida(conn, db_id, nome_cli)
+            if float(valor) > divida_atual + 0.005:
+                return jsonify({"success": False,
+                    "error": f"O valor é maior que a dívida (R$ {divida_atual:.2f})"})
             # FIADO POR FATOS: registra "pagou X" (delta negativo). Se outro caixa
             # registrar uma compra ao mesmo tempo, os DOIS fatos entram e a dívida
             # final fica correta — antes um sobrescrevia o outro.
@@ -2847,8 +2928,17 @@ def delete_cliente(cliente_id: int):
             nome_cliente = cliente['nome'] if cliente else f"ID {cliente_id}"
             cursor_del = conn.execute("DELETE FROM clientes WHERE id=? AND db_id=?", (cliente_id, db_id))
             linhas_afetadas = cursor_del.rowcount
-            conn.execute("INSERT OR REPLACE INTO exclusoes (tipo, item_id, db_id, excluido_em) VALUES (?, ?, ?, ?)",
-                ('cliente', str(cliente_id), db_id, get_timestamp()))
+            # Apaga os FATOS de fiado desse cliente. Sem isso, se um cliente com o
+            # mesmo nome fosse cadastrado depois, a dívida antiga "ressuscitaria"
+            # (a dívida é a soma dos fatos, e eles são chaveados pelo nome).
+            if cliente:
+                conn.execute("DELETE FROM fiado_mov WHERE cliente_nome=? AND db_id=?", (cliente['nome'], db_id))
+            # TOMBSTONE POR NOME (não pelo id!): o id é AUTOINCREMENT local, então
+            # o "id 1" do PC pode ser outra pessoa no celular. Apagar por id
+            # excluiria o cliente ERRADO no outro aparelho.
+            if cliente:
+                conn.execute("INSERT OR REPLACE INTO exclusoes (tipo, item_id, db_id, excluido_em) VALUES (?, ?, ?, ?)",
+                    ('cliente', cliente['nome'], db_id, get_timestamp()))
         if linhas_afetadas == 0:
             logger.warning(f"⚠️ Tentativa de excluir cliente {cliente_id} não encontrado (db_id={db_id})")
             return jsonify({"success": False, "error": "Cliente não encontrado"}), 404
