@@ -2995,6 +2995,11 @@ def registrar_venda():
         if not itens:
             return jsonify({"success": False, "error": "Nenhum item na venda"})
 
+        # Um desconto maior que o subtotal geraria uma venda com total NEGATIVO,
+        # que sujaria o faturamento e o caixa. Não permitimos.
+        if float(data.get('total', 0) or 0) < 0:
+            return jsonify({"success": False, "error": "O desconto não pode ser maior que o total da venda"})
+
         with get_db_context() as conn:
             conn.execute("BEGIN TRANSACTION")
             try:
