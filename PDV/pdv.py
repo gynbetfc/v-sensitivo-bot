@@ -517,6 +517,28 @@ def init_db() -> None:
         # fatos. Como cada fato tem ID único, dois caixas vendendo ao mesmo tempo
         # SOMAM suas saídas (nunca se sobrescrevem) — o estoque fica sempre certo,
         # online, offline e em vários dispositivos. Sincroniza igual às vendas.
+        # MOVIMENTAÇÕES DE FIADO (modelo de FATOS imutáveis).
+        # A dívida de um cliente deixa de ser um número que se sobrescreve e passa
+        # a ser a SOMA destes fatos: cada compra no fiado é um +valor, cada
+        # pagamento é um -valor, todos com ID único. Assim, se um caixa registra
+        # a compra e outro registra o pagamento ao mesmo tempo, os DOIS fatos
+        # entram (ninguém sobrescreve ninguém) e a dívida fica sempre certa.
+        #
+        # A chave é o NOME do cliente (não o id): o id é AUTOINCREMENT local, ou
+        # seja, dois dispositivos podem gerar o mesmo id para clientes diferentes.
+        # As vendas já usam o nome pelo mesmo motivo.
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS fiado_mov (
+                id TEXT PRIMARY KEY,
+                cliente_nome TEXT,
+                delta REAL,
+                tipo TEXT,
+                origem TEXT DEFAULT '',
+                db_id TEXT,
+                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+
         conn.execute('''
             CREATE TABLE IF NOT EXISTS estoque_mov (
                 id TEXT PRIMARY KEY,
@@ -1180,6 +1202,7 @@ def _normalizar_dados_firebase(dados_fb: Dict) -> Dict:
     resultado['kits'] = dados_fb.get('kits') or {}
     resultado['exclusoes'] = dados_fb.get('exclusoes') or {}
     resultado['estoque_mov'] = dados_fb.get('estoque_mov') or {}
+    resultado['fiado_mov'] = dados_fb.get('fiado_mov') or {}
     # mantém também caixa/loja se existirem (não atrapalham o merge)
     for extra in ('caixa', 'nome_loja', 'cnpj', 'cnpj_dados'):
         if extra in dados_fb:
@@ -1382,9 +1405,12 @@ def _merge_bidirecional_sem_duplicar(db_id: str, dados_firebase: Dict, resultado
                 if firebase_ts and local_ts and firebase_ts <= local_ts:
                     continue
                 try:
-                    conn.execute("""UPDATE clientes SET nome=?, telefone=?, email=?, divida=?, ultima_atualizacao=?
+                    # NÃO atualizamos 'divida' aqui: ela é DERIVADA dos fatos
+                    # (fiado_mov). Se copiássemos o número do Firebase, um caixa
+                    # sobrescreveria a dívida do outro — o bug que queremos matar.
+                    conn.execute("""UPDATE clientes SET nome=?, telefone=?, email=?, ultima_atualizacao=?
                         WHERE id=? AND db_id=?""", (dados_cli.get('nome', ''), dados_cli.get('telefone', ''),
-                        dados_cli.get('email', ''), dados_cli.get('divida', 0), firebase_ts or get_timestamp(), id_int, db_id))
+                        dados_cli.get('email', ''), firebase_ts or get_timestamp(), id_int, db_id))
                 except Exception as e:
                     logger.error(f"⚠️ Erro ao atualizar cliente {id_int}: {e}")
             else:
@@ -1460,6 +1486,30 @@ def _merge_bidirecional_sem_duplicar(db_id: str, dados_firebase: Dict, resultado
                         itens_json, db_id, 1 if dados_kit.get('ativo', True) else 0, dados_kit.get('ultima_atualizacao', get_timestamp())))
                 except Exception as e:
                     logger.error(f"⚠️ Erro ao inserir kit {kit_id}: {e}")
+
+        # MOVIMENTAÇÕES DE FIADO (fatos): insere as novas por ID único.
+        movs_fiado = dados_firebase.get('fiado_mov') or {}
+        clientes_afetados = set()
+        if movs_fiado:
+            cursor = conn.execute("SELECT id FROM fiado_mov WHERE db_id=?", (db_id,))
+            ids_f_locais = {row[0] for row in cursor.fetchall()}
+            for mov_id, m in movs_fiado.items():
+                if str(mov_id) in ids_f_locais:
+                    continue
+                try:
+                    conn.execute("""INSERT OR IGNORE INTO fiado_mov (id, cliente_nome, delta, tipo, origem, db_id, criado_em)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)""", (str(mov_id), m.get('cliente_nome'), float(m.get('delta', 0)),
+                        m.get('tipo', 'fiado'), m.get('origem', ''), db_id, m.get('criado_em', get_timestamp())))
+                    clientes_afetados.add(m.get('cliente_nome'))
+                except Exception as e:
+                    logger.error(f"⚠️ Erro ao inserir mov fiado {mov_id}: {e}")
+        # a dívida é DERIVADA dos fatos: recalcula para todos os clientes com fatos
+        for nome_c in conn.execute("SELECT DISTINCT cliente_nome FROM fiado_mov WHERE db_id=?", (db_id,)).fetchall():
+            if nome_c[0]:
+                v = conn.execute("SELECT COALESCE(SUM(delta),0) FROM fiado_mov WHERE cliente_nome=? AND db_id=?",
+                    (nome_c[0], db_id)).fetchone()[0]
+                conn.execute("UPDATE clientes SET divida=? WHERE nome=? AND db_id=?",
+                    (max(0.0, round(float(v), 2)), nome_c[0], db_id))
 
         # MOVIMENTAÇÕES DE ESTOQUE (fatos): insere as novas por ID único (nunca
         # duplica, nunca sobrescreve). Depois recalcula o estoque dos produtos
@@ -1549,6 +1599,13 @@ def enviar_para_firebase(db_id: str) -> bool:
             # MOVIMENTAÇÕES DE ESTOQUE (fatos). Sobem como as vendas: cada uma com
             # ID único, só adiciona, nunca sobrescreve. Assim o estoque calculado
             # a partir delas fica igual em todos os dispositivos.
+            cursor = conn.execute("SELECT id, cliente_nome, delta, tipo, origem, criado_em FROM fiado_mov WHERE db_id=?", (db_id,))
+            fmovs = {}
+            for row in cursor.fetchall():
+                fmovs[str(row[0])] = {'cliente_nome': row[1], 'delta': row[2], 'tipo': row[3],
+                    'origem': row[4] or '', 'criado_em': row[5] or get_timestamp()}
+            dados_firebase['fiado_mov'] = fmovs
+
             cursor = conn.execute("SELECT id, codigo, delta, tipo, origem, criado_em FROM estoque_mov WHERE db_id=?", (db_id,))
             movs = {}
             for row in cursor.fetchall():
@@ -1584,6 +1641,7 @@ def sincronizar_automatico(db_id: str) -> None:
     def _sync():
         try:
             _time.sleep(0.5)
+            migrar_dividas_para_fatos(db_id)  # converte dívidas antigas (roda 1x por cliente)
             sincronizar_dados(db_id)
         except Exception as e:
             logger.error(f"⚠️ Erro sync automático: {e}")
@@ -2302,6 +2360,59 @@ def logout():
 # PRODUTOS
 # ============================================================
 # ============================================================
+# FIADO POR FATOS (movimentações imutáveis da dívida)
+# ============================================================
+def registrar_mov_fiado(conn, db_id, cliente_nome, delta, tipo, origem=''):
+    """Registra um FATO de fiado. delta positivo = comprou fiado (dívida sobe);
+    negativo = pagou (dívida desce). A dívida é sempre a SOMA dos fatos."""
+    mov_id = str(uuid.uuid4())
+    conn.execute("""INSERT INTO fiado_mov (id, cliente_nome, delta, tipo, origem, db_id, criado_em)
+        VALUES (?, ?, ?, ?, ?, ?, ?)""",
+        (mov_id, str(cliente_nome), float(delta), tipo, origem, db_id, get_timestamp()))
+    return mov_id
+
+def calcular_divida(conn, db_id, cliente_nome):
+    """Dívida atual = soma de todos os fatos daquele cliente (nunca negativa)."""
+    row = conn.execute("SELECT COALESCE(SUM(delta),0) FROM fiado_mov WHERE cliente_nome=? AND db_id=?",
+        (str(cliente_nome), db_id)).fetchone()
+    return max(0.0, round(float(row[0]) if row else 0.0, 2))
+
+def sincronizar_coluna_divida(conn, db_id, cliente_nome):
+    """Atualiza a coluna 'divida' do cliente com a soma dos fatos (para exibição)."""
+    valor = calcular_divida(conn, db_id, cliente_nome)
+    conn.execute("UPDATE clientes SET divida=? WHERE nome=? AND db_id=?", (valor, str(cliente_nome), db_id))
+    return valor
+
+def migrar_dividas_para_fatos(db_id: str) -> None:
+    """Converte as dívidas que já existem (o número atual) em um fato de
+    'saldo_inicial'. Roda uma vez por cliente. O ID do fato é DETERMINÍSTICO
+    (derivado do db_id + nome), então se dois dispositivos migrarem a mesma
+    dívida, o fato é o mesmo e não duplica no merge."""
+    if not db_id:
+        return
+    try:
+        with get_db_context() as conn:
+            clientes = conn.execute("SELECT nome, divida FROM clientes WHERE db_id=?", (db_id,)).fetchall()
+            for row in clientes:
+                nome, divida = row[0], float(row[1] or 0)
+                if not nome:
+                    continue
+                # já tem fatos? então não migra
+                tem = conn.execute("SELECT 1 FROM fiado_mov WHERE cliente_nome=? AND db_id=? LIMIT 1",
+                    (nome, db_id)).fetchone()
+                if tem:
+                    continue
+                if abs(divida) < 0.005:
+                    continue
+                mov_id = "saldo_" + hashlib.sha256(f"{db_id}|{nome}".encode()).hexdigest()[:20]
+                conn.execute("""INSERT OR IGNORE INTO fiado_mov (id, cliente_nome, delta, tipo, origem, db_id, criado_em)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                    (mov_id, nome, divida, 'saldo_inicial', 'migração', db_id, get_timestamp()))
+                logger.info(f"🔄 Dívida de {nome} (R$ {divida:.2f}) migrada para o modelo de fatos")
+    except Exception as e:
+        logger.error(f"⚠️ Erro ao migrar dívidas para fatos: {e}")
+
+# ============================================================
 # ESTOQUE POR FATOS (movimentações imutáveis)
 # ============================================================
 def registrar_mov_estoque(conn, db_id, codigo, delta, tipo, origem=''):
@@ -2600,14 +2711,20 @@ def pagar_cliente(cliente_id: int):
         if valor <= 0:
             return jsonify({"success": False, "error": "Valor deve ser maior que zero"})
         with get_db_context() as conn:
-            cursor_upd = conn.execute("UPDATE clientes SET divida=MAX(0, divida-?), ultima_atualizacao=? WHERE id=? AND db_id=?",
-                (valor, get_timestamp(), cliente_id, db_id))
-            if cursor_upd.rowcount == 0:
-                return jsonify({"success": False, "error": "Cliente não encontrado"}), 404
             cursor = conn.execute("SELECT id, nome, divida FROM clientes WHERE id=? AND db_id=?", (cliente_id, db_id))
             cliente = cursor.fetchone()
             if not cliente:
-                return jsonify({"success": False, "error": "Cliente não encontrado"})
+                return jsonify({"success": False, "error": "Cliente não encontrado"}), 404
+            nome_cli = cliente['nome']
+            # FIADO POR FATOS: registra "pagou X" (delta negativo). Se outro caixa
+            # registrar uma compra ao mesmo tempo, os DOIS fatos entram e a dívida
+            # final fica correta — antes um sobrescrevia o outro.
+            registrar_mov_fiado(conn, db_id, nome_cli, -float(valor), 'pagamento', f"pagamento {data.get('metodo','Dinheiro')}")
+            sincronizar_coluna_divida(conn, db_id, nome_cli)
+            conn.execute("UPDATE clientes SET ultima_atualizacao=? WHERE id=? AND db_id=?",
+                (get_timestamp(), cliente_id, db_id))
+            cursor = conn.execute("SELECT id, nome, divida FROM clientes WHERE id=? AND db_id=?", (cliente_id, db_id))
+            cliente = cursor.fetchone()
             # Registra o pagamento do fiado como uma VENDA (aparece no dashboard, pois agora o dinheiro entrou)
             metodo_pg = data.get('metodo', 'Dinheiro')
             # Grava o item da quitação no MESMO formato das vendas normais
@@ -2710,6 +2827,9 @@ def editar_cliente(cliente_id: int):
                 (nome, telefone, email, get_timestamp(), cliente_id, db_id))
             if nome_antigo and nome_antigo != nome:
                 conn.execute("UPDATE vendas SET cliente=? WHERE cliente=? AND db_id=?", (nome, nome_antigo, db_id))
+                # os fatos de fiado são chaveados pelo NOME: renomeia junto,
+                # senão a dívida do cliente "sumiria" ao trocar o nome
+                conn.execute("UPDATE fiado_mov SET cliente_nome=? WHERE cliente_nome=? AND db_id=?", (nome, nome_antigo, db_id))
         sincronizar_automatico(db_id)
         return jsonify({"success": True, "message": "Cliente atualizado"})
     except Exception as e:
@@ -2862,17 +2982,22 @@ def registrar_venda():
 
         if data.get('metodo') == 'Fiado' and data.get('cliente'):
             try:
+                nome_cli = data.get('cliente')
+                valor_fiado = float(data.get('total', 0) or 0)
                 with get_db_context() as conn:
-                    cursor = conn.execute("SELECT id FROM clientes WHERE nome=? AND db_id=?", (data.get('cliente'), db_id))
+                    cursor = conn.execute("SELECT id FROM clientes WHERE nome=? AND db_id=?", (nome_cli, db_id))
                     cliente = cursor.fetchone()
-                    if cliente:
-                        conn.execute("UPDATE clientes SET divida=divida+?, ultima_atualizacao=? WHERE id=? AND db_id=?",
-                            (data.get('total', 0), get_timestamp(), cliente[0], db_id))
-                    else:
+                    if not cliente:
                         conn.execute("INSERT INTO clientes (nome, divida, db_id, ultima_atualizacao) VALUES (?, ?, ?, ?)",
-                            (data.get('cliente'), data.get('total', 0), db_id, get_timestamp()))
-            except:
-                pass
+                            (nome_cli, 0, db_id, get_timestamp()))
+                    # FIADO POR FATOS: registra "comprou X" em vez de somar direto
+                    # na coluna. Dois caixas somam seus fatos; nenhum sobrescreve.
+                    registrar_mov_fiado(conn, db_id, nome_cli, valor_fiado, 'fiado', f'venda #{venda_id}')
+                    sincronizar_coluna_divida(conn, db_id, nome_cli)
+                    conn.execute("UPDATE clientes SET ultima_atualizacao=? WHERE nome=? AND db_id=?",
+                        (get_timestamp(), nome_cli, db_id))
+            except Exception as e:
+                logger.error(f"⚠️ Erro ao registrar fiado: {e}")
 
         with get_db_context() as conn:
             cursor = conn.execute("SELECT nome_loja, cnpj, cnpj_dados FROM users WHERE db_id=? LIMIT 1", (db_id,))
