@@ -265,7 +265,24 @@
         .estoque-baixo{color:var(--red)!important;font-weight:600}.estoque-medio{color:var(--orange)!important}.estoque-alto{color:var(--green)!important}
         .linha-estoque.linha-ativa{background:rgba(34,197,94,.15)!important;outline:1px solid var(--green)}
 
-        .planos-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:80px;margin-bottom:16px}
+        .planos-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:130px;margin-bottom:16px}
+
+        /* ===== SUB-ABAS DA CONFIGURAÇÃO =====
+           Prefixo cfg- de propósito: a aba Estoque já usa .subtabs/.subpanel
+           com outro visual, e não podemos mexer nela. */
+        .cfg-subtabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;padding:5px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:12px}
+        .cfg-subtab{flex:1;min-width:120px;padding:10px 14px;background:transparent;border:none;border-radius:8px;color:var(--text-secondary);font-size:13px;font-weight:600;cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:7px}
+        .cfg-subtab i{font-size:13px}
+        .cfg-subtab:hover{background:rgba(255,255,255,.05);color:#fff}
+        .cfg-subtab.active{background:var(--green);color:#fff;box-shadow:0 2px 8px rgba(34,197,94,.28)}
+        .cfg-subpanel{display:none;animation:fadeCfg .22s ease}
+        .cfg-subpanel.active{display:block}
+        @keyframes fadeCfg{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+        .config-card{max-width:620px;margin:0 auto}
+        .config-hint{font-size:12px;color:var(--text-muted);margin:-4px 0 14px;line-height:1.5}
+        .config-2col{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+        .config-2col .config-card{max-width:none}
+        @media(max-width:900px){.config-2col{grid-template-columns:1fr}.cfg-subtab{min-width:calc(50% - 6px);flex:0 0 calc(50% - 6px)}}
         .planos-grid .plano-card{width:230px;flex:0 0 auto}
         .plano-card{background:var(--bg-card);border-radius:var(--radius);padding:20px;border:2px solid var(--border-color);transition:var(--transition);position:relative;text-align:center}
         .plano-card:hover{border-color:var(--green);transform:translateY(-2px);box-shadow:0 12px 40px rgba(34,197,94,.15)}
@@ -584,8 +601,8 @@
         <button data-tab="caixa" onclick="trocarTab('caixa')"><i class="fas fa-box"></i> Caixa</button>
         <button data-tab="dashboard" onclick="trocarTab('dashboard')"><i class="fas fa-chart-bar"></i> Dashboard</button>
         <button data-tab="estoque" onclick="trocarTab('estoque')"><i class="fas fa-boxes"></i> Estoque</button>
-        <button data-tab="planos" onclick="trocarTab('planos')"><i class="fas fa-crown"></i> Planos</button>
         <button data-tab="config" onclick="trocarTab('config')"><i class="fas fa-cog"></i> Config</button>
+        <button data-tab="planos" onclick="trocarTab('planos')"><i class="fas fa-crown"></i> Planos</button>
     </nav>
     <div class="content">
         <div class="plano-expirado-aviso" id="planoExpiradoAviso">⚠️ Seu plano expirou! <a onclick="trocarTab('planos')">Renovar agora →</a></div>
@@ -797,9 +814,30 @@
 
         <!-- PANEL CONFIG -->
         <div class="panel" id="panelConfig">
-            <div class="config-grid">
-                <div class="card">
+            <!-- SUB-ABAS: cada assunto no seu lugar, uma tela por vez -->
+            <div class="cfg-subtabs" id="configSubtabs">
+                <button class="cfg-subtab active" data-sub="loja" onclick="trocarSubConfig('loja')"><i class="fas fa-store-alt"></i> Loja</button>
+                <button class="cfg-subtab" data-sub="usuarios" onclick="trocarSubConfig('usuarios')"><i class="fas fa-user-cog"></i> Usuários</button>
+                <button class="cfg-subtab" data-sub="aparencia" onclick="trocarSubConfig('aparencia')"><i class="fas fa-palette"></i> Aparência</button>
+                <button class="cfg-subtab" data-sub="sistema" onclick="trocarSubConfig('sistema')"><i class="fas fa-server"></i> Sistema</button>
+            </div>
+
+            <!-- LOJA -->
+            <div class="cfg-subpanel active" id="subLoja">
+                <div class="card config-card">
+                    <h3><i class="fas fa-store-alt" style="color:var(--orange);"></i> Dados da Loja</h3>
+                    <p class="config-hint">Preencha o CNPJ e os dados da empresa são buscados automaticamente. Eles aparecem no cupom.</p>
+                    <div class="input-group"><label>Nome da Loja <span style="font-size:11px;color:var(--text-muted);">(vem do CNPJ)</span></label><input type="text" id="lojaNomeConfig" placeholder="Preencha o CNPJ abaixo" readonly style="background:var(--bg-primary);cursor:not-allowed;"></div>
+                    <div class="input-group"><label>CNPJ <span style="font-size:11px;color:var(--text-muted);">(salva sozinho quando válido)</span></label><input type="text" id="lojaCnpjConfig" placeholder="00.000.000/0000-00" oninput="formatarCnpjInput(this);buscarCnpjSeCompleto(this.value)" onchange="buscarDadosCNPJ(this.value)"></div>
+                    <div id="dadosCnpjConfig" style="display:none;background:var(--bg-primary);padding:10px;border-radius:8px;margin-bottom:10px;font-size:12px;color:var(--text-secondary);"></div>
+                </div>
+            </div>
+
+            <!-- USUÁRIOS -->
+            <div class="cfg-subpanel" id="subUsuarios">
+                <div class="card config-card">
                     <h3><i class="fas fa-user-cog" style="color:var(--blue);"></i> Usuários</h3>
+                    <p class="config-hint">Cadastre quem opera o caixa. Gerentes veem tudo; funcionários têm acesso limitado.</p>
                     <div class="input-group"><label>Nome</label><input type="text" id="novoUserNome" placeholder="Nome"></div>
                     <div class="input-group"><label>Email</label><input type="email" id="novoUserEmail" placeholder="email@exemplo.com"></div>
                     <div class="input-group"><label>Senha</label><input type="password" id="novoUserSenha" placeholder="••••••••"></div>
@@ -807,27 +845,14 @@
                     <button class="btn btn-primary" onclick="cadastrarUsuario()"><i class="fas fa-user-plus"></i> Cadastrar</button>
                     <div style="margin-top:12px;"><h4 style="font-size:13px;color:var(--text-secondary);margin-bottom:6px;">Usuários Cadastrados</h4><div class="usuarios-lista" id="listaUsuarios"></div></div>
                 </div>
-                <div class="card">
-                    <h3><i class="fas fa-store-alt" style="color:var(--orange);"></i> Loja</h3>
-                    <div class="input-group"><label>Nome da Loja <span style="font-size:11px;color:var(--text-muted);">(vem do CNPJ)</span></label><input type="text" id="lojaNomeConfig" placeholder="Preencha o CNPJ abaixo" readonly style="background:var(--bg-primary);cursor:not-allowed;"></div>
-                    <div class="input-group"><label>CNPJ <span style="font-size:11px;color:var(--text-muted);">(salva sozinho quando válido)</span></label><input type="text" id="lojaCnpjConfig" placeholder="00.000.000/0000-00" oninput="formatarCnpjInput(this);buscarCnpjSeCompleto(this.value)" onchange="buscarDadosCNPJ(this.value)"></div>
-                    <div id="dadosCnpjConfig" style="display:none;background:var(--bg-primary);padding:10px;border-radius:8px;margin-bottom:10px;font-size:12px;color:var(--text-secondary);"></div>
-                    <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border-color);">
-                        <p style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;"><strong>Versão:</strong> <span id="versaoSistema">11.0.0</span></p>
-                        <p style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;"><strong>ID do Banco:</strong> <span id="dbIdConfig" style="font-family:monospace;cursor:pointer;color:var(--green);" onclick="copiarId()">---</span></p>
-                        <p style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;"><strong>Servidor:</strong> <span id="servidorIdConfig" style="font-family:monospace;">---</span></p>
-                    </div>
-                    <div style="margin-top:12px;"><button onclick="sincronizarAgora(true)" style="width:100%;padding:8px;background:rgba(59,130,246,.15);color:var(--blue);border:1px solid var(--blue);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">🔄 Sincronizar Agora</button></div>
-                    <div style="margin-top:14px;border-top:1px solid var(--border-color);padding-top:10px;">
-                        <div id="devStatus" style="font-size:11px;color:var(--text-muted);cursor:pointer;" onclick="toggleAreaDev()">🛠️ modo desenvolvedor</div>
-                        <div id="devArea" style="display:none;margin-top:8px;">
-                            <input type="password" id="devSenha" placeholder="senha do modo dev" style="width:100%;font-size:12px;padding:6px;margin-bottom:6px;" onkeydown="if(event.key==='Enter')ativarModoDev()">
-                            <button onclick="ativarModoDev()" style="width:100%;padding:6px;background:rgba(168,85,247,.15);color:var(--purple);border:1px solid var(--purple);border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">Ativar / Desativar</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="card">
-                    <h3><i class="fas fa-universal-access" style="color:var(--blue);"></i> Acessibilidade</h3>
+            </div>
+
+            <!-- APARÊNCIA (acessibilidade + personalização juntas: as duas mudam o visual) -->
+            <div class="cfg-subpanel" id="subAparencia">
+                <div class="config-2col">
+                    <div class="card config-card">
+                        <h3><i class="fas fa-universal-access" style="color:var(--blue);"></i> Acessibilidade</h3>
+                        <p class="config-hint">Aumente o tamanho de letras e botões, ideal para quem tem dificuldade de enxergar.</p>
                     <div class="input-group">
                         <label>Tamanho do sistema: <span id="escalaLabel">100</span>%</label>
                         <input type="range" id="escalaFonte" min="100" max="180" step="5" value="100" oninput="ajustarEscala(this.value)" style="width:100%;">
@@ -836,9 +861,9 @@
                     <div style="display:flex;gap:8px;margin-top:6px;">
                         <button onclick="resetarEscala()" style="flex:1;padding:8px;background:var(--bg-card);color:var(--text-secondary);border:1px solid var(--border-color);border-radius:8px;cursor:pointer;font-size:13px;">Normal (100%)</button>
                     </div>
-                </div>
-                <div class="card">
-                    <h3><i class="fas fa-image" style="color:var(--purple);"></i> Personalização</h3>
+                    <div class="card config-card">
+                        <h3><i class="fas fa-image" style="color:var(--purple);"></i> Personalização</h3>
+                        <p class="config-hint">Imagem de fundo da tela de vendas.</p>
                     <div class="input-group">
                         <label>Imagem de fundo da tela de Vendas</label>
                         <div id="bgStatusBox" style="display:none;align-items:center;gap:8px;padding:10px 12px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:8px;margin-bottom:6px;">
@@ -864,9 +889,27 @@
                     </div>
                 </div>
             </div>
+
+            <!-- SISTEMA -->
+            <div class="cfg-subpanel" id="subSistema">
+                <div class="card config-card">
+                    <h3><i class="fas fa-server" style="color:var(--green);"></i> Sistema</h3>
+                    <p class="config-hint">Informações da instalação e sincronização com a nuvem.</p>
+                    <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border-color);">
+                        <p style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;"><strong>Versão:</strong> <span id="versaoSistema">11.0.0</span></p>
+                        <p style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;"><strong>ID do Banco:</strong> <span id="dbIdConfig" style="font-family:monospace;cursor:pointer;color:var(--green);" onclick="copiarId()">---</span></p>
+                        <p style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;"><strong>Servidor:</strong> <span id="servidorIdConfig" style="font-family:monospace;">---</span></p>
+                    </div>
+                    <div style="margin-top:12px;"><button onclick="sincronizarAgora(true)" style="width:100%;padding:8px;background:rgba(59,130,246,.15);color:var(--blue);border:1px solid var(--blue);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">🔄 Sincronizar Agora</button></div>
+<div style="margin-top:14px;border-top:1px solid var(--border-color);padding-top:10px;">
+                        <div id="devStatus" style="font-size:11px;color:var(--text-muted);cursor:pointer;" onclick="toggleAreaDev()">🛠️ modo desenvolvedor</div>
+                        <div id="devArea" style="display:none;margin-top:8px;">
+                            <input type="password" id="devSenha" placeholder="senha do modo dev" style="width:100%;font-size:12px;padding:6px;margin-bottom:6px;" onkeydown="if(event.key==='Enter')ativarModoDev()">
+                            <button onclick="ativarModoDev()" style="width:100%;padding:6px;background:rgba(168,85,247,.15);color:var(--purple);border:1px solid var(--purple);border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">Ativar / Desativar</button>
+                </div>
+            </div>
         </div>
     </div>
-</div>
 
 <!-- PAYMENT MODAL -->
 <div class="payment-modal" id="paymentModal">
@@ -1490,6 +1533,20 @@ async function fazerLogout(){
 // ============================================================
 // TROCAR ABA
 // ============================================================
+function trocarSubConfig(nome){
+    // Marca o botão clicado e mostra só o painel correspondente
+    document.querySelectorAll('#configSubtabs .cfg-subtab').forEach(b=>{
+        b.classList.toggle('active', b.dataset.sub===nome);
+    });
+    const mapa={loja:'subLoja',usuarios:'subUsuarios',aparencia:'subAparencia',sistema:'subSistema'};
+    Object.values(mapa).forEach(id=>{
+        const el=document.getElementById(id);
+        if(el) el.classList.remove('active');
+    });
+    const alvo=document.getElementById(mapa[nome]);
+    if(alvo) alvo.classList.add('active');
+}
+
 function trocarTab(nome){
     if (!planoAtivo && nome !== 'planos') {
         showToast('🔴 Plano expirado! Acesse a aba Planos para renovar.', 'error');
