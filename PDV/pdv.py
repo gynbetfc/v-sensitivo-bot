@@ -4125,10 +4125,20 @@ def get_servidor_id_route():
 
 @app.route('/api/baixar_html')
 def baixar_html_manual():
+    """Tentativa de emergência. O repositório é PRIVADO e o pdv.py não tem (nem
+    deve ter) o token do GitHub — quem baixa a interface é o launcher. Se cair
+    aqui, é porque o SMART_PDV.exe está desatualizado ou o pdv.py foi aberto
+    direto pelo Python. Explicamos isso em vez de ficar 'baixando' pra sempre."""
     try:
+        caminho = os.path.join(TEMPLATES_DIR, "index.html")
+        if os.path.exists(caminho):
+            return jsonify({"success": True, "message": "Interface já está no lugar!"})
         if baixar_html_github():
             return jsonify({"success": True, "message": "HTML baixado!"})
-        return jsonify({"success": False, "error": "Falha ao baixar HTML"})
+        return jsonify({"success": False, "error":
+            "Não foi possível baixar a interface. O repositório é privado, então quem "
+            "baixa o index.html é o SMART_PDV.exe. Abra o sistema por ele (e atualize "
+            f"o .exe se for antigo). Alternativa: coloque o index.html em {TEMPLATES_DIR}"})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
