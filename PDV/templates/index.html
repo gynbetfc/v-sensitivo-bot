@@ -2396,6 +2396,8 @@ function abrirPagamento(){
     document.getElementById('clientePagamento').value='';
     document.getElementById('btnConfirmarPagamento').disabled=false;
     selecionarMetodo('Dinheiro');
+    state._pgtoAbertoEm = Date.now();   // usado para não confirmar sem o usuário ver o modal
+    _vendaEmAndamento = false;
     document.getElementById('paymentModal').classList.add('active');
     setTimeout(()=>{if(metodoAtivo==='Dinheiro'){document.getElementById('valorRecebido').focus();} else if(metodoAtivo==='Fiado'){document.getElementById('clientePagamento').focus();} else {document.getElementById('clientePagamento').focus();}}, 300);
 }
@@ -2421,7 +2423,17 @@ function calcularTroco(){
     else{display.style.display='none';}
 }
 
+let _vendaEmAndamento = false;   // impede F1/Enter dispararem 2 vendas
+
 async function confirmarPagamento(){
+    // O botão fica disabled, mas F1 e Enter chamam esta função DIRETO. Sem a
+    // trava abaixo, apertar F1 várias vezes (achando que travou) registrava
+    // várias vendas iguais.
+    if(_vendaEmAndamento){ return; }
+    // Recém-aberto: ignora o "confirmar" para não finalizar sem o usuário ver o
+    // modal (F1 abre o modal; um segundo F1 rápido confirmava na hora).
+    if(state._pgtoAbertoEm && (Date.now() - state._pgtoAbertoEm) < 450){ return; }
+
     const metodo=document.querySelector('#paymentMethods .active')?.dataset.metodo||'Dinheiro';
     let cliente=document.getElementById('clientePagamento').value.trim()||'';
     
@@ -2443,6 +2455,7 @@ async function confirmarPagamento(){
     if(metodo!=='Fiado'&&metodo!=='PIX'&&metodo!=='Cartão'&&metodo!=='Débito'&&recebido<state.total){
         showToast('⚠️ Valor recebido insuficiente!','warning');return;
     }
+    _vendaEmAndamento = true;
     document.getElementById('btnConfirmarPagamento').disabled=true;
     try{
         const res=await fetch('/api/vendas',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({
@@ -2459,6 +2472,7 @@ async function confirmarPagamento(){
             showToast('✅ Venda finalizada!','success');
         }else{showToast('❌ '+data.error,'error');document.getElementById('btnConfirmarPagamento').disabled=false;}
     }catch(e){showToast('❌ Erro na venda','error');document.getElementById('btnConfirmarPagamento').disabled=false;}
+    finally{ _vendaEmAndamento = false; }
 }
 
 // ============================================================
@@ -3041,12 +3055,26 @@ async function carregarStatusConta(){
     }catch(e){console.error(e);}
 }
 
+let _pixEmAndamento = false;   // impede 2 pedidos de PIX ao mesmo tempo
+
 async function assinarPlano(planoId, meses){
     meses = meses || 1;
+    // Sem essa trava, cada clique abre uma conexão. O navegador só permite 6 por
+    // vez: com a internet ruim, alguns cliques congelavam a tela inteira e depois
+    // abriam todos os modais de uma vez.
+    if(_pixEmAndamento){
+        showToast('⏳ Já estou gerando o pagamento, aguarde...','info');
+        return;
+    }
+    _pixEmAndamento = true;
     try{
         fecharModalDuracoes();
         showToast('🔄 Gerando pagamento...','info');
-        const res=await fetch('/api/pix/criar',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({plano_id:planoId, duracao:meses})});
+        // Corta a espera no navegador se o servidor demorar demais
+        const ctrl = new AbortController();
+        const limite = setTimeout(()=>ctrl.abort(), 25000);
+        const res=await fetch('/api/pix/criar',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({plano_id:planoId, duracao:meses}),signal:ctrl.signal});
+        clearTimeout(limite);
         const data=await res.json();
         if(data.success){
             if(data.gratis){
@@ -3069,7 +3097,15 @@ async function assinarPlano(planoId, meses){
             `;
             document.getElementById('modalPix').classList.add('active');
         }else{showToast('❌ '+data.error,'error');}
-    }catch(e){showToast('❌ Erro ao gerar PIX','error');}
+    }catch(e){
+        if(e && e.name === 'AbortError'){
+            showToast('❌ O servidor de pagamentos não respondeu. Verifique a internet e tente de novo.','error');
+        }else{
+            showToast('❌ Erro ao gerar PIX','error');
+        }
+    }finally{
+        _pixEmAndamento = false;   // sempre libera, mesmo se der erro
+    }
 }
 
 function copiarPix(codigo){navigator.clipboard.writeText(codigo).then(()=>showToast('✅ Código PIX copiado!','success')).catch(()=>prompt('Copie o código:',codigo));}
