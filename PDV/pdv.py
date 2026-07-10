@@ -553,7 +553,42 @@ def init_db() -> None:
 # AUXILIARES
 # ============================================================
 def hash_senha(senha: str) -> str:
+    """Formato ANTIGO (SHA-256 puro). Mantido só para conseguir validar as senhas
+    que já estão salvas. Contas novas usam gerar_hash_senha()."""
     return hashlib.sha256(senha.encode()).hexdigest()
+
+# --- Senhas: PBKDF2 com sal ---------------------------------------------
+# SHA-256 puro é rápido demais: quem obtiver o banco testa bilhões de senhas por
+# segundo. PBKDF2 com sal deixa cada tentativa lenta e impede tabelas prontas
+# (cada senha tem um sal diferente, então hashes iguais viram valores diferentes).
+_PBKDF2_ITERACOES = 200_000
+
+def gerar_hash_senha(senha: str) -> str:
+    """Gera o hash novo. Formato: pbkdf2$<iteracoes>$<sal_hex>$<hash_hex>"""
+    sal = secrets.token_bytes(16)
+    dk = hashlib.pbkdf2_hmac('sha256', senha.encode(), sal, _PBKDF2_ITERACOES)
+    return f"pbkdf2${_PBKDF2_ITERACOES}${sal.hex()}${dk.hex()}"
+
+def senha_e_antiga(armazenado: str) -> bool:
+    """True se o hash guardado ainda é do formato antigo (SHA-256)."""
+    return bool(armazenado) and not str(armazenado).startswith('pbkdf2$')
+
+def verificar_senha(senha: str, armazenado: str) -> bool:
+    """Confere a senha contra o hash guardado, aceitando o formato NOVO e o ANTIGO.
+    Assim ninguém é deslogado na atualização: a senha antiga continua válida e é
+    migrada para o formato novo no próximo login."""
+    if not armazenado:
+        return False
+    armazenado = str(armazenado)
+    try:
+        if armazenado.startswith('pbkdf2$'):
+            _, iteracoes, sal_hex, hash_hex = armazenado.split('$', 3)
+            dk = hashlib.pbkdf2_hmac('sha256', senha.encode(), bytes.fromhex(sal_hex), int(iteracoes))
+            return secrets.compare_digest(dk.hex(), hash_hex)
+        # formato antigo
+        return secrets.compare_digest(hash_senha(senha), armazenado)
+    except Exception:
+        return False
 
 def get_db_id() -> Optional[str]:
     db_id = session.get('db_id')
@@ -817,10 +852,14 @@ class PlanoSincronizado:
     
     def salvar_token_firebase(self, token_criptografado: str) -> bool:
         try:
-            dados_fb = carregar_usuario_firebase(self.db_id) or {}
-            dados_fb['token_plano'] = token_criptografado
-            dados_fb['token_atualizado_em'] = datetime.now().isoformat()
-            ok = salvar_usuario_firebase(self.db_id, dados_fb)
+            # PATCH: grava SÓ estes campos. Com o load-and-PUT anterior, se a
+            # leitura do Firebase falhasse (oscilação de rede), o nó do usuário
+            # era substituído só pelo token — apagando email, senha, produtos e
+            # vendas. Era a causa dos "logins que sumiam".
+            ok = salvar_campos_firebase(self.db_id, {
+                'token_plano': token_criptografado,
+                'token_atualizado_em': datetime.now().isoformat(),
+            })
             if ok:
                 logger.info(f"✅ Token salvo no Firebase para {self.db_id}")
             return ok
@@ -934,11 +973,14 @@ class PlanoSincronizado:
             token = self._criar_token(expira_em, plano_id)
             self.salvar_token_local(token)
             self.salvar_token_firebase(token)
-            dados_fb = carregar_usuario_firebase(self.db_id) or {}
-            dados_fb['expira_em'] = expira_em
-            dados_fb['plano'] = plano_id
-            dados_fb['plano_atualizado_em'] = datetime.now().isoformat()
-            salvar_usuario_firebase(self.db_id, dados_fb)
+            # PATCH: atualiza só o plano. Antes era load-and-PUT — se a rede
+            # falhasse bem na hora do pagamento, o cliente pagava e PERDIA a
+            # conta inteira (o nó era substituído só por estes 3 campos).
+            salvar_campos_firebase(self.db_id, {
+                'expira_em': expira_em,
+                'plano': plano_id,
+                'plano_atualizado_em': datetime.now().isoformat(),
+            })
             logger.info(f"✅ Plano renovado para {self.db_id} até {expira_em}")
             return {'success': True, 'message': f'Plano renovado até {expira_em}', 'expira_em': expira_em}
         except Exception as e:
@@ -1927,7 +1969,7 @@ def register():
         nome = (data.get('nome') or '').strip()
         email = (data.get('email') or '').strip().lower()
         senha = data.get('senha') or ''
-        senha_hash = hash_senha(senha)
+        senha_hash = gerar_hash_senha(senha)  # formato novo (PBKDF2 + sal)
         cnpj = ''.join(filter(str.isdigit, data.get('cnpj') or ''))
         cnpj_dados = data.get('cnpj_dados') or {}
         db_id = (data.get('db_id') or '').strip()
@@ -2014,7 +2056,6 @@ def login():
         data = request.json or {}
         email = (data.get('email') or '').strip().lower()
         senha = data.get('senha') or ''
-        senha_hash = hash_senha(senha)
         if not email or not senha:
             return jsonify({"success": False, "error": "Preencha email e senha"})
 
@@ -2112,13 +2153,28 @@ def login():
             if not firebase_senha:
                 with get_db_context() as conn:
                     row = conn.execute("SELECT senha FROM users WHERE email=?", (email,)).fetchone()
-                if row and row[0] == senha_hash:
-                    usuario_firebase['senha'] = senha_hash
-                    salvar_usuario_firebase(firebase_db_id, usuario_firebase)
+                if row and verificar_senha(senha, row[0]):
+                    novo_hash = gerar_hash_senha(senha)
+                    salvar_campos_firebase(firebase_db_id, {'senha': novo_hash})
+                    usuario_firebase['senha'] = novo_hash
+                    with get_db_context() as conn:
+                        conn.execute("UPDATE users SET senha=? WHERE email=?", (novo_hash, email))
                 else:
                     return jsonify({"success": False, "error": "Email ou senha inválidos"})
-            elif senha_hash != firebase_senha:
+            elif not verificar_senha(senha, firebase_senha):
                 return jsonify({"success": False, "error": "Email ou senha inválidos"})
+            elif senha_e_antiga(firebase_senha):
+                # Senha correta, mas guardada no formato antigo (SHA-256 puro).
+                # Migramos para PBKDF2 agora, sem o usuário perceber.
+                try:
+                    novo_hash = gerar_hash_senha(senha)
+                    salvar_campos_firebase(firebase_db_id, {'senha': novo_hash})
+                    usuario_firebase['senha'] = novo_hash
+                    with get_db_context() as conn:
+                        conn.execute("UPDATE users SET senha=? WHERE email=?", (novo_hash, email))
+                    logger.info("🔐 Senha migrada para o formato seguro (PBKDF2)")
+                except Exception as e:
+                    logger.warning(f"⚠️ Não foi possível migrar a senha agora: {e}")
 
             # AUTO-CONSERTO de contas quebradas (criadas por versões antigas com bug):
             # se faltam campos essenciais (db_id, plano, expira_em ou token), a conta
@@ -2154,7 +2210,7 @@ def login():
                 if user_local:
                     user_id = user_local['id']
                     conn.execute("""UPDATE users SET nome=?, senha=?, cargo=?, db_id=?, servidor_id=?, nome_loja=?, cnpj=?, cnpj_dados=?
-                        WHERE id=?""", (usuario_firebase.get('nome', ''), senha_hash,
+                        WHERE id=?""", (usuario_firebase.get('nome', ''), usuario_firebase.get('senha', ''),
                         usuario_firebase.get('cargo', 'Gerente'), firebase_db_id,
                         usuario_firebase.get('servidor_id', SERVIDOR_ID),
                         usuario_firebase.get('nome_loja', 'Minha Loja'),
@@ -2164,7 +2220,7 @@ def login():
                     user_id = str(uuid.uuid4())[:8]
                     conn.execute("""INSERT INTO users (id, nome, email, senha, cargo, db_id, servidor_id, nome_loja, cnpj, cnpj_dados)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", (user_id,
-                        usuario_firebase.get('nome', ''), email, senha_hash,
+                        usuario_firebase.get('nome', ''), email, usuario_firebase.get('senha', ''),
                         usuario_firebase.get('cargo', 'Gerente'), firebase_db_id,
                         usuario_firebase.get('servidor_id', SERVIDOR_ID),
                         usuario_firebase.get('nome_loja', 'Minha Loja'),
@@ -2176,12 +2232,14 @@ def login():
                 usuario_firebase.get('nome_loja', 'Minha Loja'), usuario_firebase.get('cnpj', ''),
                 usuario_firebase.get('cnpj_dados', {}))
 
-        # OFFLINE: sem internet, autentica com o banco local (cortesia)
+        # OFFLINE: sem internet, autentica com o banco local (cortesia).
+        # Buscamos pelo email e CONFERIMOS a senha: com sal, cada hash é único,
+        # então não dá para comparar por igualdade dentro do SQL.
         with get_db_context() as conn:
-            cursor = conn.execute("""SELECT id, nome, cargo, db_id, servidor_id, nome_loja, cnpj, cnpj_dados
-                FROM users WHERE email=? AND senha=?""", (email, senha_hash))
+            cursor = conn.execute("""SELECT id, nome, cargo, db_id, servidor_id, nome_loja, cnpj, cnpj_dados, senha
+                FROM users WHERE email=?""", (email,))
             user = cursor.fetchone()
-        if user:
+        if user and verificar_senha(senha, user[8]):
             return _fazer_login(user[3], user[0], user[1], user[2], user[4], user[5], user[6], user[7])
 
         return jsonify({"success": False, "error": "Sem internet e conta não encontrada neste dispositivo."})
@@ -3450,7 +3508,7 @@ def criar_usuario():
                 return jsonify({"success": False, "error": "Email já cadastrado"})
             user_id = str(uuid.uuid4())[:8]
             conn.execute("""INSERT INTO users (id, nome, email, senha, cargo, db_id, servidor_id, nome_loja, cnpj)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""", (user_id, nome, email, hash_senha(senha),
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""", (user_id, nome, email, gerar_hash_senha(senha),
                 data.get('cargo', 'Funcionario'), db_id, SERVIDOR_ID, session.get('nome_loja', ''), session.get('cnpj', '')))
         return jsonify({"success": True, "message": "Usuário criado!",
             "usuario": {"id": user_id, "nome": nome, "email": email, "cargo": data.get('cargo', 'Funcionario')}})
@@ -3493,10 +3551,9 @@ def salvar_nome_loja():
         session['nome_loja'] = nome
         session['cnpj'] = cnpj
         session['cnpj_dados'] = cnpj_dados
-        dados = carregar_usuario_firebase(db_id)
-        if dados:
-            dados.update({'nome_loja': nome, 'cnpj': cnpj, 'cnpj_dados': cnpj_dados})
-            salvar_usuario_firebase(db_id, dados)
+        # PATCH: grava só os campos da loja. Um PUT aqui poderia sobrescrever
+        # alterações feitas em outro caixa entre a leitura e a gravação.
+        salvar_campos_firebase(db_id, {'nome_loja': nome, 'cnpj': cnpj, 'cnpj_dados': cnpj_dados})
         return jsonify({"success": True, "message": "Informações salvas!"})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
