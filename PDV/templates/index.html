@@ -624,7 +624,7 @@
             <div class="db-id" id="dbIdDisplay" onclick="copiarId()" title="Copiar ID">📋 ID: ---</div>
             <div class="status-caixa fechado" id="statusCaixaHeader">🔒 Fechado</div>
             <div class="status-sincronizacao" id="statusSincronizacao">⚡ Online</div>
-            <div class="atalhos-indicador"><kbd>F1</kbd> <span class="destaque">Tudo</span> | <kbd>Enter</kbd> Confirmar | <kbd>Esc</kbd> Fechar</div>
+            <div class="atalhos-indicador"><kbd>F1</kbd> Vendas <kbd>F2</kbd> Clientes <kbd>F3</kbd> Caixa <kbd>F4</kbd> Dashboard <span style="opacity:.6">| <kbd>Enter</kbd> Confirmar <kbd>Esc</kbd> Fechar</span></div>
             <button class="btn-sair" onclick="fazerLogout()"><i class="fas fa-sign-out-alt"></i> Sair</button>
         </div>
     </div>
@@ -1390,8 +1390,33 @@ function navegarCupom(direcao) {
 // TECLAS GLOBAIS
 // ============================================================
 document.addEventListener('keydown',function(e){
-    if(['F2','F3','F4','F5','F6','F7','F8','F9','F10','F11','F12'].includes(e.key)){e.preventDefault();e.stopPropagation();return;}
-    if(e.key==='F1'){e.preventDefault();e.stopPropagation();processarF1();return;}
+    // ===== ATALHOS DE ABA F1..F7 =====
+    // Bloqueamos o comportamento NATIVO dessas teclas no navegador (F5 recarrega,
+    // F3 abre busca, F1 abre ajuda, etc.) e usamos para navegar entre as abas.
+    // Cada tecla corresponde à posição da aba na barra de navegação.
+    const teclasAba={
+        'F1':'vendas','F2':'clientes','F3':'caixa','F4':'dashboard',
+        'F5':'estoque','F6':'planos','F7':'config'
+    };
+    if(teclasAba[e.key]){
+        e.preventDefault(); e.stopPropagation();
+        // F1 tem ações contextuais dentro da venda (confirmar pagamento, escolher
+        // produto do autocomplete). Se alguma delas se aplica, faz isso primeiro.
+        if(e.key==='F1'){
+            const modalPgto=document.getElementById('paymentModal')?.classList.contains('active');
+            const modalCupom=document.getElementById('cupomModal')?.classList.contains('active');
+            const sr=document.getElementById('searchResults');
+            const temContexto = modalPgto || modalCupom ||
+                (state.itens.length>0 && state.caixa_aberto) ||
+                (sr && sr.classList.contains('active') && state.searchIndex>=0);
+            if(temContexto){ processarF1(); return; }
+        }
+        // Vai para a aba correspondente (respeitando permissões do plano)
+        irParaAbaAtalho(teclasAba[e.key]);
+        return;
+    }
+    // Demais teclas de função: mantém o nativo bloqueado (sem ação)
+    if(['F8','F9','F10','F11','F12'].includes(e.key)){e.preventDefault();e.stopPropagation();return;}
     if(e.ctrlKey&&(e.key==='r'||e.key==='R')){e.preventDefault();return;}
     if(e.ctrlKey&&e.shiftKey&&(e.key==='i'||e.key==='I')){e.preventDefault();return;}
 
@@ -1463,6 +1488,28 @@ document.addEventListener('keydown',function(e){
         return;
     }
 });
+
+function irParaAbaAtalho(nome){
+    // Abas que dependem de permissão do plano: avisa em vez de trocar em silêncio
+    if(nome==='clientes' && !temPermissao('clientes')){
+        showToast('🔒 Seu plano não permite acesso a Clientes.','warning'); return;
+    }
+    if(nome==='dashboard' && !temPermissao('dashboard')){
+        showToast('🔒 Seu plano não permite acesso ao Dashboard.','warning'); return;
+    }
+    if(!planoAtivo && nome!=='planos'){
+        showToast('🔴 Plano expirado! Acesse a aba Planos para renovar.','error'); return;
+    }
+    trocarTab(nome);
+    // Na tela de Vendas, joga o cursor direto no campo de código/nome — o caixa
+    // já pode bipar ou digitar sem tocar no mouse.
+    if(nome==='vendas'){
+        setTimeout(()=>{
+            const ci=document.getElementById('codigoInput');
+            if(ci){ ci.focus(); ci.select(); }
+        }, 60);
+    }
+}
 
 function processarF1(){
     const modalPgto=document.getElementById('paymentModal').classList.contains('active');
