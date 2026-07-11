@@ -250,6 +250,9 @@
         .dash-rank .rk-nome{flex:1;font-size:13px;color:var(--text-primary)}
         .dash-rank .rk-qtd{font-size:12px;color:var(--text-secondary);font-weight:600}
         .dash-sub{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);margin-bottom:6px;font-weight:600}
+        /* alinha a altura das duas colunas de baixo e evita "buraco" quando uma lista é curta */
+        #panelDashboard .chart-row{align-items:stretch}
+        #topDevedoresContainer,#estoqueBaixoContainer{min-height:20px}
         .chart-box h4{font-size:13px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:6px;color:var(--text-secondary)}
         .method-bar{display:flex;align-items:center;gap:8px;margin-bottom:8px}
         .method-bar .label{font-size:12px;min-width:70px;color:var(--text-secondary)}
