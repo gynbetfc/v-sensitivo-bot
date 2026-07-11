@@ -1397,6 +1397,10 @@ def _baixar_firebase_para_local(db_id: str, dados_firebase: Dict, resultado: Dic
                     (nome_c, db_id)).fetchone()[0]
                 conn.execute("UPDATE clientes SET divida=? WHERE nome=? AND db_id=?",
                     (max(0.0, round(float(v), 2)), nome_c, db_id))
+        # Garante que todo produto tenha fatos coerentes com sua coluna estoque.
+        # Sem isso, um produto vindo de outro dispositivo (coluna preenchida, mas
+        # sem fatos) ia para negativo na primeira venda.
+        reconciliar_fatos_estoque(conn, db_id)
         for (cod,) in conn.execute("SELECT DISTINCT codigo FROM estoque_mov WHERE db_id=?", (db_id,)).fetchall():
             if cod:
                 v = conn.execute("SELECT COALESCE(SUM(delta),0) FROM estoque_mov WHERE codigo=? AND db_id=?",
@@ -2509,6 +2513,31 @@ def calcular_estoque(conn, db_id, codigo):
         (str(codigo), db_id)).fetchone()
     return int(row[0]) if row else 0
 
+def reconciliar_fatos_estoque(conn, db_id):
+    """Corrige produtos cujo estoque em COLUNA não bate com a SOMA dos fatos.
+
+    Isso acontece quando um produto chega de OUTRO dispositivo (ou de um backup
+    antigo) pelo Firebase: ele vem com a coluna 'estoque' preenchida, mas sem os
+    fatos correspondentes em estoque_mov. Como o estoque real é SUM(estoque_mov),
+    a primeira venda levava o produto para negativo ('consome tudo e fica -1').
+
+    Aqui, para cada produto SEM fatos, criamos um fato de ajuste igual à coluna —
+    assim a soma passa a bater com o número que o usuário vê, e as próximas vendas
+    descontam a partir do valor certo. Só age quando NÃO há fatos ainda, para não
+    atropelar as vendas já registradas em estoque_mov.
+    """
+    try:
+        produtos = conn.execute("SELECT codigo, estoque FROM produtos WHERE db_id=?", (db_id,)).fetchall()
+        for codigo, estoque_coluna in produtos:
+            estoque_coluna = int(estoque_coluna or 0)
+            tem_fato = conn.execute("SELECT 1 FROM estoque_mov WHERE codigo=? AND db_id=? LIMIT 1",
+                (str(codigo), db_id)).fetchone()
+            if not tem_fato and estoque_coluna != 0:
+                # produto sincronizado sem histórico de fatos: cria o fato inicial
+                registrar_mov_estoque(conn, db_id, codigo, estoque_coluna, 'ajuste', 'reconciliação sync')
+    except Exception as e:
+        logger.error(f"⚠️ Erro ao reconciliar fatos de estoque: {e}")
+
 def definir_estoque_absoluto(conn, db_id, codigo, novo_valor):
     """Quando o usuário digita um estoque TOTAL (ex: 'tenho 50'), criamos um fato
     de AJUSTE com a diferença entre o que ele quer e o que os fatos somam hoje.
@@ -3031,9 +3060,22 @@ def registrar_venda():
                             conn.execute("ROLLBACK")
                             return jsonify({"success": False, "error": f"Produto '{item.get('nome', codigo)}' não encontrado"})
                         qtd = item.get('quantidade', 1)
-                        if produto[0] < qtd:
+                        # O estoque de verdade é a SOMA dos fatos. Se a coluna e os
+                        # fatos estiverem dessincronizados (ex: produto que veio de
+                        # outro dispositivo sem histórico), acertamos AGORA criando o
+                        # fato inicial — assim a baixa a seguir parte do número certo
+                        # e nunca leva a negativo. Era esta a causa do "consome tudo
+                        # e fica -1".
+                        soma_fatos = calcular_estoque(conn, db_id, codigo)
+                        tem_fato = conn.execute("SELECT 1 FROM estoque_mov WHERE codigo=? AND db_id=? LIMIT 1",
+                            (str(codigo), db_id)).fetchone()
+                        if not tem_fato and int(produto[0]) != 0:
+                            registrar_mov_estoque(conn, db_id, codigo, int(produto[0]), 'ajuste', 'reconciliação venda')
+                            soma_fatos = int(produto[0])
+                        estoque_disponivel = max(int(produto[0]), soma_fatos) if not tem_fato else soma_fatos
+                        if estoque_disponivel < qtd:
                             conn.execute("ROLLBACK")
-                            return jsonify({"success": False, "error": f"Estoque insuficiente para '{produto[1]}': disponível {produto[0]}, necessário {qtd}"})
+                            return jsonify({"success": False, "error": f"Estoque insuficiente para '{produto[1]}': disponível {max(0, estoque_disponivel)}, necessário {qtd}"})
                         item['custo_unitario'] = produto[2] or 0
                 # Segunda passada: BAIXAR estoque criando FATOS de saída (não
                 # sobrescreve o número — registra "saiu N", que soma com as saídas
