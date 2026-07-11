@@ -3393,6 +3393,47 @@ def get_estatisticas():
                 vendas.append({"id": row[0], "data_hora": row[1], "subtotal": row[2], "desconto": row[3],
                     "total": row[4], "lucro_total": row[5] or 0, "metodo": metodo, "itens": itens, "cliente": row[8] or ''})
 
+            # ---- Dados EXTRA do dashboard (só leitura, não altera nada) ----
+            # 1) Ranking de produtos mais vendidos (a partir dos itens já lidos)
+            ranking = {}
+            for v in vendas:
+                for it in v['itens']:
+                    nome_it = it.get('nome') or it.get('codigo') or 'Item'
+                    q = it.get('quantidade', 1) or 1
+                    val = it.get('total')
+                    if val is None:
+                        val = (it.get('preco_unitario') or it.get('preco') or 0) * q
+                    d = ranking.setdefault(nome_it, {'nome': nome_it, 'qtd': 0, 'total': 0.0})
+                    d['qtd'] += q
+                    d['total'] += float(val or 0)
+            mais_vendidos = sorted(ranking.values(), key=lambda x: x['qtd'], reverse=True)[:5]
+
+            # 2) Vendas por hora (para um gráfico simples de movimento)
+            por_hora = {}
+            for v in vendas:
+                try:
+                    h = int(str(v['data_hora'])[11:13])
+                except Exception:
+                    h = 0
+                por_hora[h] = por_hora.get(h, 0) + (v['total'] or 0)
+            vendas_por_hora = [{'hora': h, 'total': round(por_hora.get(h, 0), 2)} for h in range(24)]
+
+            # 3) Fiado a receber e estoque baixo (independem do período)
+            fiado_receber = conn.execute(
+                "SELECT COALESCE(SUM(divida),0), COUNT(*) FROM clientes WHERE db_id=? AND divida > 0.005",
+                (db_id,)).fetchone()
+            top_devedores = [
+                {'nome': r[0], 'divida': round(r[1], 2)}
+                for r in conn.execute(
+                    "SELECT nome, divida FROM clientes WHERE db_id=? AND divida > 0.005 ORDER BY divida DESC LIMIT 5",
+                    (db_id,)).fetchall()]
+            LIMITE_BAIXO = 5
+            estoque_baixo = [
+                {'codigo': r[0], 'nome': r[1], 'estoque': r[2]}
+                for r in conn.execute(
+                    "SELECT codigo, nome, estoque FROM produtos WHERE db_id=? AND estoque <= ? ORDER BY estoque ASC LIMIT 8",
+                    (db_id, LIMITE_BAIXO)).fetchall()]
+
         return jsonify({"success": True, "stats": {
             "total_geral": total_geral,
             "total_lucro": total_lucro,
@@ -3401,7 +3442,13 @@ def get_estatisticas():
             "media_lucro": total_lucro / total_vendas if total_vendas > 0 else 0,
             "total_itens": total_itens,
             "metodos": metodos,
-            "vendas": vendas
+            "vendas": vendas,
+            "mais_vendidos": mais_vendidos,
+            "vendas_por_hora": vendas_por_hora,
+            "fiado_total": round(fiado_receber[0], 2),
+            "fiado_clientes": fiado_receber[1],
+            "top_devedores": top_devedores,
+            "estoque_baixo": estoque_baixo
         }})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
