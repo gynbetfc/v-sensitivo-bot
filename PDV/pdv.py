@@ -3449,10 +3449,21 @@ def get_estatisticas():
                     "SELECT codigo, nome, estoque FROM produtos WHERE db_id=? AND estoque <= ? ORDER BY estoque ASC LIMIT 8",
                     (db_id, LIMITE_BAIXO)).fetchall()]
 
-            # 4) Fiado vs À vista (saúde do caixa): quanto do faturamento é fiado
-            total_fiado_vendas = sum((v['total'] or 0) for v in vendas if 'Fiado' in (v['metodo'] or ''))
-            total_avista = total_geral - total_fiado_vendas
+            # 4) Fiado vs À vista (do PERÍODO): separa o que já entrou no caixa do
+            #    que saiu fiado. Cuidado com dois pontos que geravam erro:
+            #    - "Fiado (Dinheiro/PIX/...)" é uma QUITAÇÃO: o dinheiro ENTROU,
+            #      então conta como à vista, não como fiado.
+            #    - Só "Fiado" puro é venda a prazo (ainda não entrou).
+            def _e_quitacao(m):
+                return m.startswith('Fiado (')
+            def _e_fiado_puro(m):
+                return m == 'Fiado'
+            total_fiado_vendas = sum((v['total'] or 0) for v in vendas if _e_fiado_puro(v['metodo'] or ''))
+            total_avista = sum((v['total'] or 0) for v in vendas if not _e_fiado_puro(v['metodo'] or ''))
             pct_fiado = (total_fiado_vendas / total_geral * 100) if total_geral > 0 else 0
+            # "A receber" de verdade = dívida em aberto AGORA (não o histórico do mês).
+            # É o mesmo número do card de fiado (fiado_receber[0]).
+            fiado_a_receber_agora = round(fiado_receber[0], 2)
 
             # 5) Comparativo com o período anterior (mesmo tamanho de janela)
             if periodo == 'hoje':
@@ -3500,6 +3511,7 @@ def get_estatisticas():
             "total_fiado_vendas": round(total_fiado_vendas, 2),
             "total_avista": round(total_avista, 2),
             "pct_fiado": round(pct_fiado, 1),
+            "fiado_a_receber_agora": fiado_a_receber_agora,
             "total_anterior": round(total_anterior, 2),
             "variacao_pct": (round(variacao_pct, 1) if variacao_pct is not None else None)
         }})
