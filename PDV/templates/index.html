@@ -232,6 +232,24 @@
         .filtros-dashboard .btn-filtro.active{background:rgba(34,197,94,.15);border-color:var(--green);color:var(--green)}
         .chart-row{display:grid;grid-template-columns:1fr 1.5fr;gap:16px}
         .chart-box{background:var(--bg-card);border-radius:var(--radius);padding:16px;border:1px solid var(--border-color)}
+        /* ===== Seção nova do Dashboard (indicadores do dono) ===== */
+        .dash-mini-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:16px 0}
+        .dash-mini{background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius);padding:16px;display:flex;align-items:center;gap:14px}
+        .dash-mini .dm-ico{font-size:26px;line-height:1}
+        .dash-mini .dm-valor{font-size:22px;font-weight:700;color:var(--text-primary)}
+        .dash-mini .dm-label{font-size:12px;color:var(--text-secondary);margin-top:2px}
+        .dash-mini.alerta{border-color:var(--orange)}
+        .dash-mini.alerta .dm-valor{color:var(--orange)}
+        .dash-lista-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-color);font-size:13px}
+        .dash-lista-item:last-child{border-bottom:0}
+        .dash-lista-item .nome{color:var(--text-primary)}
+        .dash-lista-item .val{font-weight:600}
+        .dash-rank{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border-color)}
+        .dash-rank:last-child{border-bottom:0}
+        .dash-rank .pos{width:22px;height:22px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+        .dash-rank .rk-nome{flex:1;font-size:13px;color:var(--text-primary)}
+        .dash-rank .rk-qtd{font-size:12px;color:var(--text-secondary);font-weight:600}
+        .dash-sub{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);margin-bottom:6px;font-weight:600}
         .chart-box h4{font-size:13px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:6px;color:var(--text-secondary)}
         .method-bar{display:flex;align-items:center;gap:8px;margin-bottom:8px}
         .method-bar .label{font-size:12px;min-width:70px;color:var(--text-secondary)}
@@ -679,6 +697,40 @@
                 <div class="chart-row">
                     <div class="chart-box"><h4><i class="fas fa-credit-card"></i> Métodos de Pagamento</h4><div id="metodosContainer"><p style="color:var(--text-secondary);font-size:13px;">Carregando...</p></div></div>
                     <div class="chart-box"><h4><i class="fas fa-clock"></i> Últimas Vendas</h4><div class="vendas-list" id="vendasList"><p style="color:var(--text-secondary);font-size:13px;">Carregando...</p></div></div>
+                </div>
+
+                <!-- ===== SEÇÃO NOVA: indicadores do dono (só adiciona, não remove nada) ===== -->
+                <div class="dash-mini-cards">
+                    <div class="dash-mini" id="dashFiadoCard">
+                        <div class="dm-ico">🧾</div>
+                        <div class="dm-info">
+                            <div class="dm-valor" id="dashFiadoTotal">R$ 0,00</div>
+                            <div class="dm-label">A receber (fiado)</div>
+                        </div>
+                    </div>
+                    <div class="dash-mini" id="dashDevedoresCard">
+                        <div class="dm-ico">👥</div>
+                        <div class="dm-info">
+                            <div class="dm-valor" id="dashFiadoClientes">0</div>
+                            <div class="dm-label">Clientes devendo</div>
+                        </div>
+                    </div>
+                    <div class="dash-mini" id="dashEstoqueCard">
+                        <div class="dm-ico">📦</div>
+                        <div class="dm-info">
+                            <div class="dm-valor" id="dashEstoqueBaixoQtd">0</div>
+                            <div class="dm-label">Produtos acabando</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-row">
+                    <div class="chart-box"><h4><i class="fas fa-trophy"></i> Mais Vendidos</h4><div id="maisVendidosContainer"><p style="color:var(--text-secondary);font-size:13px;">Carregando...</p></div></div>
+                    <div class="chart-box">
+                        <h4><i class="fas fa-triangle-exclamation"></i> A Receber &amp; Estoque Baixo</h4>
+                        <div id="topDevedoresContainer" style="margin-bottom:14px;"></div>
+                        <div id="estoqueBaixoContainer"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2826,6 +2878,55 @@ async function carregarDash(periodo){
                 });
             }else{vHtml='<p style="color:var(--text-muted);font-size:13px;">Nenhuma venda no período</p>';}
             document.getElementById('vendasList').innerHTML=vHtml;
+
+            // ===== Preenche a seção NOVA (fiado, mais vendidos, estoque baixo) =====
+            const brl=(n)=>'R$ '+(Number(n)||0).toFixed(2);
+
+            // mini-cards
+            const elFiado=document.getElementById('dashFiadoTotal');
+            if(elFiado) elFiado.textContent=brl(s.fiado_total);
+            const elFiadoCli=document.getElementById('dashFiadoClientes');
+            if(elFiadoCli) elFiadoCli.textContent=(s.fiado_clientes||0);
+            const eb=s.estoque_baixo||[];
+            const elEstQtd=document.getElementById('dashEstoqueBaixoQtd');
+            if(elEstQtd) elEstQtd.textContent=eb.length;
+            const cardEst=document.getElementById('dashEstoqueCard');
+            if(cardEst) cardEst.classList.toggle('alerta', eb.length>0);
+            const cardFiado=document.getElementById('dashFiadoCard');
+            if(cardFiado) cardFiado.classList.toggle('alerta', (s.fiado_total||0)>0);
+
+            // ranking de mais vendidos
+            const mv=s.mais_vendidos||[];
+            let mvHtml='';
+            if(mv.length>0){
+                mv.forEach((p,i)=>{
+                    mvHtml+=`<div class="dash-rank"><span class="pos">${i+1}</span><span class="rk-nome">${p.nome}</span><span class="rk-qtd">${p.qtd} un · ${brl(p.total)}</span></div>`;
+                });
+            }else{mvHtml='<p style="color:var(--text-muted);font-size:13px;">Nenhuma venda no período</p>';}
+            const elMv=document.getElementById('maisVendidosContainer');
+            if(elMv) elMv.innerHTML=mvHtml;
+
+            // top devedores
+            const td=s.top_devedores||[];
+            let tdHtml='<div class="dash-sub">Maiores devedores</div>';
+            if(td.length>0){
+                td.forEach(d=>{
+                    tdHtml+=`<div class="dash-lista-item"><span class="nome">${d.nome}</span><span class="val" style="color:var(--orange);">${brl(d.divida)}</span></div>`;
+                });
+            }else{tdHtml+='<p style="color:var(--text-muted);font-size:13px;">Ninguém devendo 🎉</p>';}
+            const elTd=document.getElementById('topDevedoresContainer');
+            if(elTd) elTd.innerHTML=tdHtml;
+
+            // estoque baixo
+            let ebHtml='<div class="dash-sub">Estoque acabando</div>';
+            if(eb.length>0){
+                eb.forEach(p=>{
+                    const cor=p.estoque<=0?'var(--red)':'var(--orange)';
+                    ebHtml+=`<div class="dash-lista-item"><span class="nome">${p.nome}</span><span class="val" style="color:${cor};">${p.estoque} un</span></div>`;
+                });
+            }else{ebHtml+='<p style="color:var(--text-muted);font-size:13px;">Tudo abastecido 👍</p>';}
+            const elEb=document.getElementById('estoqueBaixoContainer');
+            if(elEb) elEb.innerHTML=ebHtml;
         }
     }catch(e){console.error(e);}
 }
