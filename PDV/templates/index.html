@@ -273,6 +273,15 @@
         .fv-fiado{background:var(--orange);display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:600}
         .fv-legenda{display:flex;gap:16px;margin-top:10px;font-size:12px;color:var(--text-secondary)}
         .fv-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle}
+        /* filtros da janela de vendas */
+        .vendas-filtros{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+        .vendas-filtros input[type=text],.vendas-filtros select{background:var(--bg-primary);border:1px solid var(--border-color);border-radius:8px;padding:7px 10px;color:var(--text-primary);font-size:13px;outline:none}
+        .vendas-filtros input[type=text]{flex:1;min-width:150px}
+        .vendas-filtros select{cursor:pointer}
+        .vendas-filtros-data{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+        .vendas-filtros input[type=date]{background:var(--bg-primary);border:1px solid var(--border-color);border-radius:8px;padding:6px 8px;color:var(--text-primary);font-size:12px;outline:none;color-scheme:dark}
+        .btn-limpar-filtro{background:var(--bg-primary);border:1px solid var(--border-color);border-radius:8px;padding:6px 10px;color:var(--text-secondary);cursor:pointer;font-size:13px}
+        .btn-limpar-filtro:hover{border-color:var(--red);color:var(--red)}
         .chart-box h4{font-size:13px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:6px;color:var(--text-secondary)}
         .method-bar{display:flex;align-items:center;gap:8px;margin-bottom:8px}
         .method-bar .label{font-size:12px;min-width:70px;color:var(--text-secondary)}
@@ -719,7 +728,32 @@
                 </div>
                 <div class="chart-row">
                     <div class="chart-box"><h4><i class="fas fa-credit-card"></i> Métodos de Pagamento</h4><div id="metodosContainer"><p style="color:var(--text-secondary);font-size:13px;">Carregando...</p></div></div>
-                    <div class="chart-box"><h4><i class="fas fa-clock"></i> Últimas Vendas</h4><div class="vendas-list" id="vendasList"><p style="color:var(--text-secondary);font-size:13px;">Carregando...</p></div></div>
+                    <div class="chart-box"><h4><i class="fas fa-clock"></i> Vendas <span id="vendasResumoFiltro" style="font-size:12px;color:var(--text-muted);font-weight:400;"></span></h4>
+                        <div class="vendas-filtros">
+                            <input type="text" id="fVendaBusca" placeholder="🔍 nº da venda ou cliente" oninput="filtrarVendasDebounce()">
+                            <select id="fVendaMetodo" onchange="aplicarFiltroVendas()">
+                                <option value="">Todos os métodos</option>
+                                <option value="Dinheiro">Dinheiro</option>
+                                <option value="PIX">PIX</option>
+                                <option value="Cartão">Cartão</option>
+                                <option value="Débito">Débito</option>
+                                <option value="Fiado">Fiado</option>
+                            </select>
+                            <select id="fVendaOrdem" onchange="aplicarFiltroVendas()">
+                                <option value="recente">Mais recentes</option>
+                                <option value="antiga">Mais antigas</option>
+                                <option value="maior">Maior valor</option>
+                                <option value="menor">Menor valor</option>
+                            </select>
+                            <div class="vendas-filtros-data">
+                                <input type="date" id="fVendaDataIni" onchange="aplicarFiltroVendas()" title="De">
+                                <span style="color:var(--text-muted);font-size:12px;">até</span>
+                                <input type="date" id="fVendaDataFim" onchange="aplicarFiltroVendas()" title="Até">
+                                <button class="btn-limpar-filtro" onclick="limparFiltrosVendas()" title="Limpar filtros">✕</button>
+                            </div>
+                        </div>
+                        <div class="vendas-list" id="vendasList"><p style="color:var(--text-secondary);font-size:13px;">Carregando...</p></div>
+                    </div>
                 </div>
 
                 <!-- ===== SEÇÃO NOVA: indicadores do dono (só adiciona, não remove nada) ===== -->
@@ -2897,25 +2931,16 @@ async function carregarDash(periodo){
             }else{html='<p style="color:var(--text-muted);font-size:13px;">Nenhuma venda no período</p>';}
             document.getElementById('metodosContainer').innerHTML=html;
             
-            const vendas=s.vendas||[];
-            let vHtml='';
-            if(vendas.length>0){
-                vendas.slice(0,20).forEach(v=>{
-                    const metodo=v.metodo||'Dinheiro';
-                    const cls={'Dinheiro':'dinheiro','PIX':'pix','Cartão':'cartao','Débito':'cartao','Fiado':'fiado'}[metodo]||'dinheiro';
-                    vHtml+=`<div class="venda-item">
-                        <span style="font-weight:600;">#${v.id}</span>
-                        <span style="font-size:11px;color:var(--text-muted);">${v.data_hora ? new Date(v.data_hora).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : ''}</span>
-                        <span class="metodo ${cls}">${metodo}</span>
-                        <span class="valor">R$ ${v.total.toFixed(2)}</span>
-                        <span class="lucro-item">💰 Lucro: R$ ${(v.lucro_total||0).toFixed(2)}</span>
-                        <div class="produtos-detalhe">${(v.itens||[]).map(i=>`${i.nome}(${i.quantidade})`).join(', ')}</div>
-                        <button class="btn-imprimir-venda" onclick="imprimirCupomAntigo(${v.id})"><i class="fas fa-print"></i></button>
-                        <button class="btn-excluir-venda" onclick="excluirVenda(${v.id})" title="Excluir esta venda do histórico"><i class="fas fa-times"></i></button>
-                    </div>`;
-                });
-            }else{vHtml='<p style="color:var(--text-muted);font-size:13px;">Nenhuma venda no período</p>';}
-            document.getElementById('vendasList').innerHTML=vHtml;
+            // A lista de vendas usa a mesma função da busca (evita código duplicado).
+            // Só mostramos aqui se NÃO há filtro ativo; se o usuário está filtrando,
+            // deixamos o resultado da busca na tela.
+            const _temFiltroAtivo = (document.getElementById('fVendaBusca')?.value ||
+                document.getElementById('fVendaMetodo')?.value ||
+                document.getElementById('fVendaDataIni')?.value ||
+                document.getElementById('fVendaDataFim')?.value);
+            if(!_temFiltroAtivo){
+                renderListaVendas((s.vendas||[]).slice(0,30));
+            }
 
             // ===== Preenche a seção NOVA (fiado, mais vendidos, estoque baixo) =====
             const brl=(n)=>'R$ '+(Number(n)||0).toFixed(2);
@@ -3032,6 +3057,83 @@ async function carregarDash(periodo){
             if(elMl) elMl.innerHTML=mlHtml;
         }
     }catch(e){console.error(e);}
+}
+
+// ============================================================
+// BUSCA E FILTRO DE VENDAS (janela de Vendas do Dashboard)
+// ============================================================
+let _filtroVendasTimer=null;
+function filtrarVendasDebounce(){
+    // espera o usuário parar de digitar antes de buscar (evita 1 request por tecla)
+    clearTimeout(_filtroVendasTimer);
+    _filtroVendasTimer=setTimeout(aplicarFiltroVendas, 350);
+}
+function limparFiltrosVendas(){
+    document.getElementById('fVendaBusca').value='';
+    document.getElementById('fVendaMetodo').value='';
+    document.getElementById('fVendaOrdem').value='recente';
+    document.getElementById('fVendaDataIni').value='';
+    document.getElementById('fVendaDataFim').value='';
+    aplicarFiltroVendas();
+}
+async function aplicarFiltroVendas(){
+    if(!temPermissao('dashboard')) return;
+    const busca=(document.getElementById('fVendaBusca')?.value||'').trim();
+    const metodo=document.getElementById('fVendaMetodo')?.value||'';
+    const ordem=document.getElementById('fVendaOrdem')?.value||'recente';
+    const dataIni=document.getElementById('fVendaDataIni')?.value||'';
+    const dataFim=document.getElementById('fVendaDataFim')?.value||'';
+    const params=new URLSearchParams();
+    // se a busca é só número, procura pelo nº da venda; senão, por cliente
+    if(busca){
+        if(/^#?\d+$/.test(busca)) params.set('id', busca.replace('#',''));
+        else params.set('cliente', busca);
+    }
+    if(metodo) params.set('metodo', metodo);
+    if(ordem) params.set('ordem', ordem);
+    if(dataIni) params.set('data_ini', dataIni);
+    if(dataFim) params.set('data_fim', dataFim);
+    try{
+        const res=await fetch('/api/vendas/buscar?'+params.toString(),{credentials:'include'});
+        const data=await res.json();
+        if(data.success){
+            renderListaVendas(data.vendas||[]);
+            const resumo=document.getElementById('vendasResumoFiltro');
+            if(resumo){
+                const temFiltro=busca||metodo||dataIni||dataFim;
+                resumo.textContent = temFiltro
+                    ? `(${data.quantidade} encontrada(s) · R$ ${(data.total_encontrado||0).toFixed(2)})`
+                    : '';
+            }
+        }
+    }catch(e){console.error(e);}
+}
+// desenha a lista de vendas (reaproveitada pelo dashboard e pela busca)
+function renderListaVendas(vendas){
+    const el=document.getElementById('vendasList');
+    if(!el) return;
+    if(!vendas||vendas.length===0){
+        el.innerHTML='<p style="color:var(--text-muted);font-size:13px;">Nenhuma venda encontrada</p>';
+        return;
+    }
+    let vHtml='';
+    vendas.forEach(v=>{
+        const metodo=v.metodo||'Dinheiro';
+        const cls={'Dinheiro':'dinheiro','PIX':'pix','Cartão':'cartao','Débito':'cartao','Fiado':'fiado'}[metodo]||'dinheiro';
+        const dt=v.data_hora?new Date(v.data_hora):null;
+        const quando=dt?dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' '+dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'';
+        vHtml+=`<div class="venda-item">
+            <span style="font-weight:600;">#${v.id}</span>
+            <span style="font-size:11px;color:var(--text-muted);">${quando}</span>
+            <span class="metodo ${cls}">${metodo}</span>
+            <span class="valor">R$ ${(v.total||0).toFixed(2)}</span>
+            <span class="lucro-item">💰 Lucro: R$ ${(v.lucro_total||0).toFixed(2)}</span>
+            <div class="produtos-detalhe">${(v.itens||[]).map(i=>`${i.nome}(${i.quantidade})`).join(', ')}${v.cliente?' · 👤 '+v.cliente:''}</div>
+            <button class="btn-imprimir-venda" onclick="imprimirCupomAntigo(${v.id})"><i class="fas fa-print"></i></button>
+            <button class="btn-excluir-venda" onclick="excluirVenda(${v.id})" title="Excluir esta venda do histórico"><i class="fas fa-times"></i></button>
+        </div>`;
+    });
+    el.innerHTML=vHtml;
 }
 
 // ============================================================
