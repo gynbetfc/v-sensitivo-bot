@@ -1637,7 +1637,7 @@ function trocarTab(nome){
     if (btn) btn.classList.add('active');
     if(nome==='clientes') carregarClientes();
     if(nome==='estoque') carregarProdutos();
-    if(nome==='vendas') carregarKitsParaVenda();
+    if(nome==='vendas'){ carregarProdutos(); carregarKitsParaVenda(); }
     if(nome==='dashboard') carregarDash(state.periodo);
     if(nome==='caixa') carregarStatusCaixa();
     if(nome==='planos') {carregarPlanos(); verificarStatusPlano();}
@@ -1707,6 +1707,12 @@ async function carregarProdutos(){
         if(data.success){
             state.produtos=data.produtos||[];
             const tbody=document.getElementById('tabelaEstoque');
+            // A memória (state.produtos) já foi preenchida acima — isso é o que a
+            // tela de Vendas usa para buscar. O desenho da tabela abaixo só
+            // acontece se ela existir na tela (aba Estoque aberta). Antes, quando
+            // a tabela não estava montada, um erro aqui impedia o restante e a
+            // busca de produtos na venda ficava vazia até abrir o Estoque.
+            if(!tbody) return;
             if(state.produtos.length===0){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:16px;">Nenhum produto</td></tr>';return;}
             let html='';
             state.produtos.forEach((p,idx)=>{
