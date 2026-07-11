@@ -3398,7 +3398,13 @@ def get_estatisticas():
             ranking = {}
             for v in vendas:
                 for it in v['itens']:
+                    # Pula quitações de fiado: elas entram como "item" da venda para
+                    # o faturamento, mas NÃO são produtos que saíram da prateleira,
+                    # então não podem poluir o ranking. Identificamos pelo código
+                    # vazio + nome de quitação.
                     nome_it = it.get('nome') or it.get('codigo') or 'Item'
+                    if not (it.get('codigo') or '').strip() and str(nome_it).startswith('Quitação de fiado'):
+                        continue
                     q = it.get('quantidade', 1) or 1
                     val = it.get('total')
                     if val is None:
