@@ -2999,11 +2999,12 @@ async function carregarDash(periodo){
             const elFv=document.getElementById('fiadoVistaContainer');
             if(elFv){
                 const av=s.total_avista||0, fi=s.total_fiado_vendas||0, tt=av+fi;
+                const aReceber=(s.fiado_a_receber_agora!==undefined?s.fiado_a_receber_agora:(s.fiado_total||0));
                 if(tt>0){
                     const pctAv=(av/tt*100), pctFi=(fi/tt*100);
                     elFv.innerHTML=`
-                        <div class="fv-linha"><span>Entrou no caixa</span><span style="font-weight:700;color:var(--green);">${brl(av)}</span></div>
-                        <div class="fv-linha"><span>Ainda a receber (fiado)</span><span style="font-weight:700;color:var(--orange);">${brl(fi)}</span></div>
+                        <div class="fv-linha"><span>Vendas à vista</span><span style="font-weight:700;color:var(--green);">${brl(av)}</span></div>
+                        <div class="fv-linha"><span>Vendas no fiado</span><span style="font-weight:700;color:var(--orange);">${brl(fi)}</span></div>
                         <div class="fv-barra">
                             ${pctAv>0?`<div class="fv-avista" style="width:${pctAv}%">${pctAv>=12?pctAv.toFixed(0)+'%':''}</div>`:''}
                             ${pctFi>0?`<div class="fv-fiado" style="width:${pctFi}%">${pctFi>=12?pctFi.toFixed(0)+'%':''}</div>`:''}
@@ -3011,6 +3012,10 @@ async function carregarDash(periodo){
                         <div class="fv-legenda">
                             <span><span class="fv-dot" style="background:var(--green);"></span>À vista</span>
                             <span><span class="fv-dot" style="background:var(--orange);"></span>Fiado</span>
+                        </div>
+                        <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border-color);display:flex;justify-content:space-between;font-size:13px;">
+                            <span style="color:var(--text-secondary);">Total ainda a receber (dívidas em aberto)</span>
+                            <span style="font-weight:700;color:var(--orange);">${brl(aReceber)}</span>
                         </div>`;
                 }else{elFv.innerHTML='<p style="color:var(--text-muted);font-size:13px;">Nenhuma venda no período</p>';}
             }
