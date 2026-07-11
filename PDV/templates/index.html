@@ -253,6 +253,26 @@
         /* alinha a altura das duas colunas de baixo e evita "buraco" quando uma lista é curta */
         #panelDashboard .chart-row{align-items:stretch}
         #topDevedoresContainer,#estoqueBaixoContainer{min-height:20px}
+        /* variação vs período anterior */
+        .stat-variacao{font-size:12px;font-weight:600;margin-top:4px;min-height:16px}
+        .stat-variacao.sobe{color:var(--green)}
+        .stat-variacao.desce{color:var(--red)}
+        .stat-variacao.neutro{color:var(--text-muted)}
+        /* gráfico de barras por hora */
+        .grafico-hora{display:flex;align-items:flex-end;gap:3px;height:130px;padding-top:10px}
+        .gh-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;position:relative}
+        .gh-bar{width:100%;background:var(--green);border-radius:3px 3px 0 0;min-height:2px;transition:height .3s;cursor:default}
+        .gh-bar:hover{background:var(--blue)}
+        .gh-hora{font-size:9px;color:var(--text-muted);white-space:nowrap}
+        .gh-col .gh-tip{position:absolute;bottom:100%;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:6px;padding:3px 7px;font-size:11px;color:var(--text-primary);white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s;margin-bottom:4px;z-index:5}
+        .gh-col:hover .gh-tip{opacity:1}
+        /* fiado x à vista */
+        .fv-linha{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px}
+        .fv-barra{height:22px;border-radius:6px;overflow:hidden;display:flex;background:var(--bg-primary);border:1px solid var(--border-color)}
+        .fv-avista{background:var(--green);display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:600}
+        .fv-fiado{background:var(--orange);display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:600}
+        .fv-legenda{display:flex;gap:16px;margin-top:10px;font-size:12px;color:var(--text-secondary)}
+        .fv-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle}
         .chart-box h4{font-size:13px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:6px;color:var(--text-secondary)}
         .method-bar{display:flex;align-items:center;gap:8px;margin-bottom:8px}
         .method-bar .label{font-size:12px;min-width:70px;color:var(--text-secondary)}
@@ -691,7 +711,7 @@
                     <button class="btn-filtro" data-periodo="mes" onclick="filtrarDashboard(this,'mes')"><i class="fas fa-calendar-alt"></i> Mês</button>
                 </div>
                 <div class="stat-cards">
-                    <div class="stat-card"><div class="icon">💰</div><div class="value" id="statTotal">R$ 0,00</div><div class="label">Total do Período</div></div>
+                    <div class="stat-card"><div class="icon">💰</div><div class="value" id="statTotal">R$ 0,00</div><div class="label">Total do Período</div><div class="stat-variacao" id="statVariacao"></div></div>
                     <div class="stat-card"><div class="icon">🛒</div><div class="value" id="statVendas">0</div><div class="label">Vendas</div></div>
                     <div class="stat-card"><div class="icon">📦</div><div class="value" id="statItens">0</div><div class="label">Itens Vendidos</div></div>
                     <div class="stat-card"><div class="icon">📈</div><div class="value" id="statMedia">R$ 0,00</div><div class="label">Ticket Médio</div></div>
@@ -734,6 +754,21 @@
                         <div id="topDevedoresContainer" style="margin-bottom:14px;"></div>
                         <div id="estoqueBaixoContainer"></div>
                     </div>
+                </div>
+
+                <!-- ===== Gráfico de vendas por hora ===== -->
+                <div class="chart-box" style="margin-top:16px;">
+                    <h4><i class="fas fa-chart-column"></i> Movimento por Hora</h4>
+                    <div id="graficoHoraContainer" class="grafico-hora"><p style="color:var(--text-secondary);font-size:13px;">Carregando...</p></div>
+                </div>
+
+                <!-- ===== Fiado vs À vista + Mais Lucrativos ===== -->
+                <div class="chart-row" style="margin-top:16px;">
+                    <div class="chart-box">
+                        <h4><i class="fas fa-scale-balanced"></i> Fiado x À Vista</h4>
+                        <div id="fiadoVistaContainer"></div>
+                    </div>
+                    <div class="chart-box"><h4><i class="fas fa-coins"></i> Mais Lucrativos</h4><div id="maisLucrativosContainer"><p style="color:var(--text-secondary);font-size:13px;">Carregando...</p></div></div>
                 </div>
             </div>
         </div>
@@ -2930,6 +2965,66 @@ async function carregarDash(periodo){
             }else{ebHtml+='<p style="color:var(--text-muted);font-size:13px;">Tudo abastecido 👍</p>';}
             const elEb=document.getElementById('estoqueBaixoContainer');
             if(elEb) elEb.innerHTML=ebHtml;
+
+            // ===== Variação vs período anterior (setinha ↑↓) =====
+            const elVar=document.getElementById('statVariacao');
+            if(elVar){
+                if(s.variacao_pct===null||s.variacao_pct===undefined){
+                    elVar.className='stat-variacao neutro';
+                    elVar.textContent='— sem comparação';
+                }else{
+                    const sobe=s.variacao_pct>=0;
+                    elVar.className='stat-variacao '+(sobe?'sobe':'desce');
+                    const seta=sobe?'▲':'▼';
+                    elVar.textContent=`${seta} ${Math.abs(s.variacao_pct).toFixed(1)}% vs período anterior`;
+                }
+            }
+
+            // ===== Gráfico de vendas por hora =====
+            const vph=s.vendas_por_hora||[];
+            const elGh=document.getElementById('graficoHoraContainer');
+            if(elGh){
+                const maxH=Math.max(1,...vph.map(h=>h.total||0));
+                // mostra só das 6h às 23h (horário comercial), pra não ficar poluído
+                const horas=vph.filter(h=>h.hora>=6);
+                let ghHtml='';
+                horas.forEach(h=>{
+                    const alt=Math.round(((h.total||0)/maxH)*100);
+                    ghHtml+=`<div class="gh-col"><div class="gh-tip">${h.hora}h · ${brl(h.total)}</div><div class="gh-bar" style="height:${alt}%"></div><div class="gh-hora">${h.hora}h</div></div>`;
+                });
+                elGh.innerHTML = horas.some(h=>h.total>0) ? ghHtml : '<p style="color:var(--text-muted);font-size:13px;">Nenhuma venda no período</p>';
+            }
+
+            // ===== Fiado x À vista =====
+            const elFv=document.getElementById('fiadoVistaContainer');
+            if(elFv){
+                const av=s.total_avista||0, fi=s.total_fiado_vendas||0, tt=av+fi;
+                if(tt>0){
+                    const pctAv=(av/tt*100), pctFi=(fi/tt*100);
+                    elFv.innerHTML=`
+                        <div class="fv-linha"><span>Entrou no caixa</span><span style="font-weight:700;color:var(--green);">${brl(av)}</span></div>
+                        <div class="fv-linha"><span>Ainda a receber (fiado)</span><span style="font-weight:700;color:var(--orange);">${brl(fi)}</span></div>
+                        <div class="fv-barra">
+                            ${pctAv>0?`<div class="fv-avista" style="width:${pctAv}%">${pctAv>=12?pctAv.toFixed(0)+'%':''}</div>`:''}
+                            ${pctFi>0?`<div class="fv-fiado" style="width:${pctFi}%">${pctFi>=12?pctFi.toFixed(0)+'%':''}</div>`:''}
+                        </div>
+                        <div class="fv-legenda">
+                            <span><span class="fv-dot" style="background:var(--green);"></span>À vista</span>
+                            <span><span class="fv-dot" style="background:var(--orange);"></span>Fiado</span>
+                        </div>`;
+                }else{elFv.innerHTML='<p style="color:var(--text-muted);font-size:13px;">Nenhuma venda no período</p>';}
+            }
+
+            // ===== Mais lucrativos =====
+            const ml=s.mais_lucrativos||[];
+            let mlHtml='';
+            if(ml.length>0){
+                ml.forEach((p,i)=>{
+                    mlHtml+=`<div class="dash-rank"><span class="pos" style="background:var(--orange);">${i+1}</span><span class="rk-nome">${p.nome}</span><span class="rk-qtd">${brl(p.lucro)} lucro</span></div>`;
+                });
+            }else{mlHtml='<p style="color:var(--text-muted);font-size:13px;">Nenhuma venda no período</p>';}
+            const elMl=document.getElementById('maisLucrativosContainer');
+            if(elMl) elMl.innerHTML=mlHtml;
         }
     }catch(e){console.error(e);}
 }
