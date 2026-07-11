@@ -66,6 +66,9 @@
         .nav button:hover{color:#fff;background:rgba(255,255,255,.05)}
         .nav button.active{color:#fff;background:rgba(34,197,94,.15)}
         .nav button .badge{background:var(--red);color:#fff;font-size:9px;padding:1px 8px;border-radius:10px;font-weight:700}
+        .nav button .tab-tecla{font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.08);color:var(--text-muted);border:1px solid var(--border-color);letter-spacing:.3px}
+        .nav button.active .tab-tecla{background:rgba(255,255,255,.15);color:#fff;border-color:transparent}
+        @media(max-width:900px){.nav button .tab-tecla{display:none}}
         .plano-expirado-aviso{background:var(--red);color:#fff;padding:12px 20px;border-radius:8px;margin-bottom:16px;display:none;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;width:100%}
         .plano-expirado-aviso a{color:#fff;font-weight:700;text-decoration:underline;cursor:pointer}
         .content{padding:16px}
@@ -624,18 +627,18 @@
             <div class="db-id" id="dbIdDisplay" onclick="copiarId()" title="Copiar ID">📋 ID: ---</div>
             <div class="status-caixa fechado" id="statusCaixaHeader">🔒 Fechado</div>
             <div class="status-sincronizacao" id="statusSincronizacao">⚡ Online</div>
-            <div class="atalhos-indicador"><kbd>F1</kbd> Vendas <kbd>F2</kbd> Clientes <kbd>F3</kbd> Caixa <kbd>F4</kbd> Dashboard <span style="opacity:.6">| <kbd>Enter</kbd> Confirmar <kbd>Esc</kbd> Fechar</span></div>
+            <div class="atalhos-indicador"><kbd>Enter</kbd> Confirmar <kbd>Esc</kbd> Fechar</div>
             <button class="btn-sair" onclick="fazerLogout()"><i class="fas fa-sign-out-alt"></i> Sair</button>
         </div>
     </div>
     <nav class="nav" id="nav">
-        <button data-tab="vendas" onclick="trocarTab('vendas')" class="active"><i class="fas fa-cash-register"></i> Vendas</button>
-        <button data-tab="clientes" onclick="trocarTab('clientes')"><i class="fas fa-users"></i> Clientes <span class="badge" id="badgeFiados" style="display:none">0</span></button>
-        <button data-tab="caixa" onclick="trocarTab('caixa')"><i class="fas fa-box"></i> Caixa</button>
-        <button data-tab="dashboard" onclick="trocarTab('dashboard')"><i class="fas fa-chart-bar"></i> Dashboard</button>
-        <button data-tab="estoque" onclick="trocarTab('estoque')"><i class="fas fa-boxes"></i> Estoque</button>
-        <button data-tab="planos" onclick="trocarTab('planos')"><i class="fas fa-crown"></i> Planos</button>
-        <button data-tab="config" onclick="trocarTab('config')"><i class="fas fa-cog"></i> Config</button>
+        <button data-tab="vendas" onclick="trocarTab('vendas')" class="active"><i class="fas fa-cash-register"></i> Vendas <span class="tab-tecla">F1</span></button>
+        <button data-tab="clientes" onclick="trocarTab('clientes')"><i class="fas fa-users"></i> Clientes <span class="badge" id="badgeFiados" style="display:none">0</span> <span class="tab-tecla">F2</span></button>
+        <button data-tab="caixa" onclick="trocarTab('caixa')"><i class="fas fa-box"></i> Caixa <span class="tab-tecla">F3</span></button>
+        <button data-tab="dashboard" onclick="trocarTab('dashboard')"><i class="fas fa-chart-bar"></i> Dashboard <span class="tab-tecla">F4</span></button>
+        <button data-tab="estoque" onclick="trocarTab('estoque')"><i class="fas fa-boxes"></i> Estoque <span class="tab-tecla">F5</span></button>
+        <button data-tab="config" onclick="trocarTab('config')"><i class="fas fa-cog"></i> Config <span class="tab-tecla">F6</span></button>
+        <button data-tab="planos" onclick="trocarTab('planos')"><i class="fas fa-crown"></i> Planos <span class="tab-tecla">F7</span></button>
     </nav>
     <div class="content">
         <div class="plano-expirado-aviso" id="planoExpiradoAviso">⚠️ Seu plano expirou! <a onclick="trocarTab('planos')">Renovar agora →</a></div>
@@ -1391,17 +1394,15 @@ function navegarCupom(direcao) {
 // ============================================================
 document.addEventListener('keydown',function(e){
     // ===== ATALHOS DE ABA F1..F7 =====
-    // Bloqueamos o comportamento NATIVO dessas teclas no navegador (F5 recarrega,
-    // F3 abre busca, F1 abre ajuda, etc.) e usamos para navegar entre as abas.
-    // Cada tecla corresponde à posição da aba na barra de navegação.
+    // Bloqueia o comportamento NATIVO (F5 recarrega, F3 abre busca, etc.) e usa
+    // para navegar entre as abas. A ordem segue a barra de navegação.
     const teclasAba={
         'F1':'vendas','F2':'clientes','F3':'caixa','F4':'dashboard',
-        'F5':'estoque','F6':'planos','F7':'config'
+        'F5':'estoque','F6':'config','F7':'planos'
     };
     if(teclasAba[e.key]){
         e.preventDefault(); e.stopPropagation();
-        // F1 tem ações contextuais dentro da venda (confirmar pagamento, escolher
-        // produto do autocomplete). Se alguma delas se aplica, faz isso primeiro.
+        // F1 mantém ações contextuais dentro da venda (confirmar pagamento, etc.)
         if(e.key==='F1'){
             const modalPgto=document.getElementById('paymentModal')?.classList.contains('active');
             const modalCupom=document.getElementById('cupomModal')?.classList.contains('active');
@@ -1411,11 +1412,9 @@ document.addEventListener('keydown',function(e){
                 (sr && sr.classList.contains('active') && state.searchIndex>=0);
             if(temContexto){ processarF1(); return; }
         }
-        // Vai para a aba correspondente (respeitando permissões do plano)
         irParaAbaAtalho(teclasAba[e.key]);
         return;
     }
-    // Demais teclas de função: mantém o nativo bloqueado (sem ação)
     if(['F8','F9','F10','F11','F12'].includes(e.key)){e.preventDefault();e.stopPropagation();return;}
     if(e.ctrlKey&&(e.key==='r'||e.key==='R')){e.preventDefault();return;}
     if(e.ctrlKey&&e.shiftKey&&(e.key==='i'||e.key==='I')){e.preventDefault();return;}
@@ -1684,7 +1683,7 @@ function trocarTab(nome){
     if (btn) btn.classList.add('active');
     if(nome==='clientes') carregarClientes();
     if(nome==='estoque') carregarProdutos();
-    if(nome==='vendas'){ carregarProdutos(); carregarKitsParaVenda(); }
+    if(nome==='vendas') carregarKitsParaVenda();
     if(nome==='dashboard') carregarDash(state.periodo);
     if(nome==='caixa') carregarStatusCaixa();
     if(nome==='planos') {carregarPlanos(); verificarStatusPlano();}
@@ -1754,12 +1753,6 @@ async function carregarProdutos(){
         if(data.success){
             state.produtos=data.produtos||[];
             const tbody=document.getElementById('tabelaEstoque');
-            // A memória (state.produtos) já foi preenchida acima — isso é o que a
-            // tela de Vendas usa para buscar. O desenho da tabela abaixo só
-            // acontece se ela existir na tela (aba Estoque aberta). Antes, quando
-            // a tabela não estava montada, um erro aqui impedia o restante e a
-            // busca de produtos na venda ficava vazia até abrir o Estoque.
-            if(!tbody) return;
             if(state.produtos.length===0){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:16px;">Nenhum produto</td></tr>';return;}
             let html='';
             state.produtos.forEach((p,idx)=>{
