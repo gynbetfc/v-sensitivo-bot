@@ -3409,10 +3409,19 @@ def get_estatisticas():
                     val = it.get('total')
                     if val is None:
                         val = (it.get('preco_unitario') or it.get('preco') or 0) * q
-                    d = ranking.setdefault(nome_it, {'nome': nome_it, 'qtd': 0, 'total': 0.0})
+                    d = ranking.setdefault(nome_it, {'nome': nome_it, 'qtd': 0, 'total': 0.0, 'lucro': 0.0})
                     d['qtd'] += q
                     d['total'] += float(val or 0)
+                    # lucro do item (se o frontend mandou); serve pro "mais lucrativo"
+                    lucro_it = it.get('lucro')
+                    if lucro_it is None:
+                        cu = it.get('custo_unitario') or it.get('custo') or 0
+                        pu = it.get('preco_unitario') or it.get('preco') or 0
+                        lucro_it = (pu - cu) * q
+                    d['lucro'] += float(lucro_it or 0)
             mais_vendidos = sorted(ranking.values(), key=lambda x: x['qtd'], reverse=True)[:5]
+            # produto que mais deu LUCRO (diferente do que mais vendeu)
+            mais_lucrativos = sorted(ranking.values(), key=lambda x: x['lucro'], reverse=True)[:5]
 
             # 2) Vendas por hora (para um gráfico simples de movimento)
             por_hora = {}
@@ -3440,6 +3449,38 @@ def get_estatisticas():
                     "SELECT codigo, nome, estoque FROM produtos WHERE db_id=? AND estoque <= ? ORDER BY estoque ASC LIMIT 8",
                     (db_id, LIMITE_BAIXO)).fetchall()]
 
+            # 4) Fiado vs À vista (saúde do caixa): quanto do faturamento é fiado
+            total_fiado_vendas = sum((v['total'] or 0) for v in vendas if 'Fiado' in (v['metodo'] or ''))
+            total_avista = total_geral - total_fiado_vendas
+            pct_fiado = (total_fiado_vendas / total_geral * 100) if total_geral > 0 else 0
+
+            # 5) Comparativo com o período anterior (mesmo tamanho de janela)
+            if periodo == 'hoje':
+                ini_ant = (hoje - timedelta(days=1)).strftime('%Y-%m-%d')
+                fim_ant = ini_ant
+                row_ant = conn.execute(
+                    "SELECT COALESCE(SUM(total),0), COUNT(*) FROM vendas WHERE db_id=? AND data_hora LIKE ?",
+                    (db_id, ini_ant + '%')).fetchone()
+            elif periodo == 'semana':
+                ini_ant = (hoje - timedelta(days=14)).strftime('%Y-%m-%d')
+                fim_ant = (hoje - timedelta(days=7)).strftime('%Y-%m-%d')
+                row_ant = conn.execute(
+                    "SELECT COALESCE(SUM(total),0), COUNT(*) FROM vendas WHERE db_id=? AND data_hora >= ? AND data_hora < ?",
+                    (db_id, ini_ant, fim_ant)).fetchone()
+            elif periodo == 'mes':
+                ini_ant = (hoje - timedelta(days=60)).strftime('%Y-%m-%d')
+                fim_ant = (hoje - timedelta(days=30)).strftime('%Y-%m-%d')
+                row_ant = conn.execute(
+                    "SELECT COALESCE(SUM(total),0), COUNT(*) FROM vendas WHERE db_id=? AND data_hora >= ? AND data_hora < ?",
+                    (db_id, ini_ant, fim_ant)).fetchone()
+            else:
+                row_ant = (0, 0)
+            total_anterior = row_ant[0] or 0
+            if total_anterior > 0:
+                variacao_pct = (total_geral - total_anterior) / total_anterior * 100
+            else:
+                variacao_pct = None  # sem base de comparação
+
         return jsonify({"success": True, "stats": {
             "total_geral": total_geral,
             "total_lucro": total_lucro,
@@ -3454,7 +3495,13 @@ def get_estatisticas():
             "fiado_total": round(fiado_receber[0], 2),
             "fiado_clientes": fiado_receber[1],
             "top_devedores": top_devedores,
-            "estoque_baixo": estoque_baixo
+            "estoque_baixo": estoque_baixo,
+            "mais_lucrativos": mais_lucrativos,
+            "total_fiado_vendas": round(total_fiado_vendas, 2),
+            "total_avista": round(total_avista, 2),
+            "pct_fiado": round(pct_fiado, 1),
+            "total_anterior": round(total_anterior, 2),
+            "variacao_pct": (round(variacao_pct, 1) if variacao_pct is not None else None)
         }})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
