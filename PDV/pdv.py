@@ -3198,9 +3198,83 @@ def get_vendas():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
-# ============================================================
-# CUPOM DE VENDA - CORRIGIDO
-# ============================================================
+
+@app.route('/api/vendas/buscar')
+@verificar_plano
+def buscar_vendas():
+    """Busca de vendas com filtros combináveis, para recuperar o cupom de uma
+    venda antiga. Todos os filtros são opcionais e se somam (AND):
+      - metodo: 'Dinheiro' | 'PIX' | 'Cartão' | 'Fiado' | '' (todos)
+      - data_ini / data_fim: 'YYYY-MM-DD' (intervalo de dias, inclusive)
+      - cliente: parte do nome (case-insensitive)
+      - id: número exato da venda (#83 -> 83)
+      - ordem: 'recente' (padrão) | 'antiga' | 'maior' (valor) | 'menor'
+    """
+    try:
+        db_id = get_db_id()
+        metodo = (request.args.get('metodo') or '').strip()
+        data_ini = (request.args.get('data_ini') or '').strip()
+        data_fim = (request.args.get('data_fim') or '').strip()
+        cliente = (request.args.get('cliente') or '').strip()
+        venda_id = request.args.get('id', type=int)
+        ordem = (request.args.get('ordem') or 'recente').strip()
+        limite = request.args.get('limite', 300, type=int)
+
+        clausulas = ["db_id = ?"]
+        params = [db_id]
+
+        if venda_id:
+            clausulas.append("id = ?")
+            params.append(venda_id)
+        if metodo:
+            # 'Fiado' casa tanto a venda fiado quanto as quitações "Fiado (...)"
+            if metodo == 'Fiado':
+                clausulas.append("metodo LIKE 'Fiado%'")
+            else:
+                clausulas.append("metodo = ?")
+                params.append(metodo)
+        if data_ini:
+            # data_hora é gravada em ISO ('2026-07-11T04:05:...'). Comparar com
+            # 'YYYY-MM-DD' direto já funciona porque a data vem no comecinho do
+            # texto e a ordenação alfabética coincide com a cronológica.
+            clausulas.append("substr(data_hora,1,10) >= ?")
+            params.append(data_ini)
+        if data_fim:
+            clausulas.append("substr(data_hora,1,10) <= ?")
+            params.append(data_fim)
+        if cliente:
+            clausulas.append("LOWER(cliente) LIKE ?")
+            params.append('%' + cliente.lower() + '%')
+
+        ordem_sql = {
+            'recente': 'id DESC',
+            'antiga': 'id ASC',
+            'maior': 'total DESC',
+            'menor': 'total ASC',
+        }.get(ordem, 'id DESC')
+
+        sql = ("SELECT id, data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente, usuario_id, recebido, troco "
+               "FROM vendas WHERE " + " AND ".join(clausulas) +
+               f" ORDER BY {ordem_sql} LIMIT ?")
+        params.append(limite)
+
+        with get_db_context() as conn:
+            cursor = conn.execute(sql, params)
+            vendas = []
+            total_encontrado = 0.0
+            for row in cursor.fetchall():
+                try:
+                    itens = json.loads(row[7]) if row[7] else []
+                except Exception:
+                    itens = []
+                total_encontrado += row[4] or 0
+                vendas.append({"id": row[0], "data_hora": row[1], "subtotal": row[2], "desconto": row[3],
+                    "total": row[4], "lucro_total": row[5] or 0, "metodo": row[6], "itens": itens,
+                    "cliente": row[8] or '', "usuario_id": row[9] or '', "recebido": row[10] or 0, "troco": row[11] or 0})
+        return jsonify({"success": True, "vendas": vendas,
+                        "quantidade": len(vendas), "total_encontrado": round(total_encontrado, 2)})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
 @app.route('/api/vendas/<int:venda_id>/cupom')
 @verificar_plano
 def get_cupom_venda(venda_id: int):
