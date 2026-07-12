@@ -19,9 +19,6 @@ import requests
 import uuid
 import signal
 import random
-from dotenv import load_dotenv
-
-load_dotenv()  # le o mesmo .env usado no PDV (MP_ACCESS_TOKEN)
 
 warnings.filterwarnings("ignore")
 app = Flask(__name__)
@@ -38,12 +35,19 @@ MARTINGALE = 2
 PAYOUT_PADRAO = 0.85
 PERCENTUAL_BANCA = 15
 
-MERCADO_PAGO_ACCESS_TOKEN = os.environ.get("MP_ACCESS_TOKEN", "")
+# ============================================================
+# BACKEND DE PAGAMENTOS (Cloudflare Worker) - MESMO PADRAO DO PDV
+# ============================================================
+# O token do Mercado Pago NAO fica aqui. Este script roda na maquina/Termux de
+# cada aluno, entao qualquer segredo escrito aqui estaria exposto pra todo mundo
+# que tiver o bot. Em vez disso, pedimos a cobranca a um worker Cloudflare
+# DEDICADO ao TESLA 369 (separado do worker do PDV) - so' ele conhece o token
+# de producao e a tabela de precos dos planos de VOLTS.
+BACKEND_PAGAMENTOS_URL = os.environ.get(
+    "TESLA_BACKEND_URL",
+    "https://tesla369.gyn-bet-fc.workers.dev"
+)
 MODO_SIMULACAO = os.environ.get("MODO_SIMULACAO", "false").lower() == "true"
-
-if not MODO_SIMULACAO and not MERCADO_PAGO_ACCESS_TOKEN:
-    print("❌ MP_ACCESS_TOKEN nao definido no .env! PIX nao vai funcionar.")
-    print("   Crie um .env com: MP_ACCESS_TOKEN=seu_token_aqui")
 
 PLANOS = [
     {'id':1,'moedas':1,'preco':0.99,'nome':'🔰 TESTE','desc':'R$0,99/VOLT','tag':'1 ciclo','bonus':''},
@@ -1124,50 +1128,92 @@ def ativar_skin():
 
 # ========== PIX ==========
 
+# ========== PIX (mesmo padrao do PDV: backend/worker fala com o Mercado Pago) ==========
+
+def _sessao_http():
+    """Sessao HTTP com User-Agent fixo, igual ao PDV - ajuda a evitar que
+    antivirus/firewall no meio do caminho derrubem a conexao 'aleatoriamente'."""
+    s = requests.Session()
+    s.headers.update({"User-Agent": "TESLA-369/15", "Connection": "close"})
+    return s
+
+def criar_pix_backend(email, plano_id):
+    """Pede ao worker dedicado do TESLA 369 que crie a cobranca PIX.
+    So' o worker conhece o token do Mercado Pago e a tabela de precos.
+    Tenta 2x - queda pontual de conexao nao pode impedir a compra."""
+    ultimo_erro = "erro desconhecido"
+    for tentativa in range(2):
+        try:
+            with _sessao_http() as s:
+                res = s.post(f"{BACKEND_PAGAMENTOS_URL}/criar",
+                    json={"email": email, "plano_id": plano_id}, timeout=10)
+            try:
+                d = res.json()
+            except Exception:
+                ultimo_erro = f"resposta inesperada do servidor (HTTP {res.status_code})"
+                time.sleep(1.0)
+                continue
+            if res.status_code == 200 and d.get('success'):
+                return {"pix_id": d['pix_id'], "qr_code": d.get('qr_code', ''),
+                    "qr_code_base64": d.get('qr_code_base64', '')}
+            ultimo_erro = d.get('error') or f"HTTP {res.status_code}"
+            return {"erro": ultimo_erro}
+        except Exception as e:
+            ultimo_erro = str(e)
+            time.sleep(0.8)
+    return {"erro": f"nao foi possivel falar com o servidor de pagamentos ({ultimo_erro})"}
+
+def verificar_pagamento_backend(pix_id):
+    """Pergunta ao backend se aquele PIX ja foi pago (com retry curto)."""
+    if not pix_id:
+        return False
+    for tentativa in range(2):
+        try:
+            with _sessao_http() as s:
+                res = s.get(f"{BACKEND_PAGAMENTOS_URL}/verificar", params={"id": pix_id}, timeout=8)
+            if res.status_code == 200:
+                return bool(res.json().get('pago'))
+            return False
+        except Exception:
+            time.sleep(0.6)
+    return False
+
 @app.route('/criar_pix', methods=['POST'])
 def criar_pix():
     d = request.get_json()
     plano = next((p for p in PLANOS if p['id'] == int(d.get('plano_id') or 1)), None)
+    if not plano:
+        return jsonify({'sucesso': False, 'erro': 'Plano invalido'})
+    email = d.get('email')
     if MODO_SIMULACAO:
         pix_id = str(uuid.uuid4())[:8]
-        pagamentos_pendentes[pix_id] = {'email': d.get('email'), 'plano_id': plano['id'], 'moedas': plano['moedas'], 'valor': plano['preco'], 'pago': False, 'criado_em': str(datetime.now())[:19]}
-        return jsonify({'sucesso': True, 'simulacao': True, 'pix_id': pix_id, 'qr_code': f"00020126360014BR.GOV.BCB.PIX0136{d.get('email')}5204000053039865404{plano['preco']:.2f}5802BR5909Tesla3696009Sao Paulo62070503***6304E3F9", 'qr_code_base64': '', 'valor': plano['preco'], 'moedas': plano['moedas']})
-    try:
-        url = "https://api.mercadopago.com/v1/payments"
-        headers = {"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}", "Content-Type": "application/json", "X-Idempotency-Key": str(uuid.uuid4())}
-        payment_data = {"transaction_amount": float(plano['preco']), "description": f"TESLA369 - {plano['moedas']} VOLTS", "payment_method_id": "pix", "payer": {"email": d.get('email'), "first_name": "Traders", "last_name": "Tesla", "identification": {"type": "CPF", "number": "00000000000"}}}
-        res = requests.post(url, json=payment_data, headers=headers, timeout=30).json()
-        if 'id' in res:
-            pix_id = str(res['id'])
-            pagamentos_pendentes[pix_id] = {'email': d.get('email'), 'plano_id': plano['id'], 'moedas': plano['moedas'], 'valor': plano['preco'], 'pago': False, 'criado_em': str(datetime.now())[:19]}
-            return jsonify({'sucesso': True, 'simulacao': False, 'pix_id': pix_id, 'qr_code': res['point_of_interaction']['transaction_data']['qr_code'], 'qr_code_base64': res['point_of_interaction']['transaction_data']['qr_code_base64'], 'valor': plano['preco'], 'moedas': plano['moedas']})
-        return jsonify({'sucesso': False, 'erro': res.get('message', 'Erro ao gerar PIX')})
-    except Exception as e: return jsonify({'sucesso': False, 'erro': str(e)[:50]})
+        pagamentos_pendentes[pix_id] = {'email': email, 'plano_id': plano['id'], 'moedas': plano['moedas'], 'valor': plano['preco'], 'pago': False, 'criado_em': str(datetime.now())[:19]}
+        return jsonify({'sucesso': True, 'simulacao': True, 'pix_id': pix_id, 'qr_code': f"00020126360014BR.GOV.BCB.PIX0136{email}5204000053039865404{plano['preco']:.2f}5802BR5909Tesla3696009Sao Paulo62070503***6304E3F9", 'qr_code_base64': '', 'valor': plano['preco'], 'moedas': plano['moedas']})
+    resultado_pix = criar_pix_backend(email, plano['id'])
+    if resultado_pix and resultado_pix.get('pix_id'):
+        pix_id = resultado_pix['pix_id']
+        pagamentos_pendentes[pix_id] = {'email': email, 'plano_id': plano['id'], 'moedas': plano['moedas'], 'valor': plano['preco'], 'pago': False, 'criado_em': str(datetime.now())[:19]}
+        return jsonify({'sucesso': True, 'simulacao': False, 'pix_id': pix_id, 'qr_code': resultado_pix['qr_code'], 'qr_code_base64': resultado_pix['qr_code_base64'], 'valor': plano['preco'], 'moedas': plano['moedas']})
+    motivo = (resultado_pix or {}).get('erro', 'Erro desconhecido')
+    return jsonify({'sucesso': False, 'erro': f'Erro ao gerar PIX: {motivo}'})
 
 @app.route('/verificar_pix', methods=['POST'])
 def verificar_pix():
     pix_id = request.get_json().get('pix_id', '')
-    if MODO_SIMULACAO:
-        pago = pagamentos_pendentes.get(pix_id, {}).get('pago', False)
-        if pago and pix_id in pagamentos_pendentes and not pagamentos_pendentes[pix_id]['pago']:
-            pagamentos_pendentes[pix_id]['pago'] = True
-            u = carregar_usuario(pagamentos_pendentes[pix_id]['email'])
-            if u: u['moedas'] += pagamentos_pendentes[pix_id]['moedas']; salvar_usuario(pagamentos_pendentes[pix_id]['email'], u)
-            return jsonify({'pago': True, 'moedas': pagamentos_pendentes[pix_id]['moedas'], 'saldo': u.get('moedas', 0) if u else 0})
-        return jsonify({'pago': pago})
-    try:
-        url = f"https://api.mercadopago.com/v1/payments/{pix_id}"
-        headers = {"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"}
-        res = requests.get(url, headers=headers, timeout=10).json()
-        if res.get('status') == 'approved':
-            if pix_id in pagamentos_pendentes and not pagamentos_pendentes[pix_id]['pago']:
-                pagamentos_pendentes[pix_id]['pago'] = True
-                u = carregar_usuario(pagamentos_pendentes[pix_id]['email'])
-                if u: u['moedas'] += pagamentos_pendentes[pix_id]['moedas']; salvar_usuario(pagamentos_pendentes[pix_id]['email'], u)
-                return jsonify({'pago': True, 'moedas': pagamentos_pendentes[pix_id]['moedas'], 'saldo': u.get('moedas', 0) if u else 0})
-            return jsonify({'pago': True})
+    if pix_id not in pagamentos_pendentes:
         return jsonify({'pago': False})
-    except: return jsonify({'pago': False})
+    if pagamentos_pendentes[pix_id]['pago']:
+        return jsonify({'pago': True})
+    if MODO_SIMULACAO:
+        return jsonify({'pago': False})
+    if verificar_pagamento_backend(pix_id):
+        pagamentos_pendentes[pix_id]['pago'] = True
+        u = carregar_usuario(pagamentos_pendentes[pix_id]['email'])
+        if u:
+            u['moedas'] += pagamentos_pendentes[pix_id]['moedas']
+            salvar_usuario(pagamentos_pendentes[pix_id]['email'], u)
+        return jsonify({'pago': True, 'moedas': pagamentos_pendentes[pix_id]['moedas'], 'saldo': u.get('moedas', 0) if u else 0})
+    return jsonify({'pago': False})
 
 def verificador_automatico_pix():
     while True:
@@ -1176,13 +1222,8 @@ def verificador_automatico_pix():
             for pix_id, dados in list(pagamentos_pendentes.items()):
                 if dados.get('pago', False): continue
                 if MODO_SIMULACAO:
-                    pago = dados.get('pago', False)
-                else:
-                    try:
-                        res = requests.get(f"https://api.mercadopago.com/v1/payments/{pix_id}", headers={"Authorization": f"Bearer {MERCADO_PAGO_ACCESS_TOKEN}"}, timeout=10).json()
-                        pago = res.get('status') == 'approved'
-                    except: continue
-                if pago:
+                    continue
+                if verificar_pagamento_backend(pix_id):
                     pagamentos_pendentes[pix_id]['pago'] = True
                     u = carregar_usuario(dados['email']) or criar_usuario(dados['email'])
                     u['moedas'] = u.get('moedas', 0) + dados['moedas']
