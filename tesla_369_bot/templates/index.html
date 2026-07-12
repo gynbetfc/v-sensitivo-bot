@@ -181,46 +181,6 @@
                     <span style="color:#ffd700;font-size:9px" id="valorEstimado">($0.00)</span>
                     <span style="color:#ff4444;font-size:8px" id="avisoMinimo"></span>
                 </div>
-
-                <!-- ===== PAINEL DE CONFIGURACAO DE OPERACAO ===== -->
-                <div id="painelConfig" style="margin-top:8px;padding:8px;background:rgba(0,0,0,0.25);border:1px solid #222;border-radius:8px;display:flex;flex-direction:column;gap:6px">
-                    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-                        <label style="color:#888;font-size:9px">⚙️ Config:</label>
-                        <select id="cfgPadrao" onchange="salvarConfig()" style="padding:4px;background:#111;border:1px solid #333;border-radius:5px;color:#fff;font-size:10px">
-                            <option value="1" selected>Padrão da estratégia</option>
-                            <option value="0">Personalizar</option>
-                        </select>
-                        <span id="cfgGalesWrap" style="display:none;align-items:center;gap:4px">
-                            <label style="color:#888;font-size:9px">Gales:</label>
-                            <select id="cfgGales" onchange="salvarConfig()" style="padding:4px;background:#111;border:1px solid #333;border-radius:5px;color:#fff;font-size:10px;width:55px">
-                                <option value="0">0</option><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
-                            </select>
-                        </span>
-                    </div>
-                    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-                        <label style="color:#888;font-size:9px">📊 Par:</label>
-                        <select id="cfgAutoPar" onchange="salvarConfig()" style="padding:4px;background:#111;border:1px solid #333;border-radius:5px;color:#fff;font-size:10px">
-                            <option value="1" selected>Automático (melhor OTC)</option>
-                            <option value="0">Escolher manual</option>
-                        </select>
-                        <select id="cfgParManual" onchange="salvarConfig()" style="padding:4px;background:#111;border:1px solid #333;border-radius:5px;color:#fff;font-size:10px;display:none">
-                            <option value="EURUSD-OTC">EURUSD-OTC</option>
-                        </select>
-                    </div>
-                    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-                        <label style="color:#888;font-size:9px">💵 Entrada:</label>
-                        <select id="cfgModoEntrada" onchange="salvarConfig()" style="padding:4px;background:#111;border:1px solid #333;border-radius:5px;color:#fff;font-size:10px">
-                            <option value="calculo" selected>Cálculo do sistema (recomendado)</option>
-                            <option value="fixa">Mão fixa</option>
-                        </select>
-                        <span id="cfgMaoFixaWrap" style="display:none;align-items:center;gap:4px">
-                            <label style="color:#888;font-size:9px">$</label>
-                            <input type="number" id="cfgMaoFixa" value="2" min="1" step="1" onchange="salvarConfig()" style="width:55px;padding:4px;background:#111;border:1px solid #333;border-radius:5px;color:#fff;font-size:10px">
-                        </span>
-                    </div>
-                    <span id="cfgMelhorPar" style="color:#00ff88;font-size:8px"></span>
-                </div>
-                <!-- ===== FIM PAINEL CONFIG ===== -->
                 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:5px">
                     <button class="btn btn-info" id="btnConectar" onclick="conectarIQ()">🔌 CONECTAR</button>
                     <button class="btn btn-stop" id="btnDesconectar" onclick="desconectarIQ()" style="display:none">🔌 DESCONECTAR</button>
@@ -399,27 +359,11 @@ var PLANOS = [{{ PLANOS_JSON | safe }}];
 var intervalo = null;
 var botAtivo = false;
 var conectadoIQ = false;
-// Guardamos o email no localStorage pra sobreviver a um refresh de pagina.
-// Isso e o que permite N dispositivos na mesma rede usarem o MESMO servidor
-// sem que um "roube" a sessao do outro: cada aparelho manda o proprio email
-// em toda chamada, e o servidor isola o estado por email (ver bot.py).
-var emailLogado = localStorage.getItem('tesla_email') || '';
+var emailLogado = '';
 var planoSelecionado = 0;
 var pixAtual = null;
 var estrategiaSel = 'v_sensitivo';
 var toastTimeouts = {};
-
-// ========== HELPERS DE SESSAO (email em toda requisicao) ==========
-function comEmail(obj) {
-    obj = obj || {};
-    obj.email = emailLogado;
-    return obj;
-}
-function urlComEmail(url) {
-    if (!emailLogado) return url;
-    var sep = url.indexOf('?') >= 0 ? '&' : '?';
-    return url + sep + 'email=' + encodeURIComponent(emailLogado);
-}
 
 // ========== TOAST CORRIGIDO ==========
 function showToast(message, type, title) {
@@ -503,7 +447,7 @@ function clearAllToasts() {
 function initSkinEffects() { console.log("🎨 Aguardando efeitos do Firebase..."); }
 
 function carregarSkinEffectsDoFirebase() {
-    fetch(urlComEmail('/status')).then(function(r) { return r.json(); }).then(function(d) {
+    fetch('/status').then(function(r) { return r.json(); }).then(function(d) {
         var skinId = d.skin_id || 'skin_padrao';
         fetch('https://nexos-40654-default-rtdb.firebaseio.com/tesla_369/skins/' + skinId.replace(/\./g, '_') + '.json')
             .then(function(r) { return r.json(); })
@@ -560,7 +504,7 @@ function renderPlanos() {
 }
 
 function renderSkins() {
-    fetch(urlComEmail('/status')).then(function(r) { return r.json(); }).then(function(d) {
+    fetch('/status').then(function(r) { return r.json(); }).then(function(d) {
         var skinsStatus = d.skins_status || [];
         var skinsBasicas = skinsStatus.filter(function(s) { return s.categoria === 'basica'; });
         var skinsPremium = skinsStatus.filter(function(s) { return s.categoria === 'premium'; });
@@ -590,7 +534,7 @@ function renderSkinGrid(gridId, skins) {
 }
 
 function renderLojaEstrategias() {
-    fetch(urlComEmail('/status')).then(function(r) { return r.json(); }).then(function(d) {
+    fetch('/status').then(function(r) { return r.json(); }).then(function(d) {
         var grid = document.getElementById('estrategiasLojaGrid');
         if(!grid) return;
         var html = '';
@@ -608,7 +552,7 @@ function renderLojaEstrategias() {
 }
 
 function renderEstrategias() {
-    fetch(urlComEmail('/status')).then(function(r) { return r.json(); }).then(function(d) {
+    fetch('/status').then(function(r) { return r.json(); }).then(function(d) {
         var estrategiasCompradas = d.estrategias_compradas || ['v_sensitivo'];
         var disponiveis = d.estrategias_disponiveis || {};
         var estrategiaAtual = d.estrategia || 'v_sensitivo';
@@ -635,14 +579,14 @@ function selecionarEstrategia(key) {
     for(var i=0;i<cards.length;i++) cards[i].classList.remove('ativa');
     var card = document.getElementById('est_'+key);
     if(card) card.classList.add('ativa');
-    fetch('/selecionar_estrategia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(comEmail({estrategia:key}))})
+    fetch('/selecionar_estrategia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estrategia:key})})
         .then(function() { document.getElementById('estrategiaAtiva').textContent = key.toUpperCase(); showToast('Estratégia alterada para: '+key, 'success'); });
 }
 
 function comprarEstrategia(estrategiaId) {
     if(!emailLogado){ showToast('Conecte primeiro!', 'error'); return; }
     if(!confirm('Comprar esta estratégia com VOLTS?')) return;
-    fetch('/comprar_estrategia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(comEmail({estrategia_id:estrategiaId}))})
+    fetch('/comprar_estrategia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estrategia_id:estrategiaId})})
     .then(function(r) { return r.json(); }).then(function(d) { 
         if(d.ok){ showToast(d.msg||'Adquirida com sucesso!', 'success'); document.getElementById('moedasSaldo').textContent=d.moedas; renderLojaEstrategias(); renderEstrategias(); } 
         else { showToast('ERRO: '+d.erro, 'error'); } 
@@ -652,7 +596,7 @@ function comprarEstrategia(estrategiaId) {
 function comprarSkin(skinId) {
     if(!emailLogado){ showToast('Conecte primeiro!', 'error'); return; }
     if(!confirm('Comprar esta skin?')) return;
-    fetch('/comprar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(comEmail({skin_id:skinId}))})
+    fetch('/comprar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId})})
     .then(function(r) { return r.json(); }).then(function(d) {
         if(d.ok){ showToast(d.msg||'Skin adquirida!', 'success'); document.getElementById('moedasSaldo').textContent=d.moedas; renderSkins(); } 
         else { showToast('ERRO: '+d.erro, 'error'); }
@@ -662,9 +606,9 @@ function comprarSkin(skinId) {
 function ativarSkin(skinId) {
     if(!emailLogado){ showToast('Conecte primeiro!', 'error'); return; }
     if(!confirm('Ativar esta skin? O visual será atualizado.')) return;
-    fetch('/ativar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(comEmail({skin_id:skinId}))})
+    fetch('/ativar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId})})
     .then(function(r) { return r.json(); }).then(function(d) { 
-        if(d.ok){ showToast('Skin ativada! Recarregando...', 'success'); setTimeout(function() { location.href = urlComEmail('/'); }, 800); } 
+        if(d.ok){ showToast('Skin ativada! Recarregando...', 'success'); setTimeout(function() { location.reload(); }, 800); } 
         else { showToast('ERRO: '+d.erro, 'error'); } 
     });
 }
@@ -699,7 +643,7 @@ function copiarPix(){ if(pixAtual && pixAtual.qr_code){ navigator.clipboard.writ
 function verificarPagamento(pixId){
     fetch('/verificar_pix',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pix_id:pixId})})
     .then(function(r) { return r.json(); }).then(function(d){ 
-        if(d.pago){ showToast('✅ PAGAMENTO CONFIRMADO! +'+d.moedas+' VOLTS!', 'success'); document.getElementById('moedasSaldo').textContent=d.saldo; fecharModal(); location.href = urlComEmail('/'); } 
+        if(d.pago){ showToast('✅ PAGAMENTO CONFIRMADO! +'+d.moedas+' VOLTS!', 'success'); document.getElementById('moedasSaldo').textContent=d.saldo; fecharModal(); location.reload(); } 
         else { showToast('⏰ Aguardando confirmação...', 'warning'); } 
     });
 }
@@ -723,7 +667,6 @@ function conectarIQ() {
     var tipo = document.getElementById('tipo').value;
     if(!email || !senha){ showToast('Preencha email e senha!', 'warning'); return; }
     emailLogado = email;
-    localStorage.setItem('tesla_email', email);
     var btnConectar = document.getElementById('btnConectar');
     btnConectar.disabled = true;
     btnConectar.textContent = 'Conectando...';
@@ -742,24 +685,19 @@ function conectarIQ() {
             atualizar();
             iniciarChat();
             carregarSkinEffectsDoFirebase();
-            carregarParesOTC();
-            atualizarVisibilidadeConfig();
             showToast('✅ Conectado!', 'success');
-            if(d.refresh) { setTimeout(function() { location.href = urlComEmail('/'); }, 1500); }
+            if(d.refresh) { setTimeout(function() { location.reload(); }, 1500); }
         } else { showToast('ERRO: '+d.erro, 'error'); btnConectar.disabled=false; btnConectar.textContent='🔌 CONECTAR'; }
     }).catch(function(err) { showToast('Erro: ' + err.message, 'error'); btnConectar.disabled=false; btnConectar.textContent='🔌 CONECTAR'; });
 }
 
 function desconectarIQ() {
     if(botAtivo){ showToast('⚠️ Pare o bot primeiro!', 'warning'); return; }
-    // O servidor e compartilhado por varios dispositivos agora — desconectar
-    // aqui so encerra a SUA sessao, nao derruba o bot de mais ninguem.
-    if(!confirm('Desconectar sua sessão neste dispositivo?')) return;
-    fetch('/parar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(comEmail({desconectar: true})) })
+    if(!confirm('Desconectar? O servidor será encerrado.')) return;
+    fetch('/parar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({desconectar: true}) })
     .then(function(r) { return r.json(); }).then(function(d){
-        showToast('Desconectado!', 'info');
+        if(d.shutdown){ showToast('Desconectado!', 'info'); setTimeout(function() { window.close(); }, 1000); }
         conectadoIQ = false; botAtivo = false;
-        localStorage.removeItem('tesla_email');
         document.getElementById('btnConectar').style.display = 'inline-block';
         document.getElementById('btnConectar').disabled = false;
         document.getElementById('btnConectar').textContent = '🔌 CONECTAR';
@@ -777,7 +715,7 @@ function comecarOperar() {
     var btnOperar = document.getElementById('btnOperar');
     btnOperar.disabled = true;
     btnOperar.textContent = 'Iniciando...';
-    fetch('/comecar_operar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(comEmail({})) })
+    fetch('/comecar_operar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({}) })
     .then(function(r) { return r.json(); }).then(function(d){
         if(d.ok){
             botAtivo = true;
@@ -796,7 +734,7 @@ function pararBot() {
     var btnParar = document.getElementById('btnParar');
     btnParar.disabled = true;
     btnParar.textContent = 'Parando...';
-    fetch('/parar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(comEmail({desconectar: false})) })
+    fetch('/parar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({desconectar: false}) })
     .then(function(r) { return r.json(); }).then(function(d){
         botAtivo = false;
         document.getElementById('btnOperar').style.display = 'inline-block';
@@ -813,52 +751,8 @@ function pararBot() {
 
 function atualizarPercentual() { 
     var perc = document.getElementById('percentualBanca').value; 
-    fetch('/set_percentual', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(comEmail({percentual: parseInt(perc)})) });
+    fetch('/set_percentual', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({percentual: parseInt(perc)}) });
     calcularMinimo(); 
-}
-
-// ===== CONFIG DE OPERACAO =====
-function atualizarVisibilidadeConfig() {
-    var padrao = document.getElementById('cfgPadrao').value === '1';
-    var autoPar = document.getElementById('cfgAutoPar').value === '1';
-    var modoFixa = document.getElementById('cfgModoEntrada').value === 'fixa';
-    document.getElementById('cfgGalesWrap').style.display = padrao ? 'none' : 'inline-flex';
-    document.getElementById('cfgParManual').style.display = autoPar ? 'none' : 'inline-block';
-    document.getElementById('cfgMaoFixaWrap').style.display = modoFixa ? 'inline-flex' : 'none';
-}
-
-function salvarConfig() {
-    atualizarVisibilidadeConfig();
-    if(!emailLogado) return;
-    var payload = {
-        usar_config_padrao: document.getElementById('cfgPadrao').value === '1',
-        gales_override: parseInt(document.getElementById('cfgGales').value),
-        auto_par: document.getElementById('cfgAutoPar').value === '1',
-        par: document.getElementById('cfgParManual').value,
-        modo_entrada: document.getElementById('cfgModoEntrada').value,
-        mao_fixa_valor: parseFloat(document.getElementById('cfgMaoFixa').value) || 2
-    };
-    fetch('/set_config', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(comEmail(payload)) })
-    .then(function(r){ return r.json(); }).then(function(d){
-        if(d.ok) showToast('⚙️ Config salva!', 'success');
-    }).catch(function(){});
-}
-
-function carregarParesOTC() {
-    if(!emailLogado) return;
-    fetch(urlComEmail('/pares_otc')).then(function(r){ return r.json(); }).then(function(d){
-        if(d.pares && d.pares.length) {
-            var sel = document.getElementById('cfgParManual');
-            var atual = sel.value;
-            sel.innerHTML = '';
-            d.pares.forEach(function(p){
-                var opt = document.createElement('option');
-                opt.value = p; opt.textContent = p;
-                if(p === atual) opt.selected = true;
-                sel.appendChild(opt);
-            });
-        }
-    }).catch(function(){});
 }
 
 function calcularMinimo() {
@@ -929,16 +823,13 @@ function verRanking(){
 }
 
 function atualizar() {
-    fetch(urlComEmail('/status')).then(function(r) { return r.json(); }).then(function(d){
+    fetch('/status').then(function(r) { return r.json(); }).then(function(d){
         if(d.banca) { document.getElementById('banca').textContent = '$' + d.banca.toFixed(2); calcularMinimo(); }
         if(d.lucro !== undefined){ var el=document.getElementById('lucro'); el.textContent='$'+d.lucro.toFixed(2); el.style.color=d.lucro>=0?'#00ff88':'#ff4444'; }
         if(d.ops !== undefined) document.getElementById('ops').textContent = d.ops;
         if(d.moedas !== undefined) document.getElementById('moedasSaldo').textContent = d.moedas;
         if(d.sinal) document.getElementById('sinal').textContent = d.sinal;
         if(d.estrategia_nome) document.getElementById('estrategiaAtiva').textContent = d.estrategia_nome;
-        if(d.melhor_par_info && d.melhor_par_info.par){
-            document.getElementById('cfgMelhorPar').textContent = '🏆 ' + d.melhor_par_info.par + ' (payout ' + d.melhor_par_info.payout + '% • ' + d.melhor_par_info.testados + ' testados)';
-        }
         if(d.bot_version) document.getElementById('botVersionDisplay').innerHTML = '⚡ TESLA 369 v' + d.bot_version;
         if(d.analise){
             document.getElementById('rsi').textContent = d.analise.rsi ? d.analise.rsi.toFixed(1) : '--';
@@ -1010,7 +901,7 @@ function atualizarChat(){
 
 window.onload = function() {
     renderPlanos();
-    fetch(urlComEmail('/status')).then(function(r) { return r.json(); }).then(function(d){
+    fetch('/status').then(function(r) { return r.json(); }).then(function(d){
         if(d.conectado && d.email){
             conectadoIQ = true; emailLogado = d.email; document.getElementById('email').value = d.email;
             document.getElementById('btnConectar').style.display = 'none';
