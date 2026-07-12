@@ -19,6 +19,9 @@ import requests
 import uuid
 import signal
 import random
+from dotenv import load_dotenv
+
+load_dotenv()  # le o mesmo .env usado no PDV (MP_ACCESS_TOKEN)
 
 warnings.filterwarnings("ignore")
 app = Flask(__name__)
@@ -35,8 +38,12 @@ MARTINGALE = 2
 PAYOUT_PADRAO = 0.85
 PERCENTUAL_BANCA = 15
 
-MERCADO_PAGO_ACCESS_TOKEN = os.environ.get("MP_ACCESS_TOKEN", "APP_USR-4548266140377032-050311-6589fc22b166e4cb2cfad0379b28dcdf-1059299796")
-MODO_SIMULACAO = False
+MERCADO_PAGO_ACCESS_TOKEN = os.environ.get("MP_ACCESS_TOKEN", "")
+MODO_SIMULACAO = os.environ.get("MODO_SIMULACAO", "false").lower() == "true"
+
+if not MODO_SIMULACAO and not MERCADO_PAGO_ACCESS_TOKEN:
+    print("❌ MP_ACCESS_TOKEN nao definido no .env! PIX nao vai funcionar.")
+    print("   Crie um .env com: MP_ACCESS_TOKEN=seu_token_aqui")
 
 PLANOS = [
     {'id':1,'moedas':1,'preco':0.99,'nome':'🔰 TESTE','desc':'R$0,99/VOLT','tag':'1 ciclo','bonus':''},
@@ -67,6 +74,10 @@ conectado_iq = False
 ultimo_sinal, ultima_analise = "Aguardando...", {}
 logs_web, MAX_LOGS_WEB = [], 200
 email_usuario_atual = ""
+senha_atual = ""  # 🔧 guardada em memoria (nao persistida em disco) SO para permitir
+                   # reconexao "dura" (novo objeto IQ_Option) quando a conexao antiga
+                   # morre de vez - ex: troca de rede WiFi<->4G, onde o socket antigo
+                   # fica zumbi e so' chamar .connect() nele de novo nao resolve.
 skin_atual_global = 'skin_padrao'
 estrategia_atual_global = 'v_sensitivo'
 pagamentos_pendentes = {}
@@ -80,7 +91,7 @@ tipo_conta_atual = "PRACTICE"
 
 # 🔧 VARIAVEIS DE RECONEXÃO (estilo M4 VELOZ)
 ERROS_CONSECUTIVOS_API = 0
-MAX_ERROS_ANTES_RECONECTAR = 10
+MAX_ERROS_ANTES_RECONECTAR = 3  # 🔧 reduzido de 10 p/ 3: numa vela de 60s, esperar 10 falhas demora demais
 ULTIMO_PING_SUCESSO = time.time()
 RECONECTANDO = False
 
@@ -274,6 +285,33 @@ def salvar_usuario(email, dados):
         requests.put(f'{FB_URL}/tesla_369/usuarios/{key}.json', json=dados, timeout=5)
     except: pass
 
+def atualizar_estatisticas_async(email, resultado, valor, lucro_liquido, saldo_depois, estrategia):
+    """🔧 Atualiza as estatisticas (Firebase) em thread separada. Isso e' so para
+    historico/relatorio - NUNCA deve bloquear a decisao de ir pro proximo GALE,
+    que precisa ser instantanea (o saldo ja foi lido e comparado antes disso)."""
+    def worker():
+        try:
+            u = carregar_usuario(email)
+            if not u:
+                return
+            if resultado == 'WIN':
+                u['total_wins'] = u.get('total_wins', 0) + 1
+                u['total_ganho'] = u.get('total_ganho', 0) + abs(lucro_liquido)
+            else:
+                u['total_losses'] = u.get('total_losses', 0) + 1
+                u['total_gasto'] = u.get('total_gasto', 0) + valor
+            u['lucro_total'] = u.get('total_ganho', 0) - u.get('total_gasto', 0)
+            u['banca_atual'] = round(saldo_depois, 2)
+            u.setdefault('historico_operacoes', []).append({
+                'data': str(datetime.now())[:19], 'resultado': resultado,
+                'valor': valor, 'lucro': lucro_liquido,
+                'estrategia': estrategia.upper()
+            })
+            salvar_usuario(email, u)
+        except Exception as e:
+            add_log(f"⚠️ Falha ao salvar estatisticas (nao afeta a operacao): {e}", 'error')
+    threading.Thread(target=worker, daemon=True).start()
+
 def carregar_usuario(email):
     try:
         key = email.replace("@", "_").replace(".", "_").replace("#", "").replace("$", "").replace("[", "").replace("]", "").replace("/", "_")
@@ -347,15 +385,30 @@ def consumir_volt():
 
 def conectar_iq():
     """Tenta conectar/reconectar com backoff exponencial"""
-    global API, conectado_iq, ERROS_CONSECUTIVOS_API, RECONECTANDO, email_usuario_atual, tipo_conta_atual
+    global API, conectado_iq, ERROS_CONSECUTIVOS_API, RECONECTANDO, email_usuario_atual, senha_atual, tipo_conta_atual
     
     if not email_usuario_atual:
         add_log("❌ Sem credenciais para reconectar!", 'error')
         return False
     
     if RECONECTANDO:
-        return False
-    
+        # 🔧 Ja existe outra tentativa de reconexao em andamento (ex: thread de monitor
+        # de fundo rodando ao mesmo tempo que a checagem inline do ciclo). Antes, aqui
+        # retornava False na hora, fazendo o bot desistir mesmo quando a OUTRA tentativa
+        # estava prestes a reconectar com sucesso. Agora aguarda o resultado dela.
+        espera = 0.0
+        while RECONECTANDO and espera < 70:  # 🔧 70s: comfortavelmente mais que os ~60s
+            # (2+4+8+16+30) que a tentativa "dona" pode legitimamente levar - nao pode
+            # ser menor, senao quem espera desiste ANTES da outra tentativa terminar
+            time.sleep(0.5)
+            espera += 0.5
+        # Nao confia na flag conectado_iq aqui: ela so e atualizada em pontos especificos
+        # do codigo e pode estar desatualizada. Verifica o estado real da conexao.
+        try:
+            return bool(API and API.check_connect())
+        except Exception:
+            return False
+
     RECONECTANDO = True
     tentativas = 0
     max_tentativas = 5
@@ -391,7 +444,33 @@ def conectar_iq():
         add_log(f"❌ Erro durante reconexão: {e}", 'error')
     finally:
         RECONECTANDO = False
-    
+
+    # 🔧 RECONEXÃO DURA: as tentativas acima so chamam .connect() no MESMO objeto
+    # IQ_Option antigo. Isso funciona pra instabilidade momentanea, mas quando o
+    # socket morre de vez (ex: trocou de WiFi pra 4G e o SO derrubou a interface de
+    # rede), o objeto antigo pode ficar "zumbi" e nunca mais reconectar sozinho.
+    # Como ultimo recurso, tenta um LOGIN COMPLETO DO ZERO com um objeto novo.
+    if email_usuario_atual and senha_atual:
+        RECONECTANDO = True
+        try:
+            add_log("🔄 Reconexão normal falhou. Tentando RECONEXÃO COMPLETA (novo login)...", 'error')
+            nova_api = IQ_Option(email_usuario_atual, senha_atual)
+            status_conn, motivo = nova_api.connect()
+            if status_conn:
+                if tipo_conta_atual:
+                    nova_api.change_balance(tipo_conta_atual)
+                API = nova_api
+                conectado_iq = True
+                ERROS_CONSECUTIVOS_API = 0
+                add_log("✅ Reconexão completa (novo login) bem sucedida!", 'win')
+                return True
+            else:
+                add_log(f"❌ Reconexão completa falhou: {str(motivo)[:80]}", 'error')
+        except Exception as e:
+            add_log(f"❌ Erro na reconexão completa: {str(e)[:80]}", 'error')
+        finally:
+            RECONECTANDO = False
+
     conectado_iq = False
     add_log(f"❌ Falha na reconexão após {max_tentativas} tentativas!", 'error')
     return False
@@ -510,8 +589,7 @@ def executar_ciclo(direcao):
                     add_log("⚠️ Falha ao aguardar inicio da vela para a entrada principal.", 'error')
                     break
             else:
-                time.sleep(0.5)
-                add_log(f"   🔄 Executando GALE {i} imediatamente...", 'info')
+                add_log(f"   🔄 GALE {i}: executando imediatamente...", 'info')
 
             saldo_antes = API.get_balance()
             if saldo_antes < valor:
@@ -537,21 +615,101 @@ def executar_ciclo(direcao):
             else:
                 add_log(f"   📝 Ordem #{id_ordem} (GALE {i})", 'info')
 
-            add_log(f"   ⏳ Aguardando 60 segundos...", 'info')
-            for s in range(60):
+            # 🔧 saldo LOGO APOS o debito da propria entrada - e' essa a base de
+            # comparacao durante a espera, NAO o saldo_antes (capturado ANTES do buy()).
+            # O debito da entrada em si nao e' o resultado; so' uma mudanca A PARTIR
+            # DAQUI (credito de WIN chegando) sinaliza que o resultado ja' esta disponivel.
+            try:
+                saldo_pos_entrada = API.get_balance()
+            except Exception:
+                saldo_pos_entrada = saldo_antes - valor
+
+            # 🔧 ESPERA ATIVA: em vez de dormir cego ate o fim da vela e so' checar o
+            # saldo no final, verifica o saldo A CADA SEGUNDO durante a espera e reage
+            # NA HORA assim que ele mudar (nao precisa esperar o resto da janela).
+            # Isso NAO faz a opcao resolver mais rapido (ela so resolve no fechamento
+            # real da vela na corretora), mas garante que o bot nao fique parado um
+            # segundo sequer alem do necessario, e o debito da propria entrada (ja
+            # descontado em saldo_antes, capturado ANTES do buy()) nunca e' confundido
+            # com o resultado da operacao.
+            duracao_vela = timeframe_atual if timeframe_atual else 60
+            add_log(f"   ⏳ Aguardando {duracao_vela} segundos...", 'info')
+            tempo_entrada = time.time()
+            vela_expira_em = tempo_entrada + duracao_vela
+            houve_queda = False
+            queda_detectada_em = None
+            reconectado_em = None
+            saldo_mudou = False
+
+            for s in range(duracao_vela):
                 if not bot_rodando:
                     return False
+
+                if not conectado_iq:
+                    if not houve_queda:
+                        houve_queda = True
+                        queda_detectada_em = time.time()
+                        add_log("   ⚠️ Conexão caiu durante a vela!", 'error')
+                else:
+                    if houve_queda and reconectado_em is None:
+                        reconectado_em = time.time()
+                        if reconectado_em <= vela_expira_em:
+                            add_log("   ✅ Conexão voltou a tempo, dentro da vela!", 'win')
+                        else:
+                            add_log("   ⚠️ Conexão voltou, mas so depois da vela expirar!", 'error')
+
+                    # 🔧 reage NA HORA assim que o saldo mudar - nao precisa esperar o
+                    # resto da janela se o resultado ja' esta disponivel
+                    try:
+                        saldo_agora = API.get_balance()
+                        if saldo_agora != saldo_pos_entrada:
+                            saldo_mudou = True
+                            break
+                    except Exception:
+                        pass  # falha pontual no polling nao derruba o ciclo
+
                 time.sleep(1)
 
-            # 🔧 VERIFICA CONEXÃO NOVAMENTE APÓS ESPERA
-            if not verificar_saude_api():
+            # 🔧 VERIFICA CONEXÃO NOVAMENTE APÓS ESPERA (so' se ainda nao detectamos o
+            # resultado - se saldo_mudou, a conexao obviamente esta ok)
+            if not saldo_mudou and not verificar_saude_api():
                 add_log("⚠️ Conexão perdida durante espera! Tentando reconectar...", 'error')
+                if not houve_queda:
+                    houve_queda = True
+                    queda_detectada_em = time.time()
                 if conectar_iq():
-                    add_log("✅ Reconectado com sucesso!", 'win')
+                    reconectado_em = time.time()
+                    add_log("✅ Reconectado com sucesso (apos a vela ja ter expirado)!", 'win')
                 else:
                     add_log("❌ Falha na reconexão. Parando operação.", 'error')
                     bot_rodando = False
                     break
+
+            # 🔧 PEQUENA MARGEM DE TOLERANCIA: se a vela nominal ja passou mas o saldo
+            # ainda nao mudou, pode ser so' o processamento da corretora atrasando um
+            # pouco a credicao/debito - da' mais alguns segundos verificando rapido,
+            # em vez de assumir na hora que foi LOSS (o que poderia confundir um WIN
+            # que ainda nao foi creditado com uma perda).
+            if not saldo_mudou and bot_rodando:
+                margem_tentativas = 0
+                while margem_tentativas < 10:  # ate ~5s extras, checando 2x por segundo
+                    try:
+                        saldo_agora = API.get_balance()
+                        if saldo_agora != saldo_pos_entrada:
+                            saldo_mudou = True
+                            break
+                    except Exception:
+                        pass
+                    time.sleep(0.5)
+                    margem_tentativas += 1
+
+            # 🔧 DECIDE SE O GALE SEGUINTE DEVE SER ABORTADO
+            # Queda que volta DENTRO da vela: segue normal (bot conseguiu acompanhar a operacao)
+            # Queda que so volta DEPOIS da vela expirar: aborta qualquer gale (resultado nao confiavel a tempo)
+            abortar_gale_por_queda_tardia = False
+            if houve_queda and (reconectado_em is None or reconectado_em > vela_expira_em):
+                abortar_gale_por_queda_tardia = True
+                add_log("   🚫 Queda tardia detectada - GALE sera abortado se houver LOSS.", 'error')
 
             saldo_depois = API.get_balance()
             lucro_liquido = round(saldo_depois - saldo_antes, 2)
@@ -560,40 +718,21 @@ def executar_ciclo(direcao):
             if lucro_liquido > 0:
                 add_log(f"🌟 WIN! +${lucro_liquido:.2f}", 'win')
                 NumDeOperacoes += 1
-                u = carregar_usuario(email_usuario_atual)
-                if u:
-                    u['total_wins'] = u.get('total_wins', 0) + 1
-                    u['total_ganho'] = u.get('total_ganho', 0) + abs(lucro_liquido)
-                    u['lucro_total'] = u['total_ganho'] - u.get('total_gasto', 0)
-                    u['banca_atual'] = round(saldo_depois, 2)
-                    u.setdefault('historico_operacoes', []).append({
-                        'data': str(datetime.now())[:19], 'resultado': 'WIN',
-                        'valor': valor, 'lucro': lucro_liquido,
-                        'estrategia': estrategia_atual_global.upper()
-                    })
-                    salvar_usuario(email_usuario_atual, u)
+                atualizar_estatisticas_async(email_usuario_atual, 'WIN', valor, lucro_liquido, saldo_depois, estrategia_atual_global)
                 STOP_GAIN_ATINGIDO = True
                 add_log("🎯 STOP GAIN! Vitoria alcancada!", 'win')
                 break
             else:
                 add_log(f"💀 LOSS! {lucro_liquido:.2f}", 'loss')
-                u = carregar_usuario(email_usuario_atual)
-                if u:
-                    u['total_losses'] = u.get('total_losses', 0) + 1
-                    u['total_gasto'] = u.get('total_gasto', 0) + valor
-                    u['lucro_total'] = u['total_ganho'] - u['total_gasto']
-                    u['banca_atual'] = round(saldo_depois, 2)
-                    u.setdefault('historico_operacoes', []).append({
-                        'data': str(datetime.now())[:19], 'resultado': 'LOSS',
-                        'valor': valor, 'lucro': lucro_liquido,
-                        'estrategia': estrategia_atual_global.upper()
-                    })
-                    salvar_usuario(email_usuario_atual, u)
+                atualizar_estatisticas_async(email_usuario_atual, 'LOSS', valor, lucro_liquido, saldo_depois, estrategia_atual_global)
 
-                if i < MARTINGALE and bot_rodando:
+                if i < MARTINGALE and bot_rodando and not abortar_gale_por_queda_tardia:
                     add_log(f"   ➡️ Indo para GALE {i + 1}...", 'loss')
+                elif abortar_gale_por_queda_tardia:
+                    add_log("   🚫 CICLO PERDIDO (GALE abortado): conexão caiu e só voltou depois da vela expirar.", 'loss')
+                    break
                 else:
-                    add_log("   💀 CICLO ESGOTADO! Todas as entradas perdidas.", 'loss')
+                    add_log("   💀 CICLO PERDIDO! Todas as entradas perdidas.", 'loss')
 
         if bot_rodando:
             bf = API.get_balance() if API else bi
@@ -701,7 +840,7 @@ def monitor_conexao_thread():
     """Thread que monitora a saúde da conexão (estilo M4 VELOZ)"""
     global bot_rodando
     while True:
-        time.sleep(10)
+        time.sleep(5)  # 🔧 reduzido de 10s p/ 5s: detecta queda mais rapido dentro da janela da vela
         if email_usuario_atual:
             if not verificar_saude_api():
                 add_log("⚠️ Monitor detectou falha. Tentando reconectar...", 'error')
@@ -869,12 +1008,13 @@ def comprar_estrategia():
 
 @app.route('/conectar', methods=['POST'])
 def conectar():
-    global API, email_usuario_atual, conectado_iq, skin_atual_global, estrategia_atual_global, tipo_conta_atual
+    global API, email_usuario_atual, senha_atual, conectado_iq, skin_atual_global, estrategia_atual_global, tipo_conta_atual
     try:
         d = request.get_json()
         email, senha, tipo = d.get('email', '').strip(), d.get('senha', '').strip(), d.get('tipo', 'PRACTICE')
         if not email or not senha: return jsonify({'ok': False, 'erro': 'Credenciais em branco'})
         email_usuario_atual = email
+        senha_atual = senha
         tipo_conta_atual = tipo
         API = IQ_Option(email, senha)
         status_conn, reason = API.connect()
