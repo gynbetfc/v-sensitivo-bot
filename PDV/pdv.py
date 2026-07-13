@@ -596,9 +596,13 @@ def senha_e_antiga(armazenado: str) -> bool:
     return bool(armazenado) and not str(armazenado).startswith('pbkdf2$')
 
 def verificar_senha(senha: str, armazenado: str) -> bool:
-    """Confere a senha contra o hash guardado, aceitando o formato NOVO e o ANTIGO.
-    Assim ninguém é deslogado na atualização: a senha antiga continua válida e é
-    migrada para o formato novo no próximo login."""
+    """Confere a senha contra o hash guardado, aceitando os formatos:
+      - NOVO: pbkdf2$... (seguro, o padrão)
+      - ANTIGO: SHA-256 puro (64 hex) — migrado no próximo login
+      - TEXTO PURO: quando a senha foi digitada direto no Firebase sem hash
+        (ex.: editada na mão no console). Aceitamos por conveniência e
+        migramos para PBKDF2 assim que a pessoa loga.
+    Assim ninguém fica travado, e senhas fracas em texto puro não permanecem."""
     if not armazenado:
         return False
     armazenado = str(armazenado)
@@ -607,10 +611,20 @@ def verificar_senha(senha: str, armazenado: str) -> bool:
             _, iteracoes, sal_hex, hash_hex = armazenado.split('$', 3)
             dk = hashlib.pbkdf2_hmac('sha256', senha.encode(), bytes.fromhex(sal_hex), int(iteracoes))
             return secrets.compare_digest(dk.hex(), hash_hex)
-        # formato antigo
-        return secrets.compare_digest(hash_senha(senha), armazenado)
+        # SHA-256 puro tem exatamente 64 caracteres hexadecimais
+        if len(armazenado) == 64 and all(ch in '0123456789abcdefABCDEF' for ch in armazenado):
+            return secrets.compare_digest(hash_senha(senha), armazenado)
+        # Caso contrário, tratamos como senha em TEXTO PURO (comparação direta).
+        # É o caso de quem editou a senha manualmente no Firebase.
+        return secrets.compare_digest(str(senha), armazenado)
     except Exception:
         return False
+
+
+def senha_precisa_migrar(armazenado: str) -> bool:
+    """True se o hash guardado NÃO está no formato seguro (PBKDF2).
+    Cobre tanto SHA-256 antigo quanto senha em texto puro."""
+    return bool(armazenado) and not str(armazenado).startswith('pbkdf2$')
 
 def get_db_id() -> Optional[str]:
     db_id = session.get('db_id')
@@ -1233,9 +1247,59 @@ def contar_dados_firebase(dados_fb: Dict) -> Dict:
     v = len(normalizado.get('vendas') or [])
     return {'produtos': p, 'clientes': c, 'vendas': v, 'total': p + c + v}
 
+def _garantir_conta_no_firebase(db_id: str) -> None:
+    """Se a conta existe no banco LOCAL mas não no Firebase (ex.: foi criada
+    offline, ou o envio inicial falhou), sobe ela agora — com email, senha e
+    plano. Sem isso, a conta nunca chega ao Firebase e o login em OUTRO PC falha
+    com 'conta não encontrada', mesmo a internet já tendo voltado."""
+    try:
+        if not firebase_online():
+            return
+        ja_no_fb = carregar_usuario_firebase(db_id)
+        # Consideramos "presente" só se tiver email E senha (nó completo)
+        if ja_no_fb and ja_no_fb.get('email') and ja_no_fb.get('senha'):
+            return
+        # Busca os dados da conta no banco local
+        with get_db_context() as conn:
+            row = conn.execute(
+                "SELECT nome, email, senha, cargo, servidor_id, nome_loja, cnpj, cnpj_dados "
+                "FROM users WHERE db_id=? LIMIT 1", (db_id,)).fetchone()
+        if not row or not row[1] or not row[2]:
+            return  # sem email/senha local não há o que subir
+        try:
+            cnpj_dados = json.loads(row[7]) if row[7] else {}
+        except Exception:
+            cnpj_dados = {}
+        # Preserva o que já existir no Firebase (plano/token/expira) e completa o resto
+        base = ja_no_fb if isinstance(ja_no_fb, dict) else {}
+        base.update({
+            'db_id': db_id, 'nome': row[0], 'email': row[1], 'senha': row[2],
+            'cargo': row[3] or 'Gerente', 'servidor_id': row[4] or SERVIDOR_ID,
+            'nome_loja': row[5] or 'Minha Loja', 'cnpj': row[6] or '', 'cnpj_dados': cnpj_dados,
+        })
+        if not base.get('token_plano') or not base.get('expira_em') or base.get('plano') is None:
+            expira_em = base.get('expira_em') or (datetime.now() + timedelta(days=15)).isoformat()
+            plano_id = base.get('plano', 5) if base.get('plano') is not None else 5
+            try:
+                pl = PlanoSincronizado(db_id, CHAVE_SECRETA_PLANO)
+                base['token_plano'] = pl._criar_token(expira_em, plano_id)
+                base['token_atualizado_em'] = get_timestamp()
+            except Exception:
+                pass
+            base['expira_em'] = expira_em
+            base['plano'] = plano_id
+        salvar_usuario_firebase(db_id, base)
+        logger.info(f"🔼 Conta que estava só local subiu para o Firebase: {db_id}")
+    except Exception as e:
+        logger.warning(f"⚠️ Não consegui garantir a conta no Firebase: {e}")
+
+
 def sincronizar_dados(db_id: str) -> Dict:
     resultado = {'success': True, 'direcao': 'nenhuma', 'produtos_adicionados': 0, 'clientes_adicionados': 0, 'vendas_adicionadas': 0, 'erros': []}
     try:
+        # ANTES de tudo: se a conta só existe local (criada offline), sobe ela.
+        # Isso conserta o login em outro PC ("conta não encontrada").
+        _garantir_conta_no_firebase(db_id)
         dados_firebase = None
         try:
             dados_firebase = carregar_usuario_firebase(db_id)
@@ -3503,9 +3567,17 @@ def get_estatisticas():
                 metodos[metodo] = metodos.get(metodo, 0) + (row[4] or 0)
                 try:
                     itens = json.loads(row[7]) if row[7] else []
-                except:
+                    # A venda pode vir de outro dispositivo com 'itens' em formatos
+                    # inesperados (string dupla, lista de strings, etc). O dashboard
+                    # só sabe trabalhar com lista de dicionários — então filtramos.
+                    if isinstance(itens, str):
+                        itens = json.loads(itens) if itens.strip().startswith('[') else []
+                    if not isinstance(itens, list):
+                        itens = []
+                    itens = [i for i in itens if isinstance(i, dict)]
+                except Exception:
                     itens = []
-                total_itens += sum(i.get('quantidade', 1) for i in itens)
+                total_itens += sum((i.get('quantidade', 1) or 1) for i in itens)
                 vendas.append({"id": row[0], "data_hora": row[1], "subtotal": row[2], "desconto": row[3],
                     "total": row[4], "lucro_total": row[5] or 0, "metodo": metodo, "itens": itens, "cliente": row[8] or ''})
 
