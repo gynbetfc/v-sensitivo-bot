@@ -2102,6 +2102,11 @@ def baixar_html_github() -> bool:
 @app.route('/')
 def index():
     try:
+        caminho_html = os.path.join(TEMPLATES_DIR, "index.html")
+        # Se a interface não está no lugar (1ª execução, ou foi apagada),
+        # tenta baixar na hora — o repositório é público.
+        if not os.path.exists(caminho_html) or os.path.getsize(caminho_html) < 1000:
+            baixar_html_github()
         resp = make_response(render_template('index.html'))
         # Impede o navegador de servir uma versão ANTIGA do HTML em cache
         # (causa comum de "o botão não faz nada" após atualizar o código).
@@ -4623,17 +4628,20 @@ if __name__ == '__main__':
     init_db()
 
     print("📥 Verificando HTML em segundo plano...")
-    # Estratégia: SEMPRE tentar baixar a versão mais nova da interface do GitHub.
-    # O templates/ não guarda dados (só a tela), então pode ser reescrito à vontade.
-    # Se conseguir baixar, o index.html é substituído pela versão mais recente.
-    # Se estiver offline, mantém o que já existe (para não quebrar sem internet).
-    # O LAUNCHER baixa o index.html (ele tem o token do repositório privado).
-    # O pdv.py NÃO baixa mais: ele não tem token, e não deve ter — o pdv.py vai
-    # para a máquina de cada cliente, então qualquer segredo aqui vazaria.
-    # Aqui só conferimos se a interface está no lugar; o servidor sobe na hora.
+    # A interface (index.html) fica num repositório PÚBLICO do GitHub, então o
+    # próprio pdv.py consegue baixá-la — não depende mais do launcher.
+    # Estratégia:
+    #  - Se o index.html NÃO existe: baixa AGORA (bloqueante), senão a 1ª tela
+    #    fica no "Baixando interface...". É rápido (~240KB).
+    #  - Se JÁ existe: atualiza em segundo plano, para pegar a versão mais nova
+    #    sem travar a abertura. Offline: mantém o que tem (não quebra sem net).
     caminho_html_local = os.path.join(TEMPLATES_DIR, "index.html")
-    if not os.path.exists(caminho_html_local):
-        logger.error("❌ index.html não encontrado. Abra o sistema pelo SMART_PDV.exe (ele baixa a interface).")
+    if not os.path.exists(caminho_html_local) or os.path.getsize(caminho_html_local) < 1000:
+        logger.info("📥 index.html ausente — baixando do GitHub agora...")
+        if not baixar_html_github():
+            logger.error("❌ Não consegui baixar o index.html. Verifique a internet e recarregue a página.")
+    else:
+        threading.Thread(target=baixar_html_github, daemon=True).start()
 
     threading.Thread(target=_verificador_automatico_pix, daemon=True).start()
     threading.Thread(target=limpar_sessoes_inativas, daemon=True).start()
