@@ -254,6 +254,34 @@
         .btn-confirmar-mov:disabled{opacity:.5;cursor:not-allowed}
         .btn-confirmar-mov.sangria{background:var(--orange)}
         .btn-confirmar-mov.sangria:hover{background:#d97706}
+        /* ===== PAGAMENTO MISTO ===== */
+        .misto-box{background:var(--bg-primary);border:1px solid var(--border-color);border-radius:10px;padding:14px;margin-bottom:14px}
+        .misto-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:11px;font-size:12px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em}
+        .misto-add{background:rgba(34,197,94,.12);color:var(--green);border:1px solid var(--border-color);border-radius:7px;
+            padding:5px 11px;font-size:11.5px;cursor:pointer;font-weight:600;transition:var(--transition)}
+        .misto-add:hover{border-color:var(--green)}
+        .misto-linha{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+        .misto-linha select{flex:1;padding:9px 10px;background:var(--bg-card);border:1px solid var(--border-color);border-radius:7px;color:#fff;font-size:13px}
+        .misto-linha input{width:110px;padding:9px 10px;background:var(--bg-card);border:1px solid var(--border-color);border-radius:7px;color:#fff;font-size:13px;text-align:right;font-family:monospace}
+        .misto-del{width:30px;height:30px;background:0;border:1px solid var(--border-color);border-radius:7px;color:var(--text-muted);cursor:pointer;flex-shrink:0;transition:var(--transition)}
+        .misto-del:hover{border-color:var(--red);color:var(--red)}
+        .misto-falta{margin-top:10px;padding:9px 12px;border-radius:7px;font-size:13px;text-align:center;
+            background:rgba(245,158,11,.1);border:1px solid var(--orange);color:var(--orange)}
+        .misto-falta.ok{background:rgba(34,197,94,.1);border-color:var(--green);color:var(--green)}
+        .misto-falta.erro{background:rgba(239,68,68,.1);border-color:var(--red);color:var(--red)}
+        .misto-falta b{font-family:monospace}
+        /* ===== FECHAMENTO COM CONFERÊNCIA ===== */
+        .fc-esperado{background:var(--bg-primary);border:1px solid var(--border-color);border-radius:10px;padding:14px 16px;margin-bottom:16px;text-align:center}
+        .fc-lbl{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em}
+        .fc-val{font-size:28px;font-weight:800;color:var(--green);font-family:monospace;margin-top:3px}
+        .fc-det{font-size:11px;color:var(--text-muted);margin-top:5px;font-family:monospace}
+        .fc-dif{padding:12px 14px;border-radius:9px;font-size:14px;margin-bottom:14px;text-align:center;border:1px solid}
+        .fc-dif.ok{background:rgba(34,197,94,.1);border-color:var(--green);color:var(--green)}
+        .fc-dif.sobra{background:rgba(59,130,246,.1);border-color:var(--blue);color:var(--blue)}
+        .fc-dif.falta{background:rgba(239,68,68,.1);border-color:var(--red);color:var(--red)}
+        .btn-pular-conf{width:100%;padding:10px;background:0;color:var(--text-muted);border:1px solid var(--border-color);
+            border-radius:9px;font-size:12.5px;cursor:pointer;transition:var(--transition);margin-top:8px}
+        .btn-pular-conf:hover{color:var(--text-secondary);border-color:var(--text-muted)}
         @media(max-width:640px){.sg-topo{flex-direction:column;align-items:stretch}.sg-botoes{width:100%}.btn-sangria,.btn-suprimento{flex:1;justify-content:center}}
         .resumo-caixa table{width:100%;border-collapse:collapse;font-size:13px}
         .resumo-caixa th{text-align:left;padding:6px 8px;font-weight:600;color:var(--text-secondary);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border-color)}
@@ -1052,6 +1080,25 @@
 </div>
 
 <!-- PAYMENT MODAL -->
+<div class="payment-modal" id="modalFechamento">
+    <div class="modal">
+        <div class="modal-header"><h3>🔒 Fechar Caixa</h3><button class="close" onclick="fecharModalFechamento()">✕</button></div>
+        <p class="mcm-ajuda">Conte o dinheiro da gaveta e digite abaixo. O sistema compara com o esperado e mostra a diferença.</p>
+        <div class="fc-esperado">
+            <div class="fc-lbl">Deveria ter na gaveta</div>
+            <div class="fc-val" id="fcEsperado" data-valor="0">R$ 0,00</div>
+            <div class="fc-det" id="fcDetalhe"></div>
+        </div>
+        <div class="form-group">
+            <label>Quanto você contou? (R$)</label>
+            <input type="number" id="fcContado" step="0.01" min="0" placeholder="0,00" oninput="calcularDiferenca()" autocomplete="off">
+        </div>
+        <div class="fc-dif" id="fcDiferenca" style="display:none"></div>
+        <button class="btn-confirmar-mov" onclick="confirmarFechamento(true)">Conferir e fechar</button>
+        <button class="btn-pular-conf" onclick="confirmarFechamento(false)">Fechar sem conferir</button>
+    </div>
+</div>
+
 <div class="payment-modal" id="modalCaixaMov">
     <div class="modal">
         <div class="modal-header"><h3 id="mcmTitulo">💸 Sangria</h3><button class="close" onclick="fecharModalCaixaMov()">✕</button></div>
@@ -1091,6 +1138,15 @@
             <button data-metodo="Cartão" onclick="selecionarMetodo('Cartão')"><i class="fas fa-credit-card"></i> Cartão</button>
             <button data-metodo="Débito" onclick="selecionarMetodo('Débito')"><i class="fas fa-credit-card"></i> Débito</button>
             <button data-metodo="Fiado" onclick="selecionarMetodo('Fiado')" id="btnFiado"><i class="fas fa-handshake"></i> Fiado</button>
+            <button data-metodo="Misto" onclick="ativarMisto()" id="btnMisto"><i class="fas fa-divide"></i> Dividir</button>
+        </div>
+        <div class="misto-box" id="mistoBox" style="display:none">
+            <div class="misto-head">
+                <span>Dividir o pagamento</span>
+                <button class="misto-add" onclick="addFormaPgto()"><i class="fas fa-plus"></i> Forma</button>
+            </div>
+            <div id="mistoFormas"></div>
+            <div class="misto-falta" id="mistoFalta"></div>
         </div>
         <div class="payment-input" id="recebidoContainer">
             <span class="label">Recebido</span>
@@ -1506,6 +1562,8 @@ document.addEventListener('keydown',function(e){
         e.preventDefault();
         const mcm=document.getElementById('modalCaixaMov');
         if(mcm&&mcm.classList.contains('active')){fecharModalCaixaMov();return;}
+        const mfc=document.getElementById('modalFechamento');
+        if(mfc&&mfc.classList.contains('active')){fecharModalFechamento();return;}
         if(modalPgto){fecharPagamento();return;}
         if(modalCupom){fecharCupom();return;}
         if(modalPix){fecharModalPix();return;}
@@ -2592,9 +2650,16 @@ function abrirPagamento(){
     setTimeout(()=>{if(metodoAtivo==='Dinheiro'){document.getElementById('valorRecebido').focus();} else if(metodoAtivo==='Fiado'){document.getElementById('clientePagamento').focus();} else {document.getElementById('clientePagamento').focus();}}, 300);
 }
 
-function fecharPagamento(){document.getElementById('paymentModal').classList.remove('active');}
+function fecharPagamento(){
+    document.getElementById('paymentModal').classList.remove('active');
+    mistoAtivo=false;
+    const mb=document.getElementById('mistoBox');
+    if(mb){ mb.style.display='none'; document.getElementById('mistoFormas').innerHTML=''; }
+}
 
 function selecionarMetodo(metodo){
+    mistoAtivo=false;
+    document.getElementById('mistoBox').style.display='none';
     metodoAtivo=metodo;
     document.querySelectorAll('#paymentMethods button').forEach(b=>b.classList.toggle('active',b.dataset.metodo===metodo));
     const isFiado=metodo==='Fiado', isPIX=metodo==='PIX', isCartao=metodo==='Cartão'||metodo==='Débito';
@@ -2602,6 +2667,70 @@ function selecionarMetodo(metodo){
     if(isFiado){document.getElementById('trocoLabel').textContent='Fiado - cliente obrigatório';}
     else{document.getElementById('trocoLabel').textContent='Troco: R$ 0,00';}
     setTimeout(()=>{if(isFiado){document.getElementById('clientePagamento').focus();} else if(!isPIX&&!isCartao){document.getElementById('valorRecebido').focus();} else{document.getElementById('clientePagamento').focus();}}, 100);
+}
+
+// ---- Pagamento misto (dividir a conta entre formas) ----
+let mistoAtivo=false;
+const FORMAS_MISTO=['Dinheiro','PIX','Cartão','Débito'];
+
+function ativarMisto(){
+    mistoAtivo=true;
+    metodoAtivo='Misto';
+    document.querySelectorAll('#paymentMethods button').forEach(b=>b.classList.toggle('active',b.dataset.metodo==='Misto'));
+    document.getElementById('recebidoContainer').style.display='none';
+    document.getElementById('mistoBox').style.display='block';
+    const box=document.getElementById('mistoFormas');
+    if(!box.children.length){ addFormaPgto('Dinheiro'); addFormaPgto('Cartão'); }
+    atualizarFaltaMisto();
+    setTimeout(()=>{const i=box.querySelector('input');if(i)i.focus();},80);
+}
+
+function addFormaPgto(metodoPadrao){
+    const box=document.getElementById('mistoFormas');
+    if(box.children.length>=4){ showToast('⚠️ Máximo de 4 formas','warning'); return; }
+    const div=document.createElement('div');
+    div.className='misto-linha';
+    div.innerHTML=`
+        <select onchange="atualizarFaltaMisto()">
+            ${FORMAS_MISTO.map(f=>`<option value="${f}"${f===metodoPadrao?' selected':''}>${f}</option>`).join('')}
+        </select>
+        <input type="number" step="0.01" min="0" placeholder="0,00" oninput="atualizarFaltaMisto()">
+        <button class="misto-del" onclick="this.parentElement.remove();atualizarFaltaMisto()" title="Remover">✕</button>`;
+    box.appendChild(div);
+    atualizarFaltaMisto();
+}
+
+function lerFormasMisto(){
+    return Array.from(document.querySelectorAll('#mistoFormas .misto-linha')).map(l=>({
+        metodo: l.querySelector('select').value,
+        valor: parseFloat(l.querySelector('input').value)||0
+    }));
+}
+
+function atualizarFaltaMisto(){
+    const formas=lerFormasMisto();
+    const soma=formas.reduce((s,f)=>s+f.valor,0);
+    const falta=Math.round((state.total-soma)*100)/100;
+    const el=document.getElementById('mistoFalta');
+    if(Math.abs(falta)<0.01){
+        el.className='misto-falta ok'; el.innerHTML='✅ Fecha certinho: R$ '+soma.toFixed(2).replace('.',',');
+    }else if(falta>0){
+        el.className='misto-falta'; el.innerHTML='Falta <b>R$ '+falta.toFixed(2).replace('.',',')+'</b> de R$ '+state.total.toFixed(2).replace('.',',');
+    }else{
+        el.className='misto-falta erro'; el.innerHTML='Passou <b>R$ '+Math.abs(falta).toFixed(2).replace('.',',')+'</b> do total';
+    }
+    // preenche automaticamente a ÚLTIMA forma vazia com o que falta (agiliza o caixa)
+    return falta;
+}
+
+// Botão que completa o valor que falta na última forma
+function completarMisto(){
+    const linhas=document.querySelectorAll('#mistoFormas .misto-linha');
+    if(!linhas.length) return;
+    const ultima=linhas[linhas.length-1].querySelector('input');
+    const outras=Array.from(linhas).slice(0,-1).reduce((s,l)=>s+(parseFloat(l.querySelector('input').value)||0),0);
+    const falta=Math.round((state.total-outras)*100)/100;
+    if(falta>0){ ultima.value=falta.toFixed(2); atualizarFaltaMisto(); }
 }
 
 function calcularTroco(){
@@ -2630,9 +2759,21 @@ async function confirmarPagamento(){
         setTimeout(()=>{document.getElementById('clientePagamento').style.borderColor='';},3000);
         return;
     }
+    // Pagamento MISTO: valida a soma antes de mandar pro servidor
+    let pagamentos=null;
+    if(mistoAtivo){
+        pagamentos=lerFormasMisto().filter(f=>f.valor>0);
+        if(pagamentos.length<2){ showToast('⚠️ Informe pelo menos 2 formas com valor','warning'); return; }
+        const soma=pagamentos.reduce((s,f)=>s+f.valor,0);
+        if(Math.abs(soma-state.total)>0.01){
+            const d=Math.round((state.total-soma)*100)/100;
+            showToast(d>0?('⚠️ Faltam R$ '+d.toFixed(2)):('⚠️ Passou R$ '+Math.abs(d).toFixed(2)),'warning');
+            return;
+        }
+    }
     const recebido=parseFloat(document.getElementById('valorRecebido').value)||0;
     const troco=Math.max(0,recebido-state.total);
-    if(metodo!=='Fiado'&&metodo!=='PIX'&&metodo!=='Cartão'&&metodo!=='Débito'&&recebido<state.total){
+    if(!mistoAtivo&&metodo!=='Fiado'&&metodo!=='PIX'&&metodo!=='Cartão'&&metodo!=='Débito'&&recebido<state.total){
         showToast('⚠️ Valor recebido insuficiente!','warning');return;
     }
     document.getElementById('btnConfirmarPagamento').disabled=true;
@@ -2640,7 +2781,8 @@ async function confirmarPagamento(){
         const res=await fetch('/api/vendas',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({
             itens:state.itens,subtotal:state.subtotal,
             desconto:parseFloat(document.getElementById('descontoInput').value.replace(',','.'))||0,
-            total:state.total,metodo,cliente,recebido,troco
+            total:state.total,metodo,cliente,recebido,troco,
+            ...(pagamentos?{pagamentos}:{})
         })});
         const data=await res.json();
         if(data.success){
@@ -3098,11 +3240,8 @@ async function carregarStatusCaixa(){
 async function toggleCaixa(){
     try{
         if(state.caixa_aberto){
-            if(!confirm('Fechar caixa? O total do dia será registrado.'))return;
-            const res=await fetch('/api/caixa/fechar',{method:'POST',credentials:'include'});
-            const data=await res.json();
-            if(data.success){showToast('✅ Caixa fechado! Total: R$ '+data.total.toFixed(2),'success');}
-            else showToast('❌ '+data.error,'error');
+            abrirModalFechamento();   // confere a gaveta antes de fechar
+            return;
         }else{
             const valor=parseFloat(document.getElementById('valorAbertura').value)||0;
             const res=await fetch('/api/caixa/abrir',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({valor})});
@@ -3112,6 +3251,72 @@ async function toggleCaixa(){
         }
         carregarStatusCaixa();
     }catch(e){showToast('❌ Erro','error');}
+}
+
+// ---- Fechamento com conferência da gaveta ----
+async function abrirModalFechamento(){
+    try{
+        const res=await fetch('/api/caixa/resumo',{credentials:'include',cache:'no-store'});
+        const d=await res.json();
+        const esperado=d.esperado_em_caixa||0;
+        document.getElementById('fcEsperado').textContent='R$ '+esperado.toFixed(2).replace('.',',');
+        document.getElementById('fcEsperado').dataset.valor=esperado;
+        const det=[];
+        if(d.valor_abertura) det.push('abertura R$ '+d.valor_abertura.toFixed(2));
+        if(d.total_suprimentos) det.push('+ suprimento R$ '+d.total_suprimentos.toFixed(2));
+        if(d.total_sangrias) det.push('− sangria R$ '+d.total_sangrias.toFixed(2));
+        document.getElementById('fcDetalhe').textContent=det.join('  ');
+        document.getElementById('fcContado').value='';
+        document.getElementById('fcDiferenca').style.display='none';
+        document.getElementById('modalFechamento').classList.add('active');
+        setTimeout(()=>document.getElementById('fcContado').focus(),80);
+    }catch(e){ showToast('❌ Erro ao abrir o fechamento','error'); }
+}
+
+function fecharModalFechamento(){
+    document.getElementById('modalFechamento').classList.remove('active');
+}
+
+// Mostra a diferença em tempo real enquanto o operador digita
+function calcularDiferenca(){
+    const esperado=parseFloat(document.getElementById('fcEsperado').dataset.valor||0);
+    const contado=parseFloat(document.getElementById('fcContado').value);
+    const el=document.getElementById('fcDiferenca');
+    if(isNaN(contado)){ el.style.display='none'; return; }
+    const dif=Math.round((contado-esperado)*100)/100;
+    el.style.display='block';
+    if(Math.abs(dif)<0.01){
+        el.className='fc-dif ok'; el.innerHTML='✅ <b>Bateu certinho!</b>';
+    }else if(dif>0){
+        el.className='fc-dif sobra'; el.innerHTML='🔵 <b>Sobrou R$ '+dif.toFixed(2).replace('.',',')+'</b> na gaveta';
+    }else{
+        el.className='fc-dif falta'; el.innerHTML='🔴 <b>Faltou R$ '+Math.abs(dif).toFixed(2).replace('.',',')+'</b> na gaveta';
+    }
+}
+
+async function confirmarFechamento(conferir){
+    const body={};
+    if(conferir){
+        const contado=parseFloat(document.getElementById('fcContado').value);
+        if(isNaN(contado)||contado<0){ showToast('⚠️ Informe quanto você contou','warning'); return; }
+        body.valor_contado=contado;
+    }
+    try{
+        const res=await fetch('/api/caixa/fechar',{method:'POST',headers:{'Content-Type':'application/json'},
+            credentials:'include',body:JSON.stringify(body)});
+        const data=await res.json();
+        if(data.success){
+            let msg='✅ Caixa fechado! Vendas: R$ '+(data.total||0).toFixed(2);
+            if(data.conferido && data.diferenca!==null){
+                if(Math.abs(data.diferenca)<0.01) msg+=' — a gaveta bateu certinho 🎯';
+                else if(data.diferenca>0) msg+=' — sobrou R$ '+data.diferenca.toFixed(2);
+                else msg+=' — faltou R$ '+Math.abs(data.diferenca).toFixed(2);
+            }
+            showToast(msg, data.conferido && Math.abs(data.diferenca||0)>=0.01 ? 'warning' : 'success');
+            fecharModalFechamento();
+            carregarStatusCaixa();
+        }else showToast('❌ '+data.error,'error');
+    }catch(e){ showToast('❌ Erro ao fechar','error'); }
 }
 
 async function carregarResumoCaixa(){
