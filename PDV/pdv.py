@@ -551,6 +551,18 @@ def init_db() -> None:
             )
         ''')
 
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS caixa_mov (
+                id TEXT PRIMARY KEY,
+                delta REAL,
+                tipo TEXT,
+                motivo TEXT DEFAULT '',
+                usuario_id TEXT DEFAULT '',
+                db_id TEXT,
+                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+
         # Adicionar colunas faltantes
         for tabela, colunas in {
             'users': {'sincronizado_em': 'TIMESTAMP', 'bg_vendas_img': 'TEXT DEFAULT ""', 'bg_vendas_opacidade': 'INTEGER DEFAULT 50', 'escala_sistema': 'INTEGER DEFAULT 100', 'bg_vendas_img_ts': 'INTEGER DEFAULT 0', 'bg_vendas_opacidade_ts': 'INTEGER DEFAULT 0', 'escala_sistema_ts': 'INTEGER DEFAULT 0'},
@@ -1232,6 +1244,7 @@ def _normalizar_dados_firebase(dados_fb: Dict) -> Dict:
     resultado['exclusoes'] = dados_fb.get('exclusoes') or {}
     resultado['estoque_mov'] = dados_fb.get('estoque_mov') or {}
     resultado['fiado_mov'] = dados_fb.get('fiado_mov') or {}
+    resultado['caixa_mov'] = dados_fb.get('caixa_mov') or {}
     # mantém também caixa/loja se existirem (não atrapalham o merge)
     for extra in ('caixa', 'nome_loja', 'cnpj', 'cnpj_dados'):
         if extra in dados_fb:
@@ -1454,6 +1467,14 @@ def _baixar_firebase_para_local(db_id: str, dados_firebase: Dict, resultado: Dic
                     m.get('tipo', 'saida'), m.get('origem', ''), db_id, m.get('criado_em', get_timestamp())))
             except Exception as e:
                 logger.error(f"⚠️ Erro ao inserir mov estoque {mov_id}: {e}")
+        for mov_id, m in (dados_firebase.get('caixa_mov') or {}).items():
+            try:
+                conn.execute("""INSERT OR IGNORE INTO caixa_mov (id, delta, tipo, motivo, usuario_id, db_id, criado_em)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)""", (str(mov_id), float(m.get('delta', 0)),
+                    m.get('tipo', 'sangria'), m.get('motivo', ''), m.get('usuario_id', ''),
+                    db_id, m.get('criado_em', get_timestamp())))
+            except Exception as e:
+                logger.error(f"⚠️ Erro ao inserir mov caixa {mov_id}: {e}")
         # valores derivados: recalcula a partir dos fatos recém-baixados
         for (nome_c,) in conn.execute("SELECT DISTINCT cliente_nome FROM fiado_mov WHERE db_id=?", (db_id,)).fetchall():
             if nome_c:
@@ -1661,6 +1682,24 @@ def _merge_bidirecional_sem_duplicar(db_id: str, dados_firebase: Dict, resultado
                     (str(cod), db_id)).fetchone()[0]
                 conn.execute("UPDATE produtos SET estoque=? WHERE codigo=? AND db_id=?", (int(valor), str(cod), db_id))
 
+        # Sangrias/suprimentos: mesma lógica dos fatos de estoque. Cada movimento
+        # tem id único, então dois dispositivos podem sangrar ao mesmo tempo que
+        # os valores se somam, sem um apagar o do outro.
+        cmovs_fb = dados_firebase.get('caixa_mov') or {}
+        if cmovs_fb:
+            ids_locais = {row[0] for row in conn.execute(
+                "SELECT id FROM caixa_mov WHERE db_id=?", (db_id,)).fetchall()}
+            for mov_id, m in cmovs_fb.items():
+                if str(mov_id) in ids_locais:
+                    continue
+                try:
+                    conn.execute("""INSERT OR IGNORE INTO caixa_mov (id, delta, tipo, motivo, usuario_id, db_id, criado_em)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)""", (str(mov_id), float(m.get('delta', 0)),
+                        m.get('tipo', 'sangria'), m.get('motivo', ''), m.get('usuario_id', ''),
+                        db_id, m.get('criado_em', get_timestamp())))
+                except Exception as e:
+                    logger.error(f"⚠️ Erro ao inserir mov caixa {mov_id}: {e}")
+
         conn.commit()
 
 def enviar_para_firebase(db_id: str) -> bool:
@@ -1748,6 +1787,13 @@ def enviar_para_firebase(db_id: str) -> bool:
                 movs[str(row[0])] = {'codigo': row[1], 'delta': row[2], 'tipo': row[3],
                     'origem': row[4] or '', 'criado_em': row[5] or get_timestamp()}
             dados_firebase['estoque_mov'] = movs
+
+            cursor = conn.execute("SELECT id, delta, tipo, motivo, usuario_id, criado_em FROM caixa_mov WHERE db_id=?", (db_id,))
+            cmovs = {}
+            for row in cursor.fetchall():
+                cmovs[str(row[0])] = {'delta': row[1], 'tipo': row[2], 'motivo': row[3] or '',
+                    'usuario_id': row[4] or '', 'criado_em': row[5] or get_timestamp()}
+            dados_firebase['caixa_mov'] = cmovs
         # Preserva as preferências (foto, opacidade, escala) que já estão no Firebase,
         # junto com seus timestamps. Como o sync usa PUT (substitui tudo), sem isso
         # essas preferências seriam apagadas. Elas são gerenciadas à parte por timestamp.
@@ -3511,6 +3557,149 @@ def caixa_fechar():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
+def registrar_mov_caixa(conn, db_id, delta, tipo, motivo='', usuario_id=''):
+    """Registra uma entrada/saída de dinheiro do caixa como um FATO com id único.
+
+    delta NEGATIVO = saiu dinheiro (sangria)
+    delta POSITIVO = entrou dinheiro (suprimento / reforço de troco)
+
+    Segue o mesmo padrão do estoque_mov: cada movimento é um fato imutável com
+    UUID. Assim dois dispositivos podem fazer sangria ao mesmo tempo que os
+    valores se SOMAM na sincronização, em vez de um sobrescrever o outro.
+    """
+    mov_id = str(uuid.uuid4())
+    conn.execute("""INSERT INTO caixa_mov (id, delta, tipo, motivo, usuario_id, db_id, criado_em)
+        VALUES (?, ?, ?, ?, ?, ?, ?)""",
+        (mov_id, float(delta), tipo, motivo or '', usuario_id or '', db_id, get_timestamp()))
+    return mov_id
+
+
+def _dinheiro_em_caixa(conn, db_id, caixa_aberto):
+    """Quanto DEVERIA ter na gaveta agora, em dinheiro vivo:
+       abertura + vendas em dinheiro + suprimentos - sangrias.
+       Só conta o que aconteceu DEPOIS que o caixa foi aberto.
+       Cartão/PIX não entram: não viram dinheiro na gaveta."""
+    if not caixa_aberto:
+        return 0.0
+    abertura = float(caixa_aberto['valor_abertura'] or 0)
+    desde = caixa_aberto['data_abertura']
+    vendas_dinheiro = conn.execute(
+        """SELECT COALESCE(SUM(total),0) FROM vendas
+           WHERE db_id=? AND data_hora >= ? AND (metodo='Dinheiro' OR metodo LIKE 'Fiado (Dinheiro%')""",
+        (db_id, desde)).fetchone()[0] or 0
+    movs = conn.execute(
+        "SELECT COALESCE(SUM(delta),0) FROM caixa_mov WHERE db_id=? AND criado_em >= ?",
+        (db_id, desde)).fetchone()[0] or 0
+    return round(abertura + float(vendas_dinheiro) + float(movs), 2)
+
+
+@app.route('/api/caixa/sangria', methods=['POST'])
+@verificar_plano
+def caixa_sangria():
+    """Retira dinheiro do caixa (pagar fornecedor, levar pro banco, etc)."""
+    try:
+        db_id = get_db_id()
+        data = request.get_json() or {}
+        try:
+            valor = round(float(data.get('valor', 0)), 2)
+        except (TypeError, ValueError):
+            return jsonify({"success": False, "error": "Valor inválido."})
+        motivo = (data.get('motivo') or '').strip()
+
+        if valor <= 0:
+            return jsonify({"success": False, "error": "Informe um valor maior que zero."})
+
+        with get_db_context() as conn:
+            caixa = conn.execute(
+                "SELECT * FROM caixa WHERE db_id=? AND status='aberto' ORDER BY id DESC LIMIT 1",
+                (db_id,)).fetchone()
+            if not caixa:
+                return jsonify({"success": False, "error": "O caixa está fechado. Abra o caixa antes de fazer sangria."})
+
+            em_caixa = _dinheiro_em_caixa(conn, db_id, caixa)
+            if valor > em_caixa:
+                return jsonify({"success": False,
+                    "error": f"Não há esse dinheiro em caixa. Disponível: R$ {em_caixa:.2f}"})
+
+            registrar_mov_caixa(conn, db_id, -valor, 'sangria', motivo, session.get('usuario_id', ''))
+            conn.commit()
+            restante = _dinheiro_em_caixa(conn, db_id, caixa)
+
+        logger.info(f"💸 Sangria de R$ {valor:.2f} ({motivo or 'sem motivo'}) - resta R$ {restante:.2f}")
+        sincronizar_automatico(db_id)
+        return jsonify({"success": True, "valor": valor, "em_caixa": restante,
+                        "message": f"Sangria de R$ {valor:.2f} registrada."})
+    except Exception as e:
+        logger.error(f"❌ Erro na sangria: {e}")
+        return jsonify({"success": False, "error": str(e)})
+
+
+@app.route('/api/caixa/suprimento', methods=['POST'])
+@verificar_plano
+def caixa_suprimento():
+    """Coloca dinheiro no caixa (reforço de troco)."""
+    try:
+        db_id = get_db_id()
+        data = request.get_json() or {}
+        try:
+            valor = round(float(data.get('valor', 0)), 2)
+        except (TypeError, ValueError):
+            return jsonify({"success": False, "error": "Valor inválido."})
+        motivo = (data.get('motivo') or '').strip()
+
+        if valor <= 0:
+            return jsonify({"success": False, "error": "Informe um valor maior que zero."})
+
+        with get_db_context() as conn:
+            caixa = conn.execute(
+                "SELECT * FROM caixa WHERE db_id=? AND status='aberto' ORDER BY id DESC LIMIT 1",
+                (db_id,)).fetchone()
+            if not caixa:
+                return jsonify({"success": False, "error": "O caixa está fechado. Abra o caixa antes."})
+
+            registrar_mov_caixa(conn, db_id, valor, 'suprimento', motivo, session.get('usuario_id', ''))
+            conn.commit()
+            total = _dinheiro_em_caixa(conn, db_id, caixa)
+
+        logger.info(f"💵 Suprimento de R$ {valor:.2f} ({motivo or 'sem motivo'}) - caixa R$ {total:.2f}")
+        sincronizar_automatico(db_id)
+        return jsonify({"success": True, "valor": valor, "em_caixa": total,
+                        "message": f"Suprimento de R$ {valor:.2f} registrado."})
+    except Exception as e:
+        logger.error(f"❌ Erro no suprimento: {e}")
+        return jsonify({"success": False, "error": str(e)})
+
+
+@app.route('/api/caixa/movimentacoes')
+@verificar_plano
+def caixa_movimentacoes():
+    """Lista as sangrias/suprimentos do caixa aberto (ou do dia, se fechado)."""
+    try:
+        db_id = get_db_id()
+        with get_db_context() as conn:
+            caixa = conn.execute(
+                "SELECT * FROM caixa WHERE db_id=? AND status='aberto' ORDER BY id DESC LIMIT 1",
+                (db_id,)).fetchone()
+            if caixa:
+                desde = caixa['data_abertura']
+            else:
+                desde = datetime.now().strftime('%Y-%m-%d')
+            cursor = conn.execute(
+                """SELECT id, delta, tipo, motivo, usuario_id, criado_em FROM caixa_mov
+                   WHERE db_id=? AND criado_em >= ? ORDER BY criado_em DESC""", (db_id, desde))
+            movs = [{"id": r[0], "valor": abs(r[1] or 0), "tipo": r[2],
+                     "motivo": r[3] or '', "usuario_id": r[4] or '', "criado_em": r[5]}
+                    for r in cursor.fetchall()]
+            sangrias = round(sum(m['valor'] for m in movs if m['tipo'] == 'sangria'), 2)
+            suprimentos = round(sum(m['valor'] for m in movs if m['tipo'] == 'suprimento'), 2)
+            em_caixa = _dinheiro_em_caixa(conn, db_id, caixa) if caixa else 0
+        return jsonify({"success": True, "movimentacoes": movs, "total_sangrias": sangrias,
+                        "total_suprimentos": suprimentos, "em_caixa": em_caixa,
+                        "caixa_aberto": bool(caixa)})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
 @app.route('/api/caixa/resumo')
 @verificar_plano
 def caixa_resumo():
@@ -3524,8 +3713,28 @@ def caixa_resumo():
             cursor = conn.execute("SELECT SUM(total), COUNT(*) FROM vendas WHERE db_id=? AND data_hora LIKE ?",
                 (db_id, f'{data_param}%'))
             totals = cursor.fetchone()
+
+            # Sangrias e suprimentos do dia
+            cursor = conn.execute(
+                """SELECT COALESCE(SUM(CASE WHEN delta<0 THEN -delta ELSE 0 END),0),
+                          COALESCE(SUM(CASE WHEN delta>0 THEN delta ELSE 0 END),0)
+                   FROM caixa_mov WHERE db_id=? AND criado_em LIKE ?""", (db_id, f'{data_param}%'))
+            sangrias, suprimentos = cursor.fetchone()
+
+            # Quanto deveria ter na gaveta agora (só se o caixa estiver aberto)
+            caixa = conn.execute(
+                "SELECT * FROM caixa WHERE db_id=? AND status='aberto' ORDER BY id DESC LIMIT 1",
+                (db_id,)).fetchone()
+            em_caixa = _dinheiro_em_caixa(conn, db_id, caixa) if caixa else 0
+            abertura = float(caixa['valor_abertura'] or 0) if caixa else 0
+
         return jsonify({"success": True, "data": data_param, "total_geral": totals[0] or 0,
-            "total_vendas": totals[1] or 0, "metodos": metodos})
+            "total_vendas": totals[1] or 0, "metodos": metodos,
+            "total_sangrias": round(sangrias or 0, 2),
+            "total_suprimentos": round(suprimentos or 0, 2),
+            "valor_abertura": abertura,
+            "esperado_em_caixa": em_caixa,
+            "caixa_aberto": bool(caixa)})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
