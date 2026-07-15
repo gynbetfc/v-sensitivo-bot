@@ -568,8 +568,8 @@ def init_db() -> None:
             'users': {'sincronizado_em': 'TIMESTAMP', 'bg_vendas_img': 'TEXT DEFAULT ""', 'bg_vendas_opacidade': 'INTEGER DEFAULT 50', 'escala_sistema': 'INTEGER DEFAULT 100', 'bg_vendas_img_ts': 'INTEGER DEFAULT 0', 'bg_vendas_opacidade_ts': 'INTEGER DEFAULT 0', 'escala_sistema_ts': 'INTEGER DEFAULT 0'},
             'produtos': {'custo': 'REAL DEFAULT 0', 'margem': 'REAL DEFAULT 0', 'ultima_atualizacao': 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP', 'sincronizado_em': 'TIMESTAMP'},
             'clientes': {'ultima_atualizacao': 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP', 'sincronizado_em': 'TIMESTAMP'},
-            'vendas': {'lucro_total': 'REAL DEFAULT 0', 'recebido': 'REAL DEFAULT 0', 'troco': 'REAL DEFAULT 0', 'sincronizado_em': 'TIMESTAMP'},
-            'caixa': {'sincronizado_em': 'TIMESTAMP'}
+            'vendas': {'lucro_total': 'REAL DEFAULT 0', 'recebido': 'REAL DEFAULT 0', 'troco': 'REAL DEFAULT 0', 'sincronizado_em': 'TIMESTAMP', 'pagamentos': 'TEXT DEFAULT ""'},
+            'caixa': {'sincronizado_em': 'TIMESTAMP', 'valor_contado': 'REAL DEFAULT 0', 'diferenca': 'REAL DEFAULT 0', 'esperado': 'REAL DEFAULT 0'}
         }.items():
             cursor = conn.execute(f"PRAGMA table_info({tabela})")
             colunas_existentes = [row[1] for row in cursor.fetchall()]
@@ -2558,6 +2558,13 @@ def chave_cliente(db_id: str, nome: str) -> str:
     um sobrescreve o outro. O id do banco continua sendo só local."""
     return 'c_' + hashlib.sha256(f"{db_id}|{(nome or '').strip()}".encode()).hexdigest()[:16]
 
+def _e_fiado_puro(metodo) -> bool:
+    """True se a venda foi FIADO de verdade (o cliente ficou devendo).
+    'Fiado (Dinheiro)' NÃO é fiado: é a QUITAÇÃO de uma dívida, ou seja,
+    dinheiro entrando. Essa diferença muda o dashboard, o caixa e o estorno."""
+    return (metodo or '') == 'Fiado'
+
+
 def registrar_mov_fiado(conn, db_id, cliente_nome, delta, tipo, origem=''):
     """Registra um FATO de fiado. delta positivo = comprou fiado (dívida sobe);
     negativo = pagou (dívida desce). A dívida é sempre a SOMA dos fatos."""
@@ -3144,6 +3151,18 @@ def registrar_venda():
         if float(data.get('total', 0) or 0) < 0:
             return jsonify({"success": False, "error": "O desconto não pode ser maior que o total da venda"})
 
+        # PAGAMENTO MISTO: o cliente divide a conta (ex: R$20 em dinheiro e R$50
+        # no cartão). Guardamos metodo='Misto' e a quebra em 'pagamentos'.
+        # Se não vier 'pagamentos', a venda segue simples, como sempre foi.
+        metodo_venda = data.get('metodo', 'Dinheiro')
+        pagamentos_json = ''
+        if data.get('pagamentos'):
+            lista_pg, erro_pg = _normalizar_pagamentos(data.get('pagamentos'), data.get('total', 0))
+            if erro_pg:
+                return jsonify({"success": False, "error": erro_pg})
+            metodo_venda = 'Misto'
+            pagamentos_json = json.dumps(lista_pg, ensure_ascii=False)
+
         with get_db_context() as conn:
             conn.execute("BEGIN TRANSACTION")
             try:
@@ -3241,10 +3260,11 @@ def registrar_venda():
 
         venda_id = None
         with get_db_context() as conn:
-            cursor = conn.execute("""INSERT INTO vendas (data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente, usuario_id, db_id, recebido, troco)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", (data_hora, data.get('subtotal', 0), data.get('desconto', 0),
-                data.get('total', 0), lucro_total, data.get('metodo', 'Dinheiro'), json.dumps(itens_salvar, ensure_ascii=False),
-                data.get('cliente', ''), usuario_id, db_id, data.get('recebido', 0), data.get('troco', 0)))
+            cursor = conn.execute("""INSERT INTO vendas (data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente, usuario_id, db_id, recebido, troco, pagamentos)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", (data_hora, data.get('subtotal', 0), data.get('desconto', 0),
+                data.get('total', 0), lucro_total, metodo_venda, json.dumps(itens_salvar, ensure_ascii=False),
+                data.get('cliente', ''), usuario_id, db_id, data.get('recebido', 0), data.get('troco', 0),
+                pagamentos_json))
             venda_id = cursor.lastrowid
 
         if data.get('metodo') == 'Fiado' and data.get('cliente'):
@@ -3317,20 +3337,92 @@ def registrar_venda():
 @app.route('/api/vendas/<int:venda_id>', methods=['DELETE'])
 @verificar_plano
 def delete_venda(venda_id: int):
+    """Cancela uma venda DESFAZENDO o que ela fez:
+       - devolve o estoque dos itens (inclusive dos componentes de kits)
+       - estorna o fiado (o cliente deixa de dever)
+       - se a venda era uma QUITAÇÃO de fiado, a dívida VOLTA
+    Sem isso, cancelar deixava o estoque furado e o cliente devendo o que já
+    tinha desistido de comprar."""
     try:
         db_id = get_db_id()
         with get_db_context() as conn:
-            cur = conn.execute("DELETE FROM vendas WHERE id=? AND db_id=?", (venda_id, db_id))
-            if cur.rowcount == 0:
+            venda = conn.execute(
+                "SELECT id, total, metodo, itens, cliente FROM vendas WHERE id=? AND db_id=?",
+                (venda_id, db_id)).fetchone()
+            if not venda:
                 return jsonify({"success": False, "error": "Venda não encontrada"}), 404
+
+            metodo = venda['metodo'] or ''
+            cliente = (venda['cliente'] or '').strip()
+            total = float(venda['total'] or 0)
+
+            # ---- 1) devolve o estoque ----
+            devolvidos = []
+            try:
+                itens = json.loads(venda['itens']) if venda['itens'] else []
+                if isinstance(itens, str):
+                    itens = json.loads(itens) if itens.strip().startswith('[') else []
+                if not isinstance(itens, list):
+                    itens = []
+                for item in itens:
+                    if not isinstance(item, dict):
+                        continue
+                    codigo = item.get('codigo')
+                    is_kit = item.get('is_kit') or (isinstance(codigo, str) and str(codigo).startswith('KIT:'))
+                    if is_kit:
+                        qtd_kit = item.get('quantidade', 1) or 1
+                        for comp in _componentes_do_kit(conn, codigo, db_id):
+                            comp_cod = comp.get('codigo')
+                            if not comp_cod or comp_cod == 'AVULSO':
+                                continue
+                            comp_qtd = (comp.get('quantidade', 1) or 1) * qtd_kit
+                            registrar_mov_estoque(conn, db_id, comp_cod, comp_qtd, 'entrada',
+                                                  f'cancelou venda #{venda_id}')
+                            sincronizar_coluna_estoque(conn, db_id, comp_cod)
+                            devolvidos.append(comp_cod)
+                        continue
+                    # Itens sem código (quitação de fiado, item avulso) não têm estoque
+                    if codigo and codigo != 'AVULSO' and str(codigo).strip():
+                        qtd = item.get('quantidade', 1) or 1
+                        registrar_mov_estoque(conn, db_id, codigo, qtd, 'entrada',
+                                              f'cancelou venda #{venda_id}')
+                        sincronizar_coluna_estoque(conn, db_id, codigo)
+                        devolvidos.append(codigo)
+            except Exception as e:
+                logger.error(f"⚠️ Erro ao devolver estoque da venda {venda_id}: {e}")
+
+            # ---- 2) desfaz o efeito no fiado ----
+            fiado_msg = ''
+            try:
+                if cliente:
+                    if _e_fiado_puro(metodo):
+                        # Era uma compra fiado: o cliente deixa de dever.
+                        registrar_mov_fiado(conn, db_id, cliente, -total, 'estorno',
+                                            f'cancelou venda #{venda_id}')
+                        sincronizar_coluna_divida(conn, db_id, cliente)
+                        fiado_msg = f' A dívida de {cliente} baixou R$ {total:.2f}.'
+                    elif metodo.startswith('Fiado ('):
+                        # Era uma QUITAÇÃO de fiado: cancelar faz a dívida VOLTAR.
+                        registrar_mov_fiado(conn, db_id, cliente, total, 'estorno',
+                                            f'cancelou quitação #{venda_id}')
+                        sincronizar_coluna_divida(conn, db_id, cliente)
+                        fiado_msg = f' A dívida de {cliente} voltou R$ {total:.2f}.'
+            except Exception as e:
+                logger.error(f"⚠️ Erro ao estornar fiado da venda {venda_id}: {e}")
+
+            # ---- 3) remove a venda ----
+            conn.execute("DELETE FROM vendas WHERE id=? AND db_id=?", (venda_id, db_id))
             # Tombstone para não voltar em outro dispositivo
             conn.execute("INSERT OR REPLACE INTO exclusoes (tipo, item_id, db_id, excluido_em) VALUES (?, ?, ?, ?)",
                 ('venda', str(venda_id), db_id, get_timestamp()))
-        logger.info(f"🗑️ Venda {venda_id} excluída do histórico")
+            conn.commit()
+
+        logger.info(f"🗑️ Venda {venda_id} cancelada - estoque devolvido: {devolvidos or 'nenhum'}.{fiado_msg}")
         sincronizar_automatico(db_id)
-        return jsonify({"success": True, "message": "Venda excluída"})
+        return jsonify({"success": True, "message": "Venda cancelada." + fiado_msg,
+                        "estoque_devolvido": devolvidos})
     except Exception as e:
-        logger.error(f"❌ Erro ao excluir venda: {e}")
+        logger.error(f"❌ Erro ao cancelar venda: {e}")
         return jsonify({"success": False, "error": str(e)})
 
 @app.route('/api/vendas')
@@ -3544,18 +3636,124 @@ def caixa_abrir():
 @app.route('/api/caixa/fechar', methods=['POST'])
 @verificar_plano
 def caixa_fechar():
+    """Fecha o caixa conferindo a gaveta.
+
+    O operador informa quanto CONTOU em dinheiro. Comparamos com o esperado
+    (abertura + vendas em dinheiro + suprimentos - sangrias) e guardamos a
+    diferença — a famosa 'quebra de caixa'. Sem isso a sangria não serve de
+    nada: é justamente pra saber se o dinheiro bate no fim do dia.
+
+    'valor_contado' é opcional: quem não quiser conferir, fecha como antes.
+    """
     try:
         db_id = get_db_id()
+        data = request.get_json() or {}
         hoje = datetime.now().strftime('%Y-%m-%d')
         with get_db_context() as conn:
-            cursor = conn.execute("SELECT SUM(total) FROM vendas WHERE db_id=? AND data_hora LIKE ?", (db_id, f'{hoje}%'))
-            total = cursor.fetchone()[0] or 0
-            conn.execute("UPDATE caixa SET status='fechado', data_fechamento=?, total=? WHERE db_id=? AND status='aberto'",
-                (get_timestamp(), total, db_id))
+            caixa = conn.execute(
+                "SELECT * FROM caixa WHERE db_id=? AND status='aberto' ORDER BY id DESC LIMIT 1",
+                (db_id,)).fetchone()
+            if not caixa:
+                return jsonify({"success": False, "error": "O caixa já está fechado."})
+
+            total = conn.execute("SELECT SUM(total) FROM vendas WHERE db_id=? AND data_hora LIKE ?",
+                (db_id, f'{hoje}%')).fetchone()[0] or 0
+            esperado = _dinheiro_em_caixa(conn, db_id, caixa)
+
+            conferiu = data.get('valor_contado') is not None
+            contado = 0.0
+            diferenca = 0.0
+            if conferiu:
+                try:
+                    contado = round(float(data.get('valor_contado')), 2)
+                except (TypeError, ValueError):
+                    return jsonify({"success": False, "error": "Valor contado inválido."})
+                if contado < 0:
+                    return jsonify({"success": False, "error": "O valor contado não pode ser negativo."})
+                diferenca = round(contado - esperado, 2)
+
+            conn.execute("""UPDATE caixa SET status='fechado', data_fechamento=?, total=?,
+                    valor_contado=?, diferenca=?, esperado=? WHERE id=? AND db_id=?""",
+                (get_timestamp(), total, contado, diferenca, esperado, caixa['id'], db_id))
+            conn.commit()
+
+        if conferiu:
+            if abs(diferenca) < 0.01:
+                logger.info(f"🔒 Caixa fechado - bateu certinho (R$ {esperado:.2f})")
+            elif diferenca > 0:
+                logger.info(f"🔒 Caixa fechado - SOBROU R$ {diferenca:.2f} (esperado {esperado:.2f}, contado {contado:.2f})")
+            else:
+                logger.warning(f"🔒 Caixa fechado - FALTOU R$ {abs(diferenca):.2f} (esperado {esperado:.2f}, contado {contado:.2f})")
         sincronizar_automatico(db_id)
-        return jsonify({"success": True, "total": total})
+        return jsonify({"success": True, "total": total, "esperado": esperado,
+                        "valor_contado": contado if conferiu else None,
+                        "diferenca": diferenca if conferiu else None,
+                        "conferido": conferiu})
     except Exception as e:
+        logger.error(f"❌ Erro ao fechar caixa: {e}")
         return jsonify({"success": False, "error": str(e)})
+
+METODOS_VALIDOS = ('Dinheiro', 'PIX', 'Cartão', 'Débito', 'Crédito', 'Fiado')
+
+
+def _normalizar_pagamentos(pagamentos, total):
+    """Valida as formas de pagamento de uma venda MISTA (ex: R$20 dinheiro +
+    R$50 cartão). Devolve (lista_ok, erro).
+
+    Regras:
+      - cada forma precisa de um método e um valor > 0
+      - a soma tem que bater com o total da venda (tolerância de 1 centavo,
+        pra não brigar com arredondamento de float)
+      - Fiado não entra no misto: fiado é dívida, não pagamento recebido.
+    """
+    if not isinstance(pagamentos, list) or not pagamentos:
+        return None, "Informe as formas de pagamento."
+    limpos = []
+    soma = 0.0
+    for p in pagamentos:
+        if not isinstance(p, dict):
+            return None, "Forma de pagamento inválida."
+        metodo = (p.get('metodo') or '').strip()
+        if not metodo:
+            return None, "Escolha o método de cada pagamento."
+        if metodo == 'Fiado':
+            return None, "Fiado não pode ser combinado com outras formas de pagamento."
+        try:
+            valor = round(float(p.get('valor', 0)), 2)
+        except (TypeError, ValueError):
+            return None, f"Valor inválido em {metodo}."
+        if valor <= 0:
+            return None, f"O valor de {metodo} precisa ser maior que zero."
+        limpos.append({'metodo': metodo, 'valor': valor})
+        soma += valor
+    soma = round(soma, 2)
+    total = round(float(total or 0), 2)
+    if abs(soma - total) > 0.01:
+        falta = round(total - soma, 2)
+        if falta > 0:
+            return None, f"Faltam R$ {falta:.2f} para fechar o total de R$ {total:.2f}."
+        return None, f"Passou R$ {abs(falta):.2f} do total de R$ {total:.2f}."
+    if len(limpos) < 2:
+        return None, "Pagamento misto precisa de pelo menos 2 formas."
+    return limpos, None
+
+
+def _pagamentos_da_venda(venda_row):
+    """Devolve a lista de pagamentos de uma venda, seja ela mista ou simples.
+    Assim o resto do código trata as duas do mesmo jeito."""
+    try:
+        bruto = venda_row['pagamentos'] if 'pagamentos' in venda_row.keys() else ''
+    except Exception:
+        bruto = ''
+    if bruto:
+        try:
+            lista = json.loads(bruto)
+            if isinstance(lista, list) and lista:
+                return [p for p in lista if isinstance(p, dict)]
+        except Exception:
+            pass
+    return [{'metodo': venda_row['metodo'] or 'Dinheiro', 'valor': float(venda_row['total'] or 0)}]
+
 
 def registrar_mov_caixa(conn, db_id, delta, tipo, motivo='', usuario_id=''):
     """Registra uma entrada/saída de dinheiro do caixa como um FATO com id único.
@@ -3578,19 +3776,33 @@ def _dinheiro_em_caixa(conn, db_id, caixa_aberto):
     """Quanto DEVERIA ter na gaveta agora, em dinheiro vivo:
        abertura + vendas em dinheiro + suprimentos - sangrias.
        Só conta o que aconteceu DEPOIS que o caixa foi aberto.
-       Cartão/PIX não entram: não viram dinheiro na gaveta."""
+       Cartão/PIX não entram: não viram dinheiro na gaveta.
+       Numa venda MISTA (parte dinheiro, parte cartão), só a parte em
+       dinheiro entra."""
     if not caixa_aberto:
         return 0.0
     abertura = float(caixa_aberto['valor_abertura'] or 0)
     desde = caixa_aberto['data_abertura']
+    # vendas 100% em dinheiro (inclui quitação de fiado paga em dinheiro)
     vendas_dinheiro = conn.execute(
         """SELECT COALESCE(SUM(total),0) FROM vendas
            WHERE db_id=? AND data_hora >= ? AND (metodo='Dinheiro' OR metodo LIKE 'Fiado (Dinheiro%')""",
         (db_id, desde)).fetchone()[0] or 0
+    # parte em dinheiro das vendas mistas
+    misto_dinheiro = 0.0
+    for row in conn.execute(
+            "SELECT pagamentos FROM vendas WHERE db_id=? AND data_hora >= ? AND metodo='Misto'",
+            (db_id, desde)).fetchall():
+        try:
+            for p in json.loads(row[0] or '[]'):
+                if isinstance(p, dict) and p.get('metodo') == 'Dinheiro':
+                    misto_dinheiro += float(p.get('valor', 0) or 0)
+        except Exception:
+            continue
     movs = conn.execute(
         "SELECT COALESCE(SUM(delta),0) FROM caixa_mov WHERE db_id=? AND criado_em >= ?",
         (db_id, desde)).fetchone()[0] or 0
-    return round(abertura + float(vendas_dinheiro) + float(movs), 2)
+    return round(abertura + float(vendas_dinheiro) + misto_dinheiro + float(movs), 2)
 
 
 @app.route('/api/caixa/sangria', methods=['POST'])
@@ -3707,9 +3919,29 @@ def caixa_resumo():
         db_id = get_db_id()
         data_param = request.args.get('data', datetime.now().strftime('%Y-%m-%d'))
         with get_db_context() as conn:
-            cursor = conn.execute("""SELECT metodo, COUNT(*), SUM(total) FROM vendas
-                WHERE db_id=? AND data_hora LIKE ? GROUP BY metodo""", (db_id, f'{data_param}%'))
-            metodos = [{"metodo": row[0], "quantidade": row[1], "total": row[2] or 0} for row in cursor.fetchall()]
+            # Soma por método. Uma venda MISTA é quebrada nas suas partes, senão
+            # o dono veria "Misto: R$70" em vez de "Dinheiro: R$20, Cartão: R$50".
+            por_metodo = {}
+            for row in conn.execute(
+                    """SELECT metodo, total, pagamentos FROM vendas
+                       WHERE db_id=? AND data_hora LIKE ?""", (db_id, f'{data_param}%')).fetchall():
+                partes = []
+                if (row['metodo'] or '') == 'Misto' and row['pagamentos']:
+                    try:
+                        partes = [p for p in json.loads(row['pagamentos']) if isinstance(p, dict)]
+                    except Exception:
+                        partes = []
+                if not partes:
+                    partes = [{'metodo': row['metodo'] or 'Dinheiro', 'valor': float(row['total'] or 0)}]
+                for p in partes:
+                    m = p.get('metodo') or 'Dinheiro'
+                    d = por_metodo.setdefault(m, {'metodo': m, 'quantidade': 0, 'total': 0.0})
+                    d['quantidade'] += 1
+                    d['total'] += float(p.get('valor', 0) or 0)
+            metodos = [{'metodo': v['metodo'], 'quantidade': v['quantidade'], 'total': round(v['total'], 2)}
+                       for v in por_metodo.values()]
+            metodos.sort(key=lambda x: -x['total'])
+
             cursor = conn.execute("SELECT SUM(total), COUNT(*) FROM vendas WHERE db_id=? AND data_hora LIKE ?",
                 (db_id, f'{data_param}%'))
             totals = cursor.fetchone()
@@ -3752,19 +3984,19 @@ def get_estatisticas():
         with get_db_context() as conn:
             if periodo == "hoje":
                 filtro = hoje.strftime('%Y-%m-%d') + '%'
-                cursor = conn.execute("""SELECT id, data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente
+                cursor = conn.execute("""SELECT id, data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente, pagamentos
                     FROM vendas WHERE db_id=? AND data_hora LIKE ? ORDER BY id DESC LIMIT 100""", (db_id, filtro))
             elif periodo == "semana":
                 filtro_data = (hoje - timedelta(days=7)).strftime('%Y-%m-%d')
-                cursor = conn.execute("""SELECT id, data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente
+                cursor = conn.execute("""SELECT id, data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente, pagamentos
                     FROM vendas WHERE db_id=? AND data_hora >= ? ORDER BY id DESC LIMIT 200""", (db_id, filtro_data))
             elif periodo == "mes":
                 filtro_data = (hoje - timedelta(days=30)).strftime('%Y-%m-%d')
-                cursor = conn.execute("""SELECT id, data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente
+                cursor = conn.execute("""SELECT id, data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente, pagamentos
                     FROM vendas WHERE db_id=? AND data_hora >= ? ORDER BY id DESC LIMIT 500""", (db_id, filtro_data))
             else:
                 filtro = hoje.strftime('%Y-%m-%d') + '%'
-                cursor = conn.execute("""SELECT id, data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente
+                cursor = conn.execute("""SELECT id, data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente, pagamentos
                     FROM vendas WHERE db_id=? AND data_hora LIKE ? ORDER BY id DESC LIMIT 100""", (db_id, filtro))
             
             total_geral = 0
@@ -3778,7 +4010,19 @@ def get_estatisticas():
                 total_lucro += row[5] or 0
                 total_vendas += 1
                 metodo = row[6] or 'Dinheiro'
-                metodos[metodo] = metodos.get(metodo, 0) + (row[4] or 0)
+                # Venda MISTA: distribui o valor entre os métodos de verdade,
+                # senão o gráfico mostraria só "Misto" e esconderia pra onde o
+                # dinheiro foi.
+                if metodo == 'Misto' and len(row) > 9 and row[9]:
+                    try:
+                        for p in json.loads(row[9]):
+                            if isinstance(p, dict):
+                                m = p.get('metodo') or 'Dinheiro'
+                                metodos[m] = metodos.get(m, 0) + float(p.get('valor', 0) or 0)
+                    except Exception:
+                        metodos[metodo] = metodos.get(metodo, 0) + (row[4] or 0)
+                else:
+                    metodos[metodo] = metodos.get(metodo, 0) + (row[4] or 0)
                 try:
                     itens = json.loads(row[7]) if row[7] else []
                     # A venda pode vir de outro dispositivo com 'itens' em formatos
@@ -3858,8 +4102,6 @@ def get_estatisticas():
             #    - Só "Fiado" puro é venda a prazo (ainda não entrou).
             def _e_quitacao(m):
                 return m.startswith('Fiado (')
-            def _e_fiado_puro(m):
-                return m == 'Fiado'
             total_fiado_vendas = sum((v['total'] or 0) for v in vendas if _e_fiado_puro(v['metodo'] or ''))
             total_avista = sum((v['total'] or 0) for v in vendas if not _e_fiado_puro(v['metodo'] or ''))
             pct_fiado = (total_fiado_vendas / total_geral * 100) if total_geral > 0 else 0
