@@ -265,6 +265,20 @@
         .btn-confirmar-mov:disabled{opacity:.5;cursor:not-allowed}
         .btn-confirmar-mov.sangria{background:var(--orange)}
         .btn-confirmar-mov.sangria:hover{background:#d97706}
+        /* ===== RELATÓRIO DE FECHAMENTO ===== */
+        #modalRelatorio{z-index:10002}
+        .modal-relatorio{max-width:430px}
+        .rel-resumo{background:var(--bg-primary);border:1px solid var(--border-color);border-radius:9px;
+            padding:13px 15px;margin-bottom:12px;text-align:center}
+        .rel-resumo .rr-t{font-size:12px;color:var(--text-secondary)}
+        .rel-resumo .rr-v{font-size:24px;font-weight:800;color:var(--green);font-family:monospace;margin-top:2px}
+        .rel-resumo .rr-d{font-size:13px;margin-top:6px;font-weight:600}
+        .rel-resumo .rr-d.ok{color:var(--green)}
+        .rel-resumo .rr-d.sobra{color:var(--blue)}
+        .rel-resumo .rr-d.falta{color:var(--red)}
+        .rel-preview{background:#f7f5ee;color:#1a1a1a;border-radius:6px;padding:12px;font-family:'Courier New',monospace;
+            font-size:9.5px;line-height:1.35;max-height:210px;overflow-y:auto;white-space:pre;margin:0 0 14px;border:1px solid #ddd}
+        .rel-acoes{margin-top:2px}
         /* ===== PAGAMENTO MISTO (sub-janela) ===== */
         /* z-index maior que o modal de pagamento (9999): a sub-janela abre POR
            CIMA dele. Sem isso ela abria ATRÁS e parecia que fechava sozinha. */
@@ -1102,6 +1116,18 @@
 </div>
 
 <!-- PAYMENT MODAL -->
+<div class="payment-modal" id="modalRelatorio">
+    <div class="modal modal-relatorio">
+        <div class="modal-header"><h3>🧾 Fechamento</h3><button class="close" onclick="fecharModalRelatorio()">✕</button></div>
+        <div class="rel-resumo" id="relResumo"></div>
+        <pre class="rel-preview" id="relPreview"></pre>
+        <div class="rel-acoes">
+            <button class="btn-confirmar-mov" id="relImprimir" onclick="imprimirFechamento()"><i class="fas fa-print"></i> Imprimir relatório</button>
+            <button class="btn-pular-conf" onclick="fecharModalRelatorio()">Agora não</button>
+        </div>
+    </div>
+</div>
+
 <div class="payment-modal" id="modalDividir">
     <div class="modal modal-dividir">
         <div class="modal-header"><h3>➗ Dividir o Pagamento</h3><button class="close" onclick="fecharDividir()">✕</button></div>
@@ -1600,6 +1626,8 @@ document.addEventListener('keydown',function(e){
 
     if(e.key==='Escape'){
         e.preventDefault();
+        const mrel=document.getElementById('modalRelatorio');
+        if(mrel&&mrel.classList.contains('active')){fecharModalRelatorio();return;}
         const mdv=document.getElementById('modalDividir');
         if(mdv&&mdv.classList.contains('active')){fecharDividir();return;}
         const mcm=document.getElementById('modalCaixaMov');
@@ -3372,6 +3400,81 @@ async function toggleCaixa(){
     }catch(e){showToast('❌ Erro','error');}
 }
 
+// ---- Relatório de fechamento (oferecido logo após fechar o caixa) ----
+let relatorioAtual=null;
+
+function abrirModalRelatorio(rel){
+    relatorioAtual=rel;
+    const f=v=>'R$ '+(v||0).toFixed(2).replace('.',',');
+    const res=document.getElementById('relResumo');
+    let html='<div class="rr-t">Vendas do dia</div><div class="rr-v">'+f(rel.total_geral)+'</div>';
+    if(rel.diferenca!==null && rel.diferenca!==undefined){
+        const d=rel.diferenca;
+        if(Math.abs(d)<0.01) html+='<div class="rr-d ok">✅ A gaveta bateu certinho</div>';
+        else if(d>0) html+='<div class="rr-d sobra">🔵 Sobrou '+f(d)+' na gaveta</div>';
+        else html+='<div class="rr-d falta">🔴 Faltou '+f(Math.abs(d))+' na gaveta</div>';
+    }else{
+        html+='<div class="rr-d" style="color:var(--text-muted)">Fechado sem conferir a gaveta</div>';
+    }
+    res.innerHTML=html;
+    document.getElementById('relPreview').textContent=montarPreviaRelatorio(rel);
+    document.getElementById('modalRelatorio').classList.add('active');
+    setTimeout(()=>document.getElementById('relImprimir').focus(),80);
+}
+
+function fecharModalRelatorio(){
+    document.getElementById('modalRelatorio').classList.remove('active');
+    relatorioAtual=null;
+}
+
+// Prévia do que vai sair no papel (mesmo formato do backend, 48 colunas)
+function montarPreviaRelatorio(r){
+    const L=48, lin=[], c=t=>String(t).padStart(Math.floor((L+String(t).length)/2)).padEnd(L);
+    const m=v=>'R$ '+Math.abs(v||0).toFixed(2).replace('.',',');
+    const l=(rot,v,s)=>(' '+rot).padEnd(28)+(s||' ')+m(v).padStart(19);
+    lin.push('='.repeat(L), c(state.nome_loja||'MINHA LOJA'), c('FECHAMENTO DE CAIXA'), c(r.data_hora||''));
+    if(r.operador) lin.push(c('Operador: '+r.operador));
+    lin.push('='.repeat(L), '', ' DINHEIRO NA GAVETA', '-'.repeat(L));
+    lin.push(l('Abertura', r.valor_abertura));
+    lin.push(l('Vendas em dinheiro', r.vendas_dinheiro, '+'));
+    if(r.total_suprimentos) lin.push(l('Suprimentos', r.total_suprimentos, '+'));
+    if(r.total_sangrias) lin.push(l('Sangrias', r.total_sangrias, '-'));
+    lin.push('-'.repeat(L), l('ESPERADO', r.esperado));
+    if(r.valor_contado!==null && r.valor_contado!==undefined){
+        lin.push(l('CONTADO', r.valor_contado));
+        const d=r.diferenca||0;
+        if(Math.abs(d)<0.01) lin.push(' '+c('CAIXA BATEU CERTINHO').slice(0,L-1));
+        else lin.push(l(d>0?'SOBROU':'FALTOU', d, d>0?'+':'-'));
+    }else lin.push(' (caixa fechado sem conferencia)');
+    lin.push('', '='.repeat(L), ' VENDAS DO DIA', '-'.repeat(L));
+    (r.metodos||[]).forEach(x=>{
+        lin.push(' '+String(x.metodo).slice(0,20).padEnd(20)+String(x.quantidade).padStart(4)+m(x.total).padStart(23));
+    });
+    if(!(r.metodos||[]).length) lin.push(' Nenhuma venda no periodo');
+    lin.push('-'.repeat(L), ' '+'TOTAL'.padEnd(20)+String(r.total_vendas||0).padStart(4)+m(r.total_geral).padStart(23));
+    lin.push('='.repeat(L));
+    return lin.join('\n');
+}
+
+async function imprimirFechamento(){
+    if(!relatorioAtual){ showToast('❌ Relatório não encontrado','error'); return; }
+    const btn=document.getElementById('relImprimir');
+    btn.disabled=true;
+    showToast('🖨️ Enviando para impressão...','info');
+    try{
+        const res=await fetch('/api/imprimir/fechamento',{method:'POST',headers:{'Content-Type':'application/json'},
+            credentials:'include',body:JSON.stringify(relatorioAtual)});
+        if(res.status===404){
+            showToast('⚠️ O servidor está desatualizado. Feche o SMART PDV e abra de novo.','warning');
+            btn.disabled=false; return;
+        }
+        const data=await res.json();
+        if(data.success){ showToast('🖨️ Relatório impresso!','success'); fecharModalRelatorio(); }
+        else showToast('❌ '+(data.error||'Falha na impressão'),'error');
+    }catch(e){ showToast('❌ Erro ao imprimir','error'); }
+    btn.disabled=false;
+}
+
 // ---- Fechamento com conferência da gaveta ----
 async function abrirModalFechamento(){
     try{
@@ -3434,6 +3537,9 @@ async function confirmarFechamento(conferir){
             showToast(msg, data.conferido && Math.abs(data.diferenca||0)>=0.01 ? 'warning' : 'success');
             fecharModalFechamento();
             carregarStatusCaixa();
+            // Oferece o relatório impresso: é o momento em que o dono quer o
+            // papel na mão pra conferir e guardar.
+            if(data.relatorio) abrirModalRelatorio(data.relatorio);
         }else showToast('❌ '+data.error,'error');
     }catch(e){ showToast('❌ Erro ao fechar','error'); }
 }
