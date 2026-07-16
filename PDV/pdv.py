@@ -3162,6 +3162,11 @@ def registrar_venda():
                 return jsonify({"success": False, "error": erro_pg})
             metodo_venda = 'Misto'
             pagamentos_json = json.dumps(lista_pg, ensure_ascii=False)
+        elif metodo_venda == 'Misto':
+            # 'Misto' sem a quebra viraria uma venda fantasma: não contaria no
+            # caixa nem apareceria direito no dashboard. Melhor recusar.
+            return jsonify({"success": False,
+                            "error": "Para dividir o pagamento, informe as formas e os valores."})
 
         with get_db_context() as conn:
             conn.execute("BEGIN TRANSACTION")
