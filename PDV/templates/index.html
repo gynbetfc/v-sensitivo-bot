@@ -217,6 +217,16 @@
         .caixa-center .btn-caixa{padding:10px 28px;background:var(--green);color:#fff;border:0;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;transition:var(--transition);margin:4px}
         .caixa-center .btn-caixa:hover{background:var(--green-dark)}.caixa-center .btn-caixa.fechar{background:var(--red)}.caixa-center .btn-caixa.fechar:hover{background:#dc2626}
         .resumo-caixa{margin-top:16px}
+        /* Os modais novos usavam .form-group, que só tem CSS dentro de .auth-box.
+           Sem isso o label e o campo ficavam na MESMA linha e o input minúsculo. */
+        #modalCaixaMov .form-group,#modalFechamento .form-group{margin-bottom:14px}
+        #modalCaixaMov .form-group label,#modalFechamento .form-group label{display:block;font-size:12px;font-weight:600;
+            color:var(--text-secondary);margin-bottom:6px;text-transform:none;letter-spacing:0}
+        #modalCaixaMov .form-group input,#modalFechamento .form-group input{width:100%;padding:12px 14px;
+            border:1px solid var(--border-color);border-radius:8px;font-size:16px;background:var(--bg-primary);
+            color:#fff;transition:var(--transition);font-family:monospace;font-weight:600}
+        #modalCaixaMov .form-group input:focus,#modalFechamento .form-group input:focus{outline:0;border-color:var(--green)}
+        #modalCaixaMov .form-group input#mcmMotivo{font-family:inherit;font-weight:400;font-size:14px}
         /* ===== SANGRIA / SUPRIMENTO ===== */
         .sangria-card{margin-top:16px}
         .sg-topo{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
@@ -3212,6 +3222,12 @@ const MCM_SUGESTOES={
 async function carregarMovsCaixa(){
     try{
         const res=await fetch('/api/caixa/movimentacoes',{credentials:'include',cache:'no-store'});
+        if(res.status===404){
+            // Servidor antigo: avisa em vez de deixar a gaveta zerada sem explicação
+            const conta=document.getElementById('sgConta');
+            if(conta) conta.textContent='⚠️ servidor desatualizado — feche e abra o SMART PDV';
+            return;
+        }
         const data=await res.json();
         if(!data.success) return;
         const el=document.getElementById('sgEmCaixa');
@@ -3297,6 +3313,13 @@ async function confirmarCaixaMov(){
             method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
             body:JSON.stringify({valor:valor, motivo:motivo})
         });
+        // 404 = a tela é nova mas o SERVIDOR é antigo (o launcher caiu no cache
+        // do pdv.py). Sem esta checagem, o res.json() estourava num HTML de erro
+        // e o operador via só "Erro ao registrar", sem saber o que fazer.
+        if(res.status===404){
+            showToast('⚠️ O servidor está desatualizado. Feche o SMART PDV e abra de novo.','warning');
+            btn.disabled=false; return;
+        }
         const data=await res.json();
         if(data.success){
             showToast((mcmTipo==='sangria'?'💸':'💵')+' '+data.message,'success');
