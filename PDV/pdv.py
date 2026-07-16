@@ -1931,6 +1931,86 @@ def formatar_cnpj(cnpj: str) -> str:
         return cnpj
     return f"{cnpj[:2]}.{cnpj[2:5]}.{cnpj[5:8]}/{cnpj[8:12]}-{cnpj[12:14]}"
 
+def gerar_texto_fechamento(dados: Dict) -> str:
+    """Monta o relatório de fechamento de caixa para a impressora térmica.
+
+    Curto de propósito: cabe num pedaço de bobina e mostra só o que o dono
+    precisa conferir — de onde veio o dinheiro da gaveta, se bateu, e quanto
+    vendeu por método. Sem os dados de CNPJ do cupom (isso é pro cliente, não
+    pro dono)."""
+    L = 48
+    nome_loja = dados.get('nome_loja', 'MINHA LOJA')
+    data_hora = dados.get('data_hora', datetime.now().strftime('%d/%m/%Y %H:%M'))
+    operador = dados.get('operador', '')
+    abertura = float(dados.get('valor_abertura', 0) or 0)
+    vendas_dinheiro = float(dados.get('vendas_dinheiro', 0) or 0)
+    suprimentos = float(dados.get('total_suprimentos', 0) or 0)
+    sangrias = float(dados.get('total_sangrias', 0) or 0)
+    esperado = float(dados.get('esperado', 0) or 0)
+    contado = dados.get('valor_contado')
+    diferenca = dados.get('diferenca')
+    metodos = dados.get('metodos', []) or []
+    total_geral = float(dados.get('total_geral', 0) or 0)
+    total_vendas = int(dados.get('total_vendas', 0) or 0)
+
+    def linha(rot, valor, sinal=' '):
+        v = f'R$ {abs(valor):,.2f}'.replace(',', 'X').replace('.', ',').replace('X', '.')
+        return f'{rot:<28}{sinal}{v:>19}'
+
+    t = []
+    t.append('=' * L)
+    t.append(nome_loja[:L].center(L))
+    t.append('FECHAMENTO DE CAIXA'.center(L))
+    t.append(data_hora.center(L))
+    if operador:
+        t.append(f'Operador: {operador}'[:L].center(L))
+    t.append('=' * L)
+    t.append('')
+    t.append(' DINHEIRO NA GAVETA')
+    t.append('-' * L)
+    t.append(linha(' Abertura', abertura))
+    t.append(linha(' Vendas em dinheiro', vendas_dinheiro, '+'))
+    if suprimentos:
+        t.append(linha(' Suprimentos', suprimentos, '+'))
+    if sangrias:
+        t.append(linha(' Sangrias', sangrias, '-'))
+    t.append('-' * L)
+    t.append(linha(' ESPERADO', esperado))
+    if contado is not None:
+        t.append(linha(' CONTADO', float(contado)))
+        d = float(diferenca or 0)
+        if abs(d) < 0.01:
+            t.append(' ' + 'CAIXA BATEU CERTINHO'.center(L - 2))
+        else:
+            rot = ' SOBROU' if d > 0 else ' FALTOU'
+            t.append(linha(rot, d, '+' if d > 0 else '-'))
+    else:
+        t.append(' (caixa fechado sem conferencia)')
+    t.append('')
+    t.append('=' * L)
+    t.append(' VENDAS DO DIA')
+    t.append('-' * L)
+    if metodos:
+        for m in metodos:
+            nome = str(m.get('metodo', ''))[:20]
+            qtd = m.get('quantidade', 0)
+            val = float(m.get('total', 0) or 0)
+            v = f'R$ {val:,.2f}'.replace(',', 'X').replace('.', ',').replace('X', '.')
+            t.append(f' {nome:<20}{qtd:>4}{v:>23}')
+    else:
+        t.append(' Nenhuma venda no periodo')
+    t.append('-' * L)
+    v = f'R$ {total_geral:,.2f}'.replace(',', 'X').replace('.', ',').replace('X', '.')
+    t.append(f' {"TOTAL":<20}{total_vendas:>4}{v:>23}')
+    t.append('=' * L)
+    t.append('')
+    t.append('')
+    t.append(('_' * 32).center(L))
+    t.append('Assinatura do responsavel'.center(L))
+    t.append('')
+    return '\n'.join(t)
+
+
 def gerar_texto_cupom(dados: Dict) -> str:
     nome_loja = dados.get('nome_loja', 'MINHA LOJA')
     cnpj = dados.get('cnpj', '')
@@ -2023,6 +2103,50 @@ def gerar_texto_cupom(dados: Dict) -> str:
     linhas.append('VOLTE SEMPRE!'.center(L))
     linhas.append('=' * L)
     return '\n'.join(linhas) + '\n\n'
+
+def imprimir_texto_escpos(texto: str, titulo: str = "SMART PDV") -> Dict:
+    """Manda um texto qualquer para a impressora térmica (ESC/POS).
+
+    É a mesma mecânica do cupom, mas sem o formato dele — serve para o relatório
+    de fechamento e qualquer outro impresso futuro."""
+    if not IS_WINDOWS or not IMPRESSAO_DISPONIVEL:
+        return {"success": False, "error": "Impressão indisponível neste computador."}
+    try:
+        import win32print
+        ESC, GS = chr(27), chr(29)
+        cmd_init = (ESC + '@').encode('latin-1', 'replace')
+        cmd_charset = (ESC + 't' + chr(2)).encode('latin-1', 'replace')  # CP850: acentos
+        cmd_cut = (GS + 'V' + chr(66) + chr(0)).encode('latin-1', 'replace')
+
+        def _codificar(t):
+            try:
+                return t.encode('cp850')
+            except Exception:
+                import unicodedata
+                return unicodedata.normalize('NFKD', t).encode('ascii', 'ignore').decode('ascii').encode('cp850', 'replace')
+
+        impressora_nome = win32print.GetDefaultPrinter()
+        if not impressora_nome:
+            return {"success": False, "error": "Nenhuma impressora padrão definida"}
+        hprinter = win32print.OpenPrinter(impressora_nome)
+        try:
+            win32print.StartDocPrinter(hprinter, 1, (titulo, None, "RAW"))
+            win32print.StartPagePrinter(hprinter)
+            win32print.WritePrinter(hprinter, cmd_init)
+            win32print.WritePrinter(hprinter, cmd_charset)
+            win32print.WritePrinter(hprinter, _codificar(texto))
+            win32print.WritePrinter(hprinter, b'\n\n\n')
+            win32print.WritePrinter(hprinter, cmd_cut)
+            win32print.EndPagePrinter(hprinter)
+            win32print.EndDocPrinter(hprinter)
+        finally:
+            win32print.ClosePrinter(hprinter)
+        logger.info(f"🖨️ Impresso: {titulo}")
+        return {"success": True}
+    except Exception as e:
+        logger.error(f"❌ Erro ao imprimir: {e}")
+        return {"success": False, "error": str(e)}
+
 
 def imprimir_cupom_escpos(dados: Dict) -> Dict:
     if not IS_WINDOWS or not IMPRESSAO_DISPONIVEL:
@@ -3676,6 +3800,17 @@ def caixa_fechar():
                 (db_id, f'{hoje}%')).fetchone()[0] or 0
             esperado = _dinheiro_em_caixa(conn, db_id, caixa)
 
+            # Guarda os números ANTES de fechar: depois de fechar, a gaveta some
+            # (não há caixa aberto) e o relatório não teria de onde tirar a conta.
+            abertura_val = float(caixa['valor_abertura'] or 0)
+            desde_abertura = caixa['data_abertura']
+            movs = conn.execute(
+                """SELECT COALESCE(SUM(CASE WHEN delta<0 THEN -delta ELSE 0 END),0),
+                          COALESCE(SUM(CASE WHEN delta>0 THEN delta ELSE 0 END),0)
+                   FROM caixa_mov WHERE db_id=? AND criado_em >= ?""", (db_id, desde_abertura)).fetchone()
+            sangrias_val, suprimentos_val = round(movs[0] or 0, 2), round(movs[1] or 0, 2)
+            vendas_dinheiro_val = round(max(0.0, esperado - abertura_val - suprimentos_val + sangrias_val), 2)
+
             conferiu = data.get('valor_contado') is not None
             contado = 0.0
             diferenca = 0.0
@@ -3701,10 +3836,49 @@ def caixa_fechar():
             else:
                 logger.warning(f"🔒 Caixa fechado - FALTOU R$ {abs(diferenca):.2f} (esperado {esperado:.2f}, contado {contado:.2f})")
         sincronizar_automatico(db_id)
+        # Monta o relatório para a tela de impressão. Reaproveita o resumo do dia
+        # (que já quebra as vendas mistas nos métodos de verdade).
+        try:
+            with get_db_context() as conn2:
+                por_metodo = {}
+                for row in conn2.execute(
+                        """SELECT metodo, total, pagamentos FROM vendas
+                           WHERE db_id=? AND data_hora LIKE ?""", (db_id, f'{hoje}%')).fetchall():
+                    partes = []
+                    if (row['metodo'] or '') == 'Misto' and row['pagamentos']:
+                        try:
+                            partes = [p for p in json.loads(row['pagamentos']) if isinstance(p, dict)]
+                        except Exception:
+                            partes = []
+                    if not partes:
+                        partes = [{'metodo': row['metodo'] or 'Dinheiro', 'valor': float(row['total'] or 0)}]
+                    for p in partes:
+                        m = p.get('metodo') or 'Dinheiro'
+                        d = por_metodo.setdefault(m, {'metodo': m, 'quantidade': 0, 'total': 0.0})
+                        d['quantidade'] += 1
+                        d['total'] += float(p.get('valor', 0) or 0)
+                metodos_rel = sorted(
+                    [{'metodo': v['metodo'], 'quantidade': v['quantidade'], 'total': round(v['total'], 2)}
+                     for v in por_metodo.values()], key=lambda x: -x['total'])
+                qtd_vendas = conn2.execute("SELECT COUNT(*) FROM vendas WHERE db_id=? AND data_hora LIKE ?",
+                    (db_id, f'{hoje}%')).fetchone()[0] or 0
+        except Exception as e:
+            logger.error(f"⚠️ Erro ao montar o relatório de fechamento: {e}")
+            metodos_rel, qtd_vendas = [], 0
+
+        relatorio = {
+            'nome_loja': '', 'data_hora': datetime.now().strftime('%d/%m/%Y %H:%M'),
+            'operador': session.get('nome', ''),
+            'valor_abertura': abertura_val, 'vendas_dinheiro': vendas_dinheiro_val,
+            'total_suprimentos': suprimentos_val, 'total_sangrias': sangrias_val,
+            'esperado': esperado, 'valor_contado': contado if conferiu else None,
+            'diferenca': diferenca if conferiu else None,
+            'metodos': metodos_rel, 'total_geral': total, 'total_vendas': qtd_vendas,
+        }
         return jsonify({"success": True, "total": total, "esperado": esperado,
                         "valor_contado": contado if conferiu else None,
                         "diferenca": diferenca if conferiu else None,
-                        "conferido": conferiu})
+                        "conferido": conferiu, "relatorio": relatorio})
     except Exception as e:
         logger.error(f"❌ Erro ao fechar caixa: {e}")
         return jsonify({"success": False, "error": str(e)})
@@ -4885,6 +5059,27 @@ def imprimir_cupom_route():
     except Exception as e:
         logger.error(f"❌ Erro ao imprimir: {e}")
         return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/imprimir/fechamento', methods=['POST'])
+def imprimir_fechamento_route():
+    """Imprime o relatório de fechamento de caixa na térmica."""
+    try:
+        db_id = get_db_id()
+        if not db_id:
+            return jsonify({"success": False, "error": "Não autenticado"}), 401
+        dados = request.json or {}
+        with get_db_context() as conn:
+            loja = conn.execute("SELECT nome_loja FROM users WHERE db_id=? LIMIT 1", (db_id,)).fetchone()
+            if loja and loja[0]:
+                dados['nome_loja'] = loja[0]
+        dados['operador'] = dados.get('operador') or session.get('nome', '')
+        texto = gerar_texto_fechamento(dados)
+        resultado = imprimir_texto_escpos(texto)
+        return jsonify(resultado)
+    except Exception as e:
+        logger.error(f"❌ Erro ao imprimir fechamento: {e}")
+        return jsonify({"success": False, "error": str(e)})
+
 
 @app.route('/api/imprimir/texto', methods=['POST'])
 def imprimir_texto_route():
