@@ -255,6 +255,9 @@
         .btn-confirmar-mov.sangria{background:var(--orange)}
         .btn-confirmar-mov.sangria:hover{background:#d97706}
         /* ===== PAGAMENTO MISTO (sub-janela) ===== */
+        /* z-index maior que o modal de pagamento (9999): a sub-janela abre POR
+           CIMA dele. Sem isso ela abria ATRÁS e parecia que fechava sozinha. */
+        #modalDividir{z-index:10001}
         .modal-dividir{max-width:440px}
         .dv-total{display:flex;justify-content:space-between;align-items:center;background:var(--bg-primary);
             border:1px solid var(--border-color);border-radius:9px;padding:12px 15px;margin-bottom:16px}
@@ -1554,13 +1557,20 @@ document.addEventListener('keydown',function(e){
     };
     if(teclasAba[e.key]){
         e.preventDefault(); e.stopPropagation();
-        // F1 mantém ações contextuais dentro da venda (confirmar pagamento, etc.)
+        // F1 é contextual, mas na ordem que o operador espera:
+        //  1. modal aberto  -> age nele (confirmar pagamento/cupom)
+        //  2. fora da aba Vendas -> VOLTA pra Vendas (mesmo com carrinho cheio)
+        //  3. já na aba Vendas -> aí sim abre o pagamento
+        // Antes, com item no carrinho, o F1 abria o modal de QUALQUER aba: quem
+        // só queria voltar pra tela de vendas levava o modal na cara.
         if(e.key==='F1'){
             const modalPgto=document.getElementById('paymentModal')?.classList.contains('active');
             const modalCupom=document.getElementById('cupomModal')?.classList.contains('active');
+            if(modalPgto || modalCupom){ processarF1(); return; }
+            const naAbaVendas=document.getElementById('panelVendas')?.classList.contains('active');
+            if(!naAbaVendas){ irParaAbaAtalho('vendas'); return; }
             const sr=document.getElementById('searchResults');
-            const temContexto = modalPgto || modalCupom ||
-                (state.itens.length>0 && state.caixa_aberto) ||
+            const temContexto = (state.itens.length>0 && state.caixa_aberto) ||
                 (sr && sr.classList.contains('active') && state.searchIndex>=0);
             if(temContexto){ processarF1(); return; }
         }
@@ -1856,7 +1866,10 @@ function trocarTab(nome){
     if (btn) btn.classList.add('active');
     if(nome==='clientes') carregarClientes();
     if(nome==='estoque') carregarProdutos();
-    if(nome==='vendas') carregarKitsParaVenda();
+    // Vendas precisa dos PRODUTOS carregados pra busca funcionar. Antes só os
+    // kits eram carregados aqui, e a busca só passava a achar depois que o
+    // operador abrisse o Estoque (que carregava os produtos de tabela).
+    if(nome==='vendas'){ carregarProdutos(); carregarKitsParaVenda(); }
     if(nome==='dashboard') carregarDash(state.periodo);
     if(nome==='caixa') carregarStatusCaixa();
     if(nome==='planos') {carregarPlanos(); verificarStatusPlano();}
@@ -2516,6 +2529,20 @@ document.getElementById('codigoInput').addEventListener('input',function(){
     const val=this.value.trim();
     const results=document.getElementById('searchResults');
     if(val.length<1){results.classList.remove('active');return;}
+    // Rede de segurança: se por qualquer motivo os produtos ainda não chegaram
+    // (internet lenta, corrida na abertura), busca agora e repete a filtragem.
+    // Sem isso o caixa digitava e "não achava nada" até abrir o Estoque.
+    if(!state.produtos || state.produtos.length===0){
+        if(!state._carregandoProdutos){
+            state._carregandoProdutos=true;
+            carregarProdutos().then(()=>{
+                state._carregandoProdutos=false;
+                const el=document.getElementById('codigoInput');
+                if(el && el.value.trim()) el.dispatchEvent(new Event('input'));
+            }).catch(()=>{ state._carregandoProdutos=false; });
+        }
+        return;
+    }
     const termo=val.toLowerCase();
     const filtrados=state.produtos.filter(p=>p.nome.toLowerCase().includes(termo)||(p.codigo||'').toLowerCase().includes(termo));
     const kitsFiltrados=(state.kits||[]).filter(k=>k.nome.toLowerCase().includes(termo));
@@ -4088,7 +4115,7 @@ document.addEventListener('DOMContentLoaded',function(){
                 document.getElementById('authPage').classList.add('hidden');
                 document.getElementById('app').classList.add('active');
                 atualizarHeader();
-                carregarPlanos();carregarProdutos();carregarClientes();carregarUsuarios();
+                carregarPlanos();carregarProdutos().then(()=>carregarKitsParaVenda());carregarClientes();carregarUsuarios();
                 carregarStatusCaixa();carregarDash('hoje');carregarLojaInfo();
                 atualizarPermissoesUI();
                 setTimeout(verificarStatusPlano, 500);
