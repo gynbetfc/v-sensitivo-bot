@@ -3151,6 +3151,17 @@ def registrar_venda():
         if float(data.get('total', 0) or 0) < 0:
             return jsonify({"success": False, "error": "O desconto não pode ser maior que o total da venda"})
 
+        # O caixa precisa estar ABERTO para vender. A tela já impede, mas o
+        # servidor confere também: se o caixa for fechado em OUTRO dispositivo
+        # enquanto este ainda acha que está aberto, a venda passaria e o dinheiro
+        # ficaria fora da gaveta — quebrando a conferência do fim do dia.
+        with get_db_context() as conn_chk:
+            caixa_aberto_chk = conn_chk.execute(
+                "SELECT id FROM caixa WHERE db_id=? AND status='aberto' LIMIT 1", (db_id,)).fetchone()
+        if not caixa_aberto_chk:
+            return jsonify({"success": False,
+                            "error": "O caixa está fechado. Abra o caixa para registrar vendas."})
+
         # PAGAMENTO MISTO: o cliente divide a conta (ex: R$20 em dinheiro e R$50
         # no cartão). Guardamos metodo='Misto' e a quebra em 'pagamentos'.
         # Se não vier 'pagamentos', a venda segue simples, como sempre foi.
@@ -3910,8 +3921,16 @@ def caixa_movimentacoes():
             sangrias = round(sum(m['valor'] for m in movs if m['tipo'] == 'sangria'), 2)
             suprimentos = round(sum(m['valor'] for m in movs if m['tipo'] == 'suprimento'), 2)
             em_caixa = _dinheiro_em_caixa(conn, db_id, caixa) if caixa else 0
+            # Devolvemos a CONTA aberta, não só o resultado. O operador precisa
+            # ver de onde vem o número, senão olha "R$ 0,00" com vendas no dia e
+            # acha que é bug (o resumo do dia conta o dia TODO; a gaveta conta
+            # só o que entrou depois que este caixa foi aberto).
+            abertura = float(caixa['valor_abertura'] or 0) if caixa else 0
+            vendas_dinheiro = round(max(0.0, em_caixa - abertura - suprimentos + sangrias), 2) if caixa else 0
         return jsonify({"success": True, "movimentacoes": movs, "total_sangrias": sangrias,
                         "total_suprimentos": suprimentos, "em_caixa": em_caixa,
+                        "valor_abertura": abertura, "vendas_dinheiro": vendas_dinheiro,
+                        "aberto_em": caixa['data_abertura'] if caixa else None,
                         "caixa_aberto": bool(caixa)})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
