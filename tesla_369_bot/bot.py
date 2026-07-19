@@ -1268,8 +1268,21 @@ def comecar_operar():
         if not usuario: return jsonify({'ok': False, 'erro': 'Usuario nao encontrado!'})
         if usuario.get('moedas', 0) < 1: return jsonify({'ok': False, 'erro': 'Sem VOLTS! Compre na loja.'})
 
-        if s.bot_rodando and s.bot_thread and s.bot_thread.is_alive():
-            return jsonify({'ok': False, 'erro': 'Bot ja rodando!'})
+        # 🔧 Se ha uma thread anterior AINDA finalizando (ex: acabou de ganhar e
+        # esta no finally), NAO recusa nem cria uma segunda. Espera ela encerrar
+        # de vez e entao inicia limpo. Antes, reiniciar logo apos um WIN caia num
+        # limbo: o /comecar era recusado ("bot ja rodando"), mas a tela ja tinha
+        # trocado pro botao PARAR - e ai o PARAR nao tinha o que parar.
+        if s.bot_thread and s.bot_thread.is_alive():
+            # se ja esta operando de verdade, nao reinicia
+            if s.bot_rodando and not s.stop_gain:
+                return jsonify({'ok': False, 'erro': 'Bot ja rodando!'})
+            # senao, esta so' finalizando: sinaliza parada e espera encerrar
+            s.bot_rodando = False
+            s.bot_thread.join(timeout=8)
+
+        # garante estado limpo antes de comecar
+        s.stop_gain = False
         s.estrategia_injetada = None
         s.bot_rodando = True
         s.bot_thread = threading.Thread(target=bot_loop, args=(s,), daemon=True)
