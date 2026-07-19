@@ -656,11 +656,16 @@ def verificar_saude_api(s):
     if s.reconectando:
         return False
     try:
+        # 🔧 ORDEM IMPORTA: get_balance() e' rapido (~0.3s) e ja' confirma que a
+        # conexao esta viva. get_profile() e' LENTO (~6s no celular) - era o 1o
+        # da lista e travava toda checagem de saude, inclusive no caminho do gale.
+        # Agora get_balance vem primeiro: se responde, retorna na hora e nunca
+        # chega no get_profile. (get_profile fica por ultimo, so' como desempate.)
         testes = [
-            lambda: s.API.get_profile(),
             lambda: s.API.get_balance(),
             lambda: s.API.get_server_timestamp(),
-            lambda: s.API.get_all_open_time()
+            lambda: s.API.get_all_open_time(),
+            lambda: s.API.get_profile()
         ]
         for teste in testes:
             try:
@@ -751,7 +756,12 @@ def executar_ciclo(s, direcao, timeframe_seg):
         for i in range(s.martingale + 1):
             if not s.bot_rodando: break
 
-            if not verificar_saude_api(s):
+            # 🔧 GALE INSTANTANEO: verificar_saude_api() chama get_profile(), que
+            # e' uma requisicao HTTP LENTA (~6s no celular). Na entrada principal
+            # (i==0) vale a pena checar. No GALE (i>0) NAO: a conexao acabou de
+            # ser usada na entrada anterior, esta viva. Pular isso tira os ~6s de
+            # atraso do gale que o Austin cronometrou no celular.
+            if i == 0 and not verificar_saude_api(s):
                 s.add_log("⚠️ Conexão instável! Tentando reconectar...", 'error')
                 if conectar_iq(s):
                     s.add_log("✅ Reconectado com sucesso!", 'win')
@@ -1289,11 +1299,14 @@ def parar():
         # MATARIA o bot de todos os outros alunos que estivessem operando.
         # Agora so' derruba o servidor se este for mesmo o unico usuario
         # (uso local, onde 'desconectar' = fechar o programa).
-        outros_ativos = [o for o in sessoes_ativas() if o is not s and (o.conectado or o.bot_rodando)]
-        desligar = os.environ.get("TESLA_SHUTDOWN_AO_DESCONECTAR", "auto").lower()
-        pode_desligar = (desligar == "true") or (desligar == "auto" and not outros_ativos)
-
-        if pode_desligar:
+        # 🔧 DESCONECTAR NAO PODE MATAR O PROCESSO no app do celular. Antes o
+        # padrao 'auto' fazia os.kill(SIGTERM) quando havia 1 so' sessao - o que
+        # no APK derruba o app inteiro (parecia "travar ao desconectar"). Agora
+        # o padrao e' NAO desligar: apenas encerra a sessao e o Flask segue no ar
+        # pra reconectar. So' desliga se explicitamente pedido via env
+        # TESLA_SHUTDOWN_AO_DESCONECTAR=true (uso servidor, nunca no app).
+        desligar = os.environ.get("TESLA_SHUTDOWN_AO_DESCONECTAR", "false").lower() == "true"
+        if desligar:
             s.add_log("🔌 Desconectado e finalizando servidor...", 'info')
             def shutdown_server():
                 time.sleep(1)
@@ -1301,7 +1314,7 @@ def parar():
             threading.Thread(target=shutdown_server, daemon=True).start()
             return jsonify({'ok': True, 'shutdown': True})
 
-        s.add_log(f"🔌 Desconectado (servidor segue no ar: {len(outros_ativos)} aluno(s) operando).", 'info')
+        s.add_log("🔌 Desconectado com sucesso!", 'win')
         return jsonify({'ok': True, 'shutdown': False})
 
     s.add_log("✅ Bot parado!", 'win')
