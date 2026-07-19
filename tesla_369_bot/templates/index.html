@@ -156,6 +156,7 @@
         <div class="tab active" onclick="openTab('bot')">🤖 BOT</div>
         <div class="tab" onclick="openTab('relatorio')">📊 RELATÓRIO</div>
         <div class="tab" onclick="openTab('estrategias')">📈 ESTRATÉGIAS</div>
+        <div class="tab" onclick="openTab('skins')">🎨 SKINS</div>
         <div class="tab" onclick="openTab('loja')">🛍️ LOJA</div>
         <div class="tab" onclick="openTab('chat')">💬 CHAT</div>
         <div class="tab" onclick="openTab('tutorial')">📖 TUTORIAL</div>
@@ -174,6 +175,9 @@
                     <option value="PRACTICE">🧪 PRACTICE</option>
                     <option value="REAL">💰 REAL</option>
                 </select>
+                <label style="display:flex;align-items:center;gap:5px;color:#888;font-size:10px;cursor:pointer">
+                    <input type="checkbox" id="lembrarCredenciais" onchange="toggleLembrar()"> 💾 Lembrar login
+                </label>
                 <div style="margin-top:5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                     <label style="color:#888;font-size:9px">% Banca:</label>
                     <select id="percentualBanca" onchange="atualizarPercentual()" style="padding:5px;background:#111;border:1px solid #333;border-radius:5px;color:#fff;font-size:10px;width:70px">
@@ -234,6 +238,19 @@
     <div class="panel" id="panel-estrategias">
         <div class="config-section"><h3>📈 SELECIONAR ESTRATÉGIA</h3><p style="color:#888;font-size:10px">Escolha antes de clicar em COMEÇAR OPERAR</p></div>
         <div class="estrategias-grid" id="estrategiaGrid"></div>
+    </div>
+
+    <!-- PAINEL SKINS (aba propria, igual estrategias) -->
+    <div class="panel" id="panel-skins">
+        <div class="config-section"><h3>🎨 MINHAS SKINS</h3><p style="color:#888;font-size:10px">Ative uma skin que você já tem, ou compre novas na Loja</p></div>
+        <div style="display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap">
+            <button class="loja-tab-btn active" style="padding:6px 16px;font-size:11px" onclick="mostrarCategoriaSkinAba('basica')">⚡ BÁSICAS</button>
+            <button class="loja-tab-btn" style="padding:6px 16px;font-size:11px;background:#111" onclick="mostrarCategoriaSkinAba('premium')">🔮 PREMIUM</button>
+            <button class="loja-tab-btn" style="padding:6px 16px;font-size:11px;background:#111" onclick="mostrarCategoriaSkinAba('lendaria')">💎 LENDÁRIAS</button>
+        </div>
+        <div id="skinsAbaBasicas" class="produtos-grid"></div>
+        <div id="skinsAbaPremium" class="produtos-grid" style="display:none"></div>
+        <div id="skinsAbaLendarias" class="produtos-grid" style="display:none"></div>
     </div>
 
     <!-- PAINEL LOJA PROFISSIONAL -->
@@ -579,8 +596,28 @@ function carregarRecursos() {
         }
         if(d.skins_status && d.skins_status.length > 0){
             if(document.getElementById('skinsGridBasicas')) renderSkins();
+            if(document.getElementById('skinsAbaBasicas')) renderSkinsAba();
         }
     }).catch(function(){});
+}
+
+
+// ==== SKINS NA ABA PROPRIA (espelha a loja, mas na aba de cima) ====
+function renderSkinsAba() {
+    fetch('/status').then(function(r){ return r.json(); }).then(function(d){
+        var ss = d.skins_status || [];
+        renderSkinGrid('skinsAbaBasicas', ss.filter(function(s){return s.categoria==='basica';}));
+        renderSkinGrid('skinsAbaPremium', ss.filter(function(s){return s.categoria==='premium';}));
+        renderSkinGrid('skinsAbaLendarias', ss.filter(function(s){return s.categoria==='lendaria';}));
+    });
+}
+function mostrarCategoriaSkinAba(cat) {
+    document.getElementById('skinsAbaBasicas').style.display = cat==='basica'?'grid':'none';
+    document.getElementById('skinsAbaPremium').style.display = cat==='premium'?'grid':'none';
+    document.getElementById('skinsAbaLendarias').style.display = cat==='lendaria'?'grid':'none';
+    var btns = document.querySelectorAll('#panel-skins .loja-tab-btn');
+    for(var i=0;i<btns.length;i++){ btns[i].classList.remove('active'); btns[i].style.background='#111'; }
+    if(event && event.target){ event.target.classList.add('active'); event.target.style.background=''; }
 }
 
 function renderEstrategias() {
@@ -691,6 +728,7 @@ function openTab(tab) {
     if(tab == 'relatorio' && emailLogado) { document.getElementById('emailRelatorio').value = emailLogado; verRelatorio(); }
     if(tab == 'loja') mostrarLojaTab('volts');
     if(tab == 'estrategias') { if(botAtivo){ showToast('⚠️ Pare o bot primeiro!', 'warning'); openTab('bot'); return; } renderEstrategias(); }
+    if(tab == 'skins') { renderSkinsAba(); }
 }
 
 function conectarIQ() {
@@ -941,6 +979,35 @@ function atualizarChat(){
         if(chatDiv){ chatDiv.innerHTML=html; chatDiv.scrollTop=chatDiv.scrollHeight; }
         document.getElementById('chatOnline').textContent = '🟢 ' + (d.online || 1) + ' online';
     });
+}
+
+
+// ==== SALVAR/LEMBRAR CREDENCIAIS (localStorage da WebView) ====
+// ⚠️ a senha fica guardada NESTE aparelho. So' ative "Lembrar" em celular seu.
+function toggleLembrar() {
+    var lembrar = document.getElementById('lembrarCredenciais').checked;
+    if(!lembrar) {
+        try { localStorage.removeItem('tesla_email'); localStorage.removeItem('tesla_senha'); localStorage.removeItem('tesla_tipo'); } catch(e){}
+    }
+}
+function salvarCredenciais() {
+    if(!document.getElementById('lembrarCredenciais').checked) return;
+    try {
+        localStorage.setItem('tesla_email', document.getElementById('email').value);
+        localStorage.setItem('tesla_senha', document.getElementById('senha').value);
+        localStorage.setItem('tesla_tipo', document.getElementById('tipo').value);
+        localStorage.setItem('tesla_lembrar', '1');
+    } catch(e){}
+}
+function carregarCredenciais() {
+    try {
+        if(localStorage.getItem('tesla_lembrar') === '1') {
+            document.getElementById('lembrarCredenciais').checked = true;
+            var em = localStorage.getItem('tesla_email'); if(em) document.getElementById('email').value = em;
+            var se = localStorage.getItem('tesla_senha'); if(se) document.getElementById('senha').value = se;
+            var ti = localStorage.getItem('tesla_tipo'); if(ti) document.getElementById('tipo').value = ti;
+        }
+    } catch(e){}
 }
 
 window.onload = function() {
