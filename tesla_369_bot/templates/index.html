@@ -166,6 +166,7 @@
     <div class="panel active" id="panel-bot">
         <div class="config-section">
             <h3>🔐 IQ OPTION</h3>
+            <div id="statusRecursos" style="text-align:center;font-size:11px;color:#ffd700;margin:4px 0 8px 0;font-family:monospace">⏳ Carregando estratégias e skins...</div>
             <div class="config-row">
                 <input type="email" id="email" placeholder="📧 Email IQ Option" style="flex:2">
                 <input type="password" id="senha" placeholder="🔒 Senha" style="flex:1">
@@ -551,6 +552,37 @@ function renderLojaEstrategias() {
     });
 }
 
+function atualizarStatusRecursos(d) {
+    // mostra na tela do BOT quantas estrategias/skins carregaram (igual o terminal do PC)
+    var el = document.getElementById('statusRecursos');
+    if(!el) return;
+    var nEst = d.estrategias_disponiveis ? Object.keys(d.estrategias_disponiveis).length : 0;
+    var nSkin = d.skins_status ? d.skins_status.length : 0;
+    if(nEst > 0 || nSkin > 0) {
+        el.innerHTML = '\u2705 ' + nEst + ' estrat\u00e9gias | \u2705 ' + nSkin + ' skins carregadas';
+        el.style.color = '#00ff88';
+    } else {
+        el.innerHTML = '\u23f3 Carregando estrat\u00e9gias e skins...';
+        el.style.color = '#ffd700';
+    }
+}
+
+function carregarRecursos() {
+    // Chama render de estrategias E skins juntos, a partir de UM /status.
+    // Resolve o bug de "so aparece depois de trocar de aba": agora carrega no
+    // login e via polling, sem depender de abrir a aba.
+    fetch('/status').then(function(r){ return r.json(); }).then(function(d){
+        atualizarStatusRecursos(d);
+        // so' renderiza se os dados ja' vieram (evita pintar vazio na corrida)
+        if(d.estrategias_disponiveis && Object.keys(d.estrategias_disponiveis).length > 0){
+            if(document.getElementById('estrategiaGrid')) renderEstrategias();
+        }
+        if(d.skins_status && d.skins_status.length > 0){
+            if(document.getElementById('skinsGridBasicas')) renderSkins();
+        }
+    }).catch(function(){});
+}
+
 function renderEstrategias() {
     fetch('/status').then(function(r) { return r.json(); }).then(function(d) {
         var estrategiasCompradas = d.estrategias_compradas || ['v_sensitivo'];
@@ -685,6 +717,7 @@ function conectarIQ() {
             atualizar();
             iniciarChat();
             carregarSkinEffectsDoFirebase();
+            carregarRecursos();
             showToast('✅ Conectado!', 'success');
             if(d.refresh) { setTimeout(function() { location.reload(); }, 1500); }
         } else { showToast('ERRO: '+d.erro, 'error'); btnConectar.disabled=false; btnConectar.textContent='🔌 CONECTAR'; }
@@ -831,6 +864,17 @@ function atualizar() {
         if(d.sinal) document.getElementById('sinal').textContent = d.sinal;
         if(d.estrategia_nome) document.getElementById('estrategiaAtiva').textContent = d.estrategia_nome;
         if(d.bot_version) document.getElementById('botVersionDisplay').innerHTML = '⚡ TESLA 369 v' + d.bot_version;
+        // mantem o status de recursos fresco e re-tenta render se ficou vazio (corrida)
+        var _sr = document.getElementById('statusRecursos');
+        if(_sr){
+            var _nE = d.estrategias_disponiveis ? Object.keys(d.estrategias_disponiveis).length : 0;
+            var _nS = d.skins_status ? d.skins_status.length : 0;
+            if(_nE>0||_nS>0){ _sr.innerHTML='✅ '+_nE+' estratégias | ✅ '+_nS+' skins carregadas'; _sr.style.color='#00ff88'; }
+            var _eg=document.getElementById('estrategiaGrid');
+            if(_eg && !_eg.innerHTML && _nE>0) renderEstrategias();
+            var _sg=document.getElementById('skinsGridBasicas');
+            if(_sg && !_sg.innerHTML && _nS>0) renderSkins();
+        }
         if(d.analise){
             document.getElementById('rsi').textContent = d.analise.rsi ? d.analise.rsi.toFixed(1) : '--';
             document.getElementById('mm5').textContent = d.analise.mm5 ? d.analise.mm5.toFixed(5) : '--';
@@ -911,7 +955,7 @@ window.onload = function() {
             document.getElementById('statusDot').className = 'status-dot active';
             document.getElementById('moedasSaldo').textContent = d.moedas || 0;
             if(d.bot_version) document.getElementById('botVersionDisplay').innerHTML = '⚡ TESLA 369 v' + d.bot_version;
-            intervalo = setInterval(atualizar,2000); atualizar(); iniciarChat(); carregarSkinEffectsDoFirebase();
+            intervalo = setInterval(atualizar,2000); atualizar(); iniciarChat(); carregarSkinEffectsDoFirebase(); carregarRecursos();
         }
     });
     setInterval(atualizarChat,5000);
