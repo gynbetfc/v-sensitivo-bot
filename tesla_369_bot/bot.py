@@ -28,6 +28,36 @@ import signal
 import random
 
 warnings.filterwarnings("ignore")
+
+# ============================================================
+# PONTE PYTHON -> ANDROID (notificacoes + vibracao)
+# ============================================================
+# No APK (Chaquopy), conseguimos chamar codigo Kotlin. No PC isso nao existe,
+# entao a funcao vira no-op silencioso. Assim o MESMO bot.py roda nos dois.
+_ANDROID_NOTIFIER = None
+def _get_android_notifier():
+    global _ANDROID_NOTIFIER
+    if _ANDROID_NOTIFIER is not None:
+        return _ANDROID_NOTIFIER
+    try:
+        from java import jclass
+        _ANDROID_NOTIFIER = jclass("com.tesla369.bot.TeslaService")
+    except Exception:
+        _ANDROID_NOTIFIER = False  # nao estamos no Android
+    return _ANDROID_NOTIFIER
+
+def notificar_android(tipo, titulo, msg, vibracoes=0):
+    """tipo: 'win'|'loss'|'gale'|'info'. vibracoes: quantas vibradas curtas.
+    Silencioso e' seguro no PC (nao ha Android)."""
+    notifier = _get_android_notifier()
+    if not notifier:
+        return
+    try:
+        notifier.notificarResultado(tipo, titulo, msg, int(vibracoes))
+    except Exception:
+        pass  # nunca deixa a notificacao quebrar a operacao
+
+
 app = Flask(__name__)
 
 # Necessario para o cookie de sessao assinado (e' ele que separa um aluno do
@@ -897,6 +927,9 @@ def executar_ciclo(s, direcao, timeframe_seg):
                 atualizar_estatisticas_async(s, 'WIN', valor, lucro_liquido, saldo_depois, s.estrategia_atual)
                 s.stop_gain = True
                 s.add_log("🎯 STOP GAIN! Vitoria alcancada!", 'win')
+                # 🔔 notifica + vibra: i+1 vibradas (1a vela=1, gale1=2, gale2=3)
+                _onde = "de primeira" if i == 0 else f"no GALE {i}"
+                notificar_android('win', f'🌟 WIN {_onde}!', f'+${lucro_liquido:.2f} | Banca: ${saldo_depois:.2f}', i + 1)
                 break
             else:
                 s.add_log(f"💀 LOSS! {lucro_liquido:.2f}", 'loss')
@@ -904,11 +937,15 @@ def executar_ciclo(s, direcao, timeframe_seg):
 
                 if i < s.martingale and s.bot_rodando and not abortar_gale:
                     s.add_log(f"   ➡️ Indo para GALE {i + 1}...", 'loss')
+                    # 🔔 notifica que vai pro proximo gale (vibracao longa unica)
+                    notificar_android('gale', f'🔄 GALE {i + 1}', f'LOSS na tentativa {i + 1}. Indo pro gale...', 0)
                 elif abortar_gale:
                     s.add_log("   🚫 CICLO PERDIDO (GALE abortado): conexão caiu e só voltou depois da vela expirar.", 'loss')
                     break
                 else:
                     s.add_log("   💀 CICLO PERDIDO! Todas as entradas perdidas.", 'loss')
+                    # 🔔 LOSS final: 4 vibradas (distingue bem do WIN, que e' 1-3)
+                    notificar_android('loss', '💀 LOSS - ciclo perdido', f'Todas as entradas perderam. Banca: ${saldo_depois:.2f}', 4)
 
         if s.bot_rodando:
             bf = s.API.get_balance() if s.API else bi
@@ -1327,24 +1364,24 @@ def parar():
         s.API = None
         s.senha = ""
 
-        # 🔧 O v15 dava os.kill() no processo inteiro aqui. Com multiconta isso
-        # MATARIA o bot de todos os outros alunos que estivessem operando.
-        # Agora so' derruba o servidor se este for mesmo o unico usuario
-        # (uso local, onde 'desconectar' = fechar o programa).
-        # 🔧 DESCONECTAR NAO PODE MATAR O PROCESSO no app do celular. Antes o
-        # padrao 'auto' fazia os.kill(SIGTERM) quando havia 1 so' sessao - o que
-        # no APK derruba o app inteiro (parecia "travar ao desconectar"). Agora
-        # o padrao e' NAO desligar: apenas encerra a sessao e o Flask segue no ar
-        # pra reconectar. So' desliga se explicitamente pedido via env
-        # TESLA_SHUTDOWN_AO_DESCONECTAR=true (uso servidor, nunca no app).
-        desligar = os.environ.get("TESLA_SHUTDOWN_AO_DESCONECTAR", "false").lower() == "true"
-        if desligar:
-            s.add_log("🔌 Desconectado e finalizando servidor...", 'info')
-            def shutdown_server():
-                time.sleep(1)
+        # 🔧 REGRA NOVA (pedido do Austin):
+        #   - FECHAR o app  -> o bot CONTINUA (Foreground Service segura o server)
+        #   - DESCONECTAR    -> mata TUDO (encerra o servico e fecha o app)
+        # No APK, avisamos o Android pra parar o TeslaService e fechar o app.
+        # No PC (sem Android), derruba o processo local mesmo.
+        s.add_log("🔌 Desconectado. Encerrando o app...", 'info')
+        try:
+            notificar_android('encerrar', 'TESLA 369', 'Desconectado.', 0)
+        except Exception:
+            pass
+        def shutdown_server():
+            time.sleep(1.2)
+            try:
                 os.kill(os.getpid(), signal.SIGTERM)
-            threading.Thread(target=shutdown_server, daemon=True).start()
-            return jsonify({'ok': True, 'shutdown': True})
+            except Exception:
+                pass
+        threading.Thread(target=shutdown_server, daemon=True).start()
+        return jsonify({'ok': True, 'shutdown': True})
 
         s.add_log("🔌 Desconectado com sucesso!", 'win')
         return jsonify({'ok': True, 'shutdown': False})
