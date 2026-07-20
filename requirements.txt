@@ -1,3 +1,0 @@
-flask==2.3.0
-api-iqoption-faria
-requests
