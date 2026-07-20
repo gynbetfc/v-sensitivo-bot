@@ -429,15 +429,16 @@ function showToast(message, type, title) {
     var finalTitle = title || titles[type] || 'Info';
     var icon = icons[type] || 'ℹ️';
     
-    // Remove toasts existentes do mesmo tipo para evitar duplicação
+    // 🔧 Remove TODOS os toasts anteriores antes de mostrar o novo.
+    // Antes so' removia os do MESMO tipo, entao "bot iniciado" (success) +
+    // "win" (win) se acumulavam na tela. Agora so' aparece um por vez.
     var existingToasts = container.querySelectorAll('.toast');
     for (var i = 0; i < existingToasts.length; i++) {
         var existing = existingToasts[i];
-        var existingType = existing.dataset.type || '';
-        if (existingType === type) {
-            existing.classList.add('toast-hide');
-            setTimeout(function(el) { if(el && el.parentElement) el.remove(); }, 500, existing);
-        }
+        var eid = existing.dataset.toastId;
+        if (eid && toastTimeouts[eid]) { clearTimeout(toastTimeouts[eid]); delete toastTimeouts[eid]; }
+        existing.classList.add('toast-hide');
+        setTimeout(function(el) { if(el && el.parentElement) el.remove(); }, 300, existing);
     }
     
     var toast = document.createElement('div');
@@ -677,14 +678,21 @@ function renderEstrategias() {
     });
 }
 
-function selecionarEstrategia(key) {
+function selecionarEstrategia(key, ativar) {
+    // se o long-press acabou de completar, ignora o clique que vem logo atras
+    if(!ativar && _lpAtivou){ _lpAtivou = false; return; }
     estrategiaSel = key;
     var cards = document.querySelectorAll('.estrategia-card');
     for(var i=0;i<cards.length;i++) cards[i].classList.remove('ativa');
     var card = document.getElementById('est_'+key);
     if(card) card.classList.add('ativa');
     fetch('/selecionar_estrategia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estrategia:key})})
-        .then(function() { document.getElementById('estrategiaAtiva').textContent = key.toUpperCase(); showToast('Estratégia alterada para: '+key, 'success'); });
+        .then(function() {
+            document.getElementById('estrategiaAtiva').textContent = key.toUpperCase();
+            // clique simples = "selecionada"; long-press = "carregada e ativada"
+            if(ativar) showToast('\u2705 '+key.toUpperCase()+' carregada e ativada!', 'success');
+            else showToast('Estrat\u00e9gia selecionada: '+key.toUpperCase()+'. Segure para ativar.', 'info');
+        });
 }
 
 function comprarEstrategia(estrategiaId) {
@@ -1111,21 +1119,22 @@ window.onload = function() {
         // (grids de skin/estrategia) - deixa o proprio elemento rolar
         var idx = ORDEM_ABAS.indexOf(abaAtual);
         if(idx < 0) return;
-        if(dx < 0 && idx < ORDEM_ABAS.length - 1){
-            // direita -> esquerda: proxima aba
-            trocarAbaComGuard(ORDEM_ABAS[idx+1]);
-        } else if(dx > 0 && idx > 0){
-            // esquerda -> direita: aba anterior
-            trocarAbaComGuard(ORDEM_ABAS[idx-1]);
-        }
+        var passo = (dx < 0) ? 1 : -1;  // esquerda=avanca, direita=volta
+        var destino = proximaAbaValida(idx, passo);
+        if(destino) openTab(destino);
     }, {passive:true});
-    // respeita o guard de "pare o bot antes de ir pra estrategias"
-    function trocarAbaComGuard(destino){
-        if(destino === 'estrategias' && typeof botAtivo !== 'undefined' && botAtivo){
-            showToast('\u26a0\ufe0f Pare o bot primeiro!', 'warning');
-            return;
+
+    // 🔧 acha a proxima aba VALIDA na direcao, PULANDO as bloqueadas.
+    // Se estiver operando, a aba 'estrategias' e' pulada (nao trava mais o swipe).
+    function proximaAbaValida(idx, passo){
+        var i = idx + passo;
+        while(i >= 0 && i < ORDEM_ABAS.length){
+            var aba = ORDEM_ABAS[i];
+            var bloqueada = (aba === 'estrategias' && typeof botAtivo !== 'undefined' && botAtivo);
+            if(!bloqueada) return aba;
+            i += passo;  // pula a bloqueada e continua na mesma direcao
         }
-        openTab(destino);
+        return null;  // nao ha aba valida naquela direcao
     }
 })();
 
@@ -1151,6 +1160,7 @@ function _confirmarNao() {
 
 // ==== SEGURAR NA ESTRATEGIA (long-press) -> carrega e pula pro Bot ====
 var _lpTimer=null, _lpRaf=null, _lpCard=null;
+var _lpAtivou=false;  // marca que o long-press completou (impede o clique seguinte)
 var LP_DURACAO=1000;  // 1 segundo segurando
 function _lpIniciar(card){
     _lpCard = card;
@@ -1167,11 +1177,11 @@ function _lpIniciar(card){
     }
     _lpRaf = requestAnimationFrame(passo);
     _lpTimer = setTimeout(function(){
-        // completou: seleciona a estrategia e vai pro bot
+        // completou: ATIVA a estrategia e vai pro bot (diferente do clique simples)
+        _lpAtivou = true;  // impede o onclick de disparar logo em seguida
         _lpCancelar();
         if(typeof botAtivo!=='undefined' && botAtivo){ showToast('\u26a0\ufe0f Pare o bot primeiro!','warning'); return; }
-        selecionarEstrategia(key);
-        showToast('\u2705 Estrategia carregada!','success');
+        selecionarEstrategia(key, true);  // true = veio do long-press (ativa + vai pro bot)
         openTab('bot');
     }, LP_DURACAO);
 }
