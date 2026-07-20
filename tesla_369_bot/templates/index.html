@@ -75,7 +75,7 @@
         .loja-tab-btn.active{background:{{ COR_TAB_ATIVA }};color:#000;border-color:{{ COR_TAB_ATIVA }};box-shadow:0 2px 8px rgba(0,0,0,0.2)}
         
         .produtos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:15px;margin-top:15px}
-        .produto-card{background:linear-gradient(135deg,#111122,#0a0a15);border-radius:14px;border:1px solid #2a2a3e;overflow:hidden;transition:all 0.3s ease}
+        .produto-card{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;background:linear-gradient(135deg,#111122,#0a0a15);border-radius:14px;border:1px solid #2a2a3e;overflow:hidden;transition:all 0.3s ease}
         .produto-card:hover{transform:translateY(-3px);border-color:{{ COR_DESTAQUE }};box-shadow:0 8px 20px rgba(0,0,0,0.3)}
         .produto-card.selecionado{border-color:#ffd700;box-shadow:0 0 15px rgba(255,215,0,0.3)}
         .produto-card.ativo{border-color:#00ff88;box-shadow:0 0 12px rgba(0,255,136,0.3)}
@@ -99,7 +99,7 @@
         .btn-indisponivel{background:#333;color:#888;cursor:not-allowed}
         
         .estrategias-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:15px;margin-top:15px}
-        .estrategia-card{background:linear-gradient(135deg,#111122,#0a0a15);border-radius:14px;border:2px solid #2a2a3e;cursor:pointer;transition:all 0.3s ease;overflow:hidden}
+        .estrategia-card{background:linear-gradient(135deg,#111122,#0a0a15);border-radius:14px;border:2px solid #2a2a3e;cursor:pointer;transition:all 0.3s ease;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
         .estrategia-card:hover{transform:translateY(-3px);border-color:{{ COR_DESTAQUE }}}
         .estrategia-card.ativa{border-color:#00ff88;background:#0a1a0a}
 
@@ -689,9 +689,9 @@ function selecionarEstrategia(key, ativar) {
     fetch('/selecionar_estrategia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estrategia:key})})
         .then(function() {
             document.getElementById('estrategiaAtiva').textContent = key.toUpperCase();
-            // clique simples = "selecionada"; long-press = "carregada e ativada"
-            if(ativar) showToast('\u2705 '+key.toUpperCase()+' carregada e ativada!', 'success');
-            else showToast('Estrat\u00e9gia selecionada: '+key.toUpperCase()+'. Segure para ativar.', 'info');
+            // clique simples = SILENCIOSO (so' marca visualmente o card)
+            // long-press = mostra toast de ativada (unica msg)
+            if(ativar) showToast('\u2705 '+key.toUpperCase()+' ativada!', 'success');
         });
 }
 
@@ -944,22 +944,28 @@ function verRanking(){
             '<div class="relatorio-card"><div class="rlabel">🔄 TOTAL OPS</div><div class="rvalue">'+d.stats.total_ops+'</div></div>'+
             '<div class="relatorio-card"><div class="rlabel">✅ WINS GLOBAIS</div><div class="rvalue">'+d.stats.total_wins+'</div></div>'+
             '<div class="relatorio-card"><div class="rlabel">🎯 TAXA GLOBAL</div><div class="rvalue">'+d.stats.taxa_global+'%</div></div></div></div>'+
-            '<p style="color:#ffd700;font-size:16px;font-weight:bold;text-align:center;margin-bottom:15px">🏆 TOP 10 TRADERS</p>'+
-            '<div style="overflow-x:auto"><table class="historico-table">'+
-            '<thead><tr><th>#</th><th>EMAIL</th><th>LUCRO TOTAL</th><th>WINS</th><th>LOSS</th><th>TAXA</th><th>BANCA</th></tr></thead><tbody>';
+            '<p style="color:#ffd700;font-size:16px;font-weight:bold;text-align:center;margin-bottom:15px">🏆 TOP 10 TRADERS</p>';
+        // 🔧 CARDS em vez de tabela larga: no celular a tabela exigia arrastar pro
+        // lado (e isso trocava de aba). Cada trader vira um card vertical.
         for(var i=0;i<d.ranking.length && i<10;i++){
             var u = d.ranking[i];
-            var medalha = i===0?'🥇':(i===1?'🥈':(i===2?'🥉':(i+1)));
-            h+='<tr><td style="font-weight:bold;font-size:16px">'+medalha+'</td>'+
-                '<td style="font-size:10px">'+(u.email||'---').substring(0,25)+'</td>'+
-                '<td style="color:'+(u.lucro_total>=0?'#00ff88':'#ff4444')+'">$'+u.lucro_total.toFixed(2)+'</td>'+
-                '<td style="color:#00ff88">'+u.total_wins+'</td>'+
-                '<td style="color:#ff4444">'+u.total_losses+'</td>'+
-                '<td style="color:#ffd700">'+u.taxa+'%</td>'+
-                '<td style="color:#00ff88">$'+u.banca_atual.toFixed(2)+'</td>'+
-                '</tr>';
+            var medalha = i===0?'🥇':(i===1?'🥈':(i===2?'🥉':'#'+(i+1)));
+            var corLucro = u.lucro_total>=0?'#00ff88':'#ff4444';
+            var email = (u.email||'---');
+            var emailCurto = email.length>22 ? email.substring(0,22)+'...' : email;
+            h+='<div style="background:#12121e;border:1px solid #2a2a3e;border-left:3px solid #ffd700;border-radius:12px;padding:12px 14px;margin-bottom:10px">'+
+                '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'+
+                    '<span style="font-size:18px;font-weight:bold;color:#ffd700">'+medalha+'</span>'+
+                    '<span style="font-size:11px;color:#aaa;word-break:break-all;text-align:right">'+emailCurto+'</span>'+
+                '</div>'+
+                '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px">'+
+                    '<div><span style="color:#666">Lucro:</span> <b style="color:'+corLucro+'">$'+u.lucro_total.toFixed(2)+'</b></div>'+
+                    '<div><span style="color:#666">Banca:</span> <b style="color:#00ff88">$'+u.banca_atual.toFixed(2)+'</b></div>'+
+                    '<div><span style="color:#666">Wins:</span> <b style="color:#00ff88">'+u.total_wins+'</b> / <b style="color:#ff4444">'+u.total_losses+'</b></div>'+
+                    '<div><span style="color:#666">Taxa:</span> <b style="color:#ffd700">'+u.taxa+'%</b></div>'+
+                '</div>'+
+            '</div>';
         }
-        h+='</tbody></table></div>';
         document.getElementById('relatorioContent').innerHTML = h;
     }).catch(function(){ showToast('Erro ao carregar ranking', 'error'); });
 }
