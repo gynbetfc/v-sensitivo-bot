@@ -102,6 +102,15 @@
         .estrategia-card{background:linear-gradient(135deg,#111122,#0a0a15);border-radius:14px;border:2px solid #2a2a3e;cursor:pointer;transition:all 0.3s ease;overflow:hidden}
         .estrategia-card:hover{transform:translateY(-3px);border-color:{{ COR_DESTAQUE }}}
         .estrategia-card.ativa{border-color:#00ff88;background:#0a1a0a}
+
+        /* anel de progresso do long-press na estrategia */
+        .lp-overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);border-radius:14px;z-index:5}
+        .lp-overlay.on{display:flex}
+        .lp-ring{width:54px;height:54px;transform:rotate(-90deg)}
+        .lp-ring circle{fill:none;stroke-width:5}
+        .lp-ring .bg{stroke:#333}
+        .lp-ring .fg{stroke:#00ff88;stroke-linecap:round;transition:stroke-dashoffset 0.05s linear}
+
         .estrategia-header{background:rgba(0,0,0,0.3);padding:12px;text-align:center}
         .estrategia-nome{font-size:14px;font-weight:bold;color:{{ COR_DESTAQUE }}}
         .estrategia-body{padding:12px}
@@ -313,6 +322,18 @@
             <p style="color:#ffd700;font-size:13px;font-weight:bold;margin-bottom:10px;margin-top:15px">🤖 COMO O ROBÔ FUNCIONA</p>
             <p style="color:#ccc;font-size:11px;line-height:1.8;text-align:justify">
                 O Tesla 369 analisa <span style="color:#00ff88">padrões de velas</span> em tempo real usando indicadores técnicos. Cada estratégia tem seu próprio <span style="color:#ffd700">timeframe e gatilho</span> de entrada. Quando encontra um padrão com alta probabilidade, ele <span style="color:#ffd700">abre uma ordem automaticamente</span>. O robô busca <span style="color:#ffd700;font-weight:bold">+10% de retorno</span> sobre o valor que você definir como entrada. Se perder, ele aplica <span style="color:#ff4444">Martingale (Gale 2)</span> dobrando o valor por até 2 vezes. <span style="color:#00ff88;font-weight:bold">Stop Gain:</span> 1 WIN = bot para automaticamente.
+            </p>
+            <p style="color:#ffd700;font-size:13px;font-weight:bold;margin-bottom:10px;margin-top:15px">👆 GESTOS E ATALHOS</p>
+            <p style="color:#ccc;font-size:11px;line-height:2.0;text-align:justify">
+                <span style="color:#00ff88">•</span> <span style="color:#ffd700">Deslize o dedo para os lados</span> para trocar de aba: arraste da <span style="color:#ffd700">direita para a esquerda</span> para avançar, e da <span style="color:#ffd700">esquerda para a direita</span> para voltar.<br>
+                <span style="color:#00ff88">•</span> Na aba <span style="color:#ffd700">ESTRATÉGIAS</span>, <span style="color:#ffd700">segure o dedo</span> sobre uma estratégia por 1 segundo: um círculo de carregamento aparece e, ao completar, ela é ativada e você vai direto para a tela do bot.<br>
+                <span style="color:#00ff88">•</span> Na aba <span style="color:#ffd700">SKINS</span> você vê as skins que já tem; na <span style="color:#ffd700">LOJA</span>, só as que ainda estão à venda.<br>
+                <span style="color:#00ff88">•</span> Marque <span style="color:#ffd700">💾 Lembrar login</span> para não digitar email e senha toda vez (fica salvo só neste aparelho).<br>
+                <span style="color:#00ff88">•</span> Ao comprar ou ativar uma skin, o app <span style="color:#ffd700">recarrega sozinho</span> para aplicar o novo visual.
+            </p>
+            <p style="color:#ffd700;font-size:13px;font-weight:bold;margin-bottom:10px;margin-top:15px">📡 CONEXÃO</p>
+            <p style="color:#ccc;font-size:11px;line-height:2.0;text-align:justify">
+                Se o login ficar travado em <span style="color:#ffd700">"Conectando..."</span>, tente usar os <span style="color:#ffd700">dados móveis (4G)</span> em vez do Wi-Fi. Algumas redes Wi-Fi bloqueiam a conexão com a corretora.
             </p>
         </div>
         
@@ -644,12 +665,14 @@ function renderEstrategias() {
             if(estrategiasCompradas.includes(key)) {
                 var e = disponiveis[key];
                 var ativa = (key == estrategiaAtual) ? ' ativa' : '';
-                html += '<div class="estrategia-card'+ativa+'" onclick="selecionarEstrategia(\''+key+'\')" id="est_'+key+'">' +
+                html += '<div class="estrategia-card'+ativa+'" onclick="selecionarEstrategia(\''+key+'\')" id="est_'+key+'" data-key="'+key+'">' +
+                    '<div class="lp-overlay"><svg class="lp-ring" viewBox="0 0 54 54"><circle class="bg" cx="27" cy="27" r="24"></circle><circle class="fg" cx="27" cy="27" r="24" stroke-dasharray="150.8" stroke-dashoffset="150.8"></circle></svg></div>' +
                     '<div class="estrategia-header"><div class="estrategia-nome">'+e.nome+'</div></div>' +
                     '<div class="estrategia-body"><div class="estrategia-desc">'+e.desc+'</div><div class="estrategia-preco">'+(e.gratis ? '<span class="badge-gratis">GRÁTIS</span>' : '<span class="badge-pago">⚡ '+e.preco_moedas+' VOLTS</span>')+'</div></div></div>';
             }
         }
         grid.innerHTML = html || '<p style="color:#ff4444;text-align:center;padding:20px">⚠️ NENHUMA ESTRATÉGIA ADQUIRIDA! Vá na LOJA e compre uma estratégia.</p>';
+        ligarLongPressEstrategias();
         if(disponiveis[estrategiaAtual]) document.getElementById('estrategiaAtiva').textContent = disponiveis[estrategiaAtual].nome;
     });
 }
@@ -666,7 +689,17 @@ function selecionarEstrategia(key) {
 
 function comprarEstrategia(estrategiaId) {
     if(!emailLogado){ showToast('Conecte primeiro!', 'error'); return; }
+    // pergunta antes de debitar
+    var _fn = arguments.callee; confirmarWeb('Comprar esta estrategia com seus VOLTS?', function(sim){ if(!sim) return; _comprarEstrategiaConfirmado(estrategiaId); }); return;
     // confirmacao removida (confirm nao funciona na WebView)
+    fetch('/comprar_estrategia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estrategia_id:estrategiaId})})
+    .then(function(r) { return r.json(); }).then(function(d) { 
+        if(d.ok){ showToast(d.msg||'Adquirida com sucesso!', 'success'); document.getElementById('moedasSaldo').textContent=d.moedas; renderLojaEstrategias(); renderEstrategias(); } 
+        else { showToast('ERRO: '+d.erro, 'error'); } 
+    });
+}
+function _comprarEstrategiaConfirmado(estrategiaId) {
+        // confirmacao removida (confirm nao funciona na WebView)
     fetch('/comprar_estrategia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estrategia_id:estrategiaId})})
     .then(function(r) { return r.json(); }).then(function(d) { 
         if(d.ok){ showToast(d.msg||'Adquirida com sucesso!', 'success'); document.getElementById('moedasSaldo').textContent=d.moedas; renderLojaEstrategias(); renderEstrategias(); } 
@@ -676,20 +709,26 @@ function comprarEstrategia(estrategiaId) {
 
 function comprarSkin(skinId) {
     if(!emailLogado){ showToast('Conecte primeiro!', 'error'); return; }
-    // confirmacao removida (confirm nao funciona na WebView)
-    fetch('/comprar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId})})
-    .then(function(r) { return r.json(); }).then(function(d) {
-        if(d.ok){ showToast(d.msg||'Skin adquirida!', 'success'); document.getElementById('moedasSaldo').textContent=d.moedas; renderSkins(); } 
-        else { showToast('ERRO: '+d.erro, 'error'); }
+    // PERGUNTA antes de debitar (via modal, que funciona na WebView)
+    confirmarWeb('Comprar esta skin com seus VOLTS?', function(sim){
+        if(!sim) return;
+        fetch('/comprar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId})})
+        .then(function(r) { return r.json(); }).then(function(d) {
+            if(d.ok){
+                showToast(d.msg||'Skin adquirida! Aplicando...', 'success');
+                document.getElementById('moedasSaldo').textContent=d.moedas;
+                // recarrega pra aplicar a skin (as cores vem do servidor no render)
+                setTimeout(function(){ location.reload(); }, 900);
+            } else { showToast('ERRO: '+d.erro, 'error'); }
+        });
     });
 }
 
 function ativarSkin(skinId) {
     if(!emailLogado){ showToast('Conecte primeiro!', 'error'); return; }
-    // confirmacao removida (confirm nao funciona na WebView)
     fetch('/ativar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId})})
     .then(function(r) { return r.json(); }).then(function(d) { 
-        if(d.ok){ showToast('Skin ativada! Recarregando...', 'success'); setTimeout(function() { location.reload(); }, 800); } 
+        if(d.ok){ showToast('Skin ativada! Aplicando...', 'success'); setTimeout(function() { location.reload(); }, 800); } 
         else { showToast('ERRO: '+d.erro, 'error'); } 
     });
 }
@@ -1090,6 +1129,88 @@ window.onload = function() {
     }
 })();
 
+
+// ==== CONFIRMACAO VIA MODAL (funciona na WebView) ====
+var _confirmarCallback = null;
+function confirmarWeb(mensagem, callback) {
+    document.getElementById('modalConfirmarTexto').innerText = mensagem;
+    document.getElementById('modalConfirmar').style.display = 'flex';
+    _confirmarCallback = callback;
+}
+function _confirmarSim() {
+    document.getElementById('modalConfirmar').style.display = 'none';
+    if(_confirmarCallback) _confirmarCallback(true);
+    _confirmarCallback = null;
+}
+function _confirmarNao() {
+    document.getElementById('modalConfirmar').style.display = 'none';
+    if(_confirmarCallback) _confirmarCallback(false);
+    _confirmarCallback = null;
+}
+
+
+// ==== SEGURAR NA ESTRATEGIA (long-press) -> carrega e pula pro Bot ====
+var _lpTimer=null, _lpRaf=null, _lpCard=null;
+var LP_DURACAO=1000;  // 1 segundo segurando
+function _lpIniciar(card){
+    _lpCard = card;
+    var key = card.getAttribute('data-key');
+    var overlay = card.querySelector('.lp-overlay');
+    var fg = card.querySelector('.lp-ring .fg');
+    if(!overlay||!fg) return;
+    overlay.classList.add('on');
+    var circ = 150.8, t0 = Date.now();
+    function passo(){
+        var p = Math.min(1, (Date.now()-t0)/LP_DURACAO);
+        fg.style.strokeDashoffset = circ*(1-p);
+        if(p<1){ _lpRaf=requestAnimationFrame(passo); }
+    }
+    _lpRaf = requestAnimationFrame(passo);
+    _lpTimer = setTimeout(function(){
+        // completou: seleciona a estrategia e vai pro bot
+        _lpCancelar();
+        if(typeof botAtivo!=='undefined' && botAtivo){ showToast('\u26a0\ufe0f Pare o bot primeiro!','warning'); return; }
+        selecionarEstrategia(key);
+        showToast('\u2705 Estrategia carregada!','success');
+        openTab('bot');
+    }, LP_DURACAO);
+}
+function _lpCancelar(){
+    if(_lpTimer){ clearTimeout(_lpTimer); _lpTimer=null; }
+    if(_lpRaf){ cancelAnimationFrame(_lpRaf); _lpRaf=null; }
+    if(_lpCard){
+        var ov=_lpCard.querySelector('.lp-overlay'); var fg=_lpCard.querySelector('.lp-ring .fg');
+        if(ov) ov.classList.remove('on');
+        if(fg) fg.style.strokeDashoffset=150.8;
+        _lpCard=null;
+    }
+}
+function ligarLongPressEstrategias(){
+    var cards = document.querySelectorAll('#estrategiaGrid .estrategia-card');
+    for(var i=0;i<cards.length;i++){
+        var c = cards[i];
+        c.addEventListener('touchstart', function(e){ _lpIniciar(e.currentTarget); }, {passive:true});
+        c.addEventListener('touchend', function(){ _lpCancelar(); }, {passive:true});
+        c.addEventListener('touchmove', function(){ _lpCancelar(); }, {passive:true});
+        // no desktop tb (mouse) pra testar
+        c.addEventListener('mousedown', function(e){ _lpIniciar(e.currentTarget); });
+        c.addEventListener('mouseup', function(){ _lpCancelar(); });
+        c.addEventListener('mouseleave', function(){ _lpCancelar(); });
+    }
+}
+
 </script>
+
+    <!-- MODAL DE CONFIRMACAO (substitui o confirm() que nao funciona na WebView) -->
+    <div id="modalConfirmar" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center">
+        <div style="background:{{ COR_PANEL }};border:2px solid {{ COR_DESTAQUE }};border-radius:15px;padding:24px;max-width:300px;margin:20px;text-align:center;box-shadow:0 0 40px rgba(0,0,0,0.6)">
+            <div id="modalConfirmarTexto" style="color:{{ COR_TEXTO }};font-size:15px;margin-bottom:20px;line-height:1.4"></div>
+            <div style="display:flex;gap:10px">
+                <button onclick="_confirmarSim()" style="flex:1;padding:12px;border:none;border-radius:8px;background:{{ COR_BOTAO }};color:#000;font-weight:bold;font-size:14px;cursor:pointer">✅ SIM</button>
+                <button onclick="_confirmarNao()" style="flex:1;padding:12px;border:1px solid #666;border-radius:8px;background:#222;color:#ccc;font-weight:bold;font-size:14px;cursor:pointer">✖ NÃO</button>
+            </div>
+        </div>
+    </div>
+
 </body>
                                                                                                                                               </html>
