@@ -654,7 +654,7 @@ function selecionarEstrategia(key) {
 
 function comprarEstrategia(estrategiaId) {
     if(!emailLogado){ showToast('Conecte primeiro!', 'error'); return; }
-    if(!confirm('Comprar esta estratégia com VOLTS?')) return;
+    // confirmacao removida (confirm nao funciona na WebView)
     fetch('/comprar_estrategia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({estrategia_id:estrategiaId})})
     .then(function(r) { return r.json(); }).then(function(d) { 
         if(d.ok){ showToast(d.msg||'Adquirida com sucesso!', 'success'); document.getElementById('moedasSaldo').textContent=d.moedas; renderLojaEstrategias(); renderEstrategias(); } 
@@ -664,7 +664,7 @@ function comprarEstrategia(estrategiaId) {
 
 function comprarSkin(skinId) {
     if(!emailLogado){ showToast('Conecte primeiro!', 'error'); return; }
-    if(!confirm('Comprar esta skin?')) return;
+    // confirmacao removida (confirm nao funciona na WebView)
     fetch('/comprar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId})})
     .then(function(r) { return r.json(); }).then(function(d) {
         if(d.ok){ showToast(d.msg||'Skin adquirida!', 'success'); document.getElementById('moedasSaldo').textContent=d.moedas; renderSkins(); } 
@@ -674,7 +674,7 @@ function comprarSkin(skinId) {
 
 function ativarSkin(skinId) {
     if(!emailLogado){ showToast('Conecte primeiro!', 'error'); return; }
-    if(!confirm('Ativar esta skin? O visual será atualizado.')) return;
+    // confirmacao removida (confirm nao funciona na WebView)
     fetch('/ativar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId})})
     .then(function(r) { return r.json(); }).then(function(d) { 
         if(d.ok){ showToast('Skin ativada! Recarregando...', 'success'); setTimeout(function() { location.reload(); }, 800); } 
@@ -756,6 +756,7 @@ function conectarIQ() {
             iniciarChat();
             carregarSkinEffectsDoFirebase();
             carregarRecursos();
+            salvarCredenciais();
             showToast('✅ Conectado!', 'success');
             if(d.refresh) { setTimeout(function() { location.reload(); }, 1500); }
         } else { showToast('ERRO: '+d.erro, 'error'); btnConectar.disabled=false; btnConectar.textContent='🔌 CONECTAR'; }
@@ -764,7 +765,7 @@ function conectarIQ() {
 
 function desconectarIQ() {
     if(botAtivo){ showToast('⚠️ Pare o bot primeiro!', 'warning'); return; }
-    if(!confirm('Desconectar? O servidor será encerrado.')) return;
+    // confirmacao removida (confirm nao funciona na WebView)
     fetch('/parar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({desconectar: true}) })
     .then(function(r) { return r.json(); }).then(function(d){
         if(d.shutdown){ showToast('Desconectado!', 'info'); setTimeout(function() { window.close(); }, 1000); }
@@ -801,7 +802,7 @@ function comecarOperar() {
 }
 
 function pararBot() {
-    if(!confirm('Parar o bot?')) return;
+    // confirmacao removida (confirm nao funciona na WebView)
     var btnParar = document.getElementById('btnParar');
     btnParar.disabled = true;
     btnParar.textContent = 'Parando...';
@@ -1011,6 +1012,7 @@ function carregarCredenciais() {
 }
 
 window.onload = function() {
+    carregarCredenciais();
     renderPlanos();
     fetch('/status').then(function(r) { return r.json(); }).then(function(d){
         if(d.conectado && d.email){
