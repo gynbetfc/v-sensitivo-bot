@@ -1,9 +1,0 @@
-config.json
-*.env
-credentials.json
-dados/
-vsens_users/
-__pycache__/
-*.pyc
-.vscode/
-.idea/
