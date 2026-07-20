@@ -852,7 +852,10 @@ def executar_ciclo(s, direcao, timeframe_seg):
                 restante = vela_expira_em - time.time()
                 time.sleep(max(0, min(1.0 - gasto, restante)))
 
-            if not saldo_mudou and not verificar_saude_api(s):
+            # 🔧 So' verifica saude/reconecta se REALMENTE houve queda na vela.
+            # Se a vela fechou normal (houve_queda=False), a conexao esta viva -
+            # chamar verificar_saude_api aqui so' adicionava segundos ao gale.
+            if not saldo_mudou and houve_queda and not verificar_saude_api(s):
                 s.add_log("⚠️ Conexão perdida durante espera! Tentando reconectar...", 'error')
                 if not houve_queda:
                     houve_queda = True
@@ -864,9 +867,11 @@ def executar_ciclo(s, direcao, timeframe_seg):
                     s.bot_rodando = False
                     break
 
-            # margem: a corretora pode levar alguns segundos pra creditar
+            # margem: a corretora pode demorar um pouquinho pra creditar um WIN.
+            # 🔧 era 5s (a maior parte do "gale de 6s"). O credito real cai em
+            # <1s; 1.5s cobre o atraso sem travar o gale apos um LOSS.
             if not saldo_mudou and s.bot_rodando:
-                fim_margem = time.time() + 5
+                fim_margem = time.time() + 1.5
                 while time.time() < fim_margem:
                     try:
                         if s.API.get_balance() != saldo_pos_entrada:
@@ -978,15 +983,29 @@ def _bot_loop_interno(s):
         s.ultimo_sinal = "Aguardando..."
         s.add_log(f"📌 {s.par} | 💰 ${s.banca_inicial:.2f}")
 
+        # contador pra nao verificar saude a cada volta (isso travava o PARAR:
+        # cada verificacao tem latencia e o loop ficava preso nela)
+        _voltas = 0
         while s.bot_rodando and not s.stop_gain:
-            if not verificar_saude_api(s):
-                s.add_log("⚠️ Conexão instável no loop! Tentando reconectar...", 'error')
-                if conectar_iq(s):
-                    s.add_log("✅ Reconectado com sucesso!", 'win')
-                else:
-                    s.add_log("❌ Falha na reconexão. Bot parado.", 'error')
-                    s.bot_rodando = False
-                    break
+            # 🔧 PARAR INSTANTANEO: checa o flag ANTES de qualquer coisa cara.
+            if not s.bot_rodando:
+                break
+
+            # 🔧 nao verifica saude a CADA volta - so' a cada ~10 voltas (~3s).
+            # Antes, cada volta do loop chamava verificar_saude_api (lento no
+            # celular), e o bot ficava preso nela quando voce clicava PARAR.
+            _voltas += 1
+            if _voltas == 1 or _voltas % 10 == 0:
+                if not verificar_saude_api(s):
+                    if not s.bot_rodando: break
+                    s.add_log("⚠️ Conexão instável no loop! Tentando reconectar...", 'error')
+                    if conectar_iq(s):
+                        s.add_log("✅ Reconectado com sucesso!", 'win')
+                    else:
+                        s.add_log("❌ Falha na reconexão. Bot parado.", 'error')
+                        s.bot_rodando = False
+                        break
+            if not s.bot_rodando: break
 
             try:
                 # entrega o add_log interrompivel: e' o que permite o PARAR
