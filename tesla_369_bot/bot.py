@@ -530,22 +530,31 @@ def Payout(s, p):
 def listar_pares_binarios(s):
     """Devolve os pares BINARIOS (turbo + classico) com seu estado aberto/fechado,
     NUNCA os digitais - o robo so' opera binario. O usuario escolhe manualmente
-    entre os que estao abertos ou fechados no momento."""
+    entre os que estao abertos ou fechados no momento.
+
+    🔧 A lib iqoptionapi costuma devolver False (nao lancar excecao) quando a
+    chamada falha - ver Payout() acima, que ja checa `if d != False`. So'
+    proteger a CHAMADA e' insuficiente: se get_all_open_time() voltar False,
+    o `.get()` seguinte quebrava com AttributeError FORA do try, derrubando a
+    rota com 500 - e o front-end engolia o erro (.catch silencioso), deixando
+    o select preso pra sempre no placeholder. Agora tudo esta protegido."""
     if not s.API:
         return []
     try:
         abertura = s.API.get_all_open_time()
+        if not abertura:
+            return []
+        combinados = {}
+        for categoria in ('turbo', 'binary'):
+            for nome, info in (abertura.get(categoria) or {}).items():
+                aberto = bool(info.get('open')) if isinstance(info, dict) else False
+                combinados[nome] = combinados.get(nome, False) or aberto
+        pares = [{'par': nome, 'aberto': aberto} for nome, aberto in combinados.items()]
+        pares.sort(key=lambda x: (not x['aberto'], x['par']))
+        return pares
     except Exception as e:
         s.add_log(f"⚠️ Erro ao listar pares: {e}", 'error')
         return []
-    combinados = {}
-    for categoria in ('turbo', 'binary'):
-        for nome, info in (abertura.get(categoria) or {}).items():
-            aberto = bool(info.get('open')) if isinstance(info, dict) else False
-            combinados[nome] = combinados.get(nome, False) or aberto
-    pares = [{'par': nome, 'aberto': aberto} for nome, aberto in combinados.items()]
-    pares.sort(key=lambda x: (not x['aberto'], x['par']))
-    return pares
 
 
 def calcular_entradas(b, p, g, percentual):
@@ -1265,26 +1274,34 @@ def selecionar_estrategia():
 
 @app.route('/pares_disponiveis')
 def pares_disponiveis():
-    s = get_sessao()
-    if not s.API or not s.conectado:
-        return jsonify({'pares': [], 'par_atual': s.par})
-    return jsonify({'pares': listar_pares_binarios(s), 'par_atual': s.par})
+    try:
+        s = get_sessao()
+        if not s.API or not s.conectado:
+            return jsonify({'pares': [], 'par_atual': s.par})
+        return jsonify({'pares': listar_pares_binarios(s), 'par_atual': s.par})
+    except Exception as e:
+        # 🔧 nunca deixa isto estourar 500: o front-end faz polling nisso e um
+        # 500 vira erro silencioso (.catch vazio), travando o select pra sempre.
+        return jsonify({'pares': [], 'par_atual': '', 'erro': str(e)[:100]})
 
 @app.route('/selecionar_par', methods=['POST'])
 def selecionar_par():
-    s = get_sessao()
-    if s.bot_rodando:
-        return jsonify({'ok': False, 'erro': 'Pare o bot antes de trocar de par.'})
-    d = request.get_json(force=True) or {}
-    par = (d.get('par') or '').strip()
-    if not par:
-        return jsonify({'ok': False, 'erro': 'Par invalido.'})
-    validos = {p['par'] for p in listar_pares_binarios(s)}
-    if par not in validos:
-        return jsonify({'ok': False, 'erro': 'Par nao encontrado na lista de pares binarios validos.'})
-    s.par = par
-    s.add_log(f"📌 Par alterado para {par}", 'info')
-    return jsonify({'ok': True, 'par': par})
+    try:
+        s = get_sessao()
+        if s.bot_rodando:
+            return jsonify({'ok': False, 'erro': 'Pare o bot antes de trocar de par.'})
+        d = request.get_json(force=True) or {}
+        par = (d.get('par') or '').strip()
+        if not par:
+            return jsonify({'ok': False, 'erro': 'Par invalido.'})
+        validos = {p['par'] for p in listar_pares_binarios(s)}
+        if par not in validos:
+            return jsonify({'ok': False, 'erro': 'Par nao encontrado na lista de pares binarios validos.'})
+        s.par = par
+        s.add_log(f"📌 Par alterado para {par}", 'info')
+        return jsonify({'ok': True, 'par': par})
+    except Exception as e:
+        return jsonify({'ok': False, 'erro': str(e)[:100]})
 
 @app.route('/comprar_estrategia', methods=['POST'])
 def comprar_estrategia():
