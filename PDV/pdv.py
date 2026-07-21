@@ -194,7 +194,7 @@ class Plano:
     oculto: bool = False
 
 PLANOS: List[Plano] = [
-    Plano(1, 1, 49.99, '🔰 BÁSICO', 30, 1000, {
+    Plano(1, 1, 00.99, '🔰 BÁSICO', 30, 1000, {
         'clientes': False,
         'dashboard': False,
         'busca_estoque': False,
@@ -202,7 +202,7 @@ PLANOS: List[Plano] = [
         'fiado': False,
         'kit_combo': False,
     }),
-    Plano(2, 3, 89.99, '⭐ STANDARD', 30, 5000, {
+    Plano(2, 3, 00.99, '⭐ STANDARD', 30, 5000, {
         'clientes': True,
         'dashboard': False,
         'busca_estoque': True,
@@ -210,7 +210,7 @@ PLANOS: List[Plano] = [
         'fiado': True,
         'kit_combo': True,
     }),
-    Plano(3, 10, 119.99, '💎 PREMIUM', 30, -1, {
+    Plano(3, 10, 00.99, '💎 PREMIUM', 30, -1, {
         'clientes': True,
         'dashboard': True,
         'busca_estoque': True,
@@ -218,7 +218,7 @@ PLANOS: List[Plano] = [
         'fiado': True,
         'kit_combo': True,
     }),
-    Plano(4, 10, 0.99, '👑 EMPRESARIAL', 30, -1, {
+    Plano(4, 10, 00.99, '👑 EMPRESARIAL', 30, -1, {
         'clientes': True,
         'dashboard': True,
         'busca_estoque': True,
