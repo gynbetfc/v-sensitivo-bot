@@ -76,6 +76,7 @@ print("✅ Firebase HTTP REST configurado!")
 MARTINGALE_PADRAO = 2
 PAYOUT_PADRAO = 0.85
 PERCENTUAL_BANCA_PADRAO = 15
+ENTRADA_MINIMA = 2  # a IQ Option recusa ordem abaixo disso (R$2 / $1 - usamos o piso mais alto)
 
 # ============================================================
 # BACKEND DE PAGAMENTOS (Cloudflare Worker) - MESMO PADRAO DO PDV
@@ -444,7 +445,7 @@ def carregar_e_injetar_estrategia(s, nome_estrategia):
         return False
     s.estrategia_executar = func
     s.estrategia_injetada = nome_estrategia
-    s.add_log(f"✅ Estrategia '{nome_estrategia}' injetada do Firebase!", "win")
+    s.add_log(f"✅ Estrategia '{nome_estrategia}' carregada com sucesso!", "win")
     return True
 
 # ========== FUNCOES DE USUARIO (FIREBASE) ==========
@@ -526,6 +527,27 @@ def Payout(s, p):
         return PAYOUT_PADRAO
     except: return PAYOUT_PADRAO
 
+def listar_pares_binarios(s):
+    """Devolve os pares BINARIOS (turbo + classico) com seu estado aberto/fechado,
+    NUNCA os digitais - o robo so' opera binario. O usuario escolhe manualmente
+    entre os que estao abertos ou fechados no momento."""
+    if not s.API:
+        return []
+    try:
+        abertura = s.API.get_all_open_time()
+    except Exception as e:
+        s.add_log(f"⚠️ Erro ao listar pares: {e}", 'error')
+        return []
+    combinados = {}
+    for categoria in ('turbo', 'binary'):
+        for nome, info in (abertura.get(categoria) or {}).items():
+            aberto = bool(info.get('open')) if isinstance(info, dict) else False
+            combinados[nome] = combinados.get(nome, False) or aberto
+    pares = [{'par': nome, 'aberto': aberto} for nome, aberto in combinados.items()]
+    pares.sort(key=lambda x: (not x['aberto'], x['par']))
+    return pares
+
+
 def calcular_entradas(b, p, g, percentual):
     bs = (b * percentual / 100) * 0.99
     e0 = bs / sum((1/p)**i for i in range(g+1))
@@ -536,7 +558,11 @@ def calcular_entradas(b, p, g, percentual):
     entradas = [round(e * ajuste, 2) for e in entradas]
     if sum(entradas) > b:
         entradas[-1] = round(entradas[-1] - (sum(entradas) - b) - 0.02, 2)
-    return [max(1, e) for e in entradas]
+    # 🔧 banca pequena + percentual baixo podiam dar uma entrada abaixo do minimo
+    # que a corretora aceita (ex: 15% de banca baixa nao fecha 2$ na primeira
+    # entrada). Sem isto o buy() falhava silenciosamente. Aqui o piso VENCE o
+    # percentual escolhido: o robo so' opera se puder respeitar o minimo da IQ.
+    return [max(ENTRADA_MINIMA, e) for e in entradas]
 
 def normalizar_timeframe(tf):
     """Aceita segundos (60, 300) ou minutos (1, 5) e devolve SEGUNDOS.
@@ -1236,6 +1262,29 @@ def selecionar_estrategia():
     s.estrategia_injetada = None   # forca reinjecao na proxima operacao
     s.add_log(f"🧠 Estrategia: {estrategias_info[est_id]['nome']}", 'indicator')
     return jsonify({'ok': True})
+
+@app.route('/pares_disponiveis')
+def pares_disponiveis():
+    s = get_sessao()
+    if not s.API or not s.conectado:
+        return jsonify({'pares': [], 'par_atual': s.par})
+    return jsonify({'pares': listar_pares_binarios(s), 'par_atual': s.par})
+
+@app.route('/selecionar_par', methods=['POST'])
+def selecionar_par():
+    s = get_sessao()
+    if s.bot_rodando:
+        return jsonify({'ok': False, 'erro': 'Pare o bot antes de trocar de par.'})
+    d = request.get_json(force=True) or {}
+    par = (d.get('par') or '').strip()
+    if not par:
+        return jsonify({'ok': False, 'erro': 'Par invalido.'})
+    validos = {p['par'] for p in listar_pares_binarios(s)}
+    if par not in validos:
+        return jsonify({'ok': False, 'erro': 'Par nao encontrado na lista de pares binarios validos.'})
+    s.par = par
+    s.add_log(f"📌 Par alterado para {par}", 'info')
+    return jsonify({'ok': True, 'par': par})
 
 @app.route('/comprar_estrategia', methods=['POST'])
 def comprar_estrategia():
