@@ -453,15 +453,34 @@ def carregar_e_injetar_estrategia(s, nome_estrategia):
 def _key_email(email):
     return email.replace("@", "_").replace(".", "_").replace("#", "").replace("$", "").replace("[", "").replace("]", "").replace("/", "_")
 
+_usuario_cache = {}  # email -> (dados, timestamp)
+USUARIO_CACHE_TTL = 3  # segundos
+
 def salvar_usuario(email, dados):
     try:
         requests.put(f'{FB_URL}/tesla_369/usuarios/{_key_email(email)}.json', json=dados, timeout=5)
+        _usuario_cache[email] = (dados, time.time())  # write-through: cache ja' sai atualizado
     except: pass
 
 def carregar_usuario(email):
+    """🔧 O /status e' consultado a cada 2s (poll do front-end) e SEMPRE fazia
+    uma chamada de rede ao Firebase aqui dentro - sem cache nenhum. Numa rede
+    lenta/instavel isso e' o principal motivo da tela demorar pra "assentar"
+    depois de conectar (varias chamadas em sequencia, cada uma podendo levar
+    ate 5s de timeout). Um cache curto (3s) tira a maioria dessas chamadas da
+    rede sem deixar o saldo/estado desatualizado por muito tempo - e toda
+    escrita (salvar_usuario) ja' atualiza o cache na hora, entao uma compra ou
+    troca nunca fica "presa" mostrando dado velho."""
+    agora = time.time()
+    em_cache = _usuario_cache.get(email)
+    if em_cache and (agora - em_cache[1]) < USUARIO_CACHE_TTL:
+        return em_cache[0]
     try:
         r = requests.get(f'{FB_URL}/tesla_369/usuarios/{_key_email(email)}.json', timeout=5)
-        if r.status_code == 200 and r.json(): return r.json()
+        if r.status_code == 200 and r.json():
+            dados = r.json()
+            _usuario_cache[email] = (dados, agora)
+            return dados
     except: pass
     return None
 
