@@ -197,12 +197,6 @@
                     <span style="color:#ffd700;font-size:9px" id="valorEstimado">($0.00)</span>
                     <span style="color:#ff4444;font-size:8px" id="avisoMinimo"></span>
                 </div>
-                <div style="margin-top:5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                    <label style="color:#888;font-size:9px">💱 Par:</label>
-                    <select id="parSelecionado" onchange="selecionarPar()" style="padding:5px;background:#111;border:1px solid #333;border-radius:5px;color:#fff;font-size:10px;max-width:180px" disabled>
-                        <option value="">Conecte para listar...</option>
-                    </select>
-                </div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:5px">
                     <button class="btn btn-info" id="btnConectar" onclick="conectarIQ()">🔌 CONECTAR</button>
                     <button class="btn btn-stop" id="btnDesconectar" onclick="desconectarIQ()" style="display:none">🔌 DESCONECTAR</button>
@@ -844,43 +838,10 @@ function conectarIQ() {
             carregarSkinEffectsDoFirebase();
             carregarRecursos();
             salvarCredenciais();
-            carregarPares();
             showToast('✅ Conectado!', 'success');
             if(d.refresh) { setTimeout(function() { location.reload(); }, 1500); }
         } else { showToast('ERRO: '+d.erro, 'error'); btnConectar.disabled=false; btnConectar.textContent='🔌 CONECTAR'; }
     }).catch(function(err) { showToast('Erro: ' + err.message, 'error'); btnConectar.disabled=false; btnConectar.textContent='🔌 CONECTAR'; });
-}
-
-// ==== SELECAO DE PAR (so' binarios - turbo/classico -, nunca digital) ====
-function carregarPares() {
-    var sel = document.getElementById('parSelecionado');
-    if(!sel) return;
-    fetch('/pares_disponiveis').then(function(r){ return r.json(); }).then(function(d){
-        var pares = d.pares || [];
-        if(!pares.length){
-            sel.innerHTML = '<option value="">Nenhum par disponível</option>';
-            sel.disabled = true;
-            return;
-        }
-        var html = '';
-        for(var i=0;i<pares.length;i++){
-            var p = pares[i];
-            var rotulo = (p.aberto ? '🟢 ' : '🔴 ') + p.par;
-            var sel_attr = (p.par === d.par_atual) ? ' selected' : '';
-            html += '<option value="'+p.par+'"'+sel_attr+'>'+rotulo+'</option>';
-        }
-        sel.innerHTML = html;
-        sel.disabled = false;
-    }).catch(function(){});
-}
-function selecionarPar() {
-    var sel = document.getElementById('parSelecionado');
-    if(!sel || !sel.value) return;
-    fetch('/selecionar_par',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({par:sel.value})})
-        .then(function(r){ return r.json(); }).then(function(d){
-            if(d.ok){ showToast('💱 Par: '+d.par, 'success'); }
-            else { showToast('ERRO: '+d.erro, 'error'); carregarPares(); }
-        });
 }
 
 function desconectarIQ() {
@@ -1165,7 +1126,7 @@ window.onload = function() {
             document.getElementById('statusDot').className = 'status-dot active';
             document.getElementById('moedasSaldo').textContent = d.moedas || 0;
             if(d.bot_version) document.getElementById('botVersionDisplay').innerHTML = '⚡ TESLA 369 v' + d.bot_version;
-            intervalo = setInterval(atualizar,2000); atualizar(); iniciarChat(); carregarSkinEffectsDoFirebase(); carregarRecursos(); carregarPares();
+            intervalo = setInterval(atualizar,2000); atualizar(); iniciarChat(); carregarSkinEffectsDoFirebase(); carregarRecursos();
         }
     });
     setInterval(atualizarChat,5000);
