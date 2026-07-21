@@ -218,7 +218,7 @@ PLANOS: List[Plano] = [
         'fiado': True,
         'kit_combo': True,
     }),
-    Plano(4, 10, 149.99, '👑 EMPRESARIAL', 30, -1, {
+    Plano(4, 10, 0.99, '👑 EMPRESARIAL', 30, -1, {
         'clientes': True,
         'dashboard': True,
         'busca_estoque': True,
