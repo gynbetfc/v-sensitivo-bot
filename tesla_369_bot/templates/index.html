@@ -75,7 +75,7 @@
         .loja-tab-btn.active{background:{{ COR_TAB_ATIVA }};color:#000;border-color:{{ COR_TAB_ATIVA }};box-shadow:0 2px 8px rgba(0,0,0,0.2)}
         
         .produtos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:15px;margin-top:15px}
-        .produto-card{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;background:linear-gradient(135deg,#111122,#0a0a15);border-radius:14px;border:1px solid #2a2a3e;overflow:hidden;transition:all 0.3s ease}
+        .produto-card{position:relative;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;background:linear-gradient(135deg,#111122,#0a0a15);border-radius:14px;border:1px solid #2a2a3e;overflow:hidden;transition:all 0.3s ease}
         .produto-card:hover{transform:translateY(-3px);border-color:{{ COR_DESTAQUE }};box-shadow:0 8px 20px rgba(0,0,0,0.3)}
         .produto-card.selecionado{border-color:#ffd700;box-shadow:0 0 15px rgba(255,215,0,0.3)}
         .produto-card.ativo{border-color:#00ff88;box-shadow:0 0 12px rgba(0,255,136,0.3)}
@@ -99,7 +99,7 @@
         .btn-indisponivel{background:#333;color:#888;cursor:not-allowed}
         
         .estrategias-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:15px;margin-top:15px}
-        .estrategia-card{background:linear-gradient(135deg,#111122,#0a0a15);border-radius:14px;border:2px solid #2a2a3e;cursor:pointer;transition:all 0.3s ease;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+        .estrategia-card{position:relative;background:linear-gradient(135deg,#111122,#0a0a15);border-radius:14px;border:2px solid #2a2a3e;cursor:pointer;transition:all 0.3s ease;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
         .estrategia-card:hover{transform:translateY(-3px);border-color:{{ COR_DESTAQUE }}}
         .estrategia-card.ativa{border-color:#00ff88;background:#0a1a0a}
 
@@ -575,14 +575,18 @@ function renderSkinGrid(gridId, skins, modo) {
     for(var i=0;i<skins.length;i++){
         var skin = skins[i];
         var ativa = skin.ativo ? ' ativo' : '';
-        var btnHtml = '';
-        if(skin.ativo) btnHtml = '<button class="btn-produto btn-usando">✅ EM USO</button>';
-        else if(skin.comprado) btnHtml = '<button class="btn-produto btn-ativar" onclick="ativarSkin(\''+skin.id+'\')">🎨 ATIVAR</button>';
-        else if(skin.preco_moedas == 0) btnHtml = '<button class="btn-produto btn-ativar" onclick="ativarSkin(\''+skin.id+'\')">🆓 ATIVAR</button>';
-        else btnHtml = '<button class="btn-produto btn-comprar" onclick="comprarSkin(\''+skin.id+'\')">🛒 COMPRAR ('+skin.preco_moedas+' ⚡)</button>';
-        html += '<div class="produto-card'+ativa+'"><div class="produto-header"><div class="produto-nome">'+skin.nome+'</div></div><div class="produto-body"><div class="produto-desc">'+skin.desc+'</div></div><div class="produto-footer">'+btnHtml+'</div></div>';
+        var btnHtml = '', acao = '';
+        if(skin.ativo) { btnHtml = '<button class="btn-produto btn-usando">✅ EM USO</button>'; acao = ''; }
+        else if(skin.comprado) { btnHtml = '<button class="btn-produto btn-ativar" onclick="ativarSkin(\''+skin.id+'\')">🎨 ATIVAR</button>'; acao = 'ativar'; }
+        else if(skin.preco_moedas == 0) { btnHtml = '<button class="btn-produto btn-ativar" onclick="ativarSkin(\''+skin.id+'\')">🆓 ATIVAR</button>'; acao = 'ativar'; }
+        else { btnHtml = '<button class="btn-produto btn-comprar" onclick="comprarSkin(\''+skin.id+'\')">🛒 COMPRAR ('+skin.preco_moedas+' ⚡)</button>'; acao = 'comprar'; }
+        // segurar o card (nao so' o botao) tambem compra/ativa, com o mesmo anel
+        // de progresso das estrategias - evita clique acidental na loja.
+        var overlayHtml = acao ? '<div class="lp-overlay"><svg class="lp-ring" viewBox="0 0 54 54"><circle class="bg" cx="27" cy="27" r="24"></circle><circle class="fg" cx="27" cy="27" r="24" stroke-dasharray="150.8" stroke-dashoffset="150.8"></circle></svg></div>' : '';
+        html += '<div class="produto-card'+ativa+'" data-skin-id="'+skin.id+'" data-acao="'+acao+'">'+overlayHtml+'<div class="produto-header"><div class="produto-nome">'+skin.nome+'</div></div><div class="produto-body"><div class="produto-desc">'+skin.desc+'</div></div><div class="produto-footer">'+btnHtml+'</div></div>';
     }
     grid.innerHTML = html || '<p style="color:#888;text-align:center;padding:20px">Nenhuma skin nesta categoria</p>';
+    ligarLongPressSkins(gridId);
 }
 
 function renderLojaEstrategias() {
@@ -723,7 +727,11 @@ function _comprarEstrategiaConfirmado(estrategiaId) {
     });
 }
 
-function comprarSkin(skinId) {
+function comprarSkin(skinId, viaLongPress) {
+    // 🔧 mesmo padrao do guard das estrategias: se veio do long-press (que ja
+    // disparou a compra), ignora o clique sintetico que o touch dispara em
+    // seguida - senao dobra a compra.
+    if(!viaLongPress && _lpSkinAtivou){ _lpSkinAtivou = false; return; }
     if(!emailLogado){ showToast('Conecte primeiro!', 'error'); return; }
     // PERGUNTA antes de debitar (via modal, que funciona na WebView)
     confirmarWeb('Comprar esta skin com seus VOLTS?', function(sim){
@@ -740,7 +748,8 @@ function comprarSkin(skinId) {
     });
 }
 
-function ativarSkin(skinId) {
+function ativarSkin(skinId, viaLongPress) {
+    if(!viaLongPress && _lpSkinAtivou){ _lpSkinAtivou = false; return; }
     if(!emailLogado){ showToast('Conecte primeiro!', 'error'); return; }
     fetch('/ativar_skin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({skin_id:skinId})})
     .then(function(r) { return r.json(); }).then(function(d) { 
@@ -1227,13 +1236,24 @@ function _confirmarNao() {
 // ==== SEGURAR NA ESTRATEGIA (long-press em 2 estagios) ====
 // Tap simples: so' marca a estrategia selecionada (silencioso), o usuario navega
 // manualmente ate a aba BOT.
-// Segurar ate o 1o anel (externo) completar: seleciona + ja' pula pra aba BOT.
+// Segurar ate o 1o anel (externo) completar: seleciona + pula pra aba BOT.
 // Continuar segurando ate o 2o anel (interno, sobreposto) TAMBEM completar:
 // alem de selecionar e pular pra aba BOT, ja' inicia o bot automaticamente.
+//
+// \ud83d\udd27 IMPORTANTE: NAO trocamos de aba (openTab) no instante em que o 1o anel
+// completa, mesmo que o usuario ainda esteja segurando. Trocar de aba esconde
+// o card (display:none), e o navegador/WebView entende isso como o dedo tendo
+// solto - corta o toque na hora e o usuario NUNCA conseguia chegar no 2o anel.
+// Agora so' navegamos quando o toque REALMENTE termina (_lpCancelar), com base
+// em qual estagio foi alcancado ate ali. So' a excecao e' o proprio estagio 2
+// completar: nesse ponto ja' nao ha mais nada esperando o toque continuar,
+// entao pode navegar+iniciar na hora.
 var _lpRaf=null, _lpCard=null;
-var _lpAtivou=false;  // marca que o estagio 1 disparou (impede o clique simples de rodar de novo)
-var LP_DURACAO=1000;   // 1o anel: seleciona + vai pro bot
-var LP_DURACAO2=1000;  // 2o anel (sobreposto): a partir daqui, tambem inicia o bot
+var _lpAtivou=false;    // marca que o estagio 1 disparou (impede o clique simples de rodar de novo)
+var _lpEstagio1=false;  // 1o anel completou nesta sessao de toque
+var LP_DURACAO=1000;    // 1o anel: seleciona
+var LP_DURACAO2=1000;   // 2o anel (sobreposto): inicia o bot
+var LP_TOLERANCIA=14;   // px de tremedeira do dedo que NAO cancela o hold
 function _lpIniciar(card){
     _lpCard = card;
     var key = card.getAttribute('data-key');
@@ -1243,26 +1263,27 @@ function _lpIniciar(card){
     if(!overlay||!fg||!fg2) return;
     overlay.classList.add('on');
     var circ1 = 150.8, circ2 = 100.5, t0 = Date.now();
-    var estagio1Feito = false, estagio2Feito = false;
+    _lpEstagio1 = false;
     function passo(){
         var decorrido = Date.now() - t0;
         if(decorrido <= LP_DURACAO){
             fg.style.strokeDashoffset = circ1 * (1 - decorrido/LP_DURACAO);
         } else {
             fg.style.strokeDashoffset = 0;
-            if(!estagio1Feito){
-                estagio1Feito = true;
+            if(!_lpEstagio1){
+                _lpEstagio1 = true;
                 _lpAtivou = true;  // impede o onclick de disparar logo em seguida
-                if(typeof botAtivo!=='undefined' && botAtivo){ showToast('\u26a0\ufe0f Pare o bot primeiro!','warning'); _lpCancelar(); return; }
-                selecionarEstrategia(key, true);  // true = ativa + vai pro bot
-                openTab('bot');
+                if(typeof botAtivo!=='undefined' && botAtivo){ showToast('\u26a0\ufe0f Pare o bot primeiro!','warning'); _lpResetVisual(); return; }
+                selecionarEstrategia(key, true);  // so' seleciona - a navegacao fica pro fim do toque
             }
             var p2 = Math.min(1, (decorrido - LP_DURACAO) / LP_DURACAO2);
             fg2.style.strokeDashoffset = circ2 * (1 - p2);
-            if(p2 >= 1 && !estagio2Feito){
-                estagio2Feito = true;
-                _lpCancelar();
-                comecarOperar();  // 2o anel completo: ja' inicia o bot sozinho
+            if(p2 >= 1){
+                // 2o anel completo: aqui pode navegar+iniciar na hora, nao ha'
+                // mais nada que dependa do toque continuar.
+                _lpResetVisual();
+                openTab('bot');
+                comecarOperar();
                 return;
             }
         }
@@ -1270,7 +1291,14 @@ function _lpIniciar(card){
     }
     _lpRaf = requestAnimationFrame(passo);
 }
+// toque termina (soltou o dedo/mouse, ou moveu de verdade pra fora da tolerancia):
+// so' AGORA navega pra aba do bot, se o 1o anel tinha completado.
 function _lpCancelar(){
+    var completouEstagio1 = _lpEstagio1;
+    _lpResetVisual();
+    if(completouEstagio1) openTab('bot');
+}
+function _lpResetVisual(){
     if(_lpRaf){ cancelAnimationFrame(_lpRaf); _lpRaf=null; }
     if(_lpCard){
         var ov=_lpCard.querySelector('.lp-overlay');
@@ -1281,18 +1309,92 @@ function _lpCancelar(){
         if(fg2) fg2.style.strokeDashoffset=100.5;
         _lpCard=null;
     }
+    _lpEstagio1 = false;
 }
 function ligarLongPressEstrategias(){
     var cards = document.querySelectorAll('#estrategiaGrid .estrategia-card');
     for(var i=0;i<cards.length;i++){
         var c = cards[i];
-        c.addEventListener('touchstart', function(e){ _lpIniciar(e.currentTarget); }, {passive:true});
+        var x0=0, y0=0;
+        c.addEventListener('touchstart', function(e){
+            x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+            _lpIniciar(e.currentTarget);
+        }, {passive:true});
         c.addEventListener('touchend', function(){ _lpCancelar(); }, {passive:true});
-        c.addEventListener('touchmove', function(){ _lpCancelar(); }, {passive:true});
+        c.addEventListener('touchmove', function(e){
+            // so' cancela se o dedo realmente se afastou (evita tremedeira natural
+            // interromper o hold antes do 2o anel completar)
+            var dx = e.touches[0].clientX - x0, dy = e.touches[0].clientY - y0;
+            if(Math.sqrt(dx*dx + dy*dy) > LP_TOLERANCIA) _lpCancelar();
+        }, {passive:true});
         // no desktop tb (mouse) pra testar
         c.addEventListener('mousedown', function(e){ _lpIniciar(e.currentTarget); });
         c.addEventListener('mouseup', function(){ _lpCancelar(); });
         c.addEventListener('mouseleave', function(){ _lpCancelar(); });
+    }
+}
+
+// ==== SEGURAR NA SKIN (long-press, 1 anel so') -> compra/ativa ====
+// Mesma ideia das estrategias, mas com 1 estagio: segurar o card por 1s compra
+// (se ainda nao tem) ou ativa (se ja' tem) a skin - evita clique acidental na
+// loja. So' entra em vigor em cards com acao (skin ja' em uso nao tem overlay).
+var _lpSkinRaf=null, _lpSkinCard=null;
+var _lpSkinAtivou=false;
+var LP_SKIN_DURACAO=1000;
+function _lpIniciarSkin(card){
+    var acao = card.getAttribute('data-acao');
+    if(!acao) return;  // skin ja' em uso: nada pra segurar
+    _lpSkinCard = card;
+    var skinId = card.getAttribute('data-skin-id');
+    var overlay = card.querySelector('.lp-overlay');
+    var fg = card.querySelector('.lp-ring .fg');
+    if(!overlay||!fg) return;
+    overlay.classList.add('on');
+    var circ = 150.8, t0 = Date.now();
+    function passo(){
+        var p = Math.min(1, (Date.now()-t0)/LP_SKIN_DURACAO);
+        fg.style.strokeDashoffset = circ*(1-p);
+        if(p < 1){ _lpSkinRaf = requestAnimationFrame(passo); }
+        else {
+            _lpResetVisualSkin();
+            _lpSkinAtivou = true;  // impede o clique sintetico seguinte de repetir a acao
+            if(acao === 'comprar') comprarSkin(skinId, true);
+            else if(acao === 'ativar') ativarSkin(skinId, true);
+        }
+    }
+    _lpSkinRaf = requestAnimationFrame(passo);
+}
+function _lpCancelarSkin(){ _lpResetVisualSkin(); }
+function _lpResetVisualSkin(){
+    if(_lpSkinRaf){ cancelAnimationFrame(_lpSkinRaf); _lpSkinRaf=null; }
+    if(_lpSkinCard){
+        var ov=_lpSkinCard.querySelector('.lp-overlay');
+        var fg=_lpSkinCard.querySelector('.lp-ring .fg');
+        if(ov) ov.classList.remove('on');
+        if(fg) fg.style.strokeDashoffset=150.8;
+        _lpSkinCard=null;
+    }
+}
+function ligarLongPressSkins(gridId){
+    var grid = document.getElementById(gridId);
+    if(!grid) return;
+    var cards = grid.querySelectorAll('.produto-card');
+    for(var i=0;i<cards.length;i++){
+        var c = cards[i];
+        if(!c.getAttribute('data-acao')) continue;
+        var x0=0, y0=0;
+        c.addEventListener('touchstart', function(e){
+            x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+            _lpIniciarSkin(e.currentTarget);
+        }, {passive:true});
+        c.addEventListener('touchend', function(){ _lpCancelarSkin(); }, {passive:true});
+        c.addEventListener('touchmove', function(e){
+            var dx = e.touches[0].clientX - x0, dy = e.touches[0].clientY - y0;
+            if(Math.sqrt(dx*dx + dy*dy) > LP_TOLERANCIA) _lpCancelarSkin();
+        }, {passive:true});
+        c.addEventListener('mousedown', function(e){ _lpIniciarSkin(e.currentTarget); });
+        c.addEventListener('mouseup', function(){ _lpCancelarSkin(); });
+        c.addEventListener('mouseleave', function(){ _lpCancelarSkin(); });
     }
 }
 
