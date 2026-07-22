@@ -21,6 +21,7 @@ import secrets
 import requests
 import uuid
 import socket
+import unicodedata
 import threading
 import logging
 import time as _time
@@ -2148,7 +2149,101 @@ def gerar_texto_cupom(dados: Dict) -> str:
     linhas.append('=' * L)
     return '\n'.join(linhas) + '\n\n'
 
+def _bytes_escpos_cupom(texto: str) -> bytes:
+    """Monta os bytes ESC/POS (init + charset CP850 + corpo + corte). Usado tanto
+    pela impressão via driver do Windows (win32print) quanto via rede (socket
+    direto pra impressora Wi-Fi) - o protocolo ESC/POS é o mesmo nos dois casos,
+    só muda o transporte."""
+    ESC = chr(27)
+    GS = chr(29)
+    cmd_init = (ESC + '@').encode('latin-1', 'replace')
+    # Seleciona a tabela de caracteres CP850 (código 2) — é a que a maioria
+    # das impressoras térmicas usa para acentos do português. Sem isso,
+    # "Ã", "Ç", "É" etc saem trocados (o famoso "N|O" no lugar de "NÃO").
+    cmd_charset = (ESC + 't' + chr(2)).encode('latin-1', 'replace')
+    cmd_cut = (GS + 'V' + chr(66) + chr(0)).encode('latin-1', 'replace')
+    try:
+        corpo = texto.encode('cp850')
+    except Exception:
+        sem_acento = unicodedata.normalize('NFKD', texto).encode('ascii', 'ignore').decode('ascii')
+        corpo = sem_acento.encode('cp850', 'replace')
+    return cmd_init + cmd_charset + corpo + b'\n\n\n' + cmd_cut
+
+
+def _config_obter(chave: str, default: str = '') -> str:
+    try:
+        with get_db_context() as conn:
+            conn.execute('''CREATE TABLE IF NOT EXISTS config (chave TEXT PRIMARY KEY, valor TEXT, criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
+            cursor = conn.execute("SELECT valor FROM config WHERE chave=?", (chave,))
+            result = cursor.fetchone()
+            return result[0] if result else default
+    except Exception:
+        return default
+
+
+def _config_definir(chave: str, valor: str) -> None:
+    with get_db_context() as conn:
+        conn.execute('''CREATE TABLE IF NOT EXISTS config (chave TEXT PRIMARY KEY, valor TEXT, criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
+        conn.execute("INSERT OR REPLACE INTO config (chave, valor) VALUES (?, ?)", (chave, valor))
+        conn.commit()
+
+
+def imprimir_cupom_rede(dados: Dict, ip: str, porta: int = 9100) -> Dict:
+    """Envia o cupom direto por TCP pra uma impressora térmica de rede (Wi-Fi),
+    sem precisar que ela esteja instalada como impressora do Windows. Funciona
+    com qualquer impressora ESC/POS que escute na porta 9100 (padrão
+    JetDirect/raw) - é assim que a maioria das impressoras térmicas Wi-Fi
+    portáteis funciona, e o mesmo caminho serve pro app Android (só socket,
+    sem depender de driver de SO nenhum)."""
+    resultado = {}
+
+    def _imprimir():
+        try:
+            texto = gerar_texto_cupom(dados)
+            dados_bytes = _bytes_escpos_cupom(texto)
+            with socket.create_connection((ip, porta), timeout=8) as sock:
+                sock.sendall(dados_bytes)
+
+            venda_id = dados.get('venda_id', '')
+            if venda_id:
+                arquivo = os.path.join(CUPONS_DIR, f'cupom_{venda_id}.txt')
+                with open(arquivo, 'w', encoding='utf-8') as f:
+                    f.write(texto)
+
+            resultado['ok'] = True
+            resultado['impressora'] = f'{ip}:{porta} (Wi-Fi)'
+        except Exception as e:
+            resultado['erro'] = str(e)
+
+    t = threading.Thread(target=_imprimir, daemon=True)
+    t.start()
+    t.join(timeout=12)
+
+    if t.is_alive():
+        logger.error("❌ Impressão de rede travada - desistindo de esperar")
+        return {"success": False, "error": "A impressora de rede não respondeu a tempo. Verifique o IP e se ela está ligada e na mesma rede Wi-Fi."}
+
+    if resultado.get('ok'):
+        logger.info(f"✅ Cupom impresso (rede): Venda #{dados.get('venda_id', '')} - R$ {dados.get('total', 0):.2f}")
+        return {"success": True, "message": "Cupom impresso com sucesso!", "impressora": resultado['impressora']}
+
+    erro = resultado.get('erro', 'Erro desconhecido ao imprimir')
+    logger.error(f"❌ Erro ao imprimir cupom (rede): {erro}")
+    return {"success": False, "error": f"Não consegui falar com a impressora de rede ({ip}): {erro}"}
+
+
 def imprimir_cupom_escpos(dados: Dict) -> Dict:
+    # Se tiver um IP de impressora de rede configurado (Config > Impressora),
+    # usa ele em vez do driver do Windows - assim funciona também numa
+    # impressora térmica Wi-Fi que não está instalada como impressora do SO.
+    # Impressora Bluetooth: pareie ela normalmente no Windows (isso cria uma
+    # impressora do sistema) e deixe o campo de IP em branco - o caminho por
+    # win32print abaixo já manda pra qualquer impressora padrão do Windows,
+    # seja ela USB, Bluetooth ou de rede instalada via driver.
+    ip_rede = _config_obter('impressora_ip_rede')
+    if ip_rede:
+        return imprimir_cupom_rede(dados, ip_rede)
+
     if not IS_WINDOWS or not IMPRESSAO_DISPONIVEL:
         return {"success": False, "error": "Impressão indisponível. Se você está no Windows, os módulos de impressão (pywin32) não foram incluídos no aplicativo. Gere o executável novamente com o pywin32."}
 
@@ -2166,24 +2261,7 @@ def imprimir_cupom_escpos(dados: Dict) -> Dict:
         try:
             import win32print
             texto = gerar_texto_cupom(dados)
-            ESC = chr(27)
-            GS = chr(29)
-            cmd_init = (ESC + '@').encode('latin-1', 'replace')
-            # Seleciona a tabela de caracteres CP850 (código 2) — é a que a maioria
-            # das impressoras térmicas usa para acentos do português. Sem isso,
-            # "Ã", "Ç", "É" etc saem trocados (o famoso "N|O" no lugar de "NÃO").
-            cmd_charset = (ESC + 't' + chr(2)).encode('latin-1', 'replace')
-            cmd_cut = (GS + 'V' + chr(66) + chr(0)).encode('latin-1', 'replace')
-
-            # Codifica o texto em CP850. Se algum caractere não existir na tabela,
-            # cai para uma versão sem acento (não trava a impressão).
-            def _codificar(t):
-                try:
-                    return t.encode('cp850')
-                except Exception:
-                    import unicodedata
-                    sem_acento = unicodedata.normalize('NFKD', t).encode('ascii', 'ignore').decode('ascii')
-                    return sem_acento.encode('cp850', 'replace')
+            dados_bytes = _bytes_escpos_cupom(texto)
 
             impressora_nome = win32print.GetDefaultPrinter()
             if not impressora_nome:
@@ -2194,11 +2272,7 @@ def imprimir_cupom_escpos(dados: Dict) -> Dict:
             try:
                 win32print.StartDocPrinter(hprinter, 1, ("Cupom Fiscal", None, "RAW"))
                 win32print.StartPagePrinter(hprinter)
-                win32print.WritePrinter(hprinter, cmd_init)
-                win32print.WritePrinter(hprinter, cmd_charset)
-                win32print.WritePrinter(hprinter, _codificar(texto))
-                win32print.WritePrinter(hprinter, b'\n\n\n')
-                win32print.WritePrinter(hprinter, cmd_cut)
+                win32print.WritePrinter(hprinter, dados_bytes)
                 win32print.EndPagePrinter(hprinter)
                 win32print.EndDocPrinter(hprinter)
             finally:
@@ -4601,6 +4675,26 @@ def buscar_cnpj(cnpj: str):
 # ============================================================
 # IMPRESSÃO
 # ============================================================
+@app.route('/api/config/impressora', methods=['GET'])
+def obter_config_impressora_route():
+    try:
+        if not get_db_id():
+            return jsonify({"success": False, "error": "Não autenticado"}), 401
+        return jsonify({"success": True, "ip_rede": _config_obter('impressora_ip_rede')})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/config/impressora', methods=['POST'])
+def definir_config_impressora_route():
+    try:
+        if not get_db_id():
+            return jsonify({"success": False, "error": "Não autenticado"}), 401
+        ip_rede = (request.json or {}).get('ip_rede', '').strip()
+        _config_definir('impressora_ip_rede', ip_rede)
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
 @app.route('/api/imprimir/cupom', methods=['POST'])
 def imprimir_cupom_route():
     try:
