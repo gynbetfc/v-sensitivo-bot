@@ -217,108 +217,6 @@
         .caixa-center .btn-caixa{padding:10px 28px;background:var(--green);color:#fff;border:0;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;transition:var(--transition);margin:4px}
         .caixa-center .btn-caixa:hover{background:var(--green-dark)}.caixa-center .btn-caixa.fechar{background:var(--red)}.caixa-center .btn-caixa.fechar:hover{background:#dc2626}
         .resumo-caixa{margin-top:16px}
-        /* Os modais novos usavam .form-group, que só tem CSS dentro de .auth-box.
-           Sem isso o label e o campo ficavam na MESMA linha e o input minúsculo. */
-        #modalCaixaMov .form-group,#modalFechamento .form-group{margin-bottom:14px}
-        #modalCaixaMov .form-group label,#modalFechamento .form-group label{display:block;font-size:12px;font-weight:600;
-            color:var(--text-secondary);margin-bottom:6px;text-transform:none;letter-spacing:0}
-        #modalCaixaMov .form-group input,#modalFechamento .form-group input{width:100%;padding:12px 14px;
-            border:1px solid var(--border-color);border-radius:8px;font-size:16px;background:var(--bg-primary);
-            color:#fff;transition:var(--transition);font-family:monospace;font-weight:600}
-        #modalCaixaMov .form-group input:focus,#modalFechamento .form-group input:focus{outline:0;border-color:var(--green)}
-        #modalCaixaMov .form-group input#mcmMotivo{font-family:inherit;font-weight:400;font-size:14px}
-        /* ===== SANGRIA / SUPRIMENTO ===== */
-        .sangria-card{margin-top:16px}
-        .sg-topo{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
-        .sg-label{font-size:12px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.08em}
-        .sg-desde{text-transform:none;letter-spacing:0;color:var(--text-muted);font-size:11px;margin-left:6px}
-        .sg-valor{font-size:30px;font-weight:800;color:var(--green);line-height:1.15;margin-top:2px}
-        .sg-conta{font-size:11px;color:var(--text-muted);margin-top:4px;font-family:monospace}
-        .sg-botoes{display:flex;gap:10px;flex-wrap:wrap}
-        .btn-sangria,.btn-suprimento{display:inline-flex;align-items:center;gap:7px;padding:11px 18px;border:1px solid var(--border-color);
-            border-radius:10px;cursor:pointer;font-weight:600;font-size:14px;transition:var(--transition);background:var(--bg-primary);color:#fff}
-        .btn-sangria:hover{border-color:var(--orange);color:var(--orange)}
-        .btn-suprimento:hover{border-color:var(--green);color:var(--green)}
-        .sg-movs{margin-top:16px;display:flex;flex-direction:column;gap:7px;max-height:220px;overflow-y:auto}
-        .sg-mov{display:flex;align-items:center;gap:11px;padding:10px 12px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:9px;font-size:13px}
-        .sg-mov .ic{width:28px;height:28px;border-radius:7px;display:grid;place-items:center;font-size:12px;flex-shrink:0}
-        .sg-mov.saida .ic{background:rgba(245,158,11,.14);color:var(--orange)}
-        .sg-mov.entrada .ic{background:rgba(34,197,94,.14);color:var(--green)}
-        .sg-mov .info{flex:1;min-width:0}
-        .sg-mov .mt{font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .sg-mov .hr{font-size:11px;color:var(--text-muted)}
-        .sg-mov .vl{font-weight:700;font-family:monospace;white-space:nowrap}
-        .sg-mov.saida .vl{color:var(--orange)}
-        .sg-mov.entrada .vl{color:var(--green)}
-        .sg-vazio{color:var(--text-muted);font-size:12.5px;text-align:center;padding:14px}
-        .mcm-ajuda{color:var(--text-secondary);font-size:13px;margin-bottom:14px;line-height:1.5}
-        .mcm-disponivel{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;background:var(--bg-primary);
-            border:1px solid var(--border-color);border-radius:9px;margin-bottom:16px;font-size:13px;color:var(--text-secondary)}
-        .mcm-disponivel b{color:var(--green);font-size:16px;font-family:monospace}
-        .mcm-sugestoes{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-        .mcm-sug{padding:5px 11px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:100px;
-            font-size:11.5px;color:var(--text-secondary);cursor:pointer;transition:var(--transition)}
-        .mcm-sug:hover{border-color:var(--green);color:var(--green)}
-        .btn-confirmar-mov{width:100%;padding:13px;background:var(--green);color:#fff;border:0;border-radius:9px;
-            font-weight:700;font-size:15px;cursor:pointer;transition:var(--transition);margin-top:4px}
-        .btn-confirmar-mov:hover{background:var(--green-dark)}
-        .btn-confirmar-mov:disabled{opacity:.5;cursor:not-allowed}
-        .btn-confirmar-mov.sangria{background:var(--orange)}
-        .btn-confirmar-mov.sangria:hover{background:#d97706}
-        /* ===== RELATÓRIO DE FECHAMENTO ===== */
-        #modalRelatorio{z-index:10002}
-        .modal-relatorio{max-width:430px}
-        .rel-resumo{background:var(--bg-primary);border:1px solid var(--border-color);border-radius:9px;
-            padding:13px 15px;margin-bottom:12px;text-align:center}
-        .rel-resumo .rr-t{font-size:12px;color:var(--text-secondary)}
-        .rel-resumo .rr-v{font-size:24px;font-weight:800;color:var(--green);font-family:monospace;margin-top:2px}
-        .rel-resumo .rr-d{font-size:13px;margin-top:6px;font-weight:600}
-        .rel-resumo .rr-d.ok{color:var(--green)}
-        .rel-resumo .rr-d.sobra{color:var(--blue)}
-        .rel-resumo .rr-d.falta{color:var(--red)}
-        .rel-preview{background:#f7f5ee;color:#1a1a1a;border-radius:6px;padding:12px;font-family:'Courier New',monospace;
-            font-size:9.5px;line-height:1.35;max-height:210px;overflow-y:auto;white-space:pre;margin:0 0 14px;border:1px solid #ddd}
-        .rel-acoes{margin-top:2px}
-        /* ===== PAGAMENTO MISTO (sub-janela) ===== */
-        /* z-index maior que o modal de pagamento (9999): a sub-janela abre POR
-           CIMA dele. Sem isso ela abria ATRÁS e parecia que fechava sozinha. */
-        #modalDividir{z-index:10001}
-        .modal-dividir{max-width:440px}
-        .dv-total{display:flex;justify-content:space-between;align-items:center;background:var(--bg-primary);
-            border:1px solid var(--border-color);border-radius:9px;padding:12px 15px;margin-bottom:16px}
-        .dv-total span{font-size:11px;color:var(--text-muted);letter-spacing:.08em}
-        .dv-total b{font-size:22px;color:var(--green);font-family:monospace}
-        .dv-acoes{margin-top:16px}
-        .dv-dicas{margin-top:12px;text-align:center;font-size:10.5px;color:var(--text-muted)}
-        .dv-dicas kbd{background:var(--bg-primary);border:1px solid var(--border-color);border-radius:4px;
-            padding:1px 5px;font-family:monospace;font-size:10px;color:var(--text-secondary)}
-        .misto-add{width:100%;background:rgba(34,197,94,.1);color:var(--green);border:1px dashed var(--border-color);
-            border-radius:8px;padding:9px;font-size:12.5px;cursor:pointer;font-weight:600;transition:var(--transition);margin-top:2px}
-        .misto-add:hover{border-color:var(--green);border-style:solid}
-        .misto-linha{display:flex;gap:8px;margin-bottom:9px;align-items:center}
-        .misto-linha select{flex:1;padding:11px 10px;background:var(--bg-card);border:1px solid var(--border-color);border-radius:8px;color:#fff;font-size:14px;cursor:pointer}
-        .misto-linha select:focus,.misto-linha input:focus{outline:0;border-color:var(--green)}
-        .misto-linha input{width:120px;padding:11px 10px;background:var(--bg-card);border:1px solid var(--border-color);border-radius:8px;color:#fff;font-size:15px;text-align:right;font-family:monospace;font-weight:600}
-        .misto-del{width:34px;height:34px;background:0;border:1px solid var(--border-color);border-radius:8px;color:var(--text-muted);cursor:pointer;flex-shrink:0;transition:var(--transition);font-size:13px}
-        .misto-del:hover{border-color:var(--red);color:var(--red)}
-        .misto-falta{margin-top:12px;padding:11px 12px;border-radius:8px;font-size:13.5px;text-align:center;
-            background:rgba(245,158,11,.1);border:1px solid var(--orange);color:var(--orange)}
-        .misto-falta.ok{background:rgba(34,197,94,.1);border-color:var(--green);color:var(--green)}
-        .misto-falta.erro{background:rgba(239,68,68,.1);border-color:var(--red);color:var(--red)}
-        .misto-falta b{font-family:monospace}
-        /* ===== FECHAMENTO COM CONFERÊNCIA ===== */
-        .fc-esperado{background:var(--bg-primary);border:1px solid var(--border-color);border-radius:10px;padding:14px 16px;margin-bottom:16px;text-align:center}
-        .fc-lbl{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em}
-        .fc-val{font-size:28px;font-weight:800;color:var(--green);font-family:monospace;margin-top:3px}
-        .fc-det{font-size:11px;color:var(--text-muted);margin-top:5px;font-family:monospace}
-        .fc-dif{padding:12px 14px;border-radius:9px;font-size:14px;margin-bottom:14px;text-align:center;border:1px solid}
-        .fc-dif.ok{background:rgba(34,197,94,.1);border-color:var(--green);color:var(--green)}
-        .fc-dif.sobra{background:rgba(59,130,246,.1);border-color:var(--blue);color:var(--blue)}
-        .fc-dif.falta{background:rgba(239,68,68,.1);border-color:var(--red);color:var(--red)}
-        .btn-pular-conf{width:100%;padding:10px;background:0;color:var(--text-muted);border:1px solid var(--border-color);
-            border-radius:9px;font-size:12.5px;cursor:pointer;transition:var(--transition);margin-top:8px}
-        .btn-pular-conf:hover{color:var(--text-secondary);border-color:var(--text-muted)}
-        @media(max-width:640px){.sg-topo{flex-direction:column;align-items:stretch}.sg-botoes{width:100%}.btn-sangria,.btn-suprimento{flex:1;justify-content:center}}
         .resumo-caixa table{width:100%;border-collapse:collapse;font-size:13px}
         .resumo-caixa th{text-align:left;padding:6px 8px;font-weight:600;color:var(--text-secondary);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border-color)}
         .resumo-caixa td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.03)}
@@ -804,24 +702,6 @@
                 <input type="number" id="valorAbertura" class="input-abertura" placeholder="Valor de abertura (R$)" value="0" min="0" step="0.01">
                 <div><button class="btn-caixa" id="btnCaixa" onclick="toggleCaixa()">🔓 Abrir Caixa</button></div>
             </div>
-            <div class="card sangria-card" id="sangriaCard" style="display:none">
-                <div class="sg-topo">
-                    <div>
-                        <div class="sg-label">💵 Dinheiro na gaveta <span class="sg-desde" id="sgDesde"></span></div>
-                        <div class="sg-valor" id="sgEmCaixa">R$ 0,00</div>
-                        <div class="sg-conta" id="sgConta"></div>
-                    </div>
-                    <div class="sg-botoes">
-                        <button class="btn-sangria" onclick="abrirModalCaixaMov('sangria')" title="Tirar dinheiro do caixa">
-                            <i class="fas fa-arrow-up"></i> Sangria
-                        </button>
-                        <button class="btn-suprimento" onclick="abrirModalCaixaMov('suprimento')" title="Colocar dinheiro no caixa">
-                            <i class="fas fa-arrow-down"></i> Suprimento
-                        </button>
-                    </div>
-                </div>
-                <div class="sg-movs" id="sgMovs"></div>
-            </div>
             <div class="card resumo-caixa" id="resumoCaixa" style="display:none">
                 <h3><i class="fas fa-receipt" style="color:var(--green);"></i> Resumo do Dia</h3>
                 <table><thead><tr><th>Método</th><th style="text-align:right;">Qtd</th><th style="text-align:right;">Total</th></tr></thead><tbody id="tabelaResumoCaixa"></tbody></table>
@@ -1116,76 +996,6 @@
 </div>
 
 <!-- PAYMENT MODAL -->
-<div class="payment-modal" id="modalRelatorio">
-    <div class="modal modal-relatorio">
-        <div class="modal-header"><h3>🧾 Fechamento</h3><button class="close" onclick="fecharModalRelatorio()">✕</button></div>
-        <div class="rel-resumo" id="relResumo"></div>
-        <pre class="rel-preview" id="relPreview"></pre>
-        <div class="rel-acoes">
-            <button class="btn-confirmar-mov" id="relImprimir" onclick="imprimirFechamento()"><i class="fas fa-print"></i> Imprimir relatório</button>
-            <button class="btn-pular-conf" onclick="fecharModalRelatorio()">Agora não</button>
-        </div>
-    </div>
-</div>
-
-<div class="payment-modal" id="modalDividir">
-    <div class="modal modal-dividir">
-        <div class="modal-header"><h3>➗ Dividir o Pagamento</h3><button class="close" onclick="fecharDividir()">✕</button></div>
-        <div class="dv-total">
-            <span>TOTAL DA VENDA</span>
-            <b id="dvTotal">R$ 0,00</b>
-        </div>
-        <div id="mistoFormas"></div>
-        <button class="misto-add" onclick="addFormaPgto()"><i class="fas fa-plus"></i> Adicionar forma</button>
-        <div class="misto-falta" id="mistoFalta"></div>
-        <div class="dv-acoes">
-            <button class="btn-confirmar-mov" id="dvConfirmar" onclick="confirmarPagamento()">✓ Finalizar Venda</button>
-            <button class="btn-pular-conf" onclick="fecharDividir()">Voltar</button>
-        </div>
-        <div class="dv-dicas"><kbd>Tab</kbd> troca campo · <kbd>Enter</kbd> finaliza · <kbd>Esc</kbd> volta</div>
-    </div>
-</div>
-
-<div class="payment-modal" id="modalFechamento">
-    <div class="modal">
-        <div class="modal-header"><h3>🔒 Fechar Caixa</h3><button class="close" onclick="fecharModalFechamento()">✕</button></div>
-        <p class="mcm-ajuda">Conte o dinheiro da gaveta e digite abaixo. O sistema compara com o esperado e mostra a diferença.</p>
-        <div class="fc-esperado">
-            <div class="fc-lbl">Deveria ter na gaveta</div>
-            <div class="fc-val" id="fcEsperado" data-valor="0">R$ 0,00</div>
-            <div class="fc-det" id="fcDetalhe"></div>
-        </div>
-        <div class="form-group">
-            <label>Quanto você contou? (R$)</label>
-            <input type="number" id="fcContado" step="0.01" min="0" placeholder="0,00" oninput="calcularDiferenca()" autocomplete="off">
-        </div>
-        <div class="fc-dif" id="fcDiferenca" style="display:none"></div>
-        <button class="btn-confirmar-mov" onclick="confirmarFechamento(true)">Conferir e fechar</button>
-        <button class="btn-pular-conf" onclick="confirmarFechamento(false)">Fechar sem conferir</button>
-    </div>
-</div>
-
-<div class="payment-modal" id="modalCaixaMov">
-    <div class="modal">
-        <div class="modal-header"><h3 id="mcmTitulo">💸 Sangria</h3><button class="close" onclick="fecharModalCaixaMov()">✕</button></div>
-        <p class="mcm-ajuda" id="mcmAjuda"></p>
-        <div class="mcm-disponivel">
-            <span>Na gaveta agora</span>
-            <b id="mcmEmCaixa">R$ 0,00</b>
-        </div>
-        <div class="form-group">
-            <label>Valor (R$)</label>
-            <input type="number" id="mcmValor" step="0.01" min="0" placeholder="0,00" autocomplete="off">
-        </div>
-        <div class="form-group">
-            <label>Motivo</label>
-            <input type="text" id="mcmMotivo" placeholder="Ex: pagar entregador, levar ao banco..." autocomplete="off">
-            <div class="mcm-sugestoes" id="mcmSugestoes"></div>
-        </div>
-        <button class="btn-confirmar-mov" id="mcmConfirmar" onclick="confirmarCaixaMov()">Confirmar</button>
-    </div>
-</div>
-
 <div class="payment-modal" id="paymentModal">
     <div class="modal">
         <div class="modal-header"><h3>💳 Pagamento</h3><button class="close" onclick="fecharPagamento()">✕</button></div>
@@ -1204,9 +1014,7 @@
             <button data-metodo="Cartão" onclick="selecionarMetodo('Cartão')"><i class="fas fa-credit-card"></i> Cartão</button>
             <button data-metodo="Débito" onclick="selecionarMetodo('Débito')"><i class="fas fa-credit-card"></i> Débito</button>
             <button data-metodo="Fiado" onclick="selecionarMetodo('Fiado')" id="btnFiado"><i class="fas fa-handshake"></i> Fiado</button>
-            <button data-metodo="Misto" onclick="ativarMisto()" id="btnMisto"><i class="fas fa-divide"></i> Dividir</button>
         </div>
-
         <div class="payment-input" id="recebidoContainer">
             <span class="label">Recebido</span>
             <input type="number" id="valorRecebido" placeholder="0,00" step="0.01" oninput="calcularTroco()">
@@ -1594,20 +1402,13 @@ document.addEventListener('keydown',function(e){
     };
     if(teclasAba[e.key]){
         e.preventDefault(); e.stopPropagation();
-        // F1 é contextual, mas na ordem que o operador espera:
-        //  1. modal aberto  -> age nele (confirmar pagamento/cupom)
-        //  2. fora da aba Vendas -> VOLTA pra Vendas (mesmo com carrinho cheio)
-        //  3. já na aba Vendas -> aí sim abre o pagamento
-        // Antes, com item no carrinho, o F1 abria o modal de QUALQUER aba: quem
-        // só queria voltar pra tela de vendas levava o modal na cara.
+        // F1 mantém ações contextuais dentro da venda (confirmar pagamento, etc.)
         if(e.key==='F1'){
             const modalPgto=document.getElementById('paymentModal')?.classList.contains('active');
             const modalCupom=document.getElementById('cupomModal')?.classList.contains('active');
-            if(modalPgto || modalCupom){ processarF1(); return; }
-            const naAbaVendas=document.getElementById('panelVendas')?.classList.contains('active');
-            if(!naAbaVendas){ irParaAbaAtalho('vendas'); return; }
             const sr=document.getElementById('searchResults');
-            const temContexto = (state.itens.length>0 && state.caixa_aberto) ||
+            const temContexto = modalPgto || modalCupom ||
+                (state.itens.length>0 && state.caixa_aberto) ||
                 (sr && sr.classList.contains('active') && state.searchIndex>=0);
             if(temContexto){ processarF1(); return; }
         }
@@ -1626,14 +1427,6 @@ document.addEventListener('keydown',function(e){
 
     if(e.key==='Escape'){
         e.preventDefault();
-        const mrel=document.getElementById('modalRelatorio');
-        if(mrel&&mrel.classList.contains('active')){fecharModalRelatorio();return;}
-        const mdv=document.getElementById('modalDividir');
-        if(mdv&&mdv.classList.contains('active')){fecharDividir();return;}
-        const mcm=document.getElementById('modalCaixaMov');
-        if(mcm&&mcm.classList.contains('active')){fecharModalCaixaMov();return;}
-        const mfc=document.getElementById('modalFechamento');
-        if(mfc&&mfc.classList.contains('active')){fecharModalFechamento();return;}
         if(modalPgto){fecharPagamento();return;}
         if(modalCupom){fecharCupom();return;}
         if(modalPix){fecharModalPix();return;}
@@ -1645,18 +1438,7 @@ document.addEventListener('keydown',function(e){
     }
 
     if(e.key==='Enter'){
-        // A sub-janela do "Dividir" tem prioridade: Enter ali finaliza a venda.
-        const mdv=document.getElementById('modalDividir');
-        if(mdv && mdv.classList.contains('active')){
-            e.preventDefault(); confirmarPagamento(); return;
-        }
         if(modalPgto){
-            // Se o operador chegou no "Dividir" pelas SETAS, o Enter abre a
-            // sub-janela em vez de tentar confirmar (antes só o clique abria,
-            // e o Enter mandava uma venda "Misto" sem as formas).
-            if(metodoAtivo==='Misto' && !mistoAtivo){
-                e.preventDefault(); ativarMisto(); return;
-            }
             // Se a lista de clientes está aberta com um cliente destacado,
             // Enter ESCOLHE o cliente (não confirma a venda ainda). Isso evita
             // o bug de "vender" com o nome pela metade em vez de pegar o cliente.
@@ -1687,10 +1469,6 @@ document.addEventListener('keydown',function(e){
     }
 
     if(modalPgto&&(e.key==='ArrowUp'||e.key==='ArrowDown')){
-        // Com a sub-janela do Dividir aberta, as setas são dela (mexer nos
-        // valores), não do menu de métodos atrás.
-        const mdv2=document.getElementById('modalDividir');
-        if(mdv2 && mdv2.classList.contains('active')) return;
         // Se a lista de sugestões de cliente está aberta, as setas navegam
         // NELA (escolher cliente). Só mudam o método de pagamento quando a
         // lista de clientes está fechada. Assim não "cai no fiado" sem querer.
@@ -1905,10 +1683,7 @@ function trocarTab(nome){
     if (btn) btn.classList.add('active');
     if(nome==='clientes') carregarClientes();
     if(nome==='estoque') carregarProdutos();
-    // Vendas precisa dos PRODUTOS carregados pra busca funcionar. Antes só os
-    // kits eram carregados aqui, e a busca só passava a achar depois que o
-    // operador abrisse o Estoque (que carregava os produtos de tabela).
-    if(nome==='vendas'){ carregarProdutos(); carregarKitsParaVenda(); }
+    if(nome==='vendas') carregarKitsParaVenda();
     if(nome==='dashboard') carregarDash(state.periodo);
     if(nome==='caixa') carregarStatusCaixa();
     if(nome==='planos') {carregarPlanos(); verificarStatusPlano();}
@@ -2568,20 +2343,6 @@ document.getElementById('codigoInput').addEventListener('input',function(){
     const val=this.value.trim();
     const results=document.getElementById('searchResults');
     if(val.length<1){results.classList.remove('active');return;}
-    // Rede de segurança: se por qualquer motivo os produtos ainda não chegaram
-    // (internet lenta, corrida na abertura), busca agora e repete a filtragem.
-    // Sem isso o caixa digitava e "não achava nada" até abrir o Estoque.
-    if(!state.produtos || state.produtos.length===0){
-        if(!state._carregandoProdutos){
-            state._carregandoProdutos=true;
-            carregarProdutos().then(()=>{
-                state._carregandoProdutos=false;
-                const el=document.getElementById('codigoInput');
-                if(el && el.value.trim()) el.dispatchEvent(new Event('input'));
-            }).catch(()=>{ state._carregandoProdutos=false; });
-        }
-        return;
-    }
     const termo=val.toLowerCase();
     const filtrados=state.produtos.filter(p=>p.nome.toLowerCase().includes(termo)||(p.codigo||'').toLowerCase().includes(termo));
     const kitsFiltrados=(state.kits||[]).filter(k=>k.nome.toLowerCase().includes(termo));
@@ -2752,19 +2513,9 @@ function abrirPagamento(){
     setTimeout(()=>{if(metodoAtivo==='Dinheiro'){document.getElementById('valorRecebido').focus();} else if(metodoAtivo==='Fiado'){document.getElementById('clientePagamento').focus();} else {document.getElementById('clientePagamento').focus();}}, 300);
 }
 
-function fecharPagamento(){
-    document.getElementById('paymentModal').classList.remove('active');
-    document.getElementById('modalDividir').classList.remove('active');
-    mistoAtivo=false;
-    const mf=document.getElementById('mistoFormas');
-    if(mf) mf.innerHTML='';
-}
+function fecharPagamento(){document.getElementById('paymentModal').classList.remove('active');}
 
 function selecionarMetodo(metodo){
-    // Só desliga o misto se a sub-janela NÃO estiver aberta (senão o clique
-    // atrás dela cancelaria a divisão em andamento).
-    const mdv=document.getElementById('modalDividir');
-    if(!(mdv && mdv.classList.contains('active'))) mistoAtivo=false;
     metodoAtivo=metodo;
     document.querySelectorAll('#paymentMethods button').forEach(b=>b.classList.toggle('active',b.dataset.metodo===metodo));
     const isFiado=metodo==='Fiado', isPIX=metodo==='PIX', isCartao=metodo==='Cartão'||metodo==='Débito';
@@ -2772,85 +2523,6 @@ function selecionarMetodo(metodo){
     if(isFiado){document.getElementById('trocoLabel').textContent='Fiado - cliente obrigatório';}
     else{document.getElementById('trocoLabel').textContent='Troco: R$ 0,00';}
     setTimeout(()=>{if(isFiado){document.getElementById('clientePagamento').focus();} else if(!isPIX&&!isCartao){document.getElementById('valorRecebido').focus();} else{document.getElementById('clientePagamento').focus();}}, 100);
-}
-
-// ---- Pagamento misto (dividir a conta entre formas) ----
-let mistoAtivo=false;
-const FORMAS_MISTO=['Dinheiro','PIX','Cartão','Débito'];
-
-// Abre a sub-janela do "Dividir". Ela é centralizada e cabe na tela inteira,
-// então o operador NÃO precisa rolar pra chegar nos campos — era o que
-// acontecia quando o painel abria dentro do modal de pagamento.
-function ativarMisto(){
-    mistoAtivo=true;
-    metodoAtivo='Misto';
-    document.querySelectorAll('#paymentMethods button').forEach(b=>b.classList.toggle('active',b.dataset.metodo==='Misto'));
-    document.getElementById('dvTotal').textContent='R$ '+state.total.toFixed(2).replace('.',',');
-    const box=document.getElementById('mistoFormas');
-    box.innerHTML='';
-    addFormaPgto('Dinheiro'); addFormaPgto('Cartão');
-    atualizarFaltaMisto();
-    document.getElementById('modalDividir').classList.add('active');
-    // já joga o cursor no 1º valor: o caixa digita direto, sem mouse
-    setTimeout(()=>{const i=box.querySelector('input');if(i){i.focus();i.select();}},90);
-}
-
-function fecharDividir(){
-    document.getElementById('modalDividir').classList.remove('active');
-    mistoAtivo=false;
-    document.getElementById('mistoFormas').innerHTML='';
-    // volta o destaque pro Dinheiro, pra não ficar preso no "Misto"
-    selecionarMetodo('Dinheiro');
-    const b=document.querySelector('#paymentMethods button[data-metodo="Dinheiro"]');
-    if(b) b.focus();
-}
-
-function addFormaPgto(metodoPadrao){
-    const box=document.getElementById('mistoFormas');
-    if(box.children.length>=4){ showToast('⚠️ Máximo de 4 formas','warning'); return; }
-    const div=document.createElement('div');
-    div.className='misto-linha';
-    div.innerHTML=`
-        <select onchange="atualizarFaltaMisto()">
-            ${FORMAS_MISTO.map(f=>`<option value="${f}"${f===metodoPadrao?' selected':''}>${f}</option>`).join('')}
-        </select>
-        <input type="number" step="0.01" min="0" placeholder="0,00" oninput="atualizarFaltaMisto()">
-        <button class="misto-del" onclick="this.parentElement.remove();atualizarFaltaMisto()" title="Remover">✕</button>`;
-    box.appendChild(div);
-    atualizarFaltaMisto();
-}
-
-function lerFormasMisto(){
-    return Array.from(document.querySelectorAll('#mistoFormas .misto-linha')).map(l=>({
-        metodo: l.querySelector('select').value,
-        valor: parseFloat(l.querySelector('input').value)||0
-    }));
-}
-
-function atualizarFaltaMisto(){
-    const formas=lerFormasMisto();
-    const soma=formas.reduce((s,f)=>s+f.valor,0);
-    const falta=Math.round((state.total-soma)*100)/100;
-    const el=document.getElementById('mistoFalta');
-    if(Math.abs(falta)<0.01){
-        el.className='misto-falta ok'; el.innerHTML='✅ Fecha certinho: R$ '+soma.toFixed(2).replace('.',',');
-    }else if(falta>0){
-        el.className='misto-falta'; el.innerHTML='Falta <b>R$ '+falta.toFixed(2).replace('.',',')+'</b> de R$ '+state.total.toFixed(2).replace('.',',');
-    }else{
-        el.className='misto-falta erro'; el.innerHTML='Passou <b>R$ '+Math.abs(falta).toFixed(2).replace('.',',')+'</b> do total';
-    }
-    // preenche automaticamente a ÚLTIMA forma vazia com o que falta (agiliza o caixa)
-    return falta;
-}
-
-// Botão que completa o valor que falta na última forma
-function completarMisto(){
-    const linhas=document.querySelectorAll('#mistoFormas .misto-linha');
-    if(!linhas.length) return;
-    const ultima=linhas[linhas.length-1].querySelector('input');
-    const outras=Array.from(linhas).slice(0,-1).reduce((s,l)=>s+(parseFloat(l.querySelector('input').value)||0),0);
-    const falta=Math.round((state.total-outras)*100)/100;
-    if(falta>0){ ultima.value=falta.toFixed(2); atualizarFaltaMisto(); }
 }
 
 function calcularTroco(){
@@ -2879,21 +2551,9 @@ async function confirmarPagamento(){
         setTimeout(()=>{document.getElementById('clientePagamento').style.borderColor='';},3000);
         return;
     }
-    // Pagamento MISTO: valida a soma antes de mandar pro servidor
-    let pagamentos=null;
-    if(mistoAtivo){
-        pagamentos=lerFormasMisto().filter(f=>f.valor>0);
-        if(pagamentos.length<2){ showToast('⚠️ Informe pelo menos 2 formas com valor','warning'); return; }
-        const soma=pagamentos.reduce((s,f)=>s+f.valor,0);
-        if(Math.abs(soma-state.total)>0.01){
-            const d=Math.round((state.total-soma)*100)/100;
-            showToast(d>0?('⚠️ Faltam R$ '+d.toFixed(2)):('⚠️ Passou R$ '+Math.abs(d).toFixed(2)),'warning');
-            return;
-        }
-    }
     const recebido=parseFloat(document.getElementById('valorRecebido').value)||0;
     const troco=Math.max(0,recebido-state.total);
-    if(!mistoAtivo&&metodo!=='Fiado'&&metodo!=='PIX'&&metodo!=='Cartão'&&metodo!=='Débito'&&recebido<state.total){
+    if(metodo!=='Fiado'&&metodo!=='PIX'&&metodo!=='Cartão'&&metodo!=='Débito'&&recebido<state.total){
         showToast('⚠️ Valor recebido insuficiente!','warning');return;
     }
     document.getElementById('btnConfirmarPagamento').disabled=true;
@@ -2901,15 +2561,12 @@ async function confirmarPagamento(){
         const res=await fetch('/api/vendas',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({
             itens:state.itens,subtotal:state.subtotal,
             desconto:parseFloat(document.getElementById('descontoInput').value.replace(',','.'))||0,
-            total:state.total,metodo,cliente,recebido,troco,
-            ...(pagamentos?{pagamentos}:{})
+            total:state.total,metodo,cliente,recebido,troco
         })});
         const data=await res.json();
         if(data.success){
             ultimaVendaId=data.id;ultimoCupomData=data.dados_impressao;
-            state.itens=[];atualizarCarrinho();
-            document.getElementById('modalDividir').classList.remove('active');
-            fecharPagamento();
+            state.itens=[];atualizarCarrinho();fecharPagamento();
             mostrarCupom(data.dados_impressao);
             carregarDash(state.periodo);carregarStatusCaixa();
             showToast('✅ Venda finalizada!','success');
@@ -3233,136 +2890,6 @@ async function carregarBgVendasSalvo(tentativa){
 // ============================================================
 // CAIXA
 // ============================================================
-
-// ---- Sangria / Suprimento ----
-let mcmTipo='sangria';
-// O motivo é texto digitado pelo usuário e entra via innerHTML — escapa pra não
-// quebrar o layout (e porque esse texto sincroniza entre os dispositivos).
-function escapeHtml(t){
-    return String(t==null?'':t).replace(/[&<>"']/g, ch=>(
-        {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-}
-const MCM_SUGESTOES={
-    sangria:['Pagar fornecedor','Levar ao banco','Pagar entregador','Despesa da loja','Retirada do dono'],
-    suprimento:['Reforço de troco','Dinheiro do dono','Devolução']
-};
-
-async function carregarMovsCaixa(){
-    try{
-        const res=await fetch('/api/caixa/movimentacoes',{credentials:'include',cache:'no-store'});
-        if(res.status===404){
-            // Servidor antigo: avisa em vez de deixar a gaveta zerada sem explicação
-            const conta=document.getElementById('sgConta');
-            if(conta) conta.textContent='⚠️ servidor desatualizado — feche e abra o SMART PDV';
-            return;
-        }
-        const data=await res.json();
-        if(!data.success) return;
-        const el=document.getElementById('sgEmCaixa');
-        if(el) el.textContent='R$ '+(data.em_caixa||0).toFixed(2).replace('.',',');
-        // Mostra a CONTA aberta, sempre. Sem isso o operador via "R$ 0,00" com
-        // vendas no Resumo do Dia e achava que era bug — o resumo conta o dia
-        // TODO (várias sessões de caixa), a gaveta conta só ESTA sessão.
-        const conta=document.getElementById('sgConta');
-        if(conta){
-            const f=v=>'R$ '+(v||0).toFixed(2).replace('.',',');
-            const partes=['abertura '+f(data.valor_abertura)];
-            partes.push('+ '+f(data.vendas_dinheiro)+' em vendas');
-            if(data.total_suprimentos>0) partes.push('+ '+f(data.total_suprimentos)+' suprimento');
-            if(data.total_sangrias>0) partes.push('− '+f(data.total_sangrias)+' sangria');
-            conta.textContent=partes.join('  ');
-        }
-        // Diz DESDE QUANDO estamos contando, pra não confundir com o dia todo
-        const desde=document.getElementById('sgDesde');
-        if(desde && data.aberto_em){
-            let h='';
-            try{ h=new Date(data.aberto_em).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }catch(e){}
-            desde.textContent = h ? ('desde a abertura do caixa, às '+h) : '';
-        }
-        const lista=document.getElementById('sgMovs');
-        if(!lista) return;
-        if(!data.movimentacoes || !data.movimentacoes.length){
-            lista.innerHTML='<div class="sg-vazio">Nenhuma sangria ou suprimento neste caixa</div>';
-            return;
-        }
-        lista.innerHTML=data.movimentacoes.map(m=>{
-            const saida=m.tipo==='sangria';
-            let hora='';
-            try{ hora=new Date(m.criado_em).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }catch(e){}
-            const motivo=(m.motivo||'').trim() || (saida?'Sangria':'Suprimento');
-            return `<div class="sg-mov ${saida?'saida':'entrada'}">
-                <div class="ic"><i class="fas fa-arrow-${saida?'up':'down'}"></i></div>
-                <div class="info"><div class="mt">${escapeHtml(motivo)}</div><div class="hr">${hora}</div></div>
-                <div class="vl">${saida?'−':'+'} R$ ${(m.valor||0).toFixed(2).replace('.',',')}</div>
-            </div>`;
-        }).join('');
-    }catch(e){}
-}
-
-function abrirModalCaixaMov(tipo){
-    mcmTipo=tipo;
-    const ehSangria=tipo==='sangria';
-    document.getElementById('mcmTitulo').textContent=ehSangria?'💸 Sangria':'💵 Suprimento';
-    document.getElementById('mcmAjuda').textContent=ehSangria
-        ? 'Tirar dinheiro da gaveta (pagar fornecedor, levar ao banco...). O caixa vai contar isso no fechamento.'
-        : 'Colocar dinheiro na gaveta (reforço de troco). Não conta como venda.';
-    const btn=document.getElementById('mcmConfirmar');
-    btn.textContent=ehSangria?'Confirmar sangria':'Confirmar suprimento';
-    btn.className='btn-confirmar-mov'+(ehSangria?' sangria':'');
-    document.getElementById('mcmEmCaixa').textContent=document.getElementById('sgEmCaixa').textContent;
-    document.getElementById('mcmValor').value='';
-    document.getElementById('mcmMotivo').value='';
-    document.getElementById('mcmSugestoes').innerHTML=MCM_SUGESTOES[tipo].map(s=>
-        `<span class="mcm-sug" onclick="document.getElementById('mcmMotivo').value='${s}'">${s}</span>`).join('');
-    document.getElementById('modalCaixaMov').classList.add('active');
-    setTimeout(()=>document.getElementById('mcmValor').focus(),80);
-}
-
-function fecharModalCaixaMov(){
-    document.getElementById('modalCaixaMov').classList.remove('active');
-}
-
-// Enter no modal confirma (o caixa não tira a mão do teclado)
-document.addEventListener('keydown', function(e){
-    const m=document.getElementById('modalCaixaMov');
-    if(e.key==='Enter' && m && m.classList.contains('active')){
-        e.preventDefault(); e.stopPropagation(); confirmarCaixaMov();
-    }
-}, true);
-
-async function confirmarCaixaMov(){
-    const valor=parseFloat(document.getElementById('mcmValor').value);
-    const motivo=document.getElementById('mcmMotivo').value.trim();
-    if(!valor || valor<=0){ showToast('⚠️ Informe um valor maior que zero','warning'); return; }
-    const btn=document.getElementById('mcmConfirmar');
-    btn.disabled=true;
-    try{
-        const res=await fetch('/api/caixa/'+mcmTipo,{
-            method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
-            body:JSON.stringify({valor:valor, motivo:motivo})
-        });
-        // 404 = a tela é nova mas o SERVIDOR é antigo (o launcher caiu no cache
-        // do pdv.py). Sem esta checagem, o res.json() estourava num HTML de erro
-        // e o operador via só "Erro ao registrar", sem saber o que fazer.
-        if(res.status===404){
-            showToast('⚠️ O servidor está desatualizado. Feche o SMART PDV e abra de novo.','warning');
-            btn.disabled=false; return;
-        }
-        const data=await res.json();
-        if(data.success){
-            showToast((mcmTipo==='sangria'?'💸':'💵')+' '+data.message,'success');
-            fecharModalCaixaMov();
-            carregarMovsCaixa();
-            carregarResumoCaixa();
-        }else{
-            showToast('❌ '+(data.error||'Não foi possível registrar'),'error');
-        }
-    }catch(e){
-        showToast('❌ Erro ao registrar','error');
-    }
-    btn.disabled=false;
-}
-
 async function carregarStatusCaixa(){
     try{
         const res=await fetch('/api/caixa/status',{credentials:'include'});
@@ -3374,12 +2901,10 @@ async function carregarStatusCaixa(){
             icon.textContent='💰';status.textContent='Caixa Aberto';msg.textContent=`Aberto por ${data.usuario_nome||data.usuario_id||'usuário'} | Total: R$ ${(data.total||0).toFixed(2)}`;
             btn.textContent='🔒 Fechar Caixa';btn.className='btn-caixa fechar';header.textContent='💰 Aberto';header.className='status-caixa aberto';
             input.style.display='none';document.getElementById('resumoCaixa').style.display='block';carregarResumoCaixa();
-            document.getElementById('sangriaCard').style.display='block';carregarMovsCaixa();
         }else{
             icon.textContent='🔒';status.textContent='Caixa Fechado';msg.textContent='Abra o caixa para iniciar as vendas';
             btn.textContent='🔓 Abrir Caixa';btn.className='btn-caixa';header.textContent='🔒 Fechado';header.className='status-caixa fechado';
             input.style.display='block';document.getElementById('resumoCaixa').style.display='none';
-            document.getElementById('sangriaCard').style.display='none';
         }
     }catch(e){console.error(e);}
 }
@@ -3387,8 +2912,11 @@ async function carregarStatusCaixa(){
 async function toggleCaixa(){
     try{
         if(state.caixa_aberto){
-            abrirModalFechamento();   // confere a gaveta antes de fechar
-            return;
+            if(!confirm('Fechar caixa? O total do dia será registrado.'))return;
+            const res=await fetch('/api/caixa/fechar',{method:'POST',credentials:'include'});
+            const data=await res.json();
+            if(data.success){showToast('✅ Caixa fechado! Total: R$ '+data.total.toFixed(2),'success');}
+            else showToast('❌ '+data.error,'error');
         }else{
             const valor=parseFloat(document.getElementById('valorAbertura').value)||0;
             const res=await fetch('/api/caixa/abrir',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({valor})});
@@ -3398,150 +2926,6 @@ async function toggleCaixa(){
         }
         carregarStatusCaixa();
     }catch(e){showToast('❌ Erro','error');}
-}
-
-// ---- Relatório de fechamento (oferecido logo após fechar o caixa) ----
-let relatorioAtual=null;
-
-function abrirModalRelatorio(rel){
-    relatorioAtual=rel;
-    const f=v=>'R$ '+(v||0).toFixed(2).replace('.',',');
-    const res=document.getElementById('relResumo');
-    let html='<div class="rr-t">Vendas do dia</div><div class="rr-v">'+f(rel.total_geral)+'</div>';
-    if(rel.diferenca!==null && rel.diferenca!==undefined){
-        const d=rel.diferenca;
-        if(Math.abs(d)<0.01) html+='<div class="rr-d ok">✅ A gaveta bateu certinho</div>';
-        else if(d>0) html+='<div class="rr-d sobra">🔵 Sobrou '+f(d)+' na gaveta</div>';
-        else html+='<div class="rr-d falta">🔴 Faltou '+f(Math.abs(d))+' na gaveta</div>';
-    }else{
-        html+='<div class="rr-d" style="color:var(--text-muted)">Fechado sem conferir a gaveta</div>';
-    }
-    res.innerHTML=html;
-    document.getElementById('relPreview').textContent=montarPreviaRelatorio(rel);
-    document.getElementById('modalRelatorio').classList.add('active');
-    setTimeout(()=>document.getElementById('relImprimir').focus(),80);
-}
-
-function fecharModalRelatorio(){
-    document.getElementById('modalRelatorio').classList.remove('active');
-    relatorioAtual=null;
-}
-
-// Prévia do que vai sair no papel (mesmo formato do backend, 48 colunas)
-function montarPreviaRelatorio(r){
-    const L=48, lin=[], c=t=>String(t).padStart(Math.floor((L+String(t).length)/2)).padEnd(L);
-    const m=v=>'R$ '+Math.abs(v||0).toFixed(2).replace('.',',');
-    const l=(rot,v,s)=>(' '+rot).padEnd(28)+(s||' ')+m(v).padStart(19);
-    lin.push('='.repeat(L), c(state.nome_loja||'MINHA LOJA'), c('FECHAMENTO DE CAIXA'), c(r.data_hora||''));
-    if(r.operador) lin.push(c('Operador: '+r.operador));
-    lin.push('='.repeat(L), '', ' DINHEIRO NA GAVETA', '-'.repeat(L));
-    lin.push(l('Abertura', r.valor_abertura));
-    lin.push(l('Vendas em dinheiro', r.vendas_dinheiro, '+'));
-    if(r.total_suprimentos) lin.push(l('Suprimentos', r.total_suprimentos, '+'));
-    if(r.total_sangrias) lin.push(l('Sangrias', r.total_sangrias, '-'));
-    lin.push('-'.repeat(L), l('ESPERADO', r.esperado));
-    if(r.valor_contado!==null && r.valor_contado!==undefined){
-        lin.push(l('CONTADO', r.valor_contado));
-        const d=r.diferenca||0;
-        if(Math.abs(d)<0.01) lin.push(' '+c('CAIXA BATEU CERTINHO').slice(0,L-1));
-        else lin.push(l(d>0?'SOBROU':'FALTOU', d, d>0?'+':'-'));
-    }else lin.push(' (caixa fechado sem conferencia)');
-    lin.push('', '='.repeat(L), ' VENDAS DO DIA', '-'.repeat(L));
-    (r.metodos||[]).forEach(x=>{
-        lin.push(' '+String(x.metodo).slice(0,20).padEnd(20)+String(x.quantidade).padStart(4)+m(x.total).padStart(23));
-    });
-    if(!(r.metodos||[]).length) lin.push(' Nenhuma venda no periodo');
-    lin.push('-'.repeat(L), ' '+'TOTAL'.padEnd(20)+String(r.total_vendas||0).padStart(4)+m(r.total_geral).padStart(23));
-    lin.push('='.repeat(L));
-    return lin.join('\n');
-}
-
-async function imprimirFechamento(){
-    if(!relatorioAtual){ showToast('❌ Relatório não encontrado','error'); return; }
-    const btn=document.getElementById('relImprimir');
-    btn.disabled=true;
-    showToast('🖨️ Enviando para impressão...','info');
-    try{
-        const res=await fetch('/api/imprimir/fechamento',{method:'POST',headers:{'Content-Type':'application/json'},
-            credentials:'include',body:JSON.stringify(relatorioAtual)});
-        if(res.status===404){
-            showToast('⚠️ O servidor está desatualizado. Feche o SMART PDV e abra de novo.','warning');
-            btn.disabled=false; return;
-        }
-        const data=await res.json();
-        if(data.success){ showToast('🖨️ Relatório impresso!','success'); fecharModalRelatorio(); }
-        else showToast('❌ '+(data.error||'Falha na impressão'),'error');
-    }catch(e){ showToast('❌ Erro ao imprimir','error'); }
-    btn.disabled=false;
-}
-
-// ---- Fechamento com conferência da gaveta ----
-async function abrirModalFechamento(){
-    try{
-        const res=await fetch('/api/caixa/resumo',{credentials:'include',cache:'no-store'});
-        const d=await res.json();
-        const esperado=d.esperado_em_caixa||0;
-        document.getElementById('fcEsperado').textContent='R$ '+esperado.toFixed(2).replace('.',',');
-        document.getElementById('fcEsperado').dataset.valor=esperado;
-        const det=[];
-        if(d.valor_abertura) det.push('abertura R$ '+d.valor_abertura.toFixed(2));
-        if(d.total_suprimentos) det.push('+ suprimento R$ '+d.total_suprimentos.toFixed(2));
-        if(d.total_sangrias) det.push('− sangria R$ '+d.total_sangrias.toFixed(2));
-        document.getElementById('fcDetalhe').textContent=det.join('  ');
-        document.getElementById('fcContado').value='';
-        document.getElementById('fcDiferenca').style.display='none';
-        document.getElementById('modalFechamento').classList.add('active');
-        setTimeout(()=>document.getElementById('fcContado').focus(),80);
-    }catch(e){ showToast('❌ Erro ao abrir o fechamento','error'); }
-}
-
-function fecharModalFechamento(){
-    document.getElementById('modalFechamento').classList.remove('active');
-}
-
-// Mostra a diferença em tempo real enquanto o operador digita
-function calcularDiferenca(){
-    const esperado=parseFloat(document.getElementById('fcEsperado').dataset.valor||0);
-    const contado=parseFloat(document.getElementById('fcContado').value);
-    const el=document.getElementById('fcDiferenca');
-    if(isNaN(contado)){ el.style.display='none'; return; }
-    const dif=Math.round((contado-esperado)*100)/100;
-    el.style.display='block';
-    if(Math.abs(dif)<0.01){
-        el.className='fc-dif ok'; el.innerHTML='✅ <b>Bateu certinho!</b>';
-    }else if(dif>0){
-        el.className='fc-dif sobra'; el.innerHTML='🔵 <b>Sobrou R$ '+dif.toFixed(2).replace('.',',')+'</b> na gaveta';
-    }else{
-        el.className='fc-dif falta'; el.innerHTML='🔴 <b>Faltou R$ '+Math.abs(dif).toFixed(2).replace('.',',')+'</b> na gaveta';
-    }
-}
-
-async function confirmarFechamento(conferir){
-    const body={};
-    if(conferir){
-        const contado=parseFloat(document.getElementById('fcContado').value);
-        if(isNaN(contado)||contado<0){ showToast('⚠️ Informe quanto você contou','warning'); return; }
-        body.valor_contado=contado;
-    }
-    try{
-        const res=await fetch('/api/caixa/fechar',{method:'POST',headers:{'Content-Type':'application/json'},
-            credentials:'include',body:JSON.stringify(body)});
-        const data=await res.json();
-        if(data.success){
-            let msg='✅ Caixa fechado! Vendas: R$ '+(data.total||0).toFixed(2);
-            if(data.conferido && data.diferenca!==null){
-                if(Math.abs(data.diferenca)<0.01) msg+=' — a gaveta bateu certinho 🎯';
-                else if(data.diferenca>0) msg+=' — sobrou R$ '+data.diferenca.toFixed(2);
-                else msg+=' — faltou R$ '+Math.abs(data.diferenca).toFixed(2);
-            }
-            showToast(msg, data.conferido && Math.abs(data.diferenca||0)>=0.01 ? 'warning' : 'success');
-            fecharModalFechamento();
-            carregarStatusCaixa();
-            // Oferece o relatório impresso: é o momento em que o dono quer o
-            // papel na mão pra conferir e guardar.
-            if(data.relatorio) abrirModalRelatorio(data.relatorio);
-        }else showToast('❌ '+data.error,'error');
-    }catch(e){ showToast('❌ Erro ao fechar','error'); }
 }
 
 async function carregarResumoCaixa(){
@@ -4257,7 +3641,7 @@ document.addEventListener('DOMContentLoaded',function(){
                 document.getElementById('authPage').classList.add('hidden');
                 document.getElementById('app').classList.add('active');
                 atualizarHeader();
-                carregarPlanos();carregarProdutos().then(()=>carregarKitsParaVenda());carregarClientes();carregarUsuarios();
+                carregarPlanos();carregarProdutos();carregarClientes();carregarUsuarios();
                 carregarStatusCaixa();carregarDash('hoje');carregarLojaInfo();
                 atualizarPermissoesUI();
                 setTimeout(verificarStatusPlano, 500);
@@ -4287,8 +3671,8 @@ document.addEventListener('DOMContentLoaded',function(){
                 if(d.sessao_substituida || d.logged_in===false){
                     document.getElementById('app').classList.remove('active');
                     document.getElementById('authPage').classList.remove('hidden');
-                    if(typeof mostrarToast==='function'){
-                        mostrarToast(d.error || 'Sua conta foi acessada em outro dispositivo.', 'erro');
+                    if(typeof showToast==='function'){
+                        showToast(d.error || 'Sua conta foi acessada em outro dispositivo.', 'error');
                     }else{
                         alert(d.error || 'Sua conta foi acessada em outro dispositivo. Faça login novamente.');
                     }
