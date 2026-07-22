@@ -1647,7 +1647,7 @@ async function fazerLogout(){
     // Limpa o estado local
     state.db_id=null;state.usuario_id=null;state.nome='';state.cargo='';
     state.permissoes={clientes:false,dashboard:false,busca_estoque:false,margem:false,fiado:false,kit_combo:false};
-    state.itens=[];state.produtos=[];state.kits=[];state.clientes=[];
+    state.itens=[];state.produtos=[];state.produtosEstoque=[];state.kits=[];state.clientes=[];
     // Mostra a tela de login (sem recarregar a página, para o webview
     // não restaurar a sessão anterior e relogar sozinho)
     document.getElementById('app').classList.remove('active');
@@ -1751,11 +1751,22 @@ async function carregarProdutos(){
         const res=await fetch(`/api/produtos?busca=${encodeURIComponent(busca)}`,{credentials:'include'});
         const data=await res.json();
         if(data.success){
-            state.produtos=data.produtos||[];
+            // 🔧 BUG CORRIGIDO: isto sobrescrevia state.produtos (a lista CHEIA,
+            // usada pela busca de Vendas e pelo Kit/Combo) com o resultado
+            // FILTRADO da busca do Estoque. Depois de digitar algo em "Buscar"
+            // no Estoque, a busca da tela de Vendas parava de achar qualquer
+            // produto que não estivesse nesse filtro - porque a lista dela
+            // tinha virado só o subconjunto filtrado. Agora o Estoque guarda o
+            // resultado da sua própria busca numa variável separada
+            // (state.produtosEstoque), e só atualiza a lista cheia quando a
+            // busca do Estoque está vazia (ou seja, quando "data" já É a lista
+            // completa mesmo).
+            state.produtosEstoque=data.produtos||[];
+            if(!busca) state.produtos=data.produtos||[];
             const tbody=document.getElementById('tabelaEstoque');
-            if(state.produtos.length===0){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:16px;">Nenhum produto</td></tr>';return;}
+            if(state.produtosEstoque.length===0){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:16px;">Nenhum produto</td></tr>';return;}
             let html='';
-            state.produtos.forEach((p,idx)=>{
+            state.produtosEstoque.forEach((p,idx)=>{
                 const cls=p.estoque<=0?'estoque-baixo':p.estoque<=5?'estoque-medio':'estoque-alto';
                 const margem = p.preco > 0 ? ((p.preco - p.custo) / p.preco * 100) : 0;
                 html+=`<tr class="linha-estoque" data-idx="${idx}" data-codigo="${p.codigo}" onclick="selecionarProdutoParaEdicao('${p.codigo}')">
@@ -1774,7 +1785,7 @@ async function carregarProdutos(){
 }
 
 function selecionarProdutoParaEdicao(codigo){
-    const p=state.produtos.find(x=>x.codigo===codigo);
+    const p=(state.produtosEstoque||state.produtos).find(x=>x.codigo===codigo);
     if(!p)return;
     document.getElementById('prodCodigo').value=p.codigo;
     document.getElementById('prodNome').value=p.nome;
