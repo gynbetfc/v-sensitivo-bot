@@ -153,6 +153,13 @@ HTML_URL: str = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/refs
 # Imagem de fundo padrão para contas novas (tela de vendas)
 BG_PADRAO_URL: str = "https://raw.githubusercontent.com/gynbetfc/v-sensitivo-bot/main/PDV/bg.png"
 SESSOES_ATIVAS: Dict[str, str] = {}
+# 🔧 token de sessão (assinado pelo Worker) que autoriza ESTE processo a ler/
+# escrever os dados de cada db_id no Firebase, via proxy do Worker. Fica
+# guardado aqui (não no Flask session) de propósito: várias funções de
+# sincronização rodam em THREADS DE FUNDO, onde flask.session não existe -
+# elas já recebem db_id como parâmetro, então indexar por db_id aqui também
+# não exige mudar a assinatura de nenhuma delas.
+FB_TOKENS_POR_DB_ID: Dict[str, str] = {}
 # Porta usada só para um PDV avisar o outro que já existe um servidor rodando
 PORTA_DESCOBERTA: int = 50505
 # Controla quando cada conta sincronizou o token do plano pela última vez.
@@ -702,34 +709,49 @@ def get_usuario_id() -> Optional[str]:
 def get_timestamp() -> str:
     return datetime.now().isoformat()
 
-def _fb_key(db_id: str) -> str:
-    return db_id.replace(".", "_").replace("@", "_").replace("#", "").replace("$", "").replace("[", "").replace("]", "").replace("/", "_")
-
 # ============================================================
-# FIREBASE
+# FIREBASE — tudo passa pelo Worker (proxy autenticado), NUNCA mais direto.
 # ============================================================
-def salvar_usuario_firebase(db_id: str, dados: Dict) -> bool:
+# 🔧 HISTÓRICO DE SEGURANÇA: até a v11, estas funções falavam com o Firebase
+# DIRETO, em REST puro, sem nenhuma autenticação - e as regras do banco
+# estavam completamente abertas (".read": true, ".write": true na raiz).
+# Qualquer pessoa na internet lia/escrevia os dados de QUALQUER loja (hash de
+# senha, CNPJ, vendas). Agora o pdv.py (código público) nunca mais toca o
+# Firebase diretamente para dados de conta - ele fala com o Worker, que tem a
+# credencial (Conta de Serviço) e decide o que cada pedido pode fazer, usando
+# o token de sessão emitido no login (ver _login_via_backend).
+def _fb_request(db_id: str, rota: str, corpo: Optional[Dict] = None) -> Optional[Dict]:
+    """POST autenticado numa das rotas de dados do Worker (fb/get, fb/put,
+    fb/patch), usando o token de sessão guardado pra este db_id. Devolve o
+    corpo da resposta (dict) em caso de sucesso, ou None."""
+    token = FB_TOKENS_POR_DB_ID.get(db_id)
+    if not token:
+        logger.warning(f"⚠️ Sem token de sessão pra {db_id} - não é possível falar com o Firebase agora (faça login de novo)")
+        return None
     try:
-        key = _fb_key(db_id)
-        url = f'{FB_URL}/pdv/usuarios/{key}.json'
-        response = requests.put(url, json=dados, timeout=15)
-        return response.status_code == 200
+        payload = {'session_token': token}
+        if corpo:
+            payload.update(corpo)
+        with _sessao_http() as s:
+            r = s.post(f"{BACKEND_PAGAMENTOS_URL}/{rota}", json=payload, timeout=15)
+        if r.status_code == 200:
+            return r.json()
+        logger.warning(f"⚠️ Worker recusou {rota} para {db_id}: HTTP {r.status_code}")
+        return None
     except Exception as e:
-        logger.error(f"⚠️ Erro Firebase save: {e}")
-        return False
+        logger.error(f"⚠️ Falha ao chamar o backend ({rota}) para {db_id}: {e}")
+        return None
+
+def salvar_usuario_firebase(db_id: str, dados: Dict) -> bool:
+    r = _fb_request(db_id, 'fb/put', {'dados': dados})
+    return bool(r and r.get('success'))
 
 def salvar_campos_firebase(db_id: str, campos: Dict) -> bool:
     """Atualiza APENAS os campos informados no Firebase (PATCH), sem precisar
     carregar e reescrever todo o registro. Mais robusto para preferências
     como background, opacidade e escala."""
-    try:
-        key = _fb_key(db_id)
-        url = f'{FB_URL}/pdv/usuarios/{key}.json'
-        response = requests.patch(url, json=campos, timeout=15)
-        return response.status_code == 200
-    except Exception as e:
-        logger.error(f"⚠️ Erro Firebase patch: {e}")
-        return False
+    r = _fb_request(db_id, 'fb/patch', {'campos': campos})
+    return bool(r and r.get('success'))
 
 # Valor mágico do Firebase: ao gravar, ele troca por um número com a HORA DO SERVIDOR
 # (em milissegundos). Assim o timestamp não depende do relógio do dispositivo.
@@ -740,15 +762,7 @@ def salvar_preferencia_firebase(db_id: str, campo: str, valor) -> bool:
     do SERVIDOR Firebase. Grava dois campos: '<campo>' e '<campo>_ts'.
     Assim, na hora de sincronizar, o dispositivo com a versão mais NOVA vence,
     usando uma hora confiável (do servidor, não do aparelho)."""
-    try:
-        key = _fb_key(db_id)
-        url = f'{FB_URL}/pdv/usuarios/{key}.json'
-        payload = {campo: valor, f'{campo}_ts': FIREBASE_TIMESTAMP}
-        response = requests.patch(url, json=payload, timeout=15)
-        return response.status_code == 200
-    except Exception as e:
-        logger.error(f"⚠️ Erro Firebase preferência: {e}")
-        return False
+    return salvar_campos_firebase(db_id, {campo: valor, f'{campo}_ts': FIREBASE_TIMESTAMP})
 
 def em_segundo_plano(fn, *args, **kwargs) -> None:
     """Executa algo que depende da INTERNET sem fazer o usuário esperar.
@@ -781,72 +795,80 @@ def ler_timestamp_online() -> Optional[int]:
 def carregar_usuario_firebase(db_id: str, timeout: int = 10) -> Optional[Dict]:
     if not db_id:
         return None
-    try:
-        key = _fb_key(db_id)
-        url = f'{FB_URL}/pdv/usuarios/{key}.json'
-        response = requests.get(url, timeout=timeout)
-        if response.status_code == 200:
-            return response.json()
-        return None
-    except Exception as e:
-        logger.error(f"⚠️ Erro Firebase load: {e}")
-        return None
-
-def carregar_todos_usuarios_firebase() -> Dict:
-    try:
-        url = f'{FB_URL}/pdv/usuarios.json'
-        response = requests.get(url, timeout=10)
-        if response.status_code == 200:
-            return response.json() or {}
-        return {}
-    except:
-        return {}
+    r = _fb_request(db_id, 'fb/get')
+    return r.get('dados') if r and r.get('success') else None
 
 def firebase_online() -> bool:
     """Retorna True se o Firebase está acessível agora (temos internet).
     Usado no login para decidir: online = o Firebase manda (fonte da verdade);
-    offline = permitimos login local como cortesia para não travar a loja."""
+    offline = permitimos login local como cortesia para não travar a loja.
+
+    🔧 Continua batendo direto no Firebase (não passa pelo Worker) - este
+    caminho (pdv/_hora_servidor) é intencionalmente público nas regras (só um
+    timestamp, sem dado de ninguém), então não precisa de autenticação."""
     try:
-        # consulta bem leve (shallow) só para testar a conexão, com timeout curto
         r = requests.get(f'{FB_URL}/pdv/_hora_servidor.json', timeout=5)
         return r.status_code == 200
     except Exception:
         return False
 
-def buscar_usuario_por_email_firebase(email: str) -> Optional[Dict]:
-    email = (email or '').strip().lower()
+def _checar_existencia_backend(rota: str, campo: str, valor: str) -> bool:
+    """Pergunta ao Worker se já existe uma conta com este email/CNPJ - SEM
+    baixar o registro inteiro (nem o Worker devolve isso aqui, só um boolean).
+    Usado no cadastro pra recusar duplicidade."""
+    if not valor:
+        return False
     try:
-        url = f'{FB_URL}/pdv/usuarios.json'
-        response = requests.get(url, timeout=10)
-        if response.status_code == 200:
-            usuarios = response.json()
-            if usuarios:
-                for key, dados in usuarios.items():
-                    if not isinstance(dados, dict):
-                        continue
-                    if (dados.get('email') or '').strip().lower() == email:
-                        # AUTO-CONSERTO: o db_id É a própria chave do Firebase.
-                        # Contas antigas/quebradas podem estar sem o campo db_id —
-                        # aqui usamos a chave, para o login funcionar mesmo assim.
-                        if not dados.get('db_id'):
-                            dados['db_id'] = key
-                        return dados
-        return None
-    except:
-        return None
+        with _sessao_http() as s:
+            r = s.post(f"{BACKEND_PAGAMENTOS_URL}/{rota}", json={campo: valor}, timeout=10)
+        if r.status_code == 200:
+            return bool(r.json().get('existe'))
+    except Exception as e:
+        logger.warning(f"⚠️ Falha ao checar {campo} no backend: {e}")
+    return False
+
+def buscar_usuario_por_email_firebase(email: str) -> bool:
+    """Só existência (pro cadastro recusar email duplicado) - a busca do
+    registro completo pra LOGIN agora é feita pelo Worker (_login_via_backend),
+    que é quem tem permissão de ver a senha com hash."""
+    return _checar_existencia_backend('check_email', 'email', (email or '').strip().lower())
 
 def validar_cnpj_firebase(cnpj: str) -> bool:
+    return _checar_existencia_backend('check_cnpj', 'cnpj', cnpj)
+
+def _login_via_backend(email: str, senha: str) -> Optional[Dict]:
+    """Pede ao Worker pra buscar a conta por email e conferir a senha (ele é
+    quem tem permissão de ler o hash guardado no Firebase). Se bater, o Worker
+    devolve o registro completo (pro pdv.py continuar com a lógica de
+    reparo/migração que já existia) MAIS um token de sessão, que guardamos
+    pra autorizar as próximas leituras/escritas desta conta."""
     try:
-        url = f'{FB_URL}/pdv/usuarios.json'
-        response = requests.get(url, timeout=10)
-        if response.status_code == 200:
-            usuarios = response.json()
-            if usuarios:
-                for key, dados in usuarios.items():
-                    if dados.get('cnpj') == cnpj:
-                        return True
+        with _sessao_http() as s:
+            r = s.post(f"{BACKEND_PAGAMENTOS_URL}/login", json={'email': email, 'senha': senha}, timeout=15)
+        d = r.json()
+        if r.status_code == 200 and d.get('success') and d.get('session_token'):
+            db_id = (d.get('dados') or {}).get('db_id')
+            if db_id:
+                FB_TOKENS_POR_DB_ID[db_id] = d['session_token']
+            return d.get('dados')
+        return None
+    except Exception as e:
+        logger.error(f"⚠️ Falha ao fazer login no backend: {e}")
+        return None
+
+def _registrar_no_backend(db_id: str, dados: Dict) -> bool:
+    """Cria a conta no Firebase (via Worker) e já guarda o token de sessão
+    emitido, pra poder gravar o resto (ex: foto padrão) logo em seguida."""
+    try:
+        with _sessao_http() as s:
+            r = s.post(f"{BACKEND_PAGAMENTOS_URL}/register", json={'db_id': db_id, 'dados': dados}, timeout=15)
+        d = r.json()
+        if r.status_code == 200 and d.get('success') and d.get('session_token'):
+            FB_TOKENS_POR_DB_ID[db_id] = d['session_token']
+            return True
         return False
-    except:
+    except Exception as e:
+        logger.error(f"⚠️ Falha ao registrar conta no backend: {e}")
         return False
 
 # ============================================================
@@ -1914,7 +1936,12 @@ def criar_usuario_firebase(db_id: str, nome: str, email: str, senha_hash: str, s
         'token_atualizado_em': get_timestamp(), 'teste_usado': True, 'produtos': {}, 'clientes': {},
         'vendas': [], 'caixa': {'status': 'fechado'}, 'config': {}
     }
-    salvar_usuario_firebase(db_id, dados)
+    # 🔧 usa /register (não salvar_usuario_firebase) porque esta conta é NOVA -
+    # ainda não existe nenhum token de sessão pra ela. O Worker cria o registro
+    # E já devolve um token de sessão, que fica guardado pra autorizar as
+    # próximas escritas desta mesma conta (ex: foto padrão, logo abaixo).
+    if not _registrar_no_backend(db_id, dados):
+        logger.error(f"⚠️ Falha ao registrar {db_id} no backend - conta pode não ter sido criada no Firebase")
     plano.salvar_token_local(token)
     try:
         with get_db_context() as conn:
@@ -2266,7 +2293,11 @@ def health_check():
     status = {"status": "online", "versao": VERSION, "servidor_id": SERVIDOR_ID, "timestamp": get_timestamp(),
         "db_status": "ok", "firebase_status": "ok", "sessoes_ativas": len(SESSOES_ATIVAS), "os": sys.platform}
     try:
-        response = requests.get(f'{FB_URL}/pdv/usuarios.json?shallow=true', timeout=5)
+        # 🔧 usa pdv/_hora_servidor (público nas regras) em vez de usuarios.json -
+        # depois que as regras exigirem autenticação, um shallow de "usuarios"
+        # sempre voltaria negado e este health-check ia reportar "warning" pra
+        # sempre, mesmo com o Firebase 100% saudável.
+        response = requests.get(f'{FB_URL}/pdv/_hora_servidor.json', timeout=5)
         if response.status_code != 200:
             status["firebase_status"] = "warning"
     except:
@@ -2311,15 +2342,20 @@ def register():
         senha_hash = gerar_hash_senha(senha)  # formato novo (PBKDF2 + sal)
         cnpj = ''.join(filter(str.isdigit, data.get('cnpj') or ''))
         cnpj_dados = data.get('cnpj_dados') or {}
-        db_id = (data.get('db_id') or '').strip()
         nome_loja = cnpj_dados.get('razao_social') or cnpj_dados.get('nome_fantasia') or 'Minha Loja'
 
         if not nome or not email or not senha:
             return jsonify({"success": False, "error": "Preencha todos os campos"})
         if len(senha) < 4:
             return jsonify({"success": False, "error": "Senha deve ter pelo menos 4 caracteres"})
-        if not db_id:
-            db_id = str(uuid.uuid4())[:8]
+        # 🔧 SEGURANÇA: db_id nunca mais vem do cliente. Vinha um `data.get('db_id')`
+        # aqui, mas o index.html atual NUNCA manda esse campo no registro (conferido
+        # no front-end) - era uma porta sem uso legítimo, e permitia duas coisas
+        # ruins: 1) o cliente escolher um db_id previsível/curto de propósito;
+        # 2) potencialmente escolher o db_id de OUTRA conta já existente. Também
+        # trocamos de uuid4()[:8] (32 bits, só 4 bilhões de combinações) pro UUID
+        # completo (122 bits) - bem mais difícil de adivinhar/colidir.
+        db_id = str(uuid.uuid4())
 
         with get_db_context() as conn:
             cursor = conn.execute("SELECT COUNT(*) FROM users WHERE servidor_id=? AND (cnpj='' OR cnpj IS NULL)", (SERVIDOR_ID,))
@@ -2332,11 +2368,8 @@ def register():
             if cursor.fetchone():
                 return jsonify({"success": False, "error": "Email já cadastrado"})
 
-        usuarios_firebase = carregar_todos_usuarios_firebase()
-        if usuarios_firebase:
-            for key, dados in usuarios_firebase.items():
-                if dados.get('email') == email:
-                    return jsonify({"success": False, "error": "Este email já está cadastrado em outra conta."})
+        if buscar_usuario_por_email_firebase(email):
+            return jsonify({"success": False, "error": "Este email já está cadastrado em outra conta."})
 
         if cnpj:
             with get_db_context() as conn:
@@ -2474,36 +2507,28 @@ def login():
         online = firebase_online()
 
         if online:
-            usuario_firebase = buscar_usuario_por_email_firebase(email)
+            # 🔧 SEGURANÇA: a verificação de senha (comparar com o hash guardado
+            # no Firebase) agora acontece DENTRO do Worker - ele é quem tem
+            # permissão de ler esse hash. O pdv.py só recebe o registro
+            # completo se a senha já bateu (e ganha um token de sessão pra
+            # autorizar leituras/escritas seguintes desta conta).
+            #
+            # 🔧 Por design, não dá mais pra distinguir "conta não existe" de
+            # "senha errada" (o Worker devolve o mesmo erro genérico pras
+            # duas coisas, de propósito - não vazar se um email está
+            # cadastrado é uma boa prática). Por isso também NÃO apagamos mais
+            # a cópia local aqui: fazíamos isso antes assumindo que "não
+            # existe no Firebase" só podia significar conta desativada, mas
+            # agora esse mesmo caminho também é percorrido por um simples erro
+            # de digitação na senha - apagar o acesso local por causa disso
+            # seria pior que o problema que resolvia.
+            usuario_firebase = _login_via_backend(email, senha)
             if not usuario_firebase:
-                # Online e a conta NÃO existe no Firebase → conta inválida.
-                # Remove a cópia local para não deixar acesso "órfão" neste PC.
-                try:
-                    with get_db_context() as conn:
-                        conn.execute("DELETE FROM users WHERE email=?", (email,))
-                except Exception:
-                    pass
-                return jsonify({"success": False, "error": "Conta não encontrada ou desativada."})
+                return jsonify({"success": False, "error": "Email ou senha inválidos"})
 
             firebase_db_id = usuario_firebase.get('db_id')
-            firebase_senha = usuario_firebase.get('senha')
 
-            # Valida a senha (o Firebase manda). Se a conta no Firebase estiver
-            # sem senha (conta antiga/quebrada), reparamos com a senha local.
-            if not firebase_senha:
-                with get_db_context() as conn:
-                    row = conn.execute("SELECT senha FROM users WHERE email=?", (email,)).fetchone()
-                if row and verificar_senha(senha, row[0]):
-                    novo_hash = gerar_hash_senha(senha)
-                    salvar_campos_firebase(firebase_db_id, {'senha': novo_hash})
-                    usuario_firebase['senha'] = novo_hash
-                    with get_db_context() as conn:
-                        conn.execute("UPDATE users SET senha=? WHERE email=?", (novo_hash, email))
-                else:
-                    return jsonify({"success": False, "error": "Email ou senha inválidos"})
-            elif not verificar_senha(senha, firebase_senha):
-                return jsonify({"success": False, "error": "Email ou senha inválidos"})
-            elif senha_e_antiga(firebase_senha):
+            if senha_e_antiga(usuario_firebase.get('senha')):
                 # Senha correta, mas guardada no formato antigo (SHA-256 puro).
                 # Migramos para PBKDF2 agora, sem o usuário perceber.
                 try:
@@ -4716,7 +4741,10 @@ def _sync_pendente_background() -> None:
     while True:
         _time.sleep(60)
         try:
-            requests.get(f'{FB_URL}/.json?shallow=true', timeout=5)
+            # 🔧 usa pdv/_hora_servidor (intencionalmente público nas regras) em
+            # vez da raiz - só serve pra testar conectividade, não precisa
+            # (nem deveria) tocar em nada que exija autenticação.
+            requests.get(f'{FB_URL}/pdv/_hora_servidor.json', timeout=5)
             if offline_detectado:
                 logger.info("🌐 Conexão restaurada! Sincronizando dados pendentes...")
                 offline_detectado = False
