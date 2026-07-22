@@ -197,6 +197,13 @@
                     <span style="color:#ffd700;font-size:9px" id="valorEstimado">($0.00)</span>
                     <span style="color:#ff4444;font-size:8px" id="avisoMinimo"></span>
                 </div>
+                <div style="margin-top:5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                    <label style="color:#888;font-size:9px">📊 Par:</label>
+                    <select id="parSelect" onchange="setParEscolhido()" style="padding:5px;background:#111;border:1px solid #333;border-radius:5px;color:#fff;font-size:10px;max-width:180px">
+                        <option value="">Conecte para listar...</option>
+                    </select>
+                    <button onclick="carregarPares()" style="padding:4px 8px;background:#222;border:1px solid #444;border-radius:5px;color:#ffd700;font-size:9px;cursor:pointer">🔄</button>
+                </div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:5px">
                     <button class="btn btn-info" id="btnConectar" onclick="conectarIQ()">🔌 CONECTAR</button>
                     <button class="btn btn-stop" id="btnDesconectar" onclick="desconectarIQ()" style="display:none">🔌 DESCONECTAR</button>
@@ -431,17 +438,20 @@ function showToast(message, type, title) {
     var finalTitle = title || titles[type] || 'Info';
     var icon = icons[type] || 'ℹ️';
     
-    // 🔧 Remove TODOS os toasts anteriores antes de mostrar o novo.
-    // Antes so' removia os do MESMO tipo, entao "bot iniciado" (success) +
-    // "win" (win) se acumulavam na tela. Agora so' aparece um por vez.
+    // 🔧 Remove TODOS os toasts anteriores IMEDIATAMENTE (sem animacao de saida).
+    // O bug era: a saida usava .toast-hide + setTimeout, mas o toast "escondido"
+    // continuava no DOM e reaparecia quando um novo empurrava o container. Agora
+    // limpamos os timeouts e apagamos na hora - so' existe UM toast por vez.
     var existingToasts = container.querySelectorAll('.toast');
     for (var i = 0; i < existingToasts.length; i++) {
         var existing = existingToasts[i];
         var eid = existing.dataset.toastId;
         if (eid && toastTimeouts[eid]) { clearTimeout(toastTimeouts[eid]); delete toastTimeouts[eid]; }
-        existing.classList.add('toast-hide');
-        setTimeout(function(el) { if(el && el.parentElement) el.remove(); }, 300, existing);
+        existing.remove();  // apaga JA do DOM (nao deixa fantasma)
     }
+    // por seguranca, zera qualquer timeout orfao
+    for (var k in toastTimeouts) { clearTimeout(toastTimeouts[k]); }
+    toastTimeouts = {};
     
     var toast = document.createElement('div');
     toast.className = 'toast toast-' + type;
@@ -837,6 +847,7 @@ function conectarIQ() {
             iniciarChat();
             carregarSkinEffectsDoFirebase();
             carregarRecursos();
+            carregarPares();
             salvarCredenciais();
             showToast('✅ Conectado!', 'success');
             if(d.refresh) { setTimeout(function() { location.reload(); }, 1500); }
@@ -1126,7 +1137,7 @@ window.onload = function() {
             document.getElementById('statusDot').className = 'status-dot active';
             document.getElementById('moedasSaldo').textContent = d.moedas || 0;
             if(d.bot_version) document.getElementById('botVersionDisplay').innerHTML = '⚡ TESLA 369 v' + d.bot_version;
-            intervalo = setInterval(atualizar,2000); atualizar(); iniciarChat(); carregarSkinEffectsDoFirebase(); carregarRecursos();
+            intervalo = setInterval(atualizar,2000); atualizar(); iniciarChat(); carregarSkinEffectsDoFirebase(); carregarRecursos(); carregarPares();
         }
     });
     setInterval(atualizarChat,5000);
@@ -1357,6 +1368,43 @@ function ligarLongPressSkins(gridId){
         c.addEventListener('mouseup', function(){ _lpCancelarSkin(); });
         c.addEventListener('mouseleave', function(){ _lpCancelarSkin(); });
     }
+}
+
+
+// ==== SELECAO DE PARES (abertos + OTC, so' binarios) ====
+function carregarPares(){
+    var sel = document.getElementById('parSelect');
+    if(!sel) return;
+    sel.innerHTML = '<option value="">Carregando...</option>';
+    fetch('/pares').then(function(r){ return r.json(); }).then(function(d){
+        if(!d.ok){ sel.innerHTML = '<option value="">'+(d.erro||'Erro')+'</option>'; return; }
+        var html = '';
+        if(d.otc && d.otc.length){
+            html += '<optgroup label="\ud83d\udd36 OTC (fim de semana)">';
+            for(var i=0;i<d.otc.length;i++){
+                var sel1 = d.otc[i]===d.atual ? ' selected' : '';
+                html += '<option value="'+d.otc[i]+'"'+sel1+'>'+d.otc[i]+'</option>';
+            }
+            html += '</optgroup>';
+        }
+        if(d.normais && d.normais.length){
+            html += '<optgroup label="\ud83d\udfe2 Abertos (mercado normal)">';
+            for(var j=0;j<d.normais.length;j++){
+                var sel2 = d.normais[j]===d.atual ? ' selected' : '';
+                html += '<option value="'+d.normais[j]+'"'+sel2+'>'+d.normais[j]+'</option>';
+            }
+            html += '</optgroup>';
+        }
+        sel.innerHTML = html || '<option value="">Nenhum par aberto</option>';
+    }).catch(function(){ sel.innerHTML = '<option value="">Erro ao listar</option>'; });
+}
+function setParEscolhido(){
+    var par = document.getElementById('parSelect').value;
+    if(!par) return;
+    fetch('/set_par',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({par:par})})
+        .then(function(r){ return r.json(); }).then(function(d){
+            if(d.ok) showToast('Par: '+par, 'success');
+        });
 }
 
 </script>
