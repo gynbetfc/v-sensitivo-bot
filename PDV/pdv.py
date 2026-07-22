@@ -34,6 +34,8 @@ from flask_cors import CORS
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives.asymmetric import padding as rsa_padding
+from cryptography.hazmat.primitives.serialization import load_pem_public_key
 import hmac
 import base64
 
@@ -174,9 +176,32 @@ BACKEND_PAGAMENTOS_URL: str = os.environ.get(
 )
 
 # ============================================================
-# CHAVE SECRETA PARA TOKENS DE PLANO
+# CHAVES PARA TOKENS DE PLANO
 # ============================================================
+# 🔧 HISTÓRICO DE SEGURANÇA: até a v11, esta chave era SIMÉTRICA (a mesma
+# usada pra assinar E verificar) e o próprio pdv.py assinava os tokens
+# localmente. Como este arquivo é baixado em texto puro de um repositório
+# PÚBLICO do GitHub, qualquer pessoa podia ler essa chave e assinar um token
+# de plano "Empresarial" válido pra sempre - sem nunca pagar nada nem falar
+# com o Mercado Pago. CHAVE_SECRETA_PLANO agora só existe pra continuar
+# validando tokens ANTIGOS (v1) já emitidos antes desta correção - nenhum
+# token novo é assinado com ela (ver PlanoSincronizado._criar_token).
+#
+# Tokens NOVOS (v2) usam assinatura RSA assimétrica: só o Worker (backend)
+# tem a chave PRIVADA e consegue EMITIR um token. O pdv.py só tem a chave
+# PÚBLICA abaixo, que serve só pra VERIFICAR - publicá-la não é um risco,
+# é assim que assinatura assimétrica funciona por definição.
 CHAVE_SECRETA_PLANO: str = "hs7sudjsjfirijf839djd"
+
+CHAVE_PUBLICA_PLANO_PEM: str = """-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApSUNGT0VEP4Zkh/I2MD2
+hdu8PUgrd0pI2wIMaNZXHB/C6i2KKTz+naXyTBA3CRIeJSjYIn4vbdlYHyDsAXkp
+LkHuCBbCdxOd/dXmIsHh+fvF1FwLIrpxvdNBc2GADuJBvKjkbqtXC/dAQgOVipY/
++iE3INHopfRTw4KMddMipi28tHR37GlHuwHV3jj+ZIxMTId0tdP4u28bxUM1htcD
+RhsQ46llCX1QBTP/jNPzKzYZBFMUEpkBDAHeDRHtrKXHujy8VaV24CI+cgyUEhFa
+eAYEIsB7lcV+FUjyRnBSSn2nJS/uUWlziUYiLDRBuasGH6zfV4iIorZSKO3n+Vsq
+JQIDAQAB
+-----END PUBLIC KEY-----"""
 
 # ============================================================
 # PLANOS REVISADOS
@@ -210,7 +235,7 @@ PLANOS: List[Plano] = [
         'fiado': True,
         'kit_combo': True,
     }),
-    Plano(3, 10, 0.99, '💎 PREMIUM', 30, -1, {
+    Plano(3, 10, 119.99, '💎 PREMIUM', 30, -1, {
         'clientes': True,
         'dashboard': True,
         'busca_estoque': True,
@@ -218,7 +243,7 @@ PLANOS: List[Plano] = [
         'fiado': True,
         'kit_combo': True,
     }),
-    Plano(4, 10, 189.99, '👑 EMPRESARIAL', 30, -1, {
+    Plano(4, 10, 149.99, '👑 EMPRESARIAL', 30, -1, {
         'clientes': True,
         'dashboard': True,
         'busca_estoque': True,
@@ -262,9 +287,17 @@ rate_limits: Dict[str, List[float]] = {}
 # MODO DESENVOLVEDOR
 # Quando ativado (via senha secreta), libera TODAS as permissões e
 # ignora expiração de plano — só para você testar. Guardado por db_id.
-# TROQUE a senha abaixo por uma que só você saiba.
+#
+# 🔧 A senha NÃO fica mais fixa no código: este pdv.py é baixado em texto
+# puro de um repositório PÚBLICO do GitHub (ver pdv_launcher.py), então
+# qualquer valor escrito aqui está exposto pra qualquer pessoa que abrir o
+# arquivo - inclusive todo mundo que já rodou o app. Agora a senha só existe
+# se você definir a variável de ambiente PDV_SENHA_MODO_DEV na SUA máquina
+# antes de rodar (nunca commitada). Sem essa variável, o modo dev fica
+# permanentemente desligado - é o comportamento de qualquer cópia baixada
+# pelos lojistas.
 # ============================================================
-SENHA_MODO_DEV: str = "ejs2026dev"
+SENHA_MODO_DEV: str = os.environ.get("PDV_SENHA_MODO_DEV", "")
 _modo_dev_ativo: Dict[str, bool] = {}  # {db_id: True}
 _PERM_TOTAL = {'clientes': True, 'dashboard': True, 'busca_estoque': True,
                'margem': True, 'fiado': True, 'kit_combo': True}
@@ -551,25 +584,13 @@ def init_db() -> None:
             )
         ''')
 
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS caixa_mov (
-                id TEXT PRIMARY KEY,
-                delta REAL,
-                tipo TEXT,
-                motivo TEXT DEFAULT '',
-                usuario_id TEXT DEFAULT '',
-                db_id TEXT,
-                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-
         # Adicionar colunas faltantes
         for tabela, colunas in {
             'users': {'sincronizado_em': 'TIMESTAMP', 'bg_vendas_img': 'TEXT DEFAULT ""', 'bg_vendas_opacidade': 'INTEGER DEFAULT 50', 'escala_sistema': 'INTEGER DEFAULT 100', 'bg_vendas_img_ts': 'INTEGER DEFAULT 0', 'bg_vendas_opacidade_ts': 'INTEGER DEFAULT 0', 'escala_sistema_ts': 'INTEGER DEFAULT 0'},
             'produtos': {'custo': 'REAL DEFAULT 0', 'margem': 'REAL DEFAULT 0', 'ultima_atualizacao': 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP', 'sincronizado_em': 'TIMESTAMP'},
             'clientes': {'ultima_atualizacao': 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP', 'sincronizado_em': 'TIMESTAMP'},
-            'vendas': {'lucro_total': 'REAL DEFAULT 0', 'recebido': 'REAL DEFAULT 0', 'troco': 'REAL DEFAULT 0', 'sincronizado_em': 'TIMESTAMP', 'pagamentos': 'TEXT DEFAULT ""'},
-            'caixa': {'sincronizado_em': 'TIMESTAMP', 'valor_contado': 'REAL DEFAULT 0', 'diferenca': 'REAL DEFAULT 0', 'esperado': 'REAL DEFAULT 0'}
+            'vendas': {'lucro_total': 'REAL DEFAULT 0', 'recebido': 'REAL DEFAULT 0', 'troco': 'REAL DEFAULT 0', 'sincronizado_em': 'TIMESTAMP'},
+            'caixa': {'sincronizado_em': 'TIMESTAMP'}
         }.items():
             cursor = conn.execute(f"PRAGMA table_info({tabela})")
             colunas_existentes = [row[1] for row in cursor.fetchall()]
@@ -885,7 +906,47 @@ class PlanoSincronizado:
         token_criptografado = fernet.encrypt(json.dumps(token).encode())
         return base64.b64encode(token_criptografado).decode()
     
+    def _verificar_token_v2(self, token_str: str) -> Optional[Dict]:
+        """Verifica um token v2 (assinatura RSA - só o Worker consegue EMITIR,
+        o pdv.py só consegue VERIFICAR, com a chave pública). Devolve None se
+        não for um token v2 válido (nesse caso o chamador tenta o v1)."""
+        try:
+            pacote = json.loads(base64.b64decode(token_str.encode()).decode())
+            if pacote.get('v') != 2:
+                return None
+            dados = {
+                'db_id': pacote['db_id'], 'plano_id': pacote['plano_id'],
+                'expira_em': pacote['expira_em'], 'criado_em': pacote['criado_em'],
+                'token_id': pacote['token_id'],
+            }
+            # mensagem assinada é uma string simples (não JSON) de propósito:
+            # evita qualquer divergência de formatação entre o Python (aqui) e
+            # o JavaScript do Worker (que assina) - JSON "canônico" varia sutilmente
+            # entre linguagens (espaços, ordem, escaping), string simples não.
+            mensagem = f"{dados['db_id']}|{dados['plano_id']}|{dados['expira_em']}|{dados['token_id']}|{dados['criado_em']}|v2"
+            assinatura = base64.b64decode(pacote['sig'])
+            chave_publica = load_pem_public_key(CHAVE_PUBLICA_PLANO_PEM.encode())
+            chave_publica.verify(
+                assinatura, mensagem.encode(),
+                rsa_padding.PSS(mgf=rsa_padding.MGF1(hashes.SHA256()), salt_length=32),
+                hashes.SHA256(),
+            )
+            if dados['db_id'] != self.db_id:
+                logger.warning(f"⚠️ Token v2 é de outra conta (esperado {self.db_id}, veio {dados['db_id']})")
+                return None
+            return dados
+        except Exception:
+            return None  # não é v2 (ou assinatura inválida) - tenta v1 no fallback
+
     def _verificar_token(self, token_criptografado: str) -> Optional[Dict]:
+        # v2 primeiro (assinatura assimétrica - único formato que NOVOS tokens usam)
+        dados_v2 = self._verificar_token_v2(token_criptografado)
+        if dados_v2:
+            return dados_v2
+        # 🔧 fallback v1 (HMAC/Fernet simétrico): mantido SÓ pra não invalidar
+        # tokens que já foram emitidos antes desta correção de segurança.
+        # _criar_token (que gera v1) não é mais chamado pra tokens novos - ver
+        # renovar_plano/_emitir_token_via_backend.
         try:
             fernet = Fernet(self._derivar_chave())
             token_bytes = base64.b64decode(token_criptografado.encode())
@@ -900,6 +961,24 @@ class PlanoSincronizado:
         except Exception as e:
             logger.error(f"❌ Erro ao verificar token: {e}")
             return None
+
+    def _emitir_token_via_backend(self, expira_em: str, plano_id: int, rota: str = "emitir_token", extra: Optional[Dict] = None) -> Optional[str]:
+        """Único jeito SEGURO de obter um token novo: pede ao Worker (que tem a
+        chave PRIVADA) pra assinar. Ver comentário em CHAVE_PUBLICA_PLANO_PEM."""
+        try:
+            corpo = {'db_id': self.db_id, 'plano_id': plano_id, 'expira_em': expira_em}
+            if extra:
+                corpo.update(extra)
+            with _sessao_http() as s:
+                r = s.post(f"{BACKEND_PAGAMENTOS_URL}/{rota}", json=corpo, timeout=10)
+            if r.status_code == 200:
+                d = r.json()
+                if d.get('success') and d.get('token'):
+                    return d['token']
+            logger.warning(f"⚠️ Backend não emitiu token v2 ({rota}): HTTP {r.status_code}")
+        except Exception as e:
+            logger.warning(f"⚠️ Falha ao pedir token v2 ao backend: {e}")
+        return None
     
     def salvar_token_local(self, token_criptografado: str) -> bool:
         try:
@@ -1031,9 +1110,25 @@ class PlanoSincronizado:
             logger.error(f"❌ Erro ao obter info do plano: {e}")
             return {'ativo': False, 'dias_restantes': 0, 'expirado': True, 'mensagem': f'Erro: {str(e)}'}
     
-    def renovar_plano(self, expira_em: str, plano_id: int) -> Dict:
+    def renovar_plano(self, expira_em: str, plano_id: int, pix_id: Optional[str] = None) -> Dict:
         try:
-            token = self._criar_token(expira_em, plano_id)
+            # 🔧 manda o pix_id (se tiver) pro Worker RE-CONFERIR o pagamento
+            # direto com o Mercado Pago e derivar plano_id/expira_em sozinho a
+            # partir do external_reference - NUNCA confiando no que o cliente
+            # mandou. Sem isso, /emitir_token viraria só um novo jeito de
+            # forjar plano (mudou de "assinar local" pra "chamar um endpoint
+            # aberto"), sem resolver o problema de verdade.
+            extra = {'pix_id': pix_id} if pix_id else None
+            token = self._emitir_token_via_backend(expira_em, plano_id, rota='emitir_token', extra=extra)
+            if not token:
+                # 🔧 MODO INSEGURO (fallback): só cai aqui se o Worker estiver
+                # fora do ar OU a rota /emitir_token ainda não tiver sido
+                # publicada nele. Continua funcionando pro lojista não ficar
+                # travado, mas ESTE token pode ser forjado por qualquer pessoa
+                # com o código-fonte (é o problema original). Assim que o
+                # Worker estiver no ar com /emitir_token, isto nunca mais roda.
+                logger.error(f"⚠️ MODO INSEGURO: assinando token localmente para {self.db_id} (backend indisponível - publique /emitir_token no Worker)")
+                token = self._criar_token(expira_em, plano_id)
             self.salvar_token_local(token)
             self.salvar_token_firebase(token)
             # PATCH: atualiza só o plano. Antes era load-and-PUT — se a rede
@@ -1244,7 +1339,6 @@ def _normalizar_dados_firebase(dados_fb: Dict) -> Dict:
     resultado['exclusoes'] = dados_fb.get('exclusoes') or {}
     resultado['estoque_mov'] = dados_fb.get('estoque_mov') or {}
     resultado['fiado_mov'] = dados_fb.get('fiado_mov') or {}
-    resultado['caixa_mov'] = dados_fb.get('caixa_mov') or {}
     # mantém também caixa/loja se existirem (não atrapalham o merge)
     for extra in ('caixa', 'nome_loja', 'cnpj', 'cnpj_dados'):
         if extra in dados_fb:
@@ -1295,7 +1389,8 @@ def _garantir_conta_no_firebase(db_id: str) -> None:
             plano_id = base.get('plano', 5) if base.get('plano') is not None else 5
             try:
                 pl = PlanoSincronizado(db_id, CHAVE_SECRETA_PLANO)
-                base['token_plano'] = pl._criar_token(expira_em, plano_id)
+                token_reparo = pl._emitir_token_via_backend(expira_em, plano_id, rota='emitir_trial')
+                base['token_plano'] = token_reparo or pl._criar_token(expira_em, plano_id)
                 base['token_atualizado_em'] = get_timestamp()
             except Exception:
                 pass
@@ -1467,14 +1562,6 @@ def _baixar_firebase_para_local(db_id: str, dados_firebase: Dict, resultado: Dic
                     m.get('tipo', 'saida'), m.get('origem', ''), db_id, m.get('criado_em', get_timestamp())))
             except Exception as e:
                 logger.error(f"⚠️ Erro ao inserir mov estoque {mov_id}: {e}")
-        for mov_id, m in (dados_firebase.get('caixa_mov') or {}).items():
-            try:
-                conn.execute("""INSERT OR IGNORE INTO caixa_mov (id, delta, tipo, motivo, usuario_id, db_id, criado_em)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)""", (str(mov_id), float(m.get('delta', 0)),
-                    m.get('tipo', 'sangria'), m.get('motivo', ''), m.get('usuario_id', ''),
-                    db_id, m.get('criado_em', get_timestamp())))
-            except Exception as e:
-                logger.error(f"⚠️ Erro ao inserir mov caixa {mov_id}: {e}")
         # valores derivados: recalcula a partir dos fatos recém-baixados
         for (nome_c,) in conn.execute("SELECT DISTINCT cliente_nome FROM fiado_mov WHERE db_id=?", (db_id,)).fetchall():
             if nome_c:
@@ -1682,24 +1769,6 @@ def _merge_bidirecional_sem_duplicar(db_id: str, dados_firebase: Dict, resultado
                     (str(cod), db_id)).fetchone()[0]
                 conn.execute("UPDATE produtos SET estoque=? WHERE codigo=? AND db_id=?", (int(valor), str(cod), db_id))
 
-        # Sangrias/suprimentos: mesma lógica dos fatos de estoque. Cada movimento
-        # tem id único, então dois dispositivos podem sangrar ao mesmo tempo que
-        # os valores se somam, sem um apagar o do outro.
-        cmovs_fb = dados_firebase.get('caixa_mov') or {}
-        if cmovs_fb:
-            ids_locais = {row[0] for row in conn.execute(
-                "SELECT id FROM caixa_mov WHERE db_id=?", (db_id,)).fetchall()}
-            for mov_id, m in cmovs_fb.items():
-                if str(mov_id) in ids_locais:
-                    continue
-                try:
-                    conn.execute("""INSERT OR IGNORE INTO caixa_mov (id, delta, tipo, motivo, usuario_id, db_id, criado_em)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)""", (str(mov_id), float(m.get('delta', 0)),
-                        m.get('tipo', 'sangria'), m.get('motivo', ''), m.get('usuario_id', ''),
-                        db_id, m.get('criado_em', get_timestamp())))
-                except Exception as e:
-                    logger.error(f"⚠️ Erro ao inserir mov caixa {mov_id}: {e}")
-
         conn.commit()
 
 def enviar_para_firebase(db_id: str) -> bool:
@@ -1787,13 +1856,6 @@ def enviar_para_firebase(db_id: str) -> bool:
                 movs[str(row[0])] = {'codigo': row[1], 'delta': row[2], 'tipo': row[3],
                     'origem': row[4] or '', 'criado_em': row[5] or get_timestamp()}
             dados_firebase['estoque_mov'] = movs
-
-            cursor = conn.execute("SELECT id, delta, tipo, motivo, usuario_id, criado_em FROM caixa_mov WHERE db_id=?", (db_id,))
-            cmovs = {}
-            for row in cursor.fetchall():
-                cmovs[str(row[0])] = {'delta': row[1], 'tipo': row[2], 'motivo': row[3] or '',
-                    'usuario_id': row[4] or '', 'criado_em': row[5] or get_timestamp()}
-            dados_firebase['caixa_mov'] = cmovs
         # Preserva as preferências (foto, opacidade, escala) que já estão no Firebase,
         # junto com seus timestamps. Como o sync usa PUT (substitui tudo), sem isso
         # essas preferências seriam apagadas. Elas são gerenciadas à parte por timestamp.
@@ -1840,7 +1902,10 @@ def criar_usuario_firebase(db_id: str, nome: str, email: str, senha_hash: str, s
     expira_em = (datetime.now() + timedelta(days=15)).isoformat()
     plano_id = 5  # Plano de TESTE (Empresarial completo)
     plano = PlanoSincronizado(db_id, CHAVE_SECRETA_PLANO)
-    token = plano._criar_token(expira_em, plano_id)
+    token = plano._emitir_token_via_backend(expira_em, plano_id, rota='emitir_trial')
+    if not token:
+        logger.error(f"⚠️ MODO INSEGURO: assinando token de teste localmente para {db_id} (backend indisponível - publique /emitir_trial no Worker)")
+        token = plano._criar_token(expira_em, plano_id)
     dados = {
         'db_id': db_id, 'nome': nome, 'email': email, 'senha': senha_hash,
         'servidor_id': servidor_id, 'nome_loja': nome_loja, 'cnpj': cnpj,
@@ -1930,86 +1995,6 @@ def formatar_cnpj(cnpj: str) -> str:
     if not cnpj or len(cnpj) != 14:
         return cnpj
     return f"{cnpj[:2]}.{cnpj[2:5]}.{cnpj[5:8]}/{cnpj[8:12]}-{cnpj[12:14]}"
-
-def gerar_texto_fechamento(dados: Dict) -> str:
-    """Monta o relatório de fechamento de caixa para a impressora térmica.
-
-    Curto de propósito: cabe num pedaço de bobina e mostra só o que o dono
-    precisa conferir — de onde veio o dinheiro da gaveta, se bateu, e quanto
-    vendeu por método. Sem os dados de CNPJ do cupom (isso é pro cliente, não
-    pro dono)."""
-    L = 48
-    nome_loja = dados.get('nome_loja', 'MINHA LOJA')
-    data_hora = dados.get('data_hora', datetime.now().strftime('%d/%m/%Y %H:%M'))
-    operador = dados.get('operador', '')
-    abertura = float(dados.get('valor_abertura', 0) or 0)
-    vendas_dinheiro = float(dados.get('vendas_dinheiro', 0) or 0)
-    suprimentos = float(dados.get('total_suprimentos', 0) or 0)
-    sangrias = float(dados.get('total_sangrias', 0) or 0)
-    esperado = float(dados.get('esperado', 0) or 0)
-    contado = dados.get('valor_contado')
-    diferenca = dados.get('diferenca')
-    metodos = dados.get('metodos', []) or []
-    total_geral = float(dados.get('total_geral', 0) or 0)
-    total_vendas = int(dados.get('total_vendas', 0) or 0)
-
-    def linha(rot, valor, sinal=' '):
-        v = f'R$ {abs(valor):,.2f}'.replace(',', 'X').replace('.', ',').replace('X', '.')
-        return f'{rot:<28}{sinal}{v:>19}'
-
-    t = []
-    t.append('=' * L)
-    t.append(nome_loja[:L].center(L))
-    t.append('FECHAMENTO DE CAIXA'.center(L))
-    t.append(data_hora.center(L))
-    if operador:
-        t.append(f'Operador: {operador}'[:L].center(L))
-    t.append('=' * L)
-    t.append('')
-    t.append(' DINHEIRO NA GAVETA')
-    t.append('-' * L)
-    t.append(linha(' Abertura', abertura))
-    t.append(linha(' Vendas em dinheiro', vendas_dinheiro, '+'))
-    if suprimentos:
-        t.append(linha(' Suprimentos', suprimentos, '+'))
-    if sangrias:
-        t.append(linha(' Sangrias', sangrias, '-'))
-    t.append('-' * L)
-    t.append(linha(' ESPERADO', esperado))
-    if contado is not None:
-        t.append(linha(' CONTADO', float(contado)))
-        d = float(diferenca or 0)
-        if abs(d) < 0.01:
-            t.append(' ' + 'CAIXA BATEU CERTINHO'.center(L - 2))
-        else:
-            rot = ' SOBROU' if d > 0 else ' FALTOU'
-            t.append(linha(rot, d, '+' if d > 0 else '-'))
-    else:
-        t.append(' (caixa fechado sem conferencia)')
-    t.append('')
-    t.append('=' * L)
-    t.append(' VENDAS DO DIA')
-    t.append('-' * L)
-    if metodos:
-        for m in metodos:
-            nome = str(m.get('metodo', ''))[:20]
-            qtd = m.get('quantidade', 0)
-            val = float(m.get('total', 0) or 0)
-            v = f'R$ {val:,.2f}'.replace(',', 'X').replace('.', ',').replace('X', '.')
-            t.append(f' {nome:<20}{qtd:>4}{v:>23}')
-    else:
-        t.append(' Nenhuma venda no periodo')
-    t.append('-' * L)
-    v = f'R$ {total_geral:,.2f}'.replace(',', 'X').replace('.', ',').replace('X', '.')
-    t.append(f' {"TOTAL":<20}{total_vendas:>4}{v:>23}')
-    t.append('=' * L)
-    t.append('')
-    t.append('')
-    t.append(('_' * 32).center(L))
-    t.append('Assinatura do responsavel'.center(L))
-    t.append('')
-    return '\n'.join(t)
-
 
 def gerar_texto_cupom(dados: Dict) -> str:
     nome_loja = dados.get('nome_loja', 'MINHA LOJA')
@@ -2104,106 +2089,88 @@ def gerar_texto_cupom(dados: Dict) -> str:
     linhas.append('=' * L)
     return '\n'.join(linhas) + '\n\n'
 
-def imprimir_texto_escpos(texto: str, titulo: str = "SMART PDV") -> Dict:
-    """Manda um texto qualquer para a impressora térmica (ESC/POS).
-
-    É a mesma mecânica do cupom, mas sem o formato dele — serve para o relatório
-    de fechamento e qualquer outro impresso futuro."""
-    if not IS_WINDOWS or not IMPRESSAO_DISPONIVEL:
-        return {"success": False, "error": "Impressão indisponível neste computador."}
-    try:
-        import win32print
-        ESC, GS = chr(27), chr(29)
-        cmd_init = (ESC + '@').encode('latin-1', 'replace')
-        cmd_charset = (ESC + 't' + chr(2)).encode('latin-1', 'replace')  # CP850: acentos
-        cmd_cut = (GS + 'V' + chr(66) + chr(0)).encode('latin-1', 'replace')
-
-        def _codificar(t):
-            try:
-                return t.encode('cp850')
-            except Exception:
-                import unicodedata
-                return unicodedata.normalize('NFKD', t).encode('ascii', 'ignore').decode('ascii').encode('cp850', 'replace')
-
-        impressora_nome = win32print.GetDefaultPrinter()
-        if not impressora_nome:
-            return {"success": False, "error": "Nenhuma impressora padrão definida"}
-        hprinter = win32print.OpenPrinter(impressora_nome)
-        try:
-            win32print.StartDocPrinter(hprinter, 1, (titulo, None, "RAW"))
-            win32print.StartPagePrinter(hprinter)
-            win32print.WritePrinter(hprinter, cmd_init)
-            win32print.WritePrinter(hprinter, cmd_charset)
-            win32print.WritePrinter(hprinter, _codificar(texto))
-            win32print.WritePrinter(hprinter, b'\n\n\n')
-            win32print.WritePrinter(hprinter, cmd_cut)
-            win32print.EndPagePrinter(hprinter)
-            win32print.EndDocPrinter(hprinter)
-        finally:
-            win32print.ClosePrinter(hprinter)
-        logger.info(f"🖨️ Impresso: {titulo}")
-        return {"success": True}
-    except Exception as e:
-        logger.error(f"❌ Erro ao imprimir: {e}")
-        return {"success": False, "error": str(e)}
-
-
 def imprimir_cupom_escpos(dados: Dict) -> Dict:
     if not IS_WINDOWS or not IMPRESSAO_DISPONIVEL:
         return {"success": False, "error": "Impressão indisponível. Se você está no Windows, os módulos de impressão (pywin32) não foram incluídos no aplicativo. Gere o executável novamente com o pywin32."}
 
-    try:
-        import win32print
-        texto = gerar_texto_cupom(dados)
-        ESC = chr(27)
-        GS = chr(29)
-        cmd_init = (ESC + '@').encode('latin-1', 'replace')
-        # Seleciona a tabela de caracteres CP850 (código 2) — é a que a maioria
-        # das impressoras térmicas usa para acentos do português. Sem isso,
-        # "Ã", "Ç", "É" etc saem trocados (o famoso "N|O" no lugar de "NÃO").
-        cmd_charset = (ESC + 't' + chr(2)).encode('latin-1', 'replace')
-        cmd_cut = (GS + 'V' + chr(66) + chr(0)).encode('latin-1', 'replace')
+    # 🔧 win32print pode travar de verdade (impressora sem papel, offline, ou
+    # spooler do Windows preso) - situacao comum numa loja de verdade. Isso
+    # ficava preso pra sempre dentro da requisicao HTTP e, como o servidor
+    # roda sem threaded (ou rodava, ver app.run() no final do arquivo), NENHUMA
+    # outra rota respondia ate alguem resolver a impressora manualmente. Agora
+    # a impressao roda numa thread separada com um teto de 15s: se estourar,
+    # devolvemos erro pro usuario em vez de travar o processo inteiro (a
+    # thread presa fica sozinha em segundo plano, sem afetar mais nada).
+    resultado = {}
 
-        # Codifica o texto em CP850. Se algum caractere não existir na tabela,
-        # cai para uma versão sem acento (não trava a impressão).
-        def _codificar(t):
-            try:
-                return t.encode('cp850')
-            except Exception:
-                import unicodedata
-                sem_acento = unicodedata.normalize('NFKD', t).encode('ascii', 'ignore').decode('ascii')
-                return sem_acento.encode('cp850', 'replace')
-
-        impressora_nome = win32print.GetDefaultPrinter()
-        if not impressora_nome:
-            return {"success": False, "error": "Nenhuma impressora padrão definida"}
-
-        hprinter = win32print.OpenPrinter(impressora_nome)
+    def _imprimir():
         try:
-            win32print.StartDocPrinter(hprinter, 1, ("Cupom Fiscal", None, "RAW"))
-            win32print.StartPagePrinter(hprinter)
-            win32print.WritePrinter(hprinter, cmd_init)
-            win32print.WritePrinter(hprinter, cmd_charset)
-            win32print.WritePrinter(hprinter, _codificar(texto))
-            win32print.WritePrinter(hprinter, b'\n\n\n')
-            win32print.WritePrinter(hprinter, cmd_cut)
-            win32print.EndPagePrinter(hprinter)
-            win32print.EndDocPrinter(hprinter)
-        finally:
-            win32print.ClosePrinter(hprinter)
+            import win32print
+            texto = gerar_texto_cupom(dados)
+            ESC = chr(27)
+            GS = chr(29)
+            cmd_init = (ESC + '@').encode('latin-1', 'replace')
+            # Seleciona a tabela de caracteres CP850 (código 2) — é a que a maioria
+            # das impressoras térmicas usa para acentos do português. Sem isso,
+            # "Ã", "Ç", "É" etc saem trocados (o famoso "N|O" no lugar de "NÃO").
+            cmd_charset = (ESC + 't' + chr(2)).encode('latin-1', 'replace')
+            cmd_cut = (GS + 'V' + chr(66) + chr(0)).encode('latin-1', 'replace')
 
-        venda_id = dados.get('venda_id', '')
-        if venda_id:
-            arquivo = os.path.join(CUPONS_DIR, f'cupom_{venda_id}.txt')
-            with open(arquivo, 'w', encoding='utf-8') as f:
-                f.write(texto)
+            # Codifica o texto em CP850. Se algum caractere não existir na tabela,
+            # cai para uma versão sem acento (não trava a impressão).
+            def _codificar(t):
+                try:
+                    return t.encode('cp850')
+                except Exception:
+                    import unicodedata
+                    sem_acento = unicodedata.normalize('NFKD', t).encode('ascii', 'ignore').decode('ascii')
+                    return sem_acento.encode('cp850', 'replace')
 
+            impressora_nome = win32print.GetDefaultPrinter()
+            if not impressora_nome:
+                resultado['erro'] = "Nenhuma impressora padrão definida"
+                return
+
+            hprinter = win32print.OpenPrinter(impressora_nome)
+            try:
+                win32print.StartDocPrinter(hprinter, 1, ("Cupom Fiscal", None, "RAW"))
+                win32print.StartPagePrinter(hprinter)
+                win32print.WritePrinter(hprinter, cmd_init)
+                win32print.WritePrinter(hprinter, cmd_charset)
+                win32print.WritePrinter(hprinter, _codificar(texto))
+                win32print.WritePrinter(hprinter, b'\n\n\n')
+                win32print.WritePrinter(hprinter, cmd_cut)
+                win32print.EndPagePrinter(hprinter)
+                win32print.EndDocPrinter(hprinter)
+            finally:
+                win32print.ClosePrinter(hprinter)
+
+            venda_id = dados.get('venda_id', '')
+            if venda_id:
+                arquivo = os.path.join(CUPONS_DIR, f'cupom_{venda_id}.txt')
+                with open(arquivo, 'w', encoding='utf-8') as f:
+                    f.write(texto)
+
+            resultado['ok'] = True
+            resultado['impressora'] = impressora_nome
+        except Exception as e:
+            resultado['erro'] = str(e)
+
+    t = threading.Thread(target=_imprimir, daemon=True)
+    t.start()
+    t.join(timeout=15)
+
+    if t.is_alive():
+        logger.error("❌ Impressão travada (impressora sem papel/offline/spooler preso?) - desistindo de esperar")
+        return {"success": False, "error": "A impressora não respondeu a tempo. Verifique se está ligada, com papel e online, e tente novamente."}
+
+    if resultado.get('ok'):
         logger.info(f"✅ Cupom impresso: Venda #{dados.get('venda_id', '')} - R$ {dados.get('total', 0):.2f}")
-        return {"success": True, "message": "Cupom impresso com sucesso!", "impressora": impressora_nome}
+        return {"success": True, "message": "Cupom impresso com sucesso!", "impressora": resultado['impressora']}
 
-    except Exception as e:
-        logger.error(f"❌ Erro ao imprimir cupom: {e}")
-        return {"success": False, "error": str(e)}
+    erro = resultado.get('erro', 'Erro desconhecido ao imprimir')
+    logger.error(f"❌ Erro ao imprimir cupom: {erro}")
+    return {"success": False, "error": erro}
 
 # ============================================================
 # NORMALIZAÇÃO DE CNPJ
@@ -2403,7 +2370,8 @@ def register():
                 expira_em = usuario_firebase.get('expira_em', (datetime.now() + timedelta(days=15)).isoformat())
                 plano_id = usuario_firebase.get('plano', 5)
                 pl = PlanoSincronizado(db_id, CHAVE_SECRETA_PLANO)
-                usuario_firebase['token_plano'] = pl._criar_token(expira_em, plano_id)
+                token_novo = pl._emitir_token_via_backend(expira_em, plano_id, rota='emitir_trial')
+                usuario_firebase['token_plano'] = token_novo or pl._criar_token(expira_em, plano_id)
                 usuario_firebase['token_atualizado_em'] = get_timestamp()
                 usuario_firebase['plano'] = plano_id
                 usuario_firebase['expira_em'] = expira_em
@@ -2561,7 +2529,8 @@ def login():
                 plano_id = usuario_firebase.get('plano', 5) if usuario_firebase.get('plano') is not None else 5
                 try:
                     pl = PlanoSincronizado(firebase_db_id, CHAVE_SECRETA_PLANO)
-                    usuario_firebase['token_plano'] = pl._criar_token(expira_em, plano_id)
+                    token_reparo = pl._emitir_token_via_backend(expira_em, plano_id, rota='emitir_trial')
+                    usuario_firebase['token_plano'] = token_reparo or pl._criar_token(expira_em, plano_id)
                     usuario_firebase['token_atualizado_em'] = get_timestamp()
                 except Exception:
                     pass
@@ -2621,39 +2590,48 @@ def login():
 
 @app.route('/api/auth/status')
 def auth_status():
-    if 'usuario_id' in session:
-        # Se esta conta foi aberta em outro caixa/dispositivo, esta sessão foi
-        # derrubada. Avisamos o frontend para voltar ao login com uma mensagem.
-        if _sessao_foi_substituida():
+    # 🔧 é a rota de polling mais frequente do app inteiro (carga + a cada 20s
+    # via setInterval no index.html, que engole erro com .catch(()=>{})) - sem
+    # este try/except, qualquer exceção aqui vira 500 silencioso no front-end
+    # e o polling de sessão para de funcionar sem ninguém perceber. Estava
+    # inconsistente com o resto do arquivo, que é blindado assim em toda rota.
+    try:
+        if 'usuario_id' in session:
+            # Se esta conta foi aberta em outro caixa/dispositivo, esta sessão foi
+            # derrubada. Avisamos o frontend para voltar ao login com uma mensagem.
+            if _sessao_foi_substituida():
+                return jsonify({
+                    "logged_in": False,
+                    "sessao_substituida": True,
+                    "error": "Sua conta foi acessada em outro dispositivo. Faça login novamente."
+                })
+            db_id = session.get('db_id')
+            plano_info = get_info_plano_completa(db_id)
+            dias_restantes = plano_info.get('dias_restantes', 0)
+            plano_ativo = plano_info.get('ativo', False)
+            precisa_aviso, dias_para_aviso = precisa_aviso_renovacao(db_id)
+            permissoes = get_permissoes(db_id)
             return jsonify({
-                "logged_in": False,
-                "sessao_substituida": True,
-                "error": "Sua conta foi acessada em outro dispositivo. Faça login novamente."
+                "logged_in": True,
+                "usuario_id": session.get('usuario_id'),
+                "nome": session.get('nome'),
+                "cargo": session.get('cargo'),
+                "db_id": db_id,
+                "servidor_id": session.get('servidor_id'),
+                "nome_loja": session.get('nome_loja', 'Minha Loja'),
+                "cnpj": session.get('cnpj', ''),
+                "cnpj_dados": session.get('cnpj_dados', {}),
+                "plano_ativo": plano_ativo,
+                "dias_restantes": dias_restantes,
+                "plano_expirado": not plano_ativo,
+                "precisa_aviso": precisa_aviso,
+                "dias_para_aviso": dias_para_aviso,
+                "permissoes": permissoes
             })
-        db_id = session.get('db_id')
-        plano_info = get_info_plano_completa(db_id)
-        dias_restantes = plano_info.get('dias_restantes', 0)
-        plano_ativo = plano_info.get('ativo', False)
-        precisa_aviso, dias_para_aviso = precisa_aviso_renovacao(db_id)
-        permissoes = get_permissoes(db_id)
-        return jsonify({
-            "logged_in": True,
-            "usuario_id": session.get('usuario_id'),
-            "nome": session.get('nome'),
-            "cargo": session.get('cargo'),
-            "db_id": db_id,
-            "servidor_id": session.get('servidor_id'),
-            "nome_loja": session.get('nome_loja', 'Minha Loja'),
-            "cnpj": session.get('cnpj', ''),
-            "cnpj_dados": session.get('cnpj_dados', {}),
-            "plano_ativo": plano_ativo,
-            "dias_restantes": dias_restantes,
-            "plano_expirado": not plano_ativo,
-            "precisa_aviso": precisa_aviso,
-            "dias_para_aviso": dias_para_aviso,
-            "permissoes": permissoes
-        })
-    return jsonify({"logged_in": False})
+        return jsonify({"logged_in": False})
+    except Exception as e:
+        logger.error(f"❌ Erro em /api/auth/status: {e}")
+        return jsonify({"logged_in": False, "erro": str(e)[:100]})
 
 @app.route('/api/auth/logout', methods=['POST'])
 def logout():
@@ -2681,13 +2659,6 @@ def chave_cliente(db_id: str, nome: str) -> str:
     Dois aparelhos que conhecem o mesmo cliente geram a mesma chave, então nunca
     um sobrescreve o outro. O id do banco continua sendo só local."""
     return 'c_' + hashlib.sha256(f"{db_id}|{(nome or '').strip()}".encode()).hexdigest()[:16]
-
-def _e_fiado_puro(metodo) -> bool:
-    """True se a venda foi FIADO de verdade (o cliente ficou devendo).
-    'Fiado (Dinheiro)' NÃO é fiado: é a QUITAÇÃO de uma dívida, ou seja,
-    dinheiro entrando. Essa diferença muda o dashboard, o caixa e o estorno."""
-    return (metodo or '') == 'Fiado'
-
 
 def registrar_mov_fiado(conn, db_id, cliente_nome, delta, tipo, origem=''):
     """Registra um FATO de fiado. delta positivo = comprou fiado (dívida sobe);
@@ -3275,34 +3246,6 @@ def registrar_venda():
         if float(data.get('total', 0) or 0) < 0:
             return jsonify({"success": False, "error": "O desconto não pode ser maior que o total da venda"})
 
-        # O caixa precisa estar ABERTO para vender. A tela já impede, mas o
-        # servidor confere também: se o caixa for fechado em OUTRO dispositivo
-        # enquanto este ainda acha que está aberto, a venda passaria e o dinheiro
-        # ficaria fora da gaveta — quebrando a conferência do fim do dia.
-        with get_db_context() as conn_chk:
-            caixa_aberto_chk = conn_chk.execute(
-                "SELECT id FROM caixa WHERE db_id=? AND status='aberto' LIMIT 1", (db_id,)).fetchone()
-        if not caixa_aberto_chk:
-            return jsonify({"success": False,
-                            "error": "O caixa está fechado. Abra o caixa para registrar vendas."})
-
-        # PAGAMENTO MISTO: o cliente divide a conta (ex: R$20 em dinheiro e R$50
-        # no cartão). Guardamos metodo='Misto' e a quebra em 'pagamentos'.
-        # Se não vier 'pagamentos', a venda segue simples, como sempre foi.
-        metodo_venda = data.get('metodo', 'Dinheiro')
-        pagamentos_json = ''
-        if data.get('pagamentos'):
-            lista_pg, erro_pg = _normalizar_pagamentos(data.get('pagamentos'), data.get('total', 0))
-            if erro_pg:
-                return jsonify({"success": False, "error": erro_pg})
-            metodo_venda = 'Misto'
-            pagamentos_json = json.dumps(lista_pg, ensure_ascii=False)
-        elif metodo_venda == 'Misto':
-            # 'Misto' sem a quebra viraria uma venda fantasma: não contaria no
-            # caixa nem apareceria direito no dashboard. Melhor recusar.
-            return jsonify({"success": False,
-                            "error": "Para dividir o pagamento, informe as formas e os valores."})
-
         with get_db_context() as conn:
             conn.execute("BEGIN TRANSACTION")
             try:
@@ -3400,11 +3343,10 @@ def registrar_venda():
 
         venda_id = None
         with get_db_context() as conn:
-            cursor = conn.execute("""INSERT INTO vendas (data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente, usuario_id, db_id, recebido, troco, pagamentos)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", (data_hora, data.get('subtotal', 0), data.get('desconto', 0),
-                data.get('total', 0), lucro_total, metodo_venda, json.dumps(itens_salvar, ensure_ascii=False),
-                data.get('cliente', ''), usuario_id, db_id, data.get('recebido', 0), data.get('troco', 0),
-                pagamentos_json))
+            cursor = conn.execute("""INSERT INTO vendas (data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente, usuario_id, db_id, recebido, troco)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", (data_hora, data.get('subtotal', 0), data.get('desconto', 0),
+                data.get('total', 0), lucro_total, data.get('metodo', 'Dinheiro'), json.dumps(itens_salvar, ensure_ascii=False),
+                data.get('cliente', ''), usuario_id, db_id, data.get('recebido', 0), data.get('troco', 0)))
             venda_id = cursor.lastrowid
 
         if data.get('metodo') == 'Fiado' and data.get('cliente'):
@@ -3477,92 +3419,20 @@ def registrar_venda():
 @app.route('/api/vendas/<int:venda_id>', methods=['DELETE'])
 @verificar_plano
 def delete_venda(venda_id: int):
-    """Cancela uma venda DESFAZENDO o que ela fez:
-       - devolve o estoque dos itens (inclusive dos componentes de kits)
-       - estorna o fiado (o cliente deixa de dever)
-       - se a venda era uma QUITAÇÃO de fiado, a dívida VOLTA
-    Sem isso, cancelar deixava o estoque furado e o cliente devendo o que já
-    tinha desistido de comprar."""
     try:
         db_id = get_db_id()
         with get_db_context() as conn:
-            venda = conn.execute(
-                "SELECT id, total, metodo, itens, cliente FROM vendas WHERE id=? AND db_id=?",
-                (venda_id, db_id)).fetchone()
-            if not venda:
+            cur = conn.execute("DELETE FROM vendas WHERE id=? AND db_id=?", (venda_id, db_id))
+            if cur.rowcount == 0:
                 return jsonify({"success": False, "error": "Venda não encontrada"}), 404
-
-            metodo = venda['metodo'] or ''
-            cliente = (venda['cliente'] or '').strip()
-            total = float(venda['total'] or 0)
-
-            # ---- 1) devolve o estoque ----
-            devolvidos = []
-            try:
-                itens = json.loads(venda['itens']) if venda['itens'] else []
-                if isinstance(itens, str):
-                    itens = json.loads(itens) if itens.strip().startswith('[') else []
-                if not isinstance(itens, list):
-                    itens = []
-                for item in itens:
-                    if not isinstance(item, dict):
-                        continue
-                    codigo = item.get('codigo')
-                    is_kit = item.get('is_kit') or (isinstance(codigo, str) and str(codigo).startswith('KIT:'))
-                    if is_kit:
-                        qtd_kit = item.get('quantidade', 1) or 1
-                        for comp in _componentes_do_kit(conn, codigo, db_id):
-                            comp_cod = comp.get('codigo')
-                            if not comp_cod or comp_cod == 'AVULSO':
-                                continue
-                            comp_qtd = (comp.get('quantidade', 1) or 1) * qtd_kit
-                            registrar_mov_estoque(conn, db_id, comp_cod, comp_qtd, 'entrada',
-                                                  f'cancelou venda #{venda_id}')
-                            sincronizar_coluna_estoque(conn, db_id, comp_cod)
-                            devolvidos.append(comp_cod)
-                        continue
-                    # Itens sem código (quitação de fiado, item avulso) não têm estoque
-                    if codigo and codigo != 'AVULSO' and str(codigo).strip():
-                        qtd = item.get('quantidade', 1) or 1
-                        registrar_mov_estoque(conn, db_id, codigo, qtd, 'entrada',
-                                              f'cancelou venda #{venda_id}')
-                        sincronizar_coluna_estoque(conn, db_id, codigo)
-                        devolvidos.append(codigo)
-            except Exception as e:
-                logger.error(f"⚠️ Erro ao devolver estoque da venda {venda_id}: {e}")
-
-            # ---- 2) desfaz o efeito no fiado ----
-            fiado_msg = ''
-            try:
-                if cliente:
-                    if _e_fiado_puro(metodo):
-                        # Era uma compra fiado: o cliente deixa de dever.
-                        registrar_mov_fiado(conn, db_id, cliente, -total, 'estorno',
-                                            f'cancelou venda #{venda_id}')
-                        sincronizar_coluna_divida(conn, db_id, cliente)
-                        fiado_msg = f' A dívida de {cliente} baixou R$ {total:.2f}.'
-                    elif metodo.startswith('Fiado ('):
-                        # Era uma QUITAÇÃO de fiado: cancelar faz a dívida VOLTAR.
-                        registrar_mov_fiado(conn, db_id, cliente, total, 'estorno',
-                                            f'cancelou quitação #{venda_id}')
-                        sincronizar_coluna_divida(conn, db_id, cliente)
-                        fiado_msg = f' A dívida de {cliente} voltou R$ {total:.2f}.'
-            except Exception as e:
-                logger.error(f"⚠️ Erro ao estornar fiado da venda {venda_id}: {e}")
-
-            # ---- 3) remove a venda ----
-            conn.execute("DELETE FROM vendas WHERE id=? AND db_id=?", (venda_id, db_id))
             # Tombstone para não voltar em outro dispositivo
             conn.execute("INSERT OR REPLACE INTO exclusoes (tipo, item_id, db_id, excluido_em) VALUES (?, ?, ?, ?)",
                 ('venda', str(venda_id), db_id, get_timestamp()))
-            conn.commit()
-
-        logger.info(f"🗑️ Venda {venda_id} cancelada - estoque devolvido: {devolvidos or 'nenhum'}.{fiado_msg}")
+        logger.info(f"🗑️ Venda {venda_id} excluída do histórico")
         sincronizar_automatico(db_id)
-        return jsonify({"success": True, "message": "Venda cancelada." + fiado_msg,
-                        "estoque_devolvido": devolvidos})
+        return jsonify({"success": True, "message": "Venda excluída"})
     except Exception as e:
-        logger.error(f"❌ Erro ao cancelar venda: {e}")
+        logger.error(f"❌ Erro ao excluir venda: {e}")
         return jsonify({"success": False, "error": str(e)})
 
 @app.route('/api/vendas')
@@ -3776,339 +3646,18 @@ def caixa_abrir():
 @app.route('/api/caixa/fechar', methods=['POST'])
 @verificar_plano
 def caixa_fechar():
-    """Fecha o caixa conferindo a gaveta.
-
-    O operador informa quanto CONTOU em dinheiro. Comparamos com o esperado
-    (abertura + vendas em dinheiro + suprimentos - sangrias) e guardamos a
-    diferença — a famosa 'quebra de caixa'. Sem isso a sangria não serve de
-    nada: é justamente pra saber se o dinheiro bate no fim do dia.
-
-    'valor_contado' é opcional: quem não quiser conferir, fecha como antes.
-    """
     try:
         db_id = get_db_id()
-        data = request.get_json() or {}
         hoje = datetime.now().strftime('%Y-%m-%d')
         with get_db_context() as conn:
-            caixa = conn.execute(
-                "SELECT * FROM caixa WHERE db_id=? AND status='aberto' ORDER BY id DESC LIMIT 1",
-                (db_id,)).fetchone()
-            if not caixa:
-                return jsonify({"success": False, "error": "O caixa já está fechado."})
-
-            total = conn.execute("SELECT SUM(total) FROM vendas WHERE db_id=? AND data_hora LIKE ?",
-                (db_id, f'{hoje}%')).fetchone()[0] or 0
-            esperado = _dinheiro_em_caixa(conn, db_id, caixa)
-
-            # Guarda os números ANTES de fechar: depois de fechar, a gaveta some
-            # (não há caixa aberto) e o relatório não teria de onde tirar a conta.
-            abertura_val = float(caixa['valor_abertura'] or 0)
-            desde_abertura = caixa['data_abertura']
-            movs = conn.execute(
-                """SELECT COALESCE(SUM(CASE WHEN delta<0 THEN -delta ELSE 0 END),0),
-                          COALESCE(SUM(CASE WHEN delta>0 THEN delta ELSE 0 END),0)
-                   FROM caixa_mov WHERE db_id=? AND criado_em >= ?""", (db_id, desde_abertura)).fetchone()
-            sangrias_val, suprimentos_val = round(movs[0] or 0, 2), round(movs[1] or 0, 2)
-            vendas_dinheiro_val = round(max(0.0, esperado - abertura_val - suprimentos_val + sangrias_val), 2)
-
-            conferiu = data.get('valor_contado') is not None
-            contado = 0.0
-            diferenca = 0.0
-            if conferiu:
-                try:
-                    contado = round(float(data.get('valor_contado')), 2)
-                except (TypeError, ValueError):
-                    return jsonify({"success": False, "error": "Valor contado inválido."})
-                if contado < 0:
-                    return jsonify({"success": False, "error": "O valor contado não pode ser negativo."})
-                diferenca = round(contado - esperado, 2)
-
-            conn.execute("""UPDATE caixa SET status='fechado', data_fechamento=?, total=?,
-                    valor_contado=?, diferenca=?, esperado=? WHERE id=? AND db_id=?""",
-                (get_timestamp(), total, contado, diferenca, esperado, caixa['id'], db_id))
-            conn.commit()
-
-        if conferiu:
-            if abs(diferenca) < 0.01:
-                logger.info(f"🔒 Caixa fechado - bateu certinho (R$ {esperado:.2f})")
-            elif diferenca > 0:
-                logger.info(f"🔒 Caixa fechado - SOBROU R$ {diferenca:.2f} (esperado {esperado:.2f}, contado {contado:.2f})")
-            else:
-                logger.warning(f"🔒 Caixa fechado - FALTOU R$ {abs(diferenca):.2f} (esperado {esperado:.2f}, contado {contado:.2f})")
+            cursor = conn.execute("SELECT SUM(total) FROM vendas WHERE db_id=? AND data_hora LIKE ?", (db_id, f'{hoje}%'))
+            total = cursor.fetchone()[0] or 0
+            conn.execute("UPDATE caixa SET status='fechado', data_fechamento=?, total=? WHERE db_id=? AND status='aberto'",
+                (get_timestamp(), total, db_id))
         sincronizar_automatico(db_id)
-        # Monta o relatório para a tela de impressão. Reaproveita o resumo do dia
-        # (que já quebra as vendas mistas nos métodos de verdade).
-        try:
-            with get_db_context() as conn2:
-                por_metodo = {}
-                for row in conn2.execute(
-                        """SELECT metodo, total, pagamentos FROM vendas
-                           WHERE db_id=? AND data_hora LIKE ?""", (db_id, f'{hoje}%')).fetchall():
-                    partes = []
-                    if (row['metodo'] or '') == 'Misto' and row['pagamentos']:
-                        try:
-                            partes = [p for p in json.loads(row['pagamentos']) if isinstance(p, dict)]
-                        except Exception:
-                            partes = []
-                    if not partes:
-                        partes = [{'metodo': row['metodo'] or 'Dinheiro', 'valor': float(row['total'] or 0)}]
-                    for p in partes:
-                        m = p.get('metodo') or 'Dinheiro'
-                        d = por_metodo.setdefault(m, {'metodo': m, 'quantidade': 0, 'total': 0.0})
-                        d['quantidade'] += 1
-                        d['total'] += float(p.get('valor', 0) or 0)
-                metodos_rel = sorted(
-                    [{'metodo': v['metodo'], 'quantidade': v['quantidade'], 'total': round(v['total'], 2)}
-                     for v in por_metodo.values()], key=lambda x: -x['total'])
-                qtd_vendas = conn2.execute("SELECT COUNT(*) FROM vendas WHERE db_id=? AND data_hora LIKE ?",
-                    (db_id, f'{hoje}%')).fetchone()[0] or 0
-        except Exception as e:
-            logger.error(f"⚠️ Erro ao montar o relatório de fechamento: {e}")
-            metodos_rel, qtd_vendas = [], 0
-
-        relatorio = {
-            'nome_loja': '', 'data_hora': datetime.now().strftime('%d/%m/%Y %H:%M'),
-            'operador': session.get('nome', ''),
-            'valor_abertura': abertura_val, 'vendas_dinheiro': vendas_dinheiro_val,
-            'total_suprimentos': suprimentos_val, 'total_sangrias': sangrias_val,
-            'esperado': esperado, 'valor_contado': contado if conferiu else None,
-            'diferenca': diferenca if conferiu else None,
-            'metodos': metodos_rel, 'total_geral': total, 'total_vendas': qtd_vendas,
-        }
-        return jsonify({"success": True, "total": total, "esperado": esperado,
-                        "valor_contado": contado if conferiu else None,
-                        "diferenca": diferenca if conferiu else None,
-                        "conferido": conferiu, "relatorio": relatorio})
-    except Exception as e:
-        logger.error(f"❌ Erro ao fechar caixa: {e}")
-        return jsonify({"success": False, "error": str(e)})
-
-METODOS_VALIDOS = ('Dinheiro', 'PIX', 'Cartão', 'Débito', 'Crédito', 'Fiado')
-
-
-def _normalizar_pagamentos(pagamentos, total):
-    """Valida as formas de pagamento de uma venda MISTA (ex: R$20 dinheiro +
-    R$50 cartão). Devolve (lista_ok, erro).
-
-    Regras:
-      - cada forma precisa de um método e um valor > 0
-      - a soma tem que bater com o total da venda (tolerância de 1 centavo,
-        pra não brigar com arredondamento de float)
-      - Fiado não entra no misto: fiado é dívida, não pagamento recebido.
-    """
-    if not isinstance(pagamentos, list) or not pagamentos:
-        return None, "Informe as formas de pagamento."
-    limpos = []
-    soma = 0.0
-    for p in pagamentos:
-        if not isinstance(p, dict):
-            return None, "Forma de pagamento inválida."
-        metodo = (p.get('metodo') or '').strip()
-        if not metodo:
-            return None, "Escolha o método de cada pagamento."
-        if metodo == 'Fiado':
-            return None, "Fiado não pode ser combinado com outras formas de pagamento."
-        try:
-            valor = round(float(p.get('valor', 0)), 2)
-        except (TypeError, ValueError):
-            return None, f"Valor inválido em {metodo}."
-        if valor <= 0:
-            return None, f"O valor de {metodo} precisa ser maior que zero."
-        limpos.append({'metodo': metodo, 'valor': valor})
-        soma += valor
-    soma = round(soma, 2)
-    total = round(float(total or 0), 2)
-    if abs(soma - total) > 0.01:
-        falta = round(total - soma, 2)
-        if falta > 0:
-            return None, f"Faltam R$ {falta:.2f} para fechar o total de R$ {total:.2f}."
-        return None, f"Passou R$ {abs(falta):.2f} do total de R$ {total:.2f}."
-    if len(limpos) < 2:
-        return None, "Pagamento misto precisa de pelo menos 2 formas."
-    return limpos, None
-
-
-def _pagamentos_da_venda(venda_row):
-    """Devolve a lista de pagamentos de uma venda, seja ela mista ou simples.
-    Assim o resto do código trata as duas do mesmo jeito."""
-    try:
-        bruto = venda_row['pagamentos'] if 'pagamentos' in venda_row.keys() else ''
-    except Exception:
-        bruto = ''
-    if bruto:
-        try:
-            lista = json.loads(bruto)
-            if isinstance(lista, list) and lista:
-                return [p for p in lista if isinstance(p, dict)]
-        except Exception:
-            pass
-    return [{'metodo': venda_row['metodo'] or 'Dinheiro', 'valor': float(venda_row['total'] or 0)}]
-
-
-def registrar_mov_caixa(conn, db_id, delta, tipo, motivo='', usuario_id=''):
-    """Registra uma entrada/saída de dinheiro do caixa como um FATO com id único.
-
-    delta NEGATIVO = saiu dinheiro (sangria)
-    delta POSITIVO = entrou dinheiro (suprimento / reforço de troco)
-
-    Segue o mesmo padrão do estoque_mov: cada movimento é um fato imutável com
-    UUID. Assim dois dispositivos podem fazer sangria ao mesmo tempo que os
-    valores se SOMAM na sincronização, em vez de um sobrescrever o outro.
-    """
-    mov_id = str(uuid.uuid4())
-    conn.execute("""INSERT INTO caixa_mov (id, delta, tipo, motivo, usuario_id, db_id, criado_em)
-        VALUES (?, ?, ?, ?, ?, ?, ?)""",
-        (mov_id, float(delta), tipo, motivo or '', usuario_id or '', db_id, get_timestamp()))
-    return mov_id
-
-
-def _dinheiro_em_caixa(conn, db_id, caixa_aberto):
-    """Quanto DEVERIA ter na gaveta agora, em dinheiro vivo:
-       abertura + vendas em dinheiro + suprimentos - sangrias.
-       Só conta o que aconteceu DEPOIS que o caixa foi aberto.
-       Cartão/PIX não entram: não viram dinheiro na gaveta.
-       Numa venda MISTA (parte dinheiro, parte cartão), só a parte em
-       dinheiro entra."""
-    if not caixa_aberto:
-        return 0.0
-    abertura = float(caixa_aberto['valor_abertura'] or 0)
-    desde = caixa_aberto['data_abertura']
-    # vendas 100% em dinheiro (inclui quitação de fiado paga em dinheiro)
-    vendas_dinheiro = conn.execute(
-        """SELECT COALESCE(SUM(total),0) FROM vendas
-           WHERE db_id=? AND data_hora >= ? AND (metodo='Dinheiro' OR metodo LIKE 'Fiado (Dinheiro%')""",
-        (db_id, desde)).fetchone()[0] or 0
-    # parte em dinheiro das vendas mistas
-    misto_dinheiro = 0.0
-    for row in conn.execute(
-            "SELECT pagamentos FROM vendas WHERE db_id=? AND data_hora >= ? AND metodo='Misto'",
-            (db_id, desde)).fetchall():
-        try:
-            for p in json.loads(row[0] or '[]'):
-                if isinstance(p, dict) and p.get('metodo') == 'Dinheiro':
-                    misto_dinheiro += float(p.get('valor', 0) or 0)
-        except Exception:
-            continue
-    movs = conn.execute(
-        "SELECT COALESCE(SUM(delta),0) FROM caixa_mov WHERE db_id=? AND criado_em >= ?",
-        (db_id, desde)).fetchone()[0] or 0
-    return round(abertura + float(vendas_dinheiro) + misto_dinheiro + float(movs), 2)
-
-
-@app.route('/api/caixa/sangria', methods=['POST'])
-@verificar_plano
-def caixa_sangria():
-    """Retira dinheiro do caixa (pagar fornecedor, levar pro banco, etc)."""
-    try:
-        db_id = get_db_id()
-        data = request.get_json() or {}
-        try:
-            valor = round(float(data.get('valor', 0)), 2)
-        except (TypeError, ValueError):
-            return jsonify({"success": False, "error": "Valor inválido."})
-        motivo = (data.get('motivo') or '').strip()
-
-        if valor <= 0:
-            return jsonify({"success": False, "error": "Informe um valor maior que zero."})
-
-        with get_db_context() as conn:
-            caixa = conn.execute(
-                "SELECT * FROM caixa WHERE db_id=? AND status='aberto' ORDER BY id DESC LIMIT 1",
-                (db_id,)).fetchone()
-            if not caixa:
-                return jsonify({"success": False, "error": "O caixa está fechado. Abra o caixa antes de fazer sangria."})
-
-            em_caixa = _dinheiro_em_caixa(conn, db_id, caixa)
-            if valor > em_caixa:
-                return jsonify({"success": False,
-                    "error": f"Não há esse dinheiro em caixa. Disponível: R$ {em_caixa:.2f}"})
-
-            registrar_mov_caixa(conn, db_id, -valor, 'sangria', motivo, session.get('usuario_id', ''))
-            conn.commit()
-            restante = _dinheiro_em_caixa(conn, db_id, caixa)
-
-        logger.info(f"💸 Sangria de R$ {valor:.2f} ({motivo or 'sem motivo'}) - resta R$ {restante:.2f}")
-        sincronizar_automatico(db_id)
-        return jsonify({"success": True, "valor": valor, "em_caixa": restante,
-                        "message": f"Sangria de R$ {valor:.2f} registrada."})
-    except Exception as e:
-        logger.error(f"❌ Erro na sangria: {e}")
-        return jsonify({"success": False, "error": str(e)})
-
-
-@app.route('/api/caixa/suprimento', methods=['POST'])
-@verificar_plano
-def caixa_suprimento():
-    """Coloca dinheiro no caixa (reforço de troco)."""
-    try:
-        db_id = get_db_id()
-        data = request.get_json() or {}
-        try:
-            valor = round(float(data.get('valor', 0)), 2)
-        except (TypeError, ValueError):
-            return jsonify({"success": False, "error": "Valor inválido."})
-        motivo = (data.get('motivo') or '').strip()
-
-        if valor <= 0:
-            return jsonify({"success": False, "error": "Informe um valor maior que zero."})
-
-        with get_db_context() as conn:
-            caixa = conn.execute(
-                "SELECT * FROM caixa WHERE db_id=? AND status='aberto' ORDER BY id DESC LIMIT 1",
-                (db_id,)).fetchone()
-            if not caixa:
-                return jsonify({"success": False, "error": "O caixa está fechado. Abra o caixa antes."})
-
-            registrar_mov_caixa(conn, db_id, valor, 'suprimento', motivo, session.get('usuario_id', ''))
-            conn.commit()
-            total = _dinheiro_em_caixa(conn, db_id, caixa)
-
-        logger.info(f"💵 Suprimento de R$ {valor:.2f} ({motivo or 'sem motivo'}) - caixa R$ {total:.2f}")
-        sincronizar_automatico(db_id)
-        return jsonify({"success": True, "valor": valor, "em_caixa": total,
-                        "message": f"Suprimento de R$ {valor:.2f} registrado."})
-    except Exception as e:
-        logger.error(f"❌ Erro no suprimento: {e}")
-        return jsonify({"success": False, "error": str(e)})
-
-
-@app.route('/api/caixa/movimentacoes')
-@verificar_plano
-def caixa_movimentacoes():
-    """Lista as sangrias/suprimentos do caixa aberto (ou do dia, se fechado)."""
-    try:
-        db_id = get_db_id()
-        with get_db_context() as conn:
-            caixa = conn.execute(
-                "SELECT * FROM caixa WHERE db_id=? AND status='aberto' ORDER BY id DESC LIMIT 1",
-                (db_id,)).fetchone()
-            if caixa:
-                desde = caixa['data_abertura']
-            else:
-                desde = datetime.now().strftime('%Y-%m-%d')
-            cursor = conn.execute(
-                """SELECT id, delta, tipo, motivo, usuario_id, criado_em FROM caixa_mov
-                   WHERE db_id=? AND criado_em >= ? ORDER BY criado_em DESC""", (db_id, desde))
-            movs = [{"id": r[0], "valor": abs(r[1] or 0), "tipo": r[2],
-                     "motivo": r[3] or '', "usuario_id": r[4] or '', "criado_em": r[5]}
-                    for r in cursor.fetchall()]
-            sangrias = round(sum(m['valor'] for m in movs if m['tipo'] == 'sangria'), 2)
-            suprimentos = round(sum(m['valor'] for m in movs if m['tipo'] == 'suprimento'), 2)
-            em_caixa = _dinheiro_em_caixa(conn, db_id, caixa) if caixa else 0
-            # Devolvemos a CONTA aberta, não só o resultado. O operador precisa
-            # ver de onde vem o número, senão olha "R$ 0,00" com vendas no dia e
-            # acha que é bug (o resumo do dia conta o dia TODO; a gaveta conta
-            # só o que entrou depois que este caixa foi aberto).
-            abertura = float(caixa['valor_abertura'] or 0) if caixa else 0
-            vendas_dinheiro = round(max(0.0, em_caixa - abertura - suprimentos + sangrias), 2) if caixa else 0
-        return jsonify({"success": True, "movimentacoes": movs, "total_sangrias": sangrias,
-                        "total_suprimentos": suprimentos, "em_caixa": em_caixa,
-                        "valor_abertura": abertura, "vendas_dinheiro": vendas_dinheiro,
-                        "aberto_em": caixa['data_abertura'] if caixa else None,
-                        "caixa_aberto": bool(caixa)})
+        return jsonify({"success": True, "total": total})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
-
 
 @app.route('/api/caixa/resumo')
 @verificar_plano
@@ -4117,54 +3666,14 @@ def caixa_resumo():
         db_id = get_db_id()
         data_param = request.args.get('data', datetime.now().strftime('%Y-%m-%d'))
         with get_db_context() as conn:
-            # Soma por método. Uma venda MISTA é quebrada nas suas partes, senão
-            # o dono veria "Misto: R$70" em vez de "Dinheiro: R$20, Cartão: R$50".
-            por_metodo = {}
-            for row in conn.execute(
-                    """SELECT metodo, total, pagamentos FROM vendas
-                       WHERE db_id=? AND data_hora LIKE ?""", (db_id, f'{data_param}%')).fetchall():
-                partes = []
-                if (row['metodo'] or '') == 'Misto' and row['pagamentos']:
-                    try:
-                        partes = [p for p in json.loads(row['pagamentos']) if isinstance(p, dict)]
-                    except Exception:
-                        partes = []
-                if not partes:
-                    partes = [{'metodo': row['metodo'] or 'Dinheiro', 'valor': float(row['total'] or 0)}]
-                for p in partes:
-                    m = p.get('metodo') or 'Dinheiro'
-                    d = por_metodo.setdefault(m, {'metodo': m, 'quantidade': 0, 'total': 0.0})
-                    d['quantidade'] += 1
-                    d['total'] += float(p.get('valor', 0) or 0)
-            metodos = [{'metodo': v['metodo'], 'quantidade': v['quantidade'], 'total': round(v['total'], 2)}
-                       for v in por_metodo.values()]
-            metodos.sort(key=lambda x: -x['total'])
-
+            cursor = conn.execute("""SELECT metodo, COUNT(*), SUM(total) FROM vendas
+                WHERE db_id=? AND data_hora LIKE ? GROUP BY metodo""", (db_id, f'{data_param}%'))
+            metodos = [{"metodo": row[0], "quantidade": row[1], "total": row[2] or 0} for row in cursor.fetchall()]
             cursor = conn.execute("SELECT SUM(total), COUNT(*) FROM vendas WHERE db_id=? AND data_hora LIKE ?",
                 (db_id, f'{data_param}%'))
             totals = cursor.fetchone()
-
-            # Sangrias e suprimentos do dia
-            cursor = conn.execute(
-                """SELECT COALESCE(SUM(CASE WHEN delta<0 THEN -delta ELSE 0 END),0),
-                          COALESCE(SUM(CASE WHEN delta>0 THEN delta ELSE 0 END),0)
-                   FROM caixa_mov WHERE db_id=? AND criado_em LIKE ?""", (db_id, f'{data_param}%'))
-            sangrias, suprimentos = cursor.fetchone()
-
-            # Quanto deveria ter na gaveta agora (só se o caixa estiver aberto)
-            caixa = conn.execute(
-                "SELECT * FROM caixa WHERE db_id=? AND status='aberto' ORDER BY id DESC LIMIT 1",
-                (db_id,)).fetchone()
-            em_caixa = _dinheiro_em_caixa(conn, db_id, caixa) if caixa else 0
-            abertura = float(caixa['valor_abertura'] or 0) if caixa else 0
-
         return jsonify({"success": True, "data": data_param, "total_geral": totals[0] or 0,
-            "total_vendas": totals[1] or 0, "metodos": metodos,
-            "total_sangrias": round(sangrias or 0, 2),
-            "total_suprimentos": round(suprimentos or 0, 2),
-            "valor_abertura": abertura,
-            "esperado_em_caixa": em_caixa,
-            "caixa_aberto": bool(caixa)})
+            "total_vendas": totals[1] or 0, "metodos": metodos})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
@@ -4182,19 +3691,19 @@ def get_estatisticas():
         with get_db_context() as conn:
             if periodo == "hoje":
                 filtro = hoje.strftime('%Y-%m-%d') + '%'
-                cursor = conn.execute("""SELECT id, data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente, pagamentos
+                cursor = conn.execute("""SELECT id, data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente
                     FROM vendas WHERE db_id=? AND data_hora LIKE ? ORDER BY id DESC LIMIT 100""", (db_id, filtro))
             elif periodo == "semana":
                 filtro_data = (hoje - timedelta(days=7)).strftime('%Y-%m-%d')
-                cursor = conn.execute("""SELECT id, data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente, pagamentos
+                cursor = conn.execute("""SELECT id, data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente
                     FROM vendas WHERE db_id=? AND data_hora >= ? ORDER BY id DESC LIMIT 200""", (db_id, filtro_data))
             elif periodo == "mes":
                 filtro_data = (hoje - timedelta(days=30)).strftime('%Y-%m-%d')
-                cursor = conn.execute("""SELECT id, data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente, pagamentos
+                cursor = conn.execute("""SELECT id, data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente
                     FROM vendas WHERE db_id=? AND data_hora >= ? ORDER BY id DESC LIMIT 500""", (db_id, filtro_data))
             else:
                 filtro = hoje.strftime('%Y-%m-%d') + '%'
-                cursor = conn.execute("""SELECT id, data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente, pagamentos
+                cursor = conn.execute("""SELECT id, data_hora, subtotal, desconto, total, lucro_total, metodo, itens, cliente
                     FROM vendas WHERE db_id=? AND data_hora LIKE ? ORDER BY id DESC LIMIT 100""", (db_id, filtro))
             
             total_geral = 0
@@ -4208,19 +3717,7 @@ def get_estatisticas():
                 total_lucro += row[5] or 0
                 total_vendas += 1
                 metodo = row[6] or 'Dinheiro'
-                # Venda MISTA: distribui o valor entre os métodos de verdade,
-                # senão o gráfico mostraria só "Misto" e esconderia pra onde o
-                # dinheiro foi.
-                if metodo == 'Misto' and len(row) > 9 and row[9]:
-                    try:
-                        for p in json.loads(row[9]):
-                            if isinstance(p, dict):
-                                m = p.get('metodo') or 'Dinheiro'
-                                metodos[m] = metodos.get(m, 0) + float(p.get('valor', 0) or 0)
-                    except Exception:
-                        metodos[metodo] = metodos.get(metodo, 0) + (row[4] or 0)
-                else:
-                    metodos[metodo] = metodos.get(metodo, 0) + (row[4] or 0)
+                metodos[metodo] = metodos.get(metodo, 0) + (row[4] or 0)
                 try:
                     itens = json.loads(row[7]) if row[7] else []
                     # A venda pode vir de outro dispositivo com 'itens' em formatos
@@ -4300,6 +3797,8 @@ def get_estatisticas():
             #    - Só "Fiado" puro é venda a prazo (ainda não entrou).
             def _e_quitacao(m):
                 return m.startswith('Fiado (')
+            def _e_fiado_puro(m):
+                return m == 'Fiado'
             total_fiado_vendas = sum((v['total'] or 0) for v in vendas if _e_fiado_puro(v['metodo'] or ''))
             total_avista = sum((v['total'] or 0) for v in vendas if not _e_fiado_puro(v['metodo'] or ''))
             pct_fiado = (total_fiado_vendas / total_geral * 100) if total_geral > 0 else 0
@@ -4371,10 +3870,15 @@ def dev_status():
     return jsonify({"success": True, "ativo": modo_dev_ligado(db_id)})
 
 @app.route('/api/dev/toggle', methods=['POST'])
+@rate_limit(max_requests=5, window=60)  # dificulta tentativa de força bruta na senha
 def dev_toggle():
     db_id = get_db_id()
     if not db_id:
         return jsonify({"success": False, "error": "Não autenticado"}), 401
+    if not SENHA_MODO_DEV:
+        # variável de ambiente PDV_SENHA_MODO_DEV não configurada neste servidor
+        # -> modo dev fica impossível de ativar (caso de toda cópia baixada do GitHub)
+        return jsonify({"success": False, "error": "Modo desenvolvedor não disponível"}), 403
     data = request.json or {}
     senha = data.get('senha', '')
     if senha != SENHA_MODO_DEV:
@@ -4647,7 +4151,7 @@ def _confirmar_pagamento_plano(pix_id: str) -> None:
     dias = info.get('dias') or plano.dias
     expira_em = (datetime.now() + timedelta(days=dias)).isoformat()
     plano_obj = PlanoSincronizado(db_id, CHAVE_SECRETA_PLANO)
-    resultado = plano_obj.renovar_plano(expira_em, plano_id)
+    resultado = plano_obj.renovar_plano(expira_em, plano_id, pix_id=pix_id)
     if resultado.get('success'):
         logger.info(f"✅ Pagamento confirmado e plano renovado para {db_id} até {expira_em}")
     else:
@@ -4725,10 +4229,20 @@ def delete_usuario(user_id: str):
 # ============================================================
 # LOJA
 # ============================================================
+# 🔧 allowlist das ÚNICAS colunas que _sincronizar_preferencia_bg pode
+# atualizar. O nome da coluna vem de um parâmetro (campo_ts) interpolado
+# direto no SQL - hoje as duas chamadas existentes usam sempre literais fixos
+# (nunca dado do usuário), mas sem essa trava seria um SQL injection pronto
+# pra acontecer no dia em que alguém passasse algo vindo de request.json.
+_COLUNAS_TS_PERMITIDAS = {'bg_vendas_img_ts', 'bg_vendas_opacidade_ts'}
+
 def _sincronizar_preferencia_bg(db_id: str, campo: str, valor, campo_ts: str) -> None:
     """Sobe a preferência para o Firebase e corrige o carimbo de hora com a hora
     do SERVIDOR (para o "mais recente vence" funcionar mesmo se o relógio do PC
     estiver errado). Roda em segundo plano: o usuário já viu a mudança aplicada."""
+    if campo_ts not in _COLUNAS_TS_PERMITIDAS:
+        logger.error(f"❌ _sincronizar_preferencia_bg: coluna '{campo_ts}' não permitida - abortando")
+        return
     ts = ler_timestamp_online()
     if ts:
         try:
@@ -5060,27 +4574,6 @@ def imprimir_cupom_route():
         logger.error(f"❌ Erro ao imprimir: {e}")
         return jsonify({"success": False, "error": str(e)})
 
-@app.route('/api/imprimir/fechamento', methods=['POST'])
-def imprimir_fechamento_route():
-    """Imprime o relatório de fechamento de caixa na térmica."""
-    try:
-        db_id = get_db_id()
-        if not db_id:
-            return jsonify({"success": False, "error": "Não autenticado"}), 401
-        dados = request.json or {}
-        with get_db_context() as conn:
-            loja = conn.execute("SELECT nome_loja FROM users WHERE db_id=? LIMIT 1", (db_id,)).fetchone()
-            if loja and loja[0]:
-                dados['nome_loja'] = loja[0]
-        dados['operador'] = dados.get('operador') or session.get('nome', '')
-        texto = gerar_texto_fechamento(dados)
-        resultado = imprimir_texto_escpos(texto)
-        return jsonify(resultado)
-    except Exception as e:
-        logger.error(f"❌ Erro ao imprimir fechamento: {e}")
-        return jsonify({"success": False, "error": str(e)})
-
-
 @app.route('/api/imprimir/texto', methods=['POST'])
 def imprimir_texto_route():
     try:
@@ -5325,4 +4818,10 @@ if __name__ == '__main__':
     print("🌐 http://localhost:5000")
     print("=" * 60)
 
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    # 🔧 threaded=True: sem isto, o Werkzeug atende UM pedido por vez. Se
+    # imprimir_cupom_escpos() travar numa impressora com problema, o servidor
+    # inteiro parava (nem venda, nem login, nem abrir caixa) ate alguem
+    # resolver a impressora manualmente. Com threaded=True, outras rotas
+    # continuam respondendo mesmo se uma impressao estiver presa (a funcao de
+    # impressao tambem ganhou timeout proprio - ver imprimir_cupom_escpos).
+    app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)
