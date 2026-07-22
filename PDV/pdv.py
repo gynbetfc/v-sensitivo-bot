@@ -837,20 +837,44 @@ def validar_cnpj_firebase(cnpj: str) -> bool:
     return _checar_existencia_backend('check_cnpj', 'cnpj', cnpj)
 
 def _login_via_backend(email: str, senha: str) -> Optional[Dict]:
-    """Pede ao Worker pra buscar a conta por email e conferir a senha (ele é
-    quem tem permissão de ler o hash guardado no Firebase). Se bater, o Worker
-    devolve o registro completo (pro pdv.py continuar com a lógica de
-    reparo/migração que já existia) MAIS um token de sessão, que guardamos
-    pra autorizar as próximas leituras/escritas desta conta."""
+    """Login em 2 idas ao Worker - por quê:
+
+    🔧 Cloudflare Workers PROÍBE PBKDF2 com mais de 100.000 iterações (o
+    pdv.py sempre usou 200.000 - _PBKDF2_ITERACOES). O Worker NUNCA consegue
+    recalcular esse PBKDF2 sozinho, é uma trava da própria plataforma.
+
+    Por isso quem faz a conta pesada (PBKDF2) continua sendo o PYTHON, que
+    não tem esse limite - exatamente como sempre foi. 1ª ida (/login_salt):
+    pergunta ao Worker o sal e o nº de iterações guardados pra este email
+    (dado público, sem problema expor - já está hardcoded no pdv.py, que é
+    público). 2ª ida (/login_verificar): manda o valor JÁ CALCULADO (nunca a
+    senha em si) pro Worker comparar com o que está guardado - aí sim, se
+    bater, ele emite o token de sessão."""
     try:
         with _sessao_http() as s:
-            r = s.post(f"{BACKEND_PAGAMENTOS_URL}/login", json={'email': email, 'senha': senha}, timeout=15)
-        d = r.json()
-        if r.status_code == 200 and d.get('success') and d.get('session_token'):
-            db_id = (d.get('dados') or {}).get('db_id')
+            r1 = s.post(f"{BACKEND_PAGAMENTOS_URL}/login_salt", json={'email': email}, timeout=15)
+        d1 = r1.json()
+        if r1.status_code != 200 or not d1.get('success'):
+            return None
+
+        tipo = d1.get('tipo')
+        if tipo == 'pbkdf2':
+            salt = bytes.fromhex(d1['salt_hex'])
+            iteracoes = int(d1['iteracoes'])
+            valor = hashlib.pbkdf2_hmac('sha256', senha.encode(), salt, iteracoes).hex()
+        elif tipo == 'sha256':
+            valor = hash_senha(senha)  # mesmo hash SHA-256 puro do formato antigo
+        else:
+            valor = senha  # texto puro (conta editada manualmente no Firebase)
+
+        with _sessao_http() as s:
+            r2 = s.post(f"{BACKEND_PAGAMENTOS_URL}/login_verificar", json={'email': email, 'valor': valor}, timeout=15)
+        d2 = r2.json()
+        if r2.status_code == 200 and d2.get('success') and d2.get('session_token'):
+            db_id = (d2.get('dados') or {}).get('db_id')
             if db_id:
-                FB_TOKENS_POR_DB_ID[db_id] = d['session_token']
-            return d.get('dados')
+                FB_TOKENS_POR_DB_ID[db_id] = d2['session_token']
+            return d2.get('dados')
         return None
     except Exception as e:
         logger.error(f"⚠️ Falha ao fazer login no backend: {e}")
@@ -1106,6 +1130,14 @@ class PlanoSincronizado:
             if not expira_em:
                 return {'ativo': False, 'dias_restantes': 0, 'expirado': True, 'mensagem': 'Sem data de expiração'}
             expira_date = datetime.fromisoformat(expira_em)
+            if expira_date.tzinfo is not None:
+                # 🔧 tokens novos (assinados pelo Worker, em JS) vêm com timezone
+                # UTC ("...Z" -> new Date().toISOString()). O resto desta função
+                # trabalha com datetime "naive" (hora local, sem fuso) - subtrair
+                # aware de naive dá TypeError, que caía no except mais embaixo e
+                # aparecia pro usuário como "plano expirado" na hora, mesmo
+                # acabando de ganhar um token válido de 15 dias.
+                expira_date = expira_date.astimezone().replace(tzinfo=None)
             agora = datetime.now()
             dias = (expira_date - agora).total_seconds() / 86400
             if os.path.exists(self.arquivo_ultimo_timestamp):
