@@ -1233,6 +1233,44 @@ def status():
         'analise': s.ultima_analise, 'bot_version': BOT_VERSION
     })
 
+@app.route('/pares', methods=['GET'])
+def listar_pares():
+    """Lista os pares de opcao BINARIA (turbo) que estao ABERTOS agora,
+    separados em normais e OTC. Nao inclui digitais nem outros mercados."""
+    s = get_sessao()
+    if not s.conectado or not s.API:
+        return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+    try:
+        abertos = s.API.get_all_open_time()
+        normais, otc = [], []
+        # 'turbo' = opcoes binarias de curto prazo (o que o bot opera)
+        for categoria in ('turbo', 'binary'):
+            dados = abertos.get(categoria, {})
+            for nome, info in dados.items():
+                if not info.get('open'):
+                    continue
+                if nome in normais or nome in otc:
+                    continue
+                if nome.endswith('-OTC'):
+                    otc.append(nome)
+                else:
+                    normais.append(nome)
+        normais.sort(); otc.sort()
+        return jsonify({'ok': True, 'normais': normais, 'otc': otc, 'atual': s.par})
+    except Exception as e:
+        return jsonify({'ok': False, 'erro': str(e)[:100]})
+
+@app.route('/set_par', methods=['POST'])
+def set_par():
+    """Define o par que o bot vai operar."""
+    s = get_sessao()
+    par = (request.json.get('par') or '').strip().upper()
+    if not par:
+        return jsonify({'ok': False, 'erro': 'Par vazio'})
+    s.par = par
+    s.add_log(f"📌 Par alterado para: {par}", 'info')
+    return jsonify({'ok': True, 'par': par})
+
 @app.route('/set_percentual', methods=['POST'])
 def set_percentual():
     s = get_sessao()
