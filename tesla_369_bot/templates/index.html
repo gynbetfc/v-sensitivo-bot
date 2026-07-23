@@ -1009,6 +1009,7 @@ function atualizar() {
         if(d.moedas !== undefined) document.getElementById('moedasSaldo').textContent = d.moedas;
         if(d.sinal) document.getElementById('sinal').textContent = d.sinal;
         if(d.estrategia_nome) document.getElementById('estrategiaAtiva').textContent = d.estrategia_nome;
+        if(d.par) mostrarParAtual(d.par);
         if(d.bot_version) document.getElementById('botVersionDisplay').innerHTML = '⚡ TESLA 369 v' + d.bot_version;
         // mantem o status de recursos fresco e re-tenta render se ficou vazio (corrida)
         var _sr = document.getElementById('statusRecursos');
@@ -1411,12 +1412,37 @@ function carregarPares(){
     }).catch(function(){ sel.innerHTML = '<option value="">Erro ao listar</option>'; });
 }
 function setParEscolhido(){
-    var par = document.getElementById('parSelect').value;
+    var sel = document.getElementById('parSelect');
+    var par = sel.value;
     if(!par) return;
+    var anterior = sel.getAttribute('data-atual') || '';
+    sel.disabled = true;
     fetch('/set_par',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({par:par})})
         .then(function(r){ return r.json(); }).then(function(d){
-            if(d.ok) showToast('Par: '+par, 'success');
-        });
+            sel.disabled = false;
+            if(d.ok){
+                sel.setAttribute('data-atual', par);
+                showToast('Par: '+par+' \u2713', 'success');
+            } else {
+                // par recusado (sem historico de velas): avisa e volta pro anterior
+                showToast(d.erro || 'Par indisponivel', 'warning');
+                if(anterior) sel.value = anterior;
+            }
+        }).catch(function(){ sel.disabled = false; });
+}
+
+// mostra o par atual no seletor mesmo sem ter listado tudo (apos recarregar a
+// pagina o dropdown vinha vazio e parecia que o par tinha sido perdido)
+function mostrarParAtual(par){
+    var sel = document.getElementById('parSelect');
+    if(!sel || !par) return;
+    sel.setAttribute('data-atual', par);
+    // se a lista ainda nao foi carregada, poe o par atual como unica opcao
+    if(sel.options.length <= 1){
+        sel.innerHTML = '<option value="'+par+'" selected>'+par+'</option>';
+    } else {
+        sel.value = par;
+    }
 }
 
 
