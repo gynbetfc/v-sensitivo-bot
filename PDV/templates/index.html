@@ -383,6 +383,16 @@
         .cupom-opt{width:100%;padding:10px 8px;border:2px solid var(--border-color);border-radius:8px;background:var(--bg-primary);color:var(--text-secondary);cursor:pointer;font-weight:600;font-size:12px;font-family:inherit;text-align:center;transition:var(--transition);display:flex;align-items:center;justify-content:center;gap:6px}
         .cupom-opt:hover{border-color:var(--green);color:#fff;background:rgba(34,197,94,.1)}
         .cupom-opt.active{border-color:var(--green);background:rgba(34,197,94,.2);color:var(--green)}
+        .nfce-secao{margin:0 16px 16px;padding-top:14px;border-top:1px dashed var(--border-color)}
+        .nfce-secao-titulo{font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.4px;
+            display:flex;align-items:center;gap:7px;margin-bottom:10px}
+        .nfce-secao-botoes{display:flex;gap:8px}
+        .nfce-btn{flex:1;padding:10px 8px;border-radius:8px;font-weight:600;font-size:12px;cursor:pointer;
+            display:flex;align-items:center;justify-content:center;gap:6px;transition:var(--transition);border:2px solid transparent}
+        .nfce-btn-emitir{background:rgba(59,130,246,.12);color:var(--blue);border-color:var(--blue)}
+        .nfce-btn-emitir:hover{background:var(--blue);color:#fff}
+        .nfce-btn-previa{background:rgba(168,85,247,.12);color:var(--purple);border-color:var(--purple)}
+        .nfce-btn-previa:hover{background:var(--purple);color:#fff}
 
         .modal-cliente{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);z-index:9999;justify-content:center;align-items:center;padding:12px}
         .modal-cliente.active{display:flex}
@@ -1154,7 +1164,7 @@
 <!-- CUPOM MODAL -->
 <div class="cupom-modal" id="cupomModal">
     <div class="cupom-container">
-        <div class="cupom-header-ui"><h3>🧾 Cupom Não Fiscal</h3><button class="close" onclick="fecharCupom()">✕</button></div>
+        <div class="cupom-header-ui"><h3 id="cupomModalTitulo">🧾 Cupom Não Fiscal</h3><button class="close" onclick="fecharCupom()">✕</button></div>
         <div class="cupom-preview" id="cupomPreview">
             <div class="cupom-loja" id="cupomLojaNome"></div>
             <div style="text-align:center;font-size:10px;color:#555;margin-bottom:4px;" id="cupomCnpjLine"></div>
@@ -1184,14 +1194,18 @@
             <button class="cupom-opt active" id="cupomOptImprimir" onclick="cupomEscolher('imprimir');imprimirCupom()"><i class="fas fa-print"></i> Imprimir</button>
             <button class="cupom-opt" id="cupomOptNaoImprimir" onclick="cupomEscolher('nao');fecharCupomSemImprimir()"><i class="fas fa-times"></i> Sem Impressão</button>
         </div>
-        <div id="nfceAreaCupom" style="padding:0 16px 16px;">
-            <button class="cupom-opt" style="width:100%;background:rgba(59,130,246,.12);color:var(--blue);border-color:var(--blue);" onclick="emitirNfceDaVenda()"><i class="fas fa-file-invoice"></i> Emitir NFC-e desta venda</button>
-            <button class="cupom-opt" style="width:100%;background:rgba(168,85,247,.12);color:var(--purple);border-color:var(--purple);margin-top:8px;" onclick="verPreviaNfceDemo()"><i class="fas fa-eye"></i> Ver prévia do QR Code (demonstração)</button>
-            <div id="nfceStatusCupom" style="font-size:11.5px;color:var(--text-muted);margin-top:6px;text-align:center;"></div>
+        <div class="nfce-secao" id="nfceAreaCupom">
+            <div class="nfce-secao-titulo"><i class="fas fa-file-invoice"></i> Nota Fiscal (NFC-e)</div>
+            <div class="nfce-secao-botoes">
+                <button class="nfce-btn nfce-btn-emitir" onclick="emitirNfceDaVenda()"><i class="fas fa-paper-plane"></i> Emitir NFC-e</button>
+                <button class="nfce-btn nfce-btn-previa" onclick="verPreviaNfceDemo()"><i class="fas fa-eye"></i> Prévia (demo)</button>
+            </div>
+            <div id="nfceStatusCupom" style="font-size:11.5px;color:var(--text-muted);margin-top:8px;text-align:center;"></div>
             <div id="nfceQrPreview" style="display:none;margin-top:10px;text-align:center;background:#fff;border-radius:10px;padding:14px;">
-                <div style="font-size:11px;font-weight:700;color:#dc2626;margin-bottom:8px;">⚠️ DEMONSTRAÇÃO — NÃO É NOTA FISCAL VÁLIDA</div>
-                <img id="nfceQrImg" style="width:160px;height:160px;" alt="QR Code de demonstração">
+                <div id="nfceQrAviso" style="font-size:11px;font-weight:700;color:#dc2626;margin-bottom:8px;">⚠️ DEMONSTRAÇÃO — NÃO É NOTA FISCAL VÁLIDA</div>
+                <img id="nfceQrImg" style="width:160px;height:160px;" alt="QR Code">
                 <div id="nfceChaveDemo" style="font-family:monospace;font-size:10px;color:#333;margin-top:8px;word-break:break-all;"></div>
+                <div id="nfceProtocoloInfo" style="font-family:monospace;font-size:9px;color:#666;margin-top:4px;"></div>
             </div>
         </div>
     </div>
@@ -2829,8 +2843,22 @@ function mostrarCupom(dados){
 }
 
 function cupomEscolher(opcao){state.cupomEscolha=opcao;}
-function fecharCupomSemImprimir(){document.getElementById('cupomModal').classList.remove('active');}
-function fecharCupom(){document.getElementById('cupomModal').classList.remove('active');}
+function fecharCupomSemImprimir(){
+    document.getElementById('cupomModal').classList.remove('active');
+    document.querySelector('.cupom-preview').style.display='';
+    document.querySelector('.cupom-acoes').style.display='';
+    document.getElementById('nfceQrPreview').style.display='none';
+    document.getElementById('nfceStatusCupom').textContent='';
+    document.getElementById('cupomModalTitulo').textContent='🧾 Cupom Não Fiscal';
+}
+function fecharCupom(){
+    document.getElementById('cupomModal').classList.remove('active');
+    document.querySelector('.cupom-preview').style.display='';
+    document.querySelector('.cupom-acoes').style.display='';
+    document.getElementById('nfceQrPreview').style.display='none';
+    document.getElementById('nfceStatusCupom').textContent='';
+    document.getElementById('cupomModalTitulo').textContent='🧾 Cupom Não Fiscal';
+}
 
 async function imprimirCupom(){
     const dados = ultimoCupomData;
@@ -3408,7 +3436,8 @@ function renderListaVendas(vendas){
             <span class="valor">R$ ${(v.total||0).toFixed(2)}</span>
             <span class="lucro-item">💰 Lucro: R$ ${(v.lucro_total||0).toFixed(2)}</span>
             <div class="produtos-detalhe">${(v.itens||[]).map(i=>`${i.nome}(${i.quantidade})`).join(', ')}${v.cliente?' · 👤 '+v.cliente:''}</div>
-            <button class="btn-imprimir-venda" onclick="imprimirCupomAntigo(${v.id})"><i class="fas fa-print"></i></button>
+            <button class="btn-imprimir-venda" onclick="imprimirCupomAntigo(${v.id})" title="Reimprimir cupom não fiscal"><i class="fas fa-print"></i></button>
+            ${v.tem_nfce ? `<button class="btn-imprimir-venda" onclick="verNfceAntiga(${v.id})" title="Ver NFC-e desta venda" style="color:var(--blue);border-color:var(--blue);"><i class="fas fa-file-invoice"></i></button>` : ''}
             <button class="btn-excluir-venda" onclick="excluirVenda(${v.id})" title="Excluir esta venda do histórico"><i class="fas fa-times"></i></button>
         </div>`;
     });
@@ -3819,6 +3848,9 @@ async function verPreviaNfceDemo(){
         const data=await res.json();
         if(data.success){
             statusEl.textContent='';
+            document.getElementById('nfceQrAviso').innerHTML='⚠️ DEMONSTRAÇÃO — NÃO É NOTA FISCAL VÁLIDA';
+            document.getElementById('nfceQrAviso').style.color='#dc2626';
+            document.getElementById('nfceProtocoloInfo').textContent='';
             document.getElementById('nfceChaveDemo').textContent=data.chave.match(/.{1,4}/g).join(' ');
             if(data.qrcode_url){
                 document.getElementById('nfceQrImg').src='https://api.qrserver.com/v1/create-qr-code/?size=160x160&data='+encodeURIComponent(data.qrcode_url);
@@ -3828,6 +3860,43 @@ async function verPreviaNfceDemo(){
             statusEl.textContent='❌ '+(data.error||'Erro ao gerar prévia');
         }
     }catch(e){statusEl.textContent='❌ Erro ao gerar prévia';}
+}
+
+// Reimprimir/ver a NFC-e de uma venda ANTIGA já autorizada (chamado da lista
+// de vendas no Dashboard, não do fluxo de finalizar venda).
+async function verNfceAntiga(vendaId){
+    ultimaVendaId=vendaId;
+    mostrarCupomVazioParaNfce();
+    const statusEl=document.getElementById('nfceStatusCupom');
+    const preview=document.getElementById('nfceQrPreview');
+    statusEl.textContent='🔄 Carregando NFC-e...';
+    preview.style.display='none';
+    try{
+        const res=await fetch(`/api/fiscal/danfce/${vendaId}`,{credentials:'include'});
+        const data=await res.json();
+        if(data.success){
+            statusEl.innerHTML='✅ NFC-e autorizada';
+            document.getElementById('nfceQrAviso').innerHTML='✅ NFC-e AUTORIZADA PELA SEFAZ';
+            document.getElementById('nfceQrAviso').style.color='#16a34a';
+            document.getElementById('nfceProtocoloInfo').textContent='';
+            document.getElementById('nfceChaveDemo').textContent=data.chave.match(/.{1,4}/g).join(' ');
+            if(data.qrcode_url){
+                document.getElementById('nfceQrImg').src='https://api.qrserver.com/v1/create-qr-code/?size=160x160&data='+encodeURIComponent(data.qrcode_url);
+            }
+            preview.style.display='block';
+        }else{
+            statusEl.textContent='❌ '+(data.error||'Esta venda não tem NFC-e');
+        }
+    }catch(e){statusEl.textContent='❌ Erro ao carregar NFC-e';}
+}
+
+// Abre o modal do cupom só com a área de NFC-e visível (reimpressão de
+// venda antiga não precisa mostrar o preview do cupom não fiscal de novo)
+function mostrarCupomVazioParaNfce(){
+    document.getElementById('cupomModal').classList.add('active');
+    document.querySelector('.cupom-preview').style.display='none';
+    document.querySelector('.cupom-acoes').style.display='none';
+    document.getElementById('cupomModalTitulo').textContent='📄 Nota Fiscal (NFC-e)';
 }
 
 async function salvarConfigFiscal(){
