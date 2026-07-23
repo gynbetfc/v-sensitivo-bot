@@ -40,6 +40,33 @@ from cryptography.hazmat.primitives.serialization import load_pem_public_key, pk
 from cryptography.x509.oid import NameOID
 import hmac
 import base64
+import re
+
+# ============================================================
+# NFC-e - dependências pesadas e opcionais (lxml, signxml, nfelib,
+# requests-pkcs12). Guardadas em try/except igual o win32print: quem gerou o
+# .exe/apk antes dessas libs existirem não pode ficar com o app inteiro
+# quebrado por causa de uma feature que talvez nem use ainda.
+# ============================================================
+FISCAL_NFCE_DISPONIVEL: bool = False
+try:
+    from lxml import etree as fiscal_etree
+    from signxml import (XMLSigner as _XMLSignerBase, SignatureMethod as FiscalSigMethod,
+        DigestAlgorithm as FiscalDigestAlg, CanonicalizationMethod as FiscalC14nMethod, methods as fiscal_signxml_methods)
+    from requests_pkcs12 import Pkcs12Adapter
+    from nfelib.nfe.client.v4_0.servers import servers as SEFAZ_SERVERS, Endpoint as SefazEndpoint
+
+    class _NFCeXMLSigner(_XMLSignerBase):
+        """A SEFAZ exige SHA-1/RSA-SHA1 pra assinar a NFC-e - é uma exigência
+        do padrão nacional (não muda há mais de uma década), não uma escolha
+        de segurança nossa. O signxml bloqueia SHA1 por padrão (com razão, em
+        geral) mas aqui não tem alternativa: sem SHA1 a SEFAZ rejeita a nota."""
+        def check_deprecated_methods(self):
+            pass
+
+    FISCAL_NFCE_DISPONIVEL = True
+except Exception:
+    pass
 
 # ============================================================
 # CORREÇÃO DE ENCODING PARA WINDOWS
@@ -447,6 +474,15 @@ def init_db() -> None:
                 sincronizado_em TIMESTAMP
             )
         ''')
+        for coluna, definicao in (
+            ('inscricao_estadual', "TEXT DEFAULT ''"),
+            ('regime_tributario', "TEXT DEFAULT '1'"),  # 1=Simples Nacional
+        ):
+            try:
+                conn.execute(f"ALTER TABLE users ADD COLUMN {coluna} {definicao}")
+                conn.commit()
+            except Exception:
+                pass
 
         conn.execute('''
             CREATE TABLE IF NOT EXISTS produtos (
@@ -468,6 +504,23 @@ def init_db() -> None:
             conn.commit()
         except Exception:
             pass
+        # Campos fiscais (NFC-e). Defaults pensados pro caso mais comum de
+        # varejo pequeno no Simples Nacional (CSOSN 102 = tributado sem
+        # crédito de ICMS, CFOP 5102 = venda dentro do estado, UN = unidade).
+        # O NCM NÃO tem default seguro - cada produto precisa do código real
+        # (8 dígitos), então fica em branco até o lojista preencher.
+        for coluna, definicao in (
+            ('ncm', "TEXT DEFAULT ''"),
+            ('cfop', "TEXT DEFAULT '5102'"),
+            ('csosn', "TEXT DEFAULT '102'"),
+            ('unidade', "TEXT DEFAULT 'UN'"),
+            ('origem', "TEXT DEFAULT '0'"),
+        ):
+            try:
+                conn.execute(f"ALTER TABLE produtos ADD COLUMN {coluna} {definicao}")
+                conn.commit()
+            except Exception:
+                pass
 
         conn.execute('''
             CREATE TABLE IF NOT EXISTS clientes (
@@ -512,6 +565,22 @@ def init_db() -> None:
                 status TEXT DEFAULT 'fechado',
                 db_id TEXT,
                 sincronizado_em TIMESTAMP
+            )
+        ''')
+
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS fiscal_nfce (
+                venda_id INTEGER PRIMARY KEY,
+                chave_acesso TEXT,
+                protocolo TEXT,
+                situacao TEXT,
+                autorizada INTEGER DEFAULT 0,
+                ambiente TEXT,
+                xml_assinado TEXT,
+                qrcode_url TEXT,
+                erro TEXT,
+                emitida_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                db_id TEXT
             )
         ''')
 
@@ -2251,6 +2320,356 @@ def _fiscal_decifrar(texto_cifrado: str) -> str:
     except Exception:
         return ''
 
+# ============================================================
+# NFC-e - MOTOR DE EMISSÃO (modelo 65, layout 4.00)
+# ============================================================
+# IMPORTANTE: isto foi construído e testado isoladamente (chave de acesso,
+# XML, assinatura, QR Code) com um certificado de teste autoassinado - mas a
+# TRANSMISSÃO de verdade pra SEFAZ só pode ser confirmada com um certificado
+# ICP-Brasil real, porque a SEFAZ exige o certificado na própria conexão
+# HTTPS (mTLS), não só pra assinar. Teste em ambiente de Homologação antes de
+# usar em Produção.
+NFCE_URL_NS = "http://www.portalfiscal.inf.br/nfe"
+
+UF_CODIGO_IBGE: Dict[str, int] = {
+    "AC": 12, "AL": 27, "AP": 16, "AM": 13, "BA": 29, "CE": 23, "DF": 53, "ES": 32,
+    "GO": 52, "MA": 21, "MT": 51, "MS": 50, "MG": 31, "PA": 15, "PB": 25, "PR": 41,
+    "PE": 26, "PI": 22, "RJ": 33, "RN": 24, "RS": 43, "RO": 11, "RR": 14, "SC": 42,
+    "SP": 35, "SE": 28, "TO": 17,
+}
+
+# Base do QR Code por UF (padrão NT2020.006). Só GO está preenchida de
+# verdade (é o estado que vamos testar); as outras ficam como placeholder
+# pra não fingir suporte que não foi validado ainda.
+QRCODE_URL_BASE: Dict[str, Dict[str, str]] = {
+    "GO": {
+        "producao": "https://nfce.sefaz.go.gov.br/nfceweb/consultarNFce.jsp",
+        "homologacao": "https://homolog.sefaz.go.gov.br/nfeweb/sites/nfce/danfeNFCe",
+    },
+}
+
+MAPA_TPAG = {
+    'DINHEIRO': '01', 'PIX': '17', 'CARTAO': '03', 'CARTÃO': '03',
+    'DEBITO': '04', 'DÉBITO': '04', 'CREDITO': '03', 'CRÉDITO': '03',
+    'FIADO': '99',  # "Outros" - fiado não é uma forma de pagamento fiscal formal
+}
+
+def _normalizar_texto_busca(t: str) -> str:
+    t = unicodedata.normalize('NFKD', t or '').encode('ascii', 'ignore').decode('ascii')
+    return t.strip().upper()
+
+def _tpag_do_metodo(metodo: str) -> str:
+    return MAPA_TPAG.get(_normalizar_texto_busca(metodo), '99')
+
+def _obter_codigo_ibge_municipio(uf: str, nome_municipio: str) -> Optional[str]:
+    """Busca (e guarda em cache local, indefinidamente - código IBGE de
+    município não muda) o código de 7 dígitos do IBGE via API pública."""
+    if not uf or not nome_municipio:
+        return None
+    chave_cache = f'fiscal_municipios_{uf}'
+    municipios = {}
+    cache_json = _config_obter(chave_cache)
+    if cache_json:
+        try:
+            municipios = json.loads(cache_json)
+        except Exception:
+            municipios = {}
+    nome_norm = _normalizar_texto_busca(nome_municipio)
+    if nome_norm in municipios:
+        return municipios[nome_norm]
+    try:
+        r = requests.get(f'https://servicodados.ibge.gov.br/api/v1/localidades/estados/{uf}/municipios', timeout=10)
+        r.raise_for_status()
+        for m in r.json():
+            municipios[_normalizar_texto_busca(m['nome'])] = str(m['id'])
+        _config_definir(chave_cache, json.dumps(municipios))
+    except Exception as e:
+        logger.warning(f"⚠️ Não consegui buscar municípios do IBGE pra {uf}: {e}")
+        return municipios.get(nome_norm)
+    return municipios.get(nome_norm)
+
+def _dv_mod11_chave(chave_43: str) -> str:
+    pesos = [2, 3, 4, 5, 6, 7, 8, 9]
+    soma = sum(int(c) * pesos[i % 8] for i, c in enumerate(reversed(chave_43)))
+    resto = soma % 11
+    return '0' if resto in (0, 1) else str(11 - resto)
+
+def gerar_chave_acesso_nfce(uf: str, data_emissao: datetime, cnpj: str, serie, numero, codigo_numerico: int) -> str:
+    """Monta a chave de 44 dígitos: cUF(2) AAMM(4) CNPJ(14) mod(2)=65
+    série(3) número(9) tpEmis(1) cNF(8) + DV(1) = 44."""
+    cuf = UF_CODIGO_IBGE.get(uf.upper())
+    if not cuf:
+        raise ValueError(f"UF desconhecida pra chave de acesso: {uf}")
+    aamm = data_emissao.strftime('%y%m')
+    cnpj_num = re.sub(r'\D', '', cnpj or '').zfill(14)
+    chave_43 = f"{cuf:02d}{aamm}{cnpj_num}65{int(serie):03d}{int(numero):09d}1{int(codigo_numerico):08d}"
+    return chave_43 + _dv_mod11_chave(chave_43)
+
+def _fmt_dec(valor, casas=2) -> str:
+    return f"{float(valor or 0):.{casas}f}"
+
+def montar_xml_nfce(dados_loja: Dict, itens_venda: List[Dict], totais: Dict, config_fiscal: Dict, produtos_fiscais: Dict[str, Dict]) -> Tuple[str, str]:
+    """Constrói o XML da NFC-e (sem assinatura ainda). Retorna (chave_acesso, xml_string).
+    Estrutura validada contra um XML real de NFe emitida (mesmo XSD da NFC-e,
+    só muda o <mod> e alguns campos de <ide>) - não foi inventada do zero."""
+    if not FISCAL_NFCE_DISPONIVEL:
+        raise RuntimeError("Dependências de NFC-e (lxml/signxml/nfelib) não instaladas neste build")
+
+    uf = config_fiscal['uf']
+    ambiente = config_fiscal['ambiente']
+    tp_amb = '1' if ambiente == 'producao' else '2'
+    serie = config_fiscal.get('serie') or '1'
+    numero = config_fiscal['proximo_numero']
+    cnpj = re.sub(r'\D', '', dados_loja.get('cnpj', ''))
+    agora = datetime.now()
+    codigo_numerico = secrets.randbelow(99999999)
+    chave = gerar_chave_acesso_nfce(uf, agora, cnpj, serie, numero, codigo_numerico)
+    cnpj_dados = dados_loja.get('cnpj_dados') or {}
+    cmun = _obter_codigo_ibge_municipio(uf, cnpj_dados.get('municipio', '')) or '0000000'
+
+    NFE = f"{{{NFCE_URL_NS}}}"
+    nsmap = {None: NFCE_URL_NS}
+    NFe = fiscal_etree.Element(NFE + 'NFe', nsmap=nsmap)
+    infNFe = fiscal_etree.SubElement(NFe, NFE + 'infNFe', versao='4.00', Id=f'NFe{chave}')
+
+    ide = fiscal_etree.SubElement(infNFe, NFE + 'ide')
+    fiscal_etree.SubElement(ide, NFE + 'cUF').text = str(UF_CODIGO_IBGE[uf])
+    fiscal_etree.SubElement(ide, NFE + 'cNF').text = f"{codigo_numerico:08d}"
+    fiscal_etree.SubElement(ide, NFE + 'natOp').text = 'Venda'
+    fiscal_etree.SubElement(ide, NFE + 'mod').text = '65'
+    fiscal_etree.SubElement(ide, NFE + 'serie').text = str(int(serie))
+    fiscal_etree.SubElement(ide, NFE + 'nNF').text = str(int(numero))
+    fiscal_etree.SubElement(ide, NFE + 'dhEmi').text = agora.astimezone().isoformat(timespec='seconds')
+    fiscal_etree.SubElement(ide, NFE + 'tpNF').text = '1'
+    fiscal_etree.SubElement(ide, NFE + 'idDest').text = '1'
+    fiscal_etree.SubElement(ide, NFE + 'cMunFG').text = cmun
+    fiscal_etree.SubElement(ide, NFE + 'tpImp').text = '4'
+    fiscal_etree.SubElement(ide, NFE + 'tpEmis').text = '1'
+    fiscal_etree.SubElement(ide, NFE + 'cDV').text = chave[-1]
+    fiscal_etree.SubElement(ide, NFE + 'tpAmb').text = tp_amb
+    fiscal_etree.SubElement(ide, NFE + 'finNFe').text = '1'
+    fiscal_etree.SubElement(ide, NFE + 'indFinal').text = '1'
+    fiscal_etree.SubElement(ide, NFE + 'indPres').text = '1'
+    fiscal_etree.SubElement(ide, NFE + 'procEmi').text = '0'
+    fiscal_etree.SubElement(ide, NFE + 'verProc').text = f'SmartPDV {VERSION}'
+
+    emit = fiscal_etree.SubElement(infNFe, NFE + 'emit')
+    fiscal_etree.SubElement(emit, NFE + 'CNPJ').text = cnpj
+    fiscal_etree.SubElement(emit, NFE + 'xNome').text = (cnpj_dados.get('razao_social') or dados_loja.get('nome_loja') or 'MINHA LOJA')[:60]
+    if cnpj_dados.get('nome_fantasia'):
+        fiscal_etree.SubElement(emit, NFE + 'xFant').text = cnpj_dados['nome_fantasia'][:60]
+    ender = fiscal_etree.SubElement(emit, NFE + 'enderEmit')
+    fiscal_etree.SubElement(ender, NFE + 'xLgr').text = (cnpj_dados.get('logradouro') or 'NAO INFORMADO')[:60]
+    fiscal_etree.SubElement(ender, NFE + 'nro').text = str(cnpj_dados.get('numero') or 'SN')[:60]
+    if cnpj_dados.get('bairro'):
+        fiscal_etree.SubElement(ender, NFE + 'xBairro').text = cnpj_dados['bairro'][:60]
+    fiscal_etree.SubElement(ender, NFE + 'cMun').text = cmun
+    fiscal_etree.SubElement(ender, NFE + 'xMun').text = (cnpj_dados.get('municipio') or 'NAO INFORMADO')[:60]
+    fiscal_etree.SubElement(ender, NFE + 'UF').text = uf
+    fiscal_etree.SubElement(ender, NFE + 'CEP').text = re.sub(r'\D', '', cnpj_dados.get('cep', '')) or '00000000'
+    fiscal_etree.SubElement(ender, NFE + 'cPais').text = '1058'
+    fiscal_etree.SubElement(ender, NFE + 'xPais').text = 'Brasil'
+    if config_fiscal.get('inscricao_estadual'):
+        fiscal_etree.SubElement(emit, NFE + 'IE').text = re.sub(r'\D', '', config_fiscal['inscricao_estadual'])
+    fiscal_etree.SubElement(emit, NFE + 'CRT').text = config_fiscal.get('regime_tributario', '1')
+
+    for idx, item in enumerate(itens_venda, 1):
+        codigo = str(item.get('codigo') or 'AVULSO')
+        fdados = produtos_fiscais.get(codigo, {})
+        qtd = item.get('quantidade', 1) or 1
+        preco_unit = item.get('preco_unitario') or (item.get('total', 0) / qtd if qtd else 0)
+
+        det = fiscal_etree.SubElement(infNFe, NFE + 'det', nItem=str(idx))
+        prod = fiscal_etree.SubElement(det, NFE + 'prod')
+        fiscal_etree.SubElement(prod, NFE + 'cProd').text = codigo[:60]
+        fiscal_etree.SubElement(prod, NFE + 'cEAN').text = 'SEM GTIN'
+        fiscal_etree.SubElement(prod, NFE + 'xProd').text = str(item.get('nome', 'Item'))[:120]
+        fiscal_etree.SubElement(prod, NFE + 'NCM').text = fdados.get('ncm') or '00000000'
+        fiscal_etree.SubElement(prod, NFE + 'CFOP').text = fdados.get('cfop') or '5102'
+        fiscal_etree.SubElement(prod, NFE + 'uCom').text = fdados.get('unidade') or 'UN'
+        fiscal_etree.SubElement(prod, NFE + 'qCom').text = _fmt_dec(qtd, 4)
+        fiscal_etree.SubElement(prod, NFE + 'vUnCom').text = _fmt_dec(preco_unit, 10)
+        fiscal_etree.SubElement(prod, NFE + 'vProd').text = _fmt_dec(preco_unit * qtd)
+        fiscal_etree.SubElement(prod, NFE + 'cEANTrib').text = 'SEM GTIN'
+        fiscal_etree.SubElement(prod, NFE + 'uTrib').text = fdados.get('unidade') or 'UN'
+        fiscal_etree.SubElement(prod, NFE + 'qTrib').text = _fmt_dec(qtd, 4)
+        fiscal_etree.SubElement(prod, NFE + 'vUnTrib').text = _fmt_dec(preco_unit, 10)
+        fiscal_etree.SubElement(prod, NFE + 'indTot').text = '1'
+
+        imposto = fiscal_etree.SubElement(det, NFE + 'imposto')
+        icms = fiscal_etree.SubElement(imposto, NFE + 'ICMS')
+        # CSOSN 102 (padrão Simples Nacional sem crédito) é o mais comum pra
+        # varejo simples. Regime normal (CRT=3) usaria <ICMS00> com CST, não
+        # implementado ainda porque o regime confirmado é Simples Nacional.
+        icmssn = fiscal_etree.SubElement(icms, NFE + 'ICMSSN102')
+        fiscal_etree.SubElement(icmssn, NFE + 'orig').text = fdados.get('origem') or '0'
+        fiscal_etree.SubElement(icmssn, NFE + 'CSOSN').text = fdados.get('csosn') or '102'
+        pis = fiscal_etree.SubElement(imposto, NFE + 'PIS')
+        pisnt = fiscal_etree.SubElement(pis, NFE + 'PISNT')
+        fiscal_etree.SubElement(pisnt, NFE + 'CST').text = '07'
+        cofins = fiscal_etree.SubElement(imposto, NFE + 'COFINS')
+        cofinsnt = fiscal_etree.SubElement(cofins, NFE + 'COFINSNT')
+        fiscal_etree.SubElement(cofinsnt, NFE + 'CST').text = '07'
+
+    total = fiscal_etree.SubElement(infNFe, NFE + 'total')
+    icmsTot = fiscal_etree.SubElement(total, NFE + 'ICMSTot')
+    for campo, valor in (('vBC', 0), ('vICMS', 0), ('vICMSDeson', 0), ('vFCP', 0),
+        ('vBCST', 0), ('vST', 0), ('vFCPST', 0), ('vFCPSTRet', 0),
+        ('vProd', totais['subtotal']), ('vFrete', 0), ('vSeg', 0), ('vDesc', totais.get('desconto', 0)),
+        ('vII', 0), ('vIPI', 0), ('vIPIDevol', 0), ('vPIS', 0), ('vCOFINS', 0),
+        ('vOutro', 0), ('vNF', totais['total'])):
+        fiscal_etree.SubElement(icmsTot, NFE + campo).text = _fmt_dec(valor)
+
+    transp = fiscal_etree.SubElement(infNFe, NFE + 'transp')
+    fiscal_etree.SubElement(transp, NFE + 'modFrete').text = '9'
+
+    pag = fiscal_etree.SubElement(infNFe, NFE + 'pag')
+    detPag = fiscal_etree.SubElement(pag, NFE + 'detPag')
+    fiscal_etree.SubElement(detPag, NFE + 'tPag').text = _tpag_do_metodo(totais.get('metodo', ''))
+    fiscal_etree.SubElement(detPag, NFE + 'vPag').text = _fmt_dec(totais['total'])
+    if totais.get('troco'):
+        fiscal_etree.SubElement(pag, NFE + 'vTroco').text = _fmt_dec(totais['troco'])
+
+    infAdic = fiscal_etree.SubElement(infNFe, NFE + 'infAdic')
+    fiscal_etree.SubElement(infAdic, NFE + 'infCpl').text = f'Venda #{totais.get("venda_id", "")} - Emitido por SmartPDV'
+
+    xml_str = fiscal_etree.tostring(NFe, encoding='unicode')
+    return chave, xml_str
+
+def assinar_xml_nfce(xml_str: str, chave: str, pkcs12_bytes: bytes, pkcs12_senha: str) -> str:
+    if not FISCAL_NFCE_DISPONIVEL:
+        raise RuntimeError("Dependências de NFC-e não instaladas neste build")
+    priv_key, cert, _outros = pkcs12.load_key_and_certificates(pkcs12_bytes, pkcs12_senha.encode())
+    root = fiscal_etree.fromstring(xml_str.encode())
+    signer = _NFCeXMLSigner(
+        method=fiscal_signxml_methods.enveloped,
+        signature_algorithm=FiscalSigMethod.RSA_SHA1,
+        digest_algorithm=FiscalDigestAlg.SHA1,
+        c14n_algorithm=FiscalC14nMethod.CANONICAL_XML_1_0,
+    )
+    signed_root = signer.sign(root, key=priv_key, cert=[cert], reference_uri=f"#NFe{chave}")
+    return fiscal_etree.tostring(signed_root, encoding='unicode')
+
+def montar_qrcode_nfce(chave: str, uf: str, ambiente: str, csc_id: str, csc_token: str) -> Optional[str]:
+    """URL do QR Code impresso no DANFCE (padrão NT2020.006: hash SHA-1 de
+    'chave' + 'CSC' em hex maiúsculo). ATENÇÃO: a fórmula exata e a URL base
+    podem variar por estado - isto precisa ser conferido contra o Manual de
+    Orientação do Contribuinte da SEFAZ-GO antes de confiar no QR impresso."""
+    base = QRCODE_URL_BASE.get(uf.upper(), {}).get(ambiente)
+    if not base or not csc_id or not csc_token:
+        return None
+    tp_amb = '1' if ambiente == 'producao' else '2'
+    hash_input = f"{chave}{csc_token}"
+    c_hash = hashlib.sha1(hash_input.encode()).hexdigest().upper()
+    return f"{base}?p={chave}|2|{tp_amb}|{csc_id}|{c_hash}"
+
+def gerar_texto_danfce(dados_loja: Dict, itens_venda: List[Dict], totais: Dict, chave: str, protocolo: str, qrcode_url: Optional[str], ambiente: str) -> str:
+    """Texto pra impressão térmica do DANFCE (documento auxiliar da NFC-e).
+    Reaproveita o layout do cupom normal e acrescenta os campos fiscais
+    obrigatórios (chave de acesso, protocolo, aviso de homologação)."""
+    cnpj_dados = dados_loja.get('cnpj_dados') or {}
+    L = 48
+    linhas = []
+    linhas.append('=' * L)
+    linhas.append((cnpj_dados.get('razao_social') or dados_loja.get('nome_loja', 'MINHA LOJA'))[:L].center(L))
+    linhas.append(f"CNPJ: {formatar_cnpj(dados_loja.get('cnpj', ''))}".center(L))
+    linhas.append('-' * L)
+    linhas.append('DOCUMENTO AUXILIAR DA NOTA FISCAL'.center(L))
+    linhas.append('DE CONSUMIDOR ELETRONICA'.center(L))
+    if ambiente != 'producao':
+        linhas.append('=' * L)
+        linhas.append('EMITIDO EM AMBIENTE DE HOMOLOGACAO'.center(L))
+        linhas.append('SEM VALOR FISCAL'.center(L))
+    linhas.append('=' * L)
+    linhas.append('')
+    for idx, item in enumerate(itens_venda, 1):
+        qtd = item.get('quantidade', 1) or 1
+        nome = str(item.get('nome', 'Item'))[:22]
+        total_item = item.get('total', 0)
+        linhas.append(f"{str(idx).ljust(3)}{nome.ljust(25)}{str(qtd).rjust(4)}{f'R$ {total_item:.2f}'.rjust(16)}")
+    linhas.append('-' * L)
+    linhas.append(f"{'TOTAL:'.ljust(32)}R$ {totais['total']:.2f}".rjust(L))
+    linhas.append('=' * L)
+    linhas.append('Consulte pela Chave de Acesso em:')
+    linhas.append('www.nfce.fazenda.gov.br')
+    linhas.append('')
+    chave_espacada = ' '.join(chave[i:i+4] for i in range(0, len(chave), 4))
+    linhas.append(chave_espacada.center(L))
+    if protocolo:
+        linhas.append(f'Protocolo: {protocolo}'.center(L))
+    if qrcode_url:
+        linhas.append('')
+        linhas.append('[Escaneie o QR Code impresso]'.center(L))
+    linhas.append('=' * L)
+    return '\n'.join(linhas) + '\n\n'
+
+def consultar_status_servico_sefaz(uf: str, ambiente: str, pkcs12_bytes: bytes, pkcs12_senha: str) -> Dict:
+    """Chamada mais simples que existe pra testar se a conexão com a SEFAZ
+    (URL certa + certificado aceito) está funcionando, sem emitir nada."""
+    if not FISCAL_NFCE_DISPONIVEL:
+        return {"success": False, "error": "Dependências de NFC-e não instaladas neste build"}
+    try:
+        cfg = SEFAZ_SERVERS.get(uf.upper())
+        if not cfg:
+            return {"success": False, "error": f"UF {uf} não tem endpoint configurado na biblioteca"}
+        endpoints = cfg['dev_endpoints'] if ambiente != 'producao' else cfg['prod_endpoints']
+        url = endpoints[SefazEndpoint.NFESTATUSSERVICO].replace('?wsdl', '')
+        cuf = UF_CODIGO_IBGE[uf.upper()]
+        tp_amb = '1' if ambiente == 'producao' else '2'
+        corpo = (f'<consStatServ xmlns="{NFCE_URL_NS}" versao="4.00">'
+                 f'<tpAmb>{tp_amb}</tpAmb><cUF>{cuf}</cUF><xServ>STATUS</xServ></consStatServ>')
+        envelope = (
+            '<soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">'
+            '<soap12:Body><nfeDadosMsg xmlns="http://www.portalfiscal.inf.br/nfe/wsdl/NFeStatusServico4">'
+            f'{corpo}</nfeDadosMsg></soap12:Body></soap12:Envelope>')
+        sessao = requests.Session()
+        sessao.mount(url, Pkcs12Adapter(pkcs12_data=pkcs12_bytes, pkcs12_password=pkcs12_senha))
+        resp = sessao.post(url, data=envelope.encode('utf-8'),
+            headers={'Content-Type': 'application/soap+xml; charset=utf-8'}, timeout=20)
+        return {"success": resp.status_code == 200, "status_code": resp.status_code, "resposta": resp.text[:2000]}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+def transmitir_nfce_sefaz(xml_assinado: str, chave: str, uf: str, ambiente: str, pkcs12_bytes: bytes, pkcs12_senha: str) -> Dict:
+    """Envia a NFC-e assinada pra SEFAZ (autorização síncrona). Isto só pode
+    ser testado de verdade com um certificado ICP-Brasil real - com um
+    certificado de teste, a SEFAZ recusa a conexão TLS antes mesmo de olhar
+    o XML (é assim que deve ser: só quem tem certificado emitido por uma AC
+    credenciada consegue emitir nota de verdade)."""
+    if not FISCAL_NFCE_DISPONIVEL:
+        return {"success": False, "error": "Dependências de NFC-e não instaladas neste build"}
+    try:
+        cfg = SEFAZ_SERVERS.get(uf.upper())
+        if not cfg:
+            return {"success": False, "error": f"UF {uf} não tem endpoint configurado na biblioteca"}
+        endpoints = cfg['dev_endpoints'] if ambiente != 'producao' else cfg['prod_endpoints']
+        url = endpoints[SefazEndpoint.NFEAUTORIZACAO].replace('?wsdl', '')
+        corpo = (f'<enviNFe xmlns="{NFCE_URL_NS}" versao="4.00">'
+                 f'<idLote>1</idLote><indSinc>1</indSinc>{xml_assinado}</enviNFe>')
+        envelope = (
+            '<soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">'
+            '<soap12:Body><nfeDadosMsg xmlns="http://www.portalfiscal.inf.br/nfe/wsdl/NFeAutorizacao4">'
+            f'{corpo}</nfeDadosMsg></soap12:Body></soap12:Envelope>')
+        sessao = requests.Session()
+        sessao.mount(url, Pkcs12Adapter(pkcs12_data=pkcs12_bytes, pkcs12_password=pkcs12_senha))
+        resp = sessao.post(url, data=envelope.encode('utf-8'),
+            headers={'Content-Type': 'application/soap+xml; charset=utf-8'}, timeout=30)
+        texto = resp.text
+        protocolo = ''
+        situacao = ''
+        try:
+            m_prot = re.search(r'<nProt>(.*?)</nProt>', texto)
+            m_sit = re.search(r'<xMotivo>(.*?)</xMotivo>', texto)
+            protocolo = m_prot.group(1) if m_prot else ''
+            situacao = m_sit.group(1) if m_sit else ''
+        except Exception:
+            pass
+        autorizada = '<cStat>100</cStat>' in texto  # 100 = Autorizado o uso da NF-e
+        return {"success": autorizada, "status_code": resp.status_code, "protocolo": protocolo,
+            "situacao": situacao, "resposta_bruta": texto[:4000], "chave": chave}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
 
 def imprimir_cupom_rede(dados: Dict, ip: str, porta: int = 9100) -> Dict:
     """Envia o cupom direto por TCP pra uma impressora térmica de rede (Wi-Fi),
@@ -2976,10 +3395,10 @@ def get_produtos():
         with get_db_context() as conn:
             if busca:
                 termo = f'%{busca}%'
-                cursor = conn.execute("""SELECT codigo, nome, preco, custo, margem, estoque, categoria, imagem_url FROM produtos
+                cursor = conn.execute("""SELECT codigo, nome, preco, custo, margem, estoque, categoria, imagem_url, ncm, cfop, csosn, unidade, origem FROM produtos
                     WHERE db_id=? AND (LOWER(nome) LIKE ? OR LOWER(codigo) LIKE ?) ORDER BY nome""", (db_id, termo, termo))
             else:
-                cursor = conn.execute("SELECT codigo, nome, preco, custo, margem, estoque, categoria, imagem_url FROM produtos WHERE db_id=? ORDER BY nome", (db_id,))
+                cursor = conn.execute("SELECT codigo, nome, preco, custo, margem, estoque, categoria, imagem_url, ncm, cfop, csosn, unidade, origem FROM produtos WHERE db_id=? ORDER BY nome", (db_id,))
             produtos = [dict(row) for row in cursor.fetchall()]
         return jsonify({"success": True, "produtos": produtos})
     except Exception as e:
@@ -3009,14 +3428,19 @@ def save_produto():
                 return jsonify({"success": False, "error": msg}), 403
         with get_db_context() as conn:
             estoque_desejado = int(data.get('estoque', 0) or 0)
-            conn.execute("""INSERT INTO produtos (codigo, nome, preco, custo, margem, estoque, categoria, imagem_url, db_id, ultima_atualizacao)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(codigo) DO UPDATE SET
+            conn.execute("""INSERT INTO produtos (codigo, nome, preco, custo, margem, estoque, categoria, imagem_url, ncm, cfop, csosn, unidade, origem, db_id, ultima_atualizacao)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(codigo) DO UPDATE SET
                 nome=excluded.nome, preco=excluded.preco, custo=excluded.custo, margem=excluded.margem,
                 categoria=excluded.categoria,
                 imagem_url=CASE WHEN excluded.imagem_url!='' THEN excluded.imagem_url ELSE produtos.imagem_url END,
+                ncm=excluded.ncm, cfop=excluded.cfop, csosn=excluded.csosn, unidade=excluded.unidade, origem=excluded.origem,
                 ultima_atualizacao=excluded.ultima_atualizacao""",
                 (data['codigo'], data['nome'], preco, custo, margem, estoque_desejado,
-                data.get('categoria', 'Geral'), data.get('imagem_url', ''), db_id, get_timestamp()))
+                data.get('categoria', 'Geral'), data.get('imagem_url', ''),
+                (data.get('ncm') or '').strip(), (data.get('cfop') or '5102').strip(),
+                (data.get('csosn') or '102').strip(), (data.get('unidade') or 'UN').strip(),
+                str(data.get('origem') if data.get('origem') is not None else '0').strip(),
+                db_id, get_timestamp()))
             # ESTOQUE POR FATOS: em vez de gravar o número direto (que dois caixas
             # sobrescreveriam), registramos um AJUSTE com a diferença. O estoque
             # final é sempre a soma dos fatos. Nota: no ON CONFLICT acima NÃO
@@ -4818,9 +5242,12 @@ UFS_VALIDAS = {"AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG",
 @app.route('/api/config/fiscal', methods=['GET'])
 def obter_config_fiscal_route():
     try:
-        if not get_db_id():
+        db_id = get_db_id()
+        if not db_id:
             return jsonify({"success": False, "error": "Não autenticado"}), 401
         tem_certificado = os.path.exists(CAMINHO_CERTIFICADO_PFX)
+        with get_db_context() as conn:
+            row = conn.execute("SELECT inscricao_estadual, regime_tributario FROM users WHERE db_id=? LIMIT 1", (db_id,)).fetchone()
         return jsonify({
             "success": True,
             "tem_certificado": tem_certificado,
@@ -4832,6 +5259,8 @@ def obter_config_fiscal_route():
             "tem_csc_token": bool(_config_obter('fiscal_csc_token_enc')),
             "serie": _config_obter('fiscal_serie', '1'),
             "proximo_numero": _config_obter('fiscal_proximo_numero', '1'),
+            "inscricao_estadual": (row[0] if row else '') or '',
+            "regime_tributario": (row[1] if row else '1') or '1',
         })
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
@@ -4839,7 +5268,8 @@ def obter_config_fiscal_route():
 @app.route('/api/config/fiscal', methods=['POST'])
 def definir_config_fiscal_route():
     try:
-        if not get_db_id():
+        db_id = get_db_id()
+        if not db_id:
             return jsonify({"success": False, "error": "Não autenticado"}), 401
         data = request.json or {}
         uf = (data.get('uf') or '').strip().upper()
@@ -4848,6 +5278,9 @@ def definir_config_fiscal_route():
         ambiente = (data.get('ambiente') or 'homologacao').strip().lower()
         if ambiente not in ('homologacao', 'producao'):
             return jsonify({"success": False, "error": "Ambiente deve ser 'homologacao' ou 'producao'"})
+        regime = (data.get('regime_tributario') or '1').strip()
+        if regime not in ('1', '2', '3'):
+            return jsonify({"success": False, "error": "Regime tributário inválido"})
         if uf:
             _config_definir('fiscal_uf', uf)
         _config_definir('fiscal_ambiente', ambiente)
@@ -4859,6 +5292,10 @@ def definir_config_fiscal_route():
             _config_definir('fiscal_serie', str(data.get('serie') or '1').strip())
         if 'proximo_numero' in data:
             _config_definir('fiscal_proximo_numero', str(data.get('proximo_numero') or '1').strip())
+        with get_db_context() as conn:
+            conn.execute("UPDATE users SET inscricao_estadual=?, regime_tributario=? WHERE db_id=?",
+                ((data.get('inscricao_estadual') or '').strip(), regime, db_id))
+            conn.commit()
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
@@ -4913,6 +5350,179 @@ def remover_certificado_fiscal_route():
         for chave in ('fiscal_senha_certificado_enc', 'fiscal_validade_certificado', 'fiscal_titular_certificado'):
             _config_definir(chave, '')
         return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+def _carregar_config_fiscal_completa(db_id: str) -> Dict:
+    with get_db_context() as conn:
+        row = conn.execute("SELECT inscricao_estadual, regime_tributario FROM users WHERE db_id=? LIMIT 1", (db_id,)).fetchone()
+    return {
+        "uf": _config_obter('fiscal_uf'),
+        "ambiente": _config_obter('fiscal_ambiente', 'homologacao'),
+        "csc_id": _config_obter('fiscal_csc_id'),
+        "csc_token": _fiscal_decifrar(_config_obter('fiscal_csc_token_enc')),
+        "serie": _config_obter('fiscal_serie', '1'),
+        "proximo_numero": _config_obter('fiscal_proximo_numero', '1'),
+        "inscricao_estadual": (row[0] if row else '') or '',
+        "regime_tributario": (row[1] if row else '1') or '1',
+    }
+
+def _erro_config_fiscal_incompleta(cfg: Dict) -> Optional[str]:
+    if not os.path.exists(CAMINHO_CERTIFICADO_PFX):
+        return "Nenhum certificado digital enviado ainda (Config > Nota Fiscal)"
+    if not cfg['uf']:
+        return "UF não configurada (Config > Nota Fiscal)"
+    if not cfg['inscricao_estadual']:
+        return "Inscrição Estadual não configurada (Config > Nota Fiscal)"
+    if not cfg['csc_id'] or not cfg['csc_token']:
+        return "CSC (ID e Token) não configurado (Config > Nota Fiscal) - obrigatório pro QR Code"
+    return None
+
+@app.route('/api/fiscal/status_servico')
+def fiscal_status_servico_route():
+    """Testa só a conexão com a SEFAZ (URL + certificado aceito), sem emitir
+    nada. É o primeiro teste real que dá pra fazer quando o certificado
+    chegar - se isto funcionar, a parte de rede/certificado está OK."""
+    try:
+        db_id = get_db_id()
+        if not db_id:
+            return jsonify({"success": False, "error": "Não autenticado"}), 401
+        if not FISCAL_NFCE_DISPONIVEL:
+            return jsonify({"success": False, "error": "Dependências de NFC-e não instaladas neste build (lxml/signxml/nfelib/requests-pkcs12)"})
+        cfg = _carregar_config_fiscal_completa(db_id)
+        if not os.path.exists(CAMINHO_CERTIFICADO_PFX):
+            return jsonify({"success": False, "error": "Nenhum certificado digital enviado ainda"})
+        if not cfg['uf']:
+            return jsonify({"success": False, "error": "UF não configurada"})
+        senha = _fiscal_decifrar(_config_obter('fiscal_senha_certificado_enc'))
+        with open(CAMINHO_CERTIFICADO_PFX, 'rb') as f:
+            pfx_bytes = f.read()
+        resultado = consultar_status_servico_sefaz(cfg['uf'], cfg['ambiente'], pfx_bytes, senha)
+        return jsonify(resultado)
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/fiscal/emitir/<int:venda_id>', methods=['POST'])
+@verificar_plano
+def fiscal_emitir_nfce_route(venda_id: int):
+    try:
+        db_id = get_db_id()
+        if not db_id:
+            return jsonify({"success": False, "error": "Não autenticado"}), 401
+        if not FISCAL_NFCE_DISPONIVEL:
+            return jsonify({"success": False, "error": "Dependências de NFC-e não instaladas neste build (lxml/signxml/nfelib/requests-pkcs12)"})
+
+        cfg = _carregar_config_fiscal_completa(db_id)
+        erro_config = _erro_config_fiscal_incompleta(cfg)
+        if erro_config:
+            return jsonify({"success": False, "error": erro_config})
+
+        with get_db_context() as conn:
+            ja_emitida = conn.execute("SELECT chave_acesso, autorizada FROM fiscal_nfce WHERE venda_id=? AND db_id=?", (venda_id, db_id)).fetchone()
+            if ja_emitida and ja_emitida[1]:
+                return jsonify({"success": False, "error": f"Esta venda já tem uma NFC-e autorizada (chave {ja_emitida[0]})"})
+
+            venda = conn.execute("""SELECT id, subtotal, desconto, total, metodo, itens, troco FROM vendas
+                WHERE id=? AND db_id=?""", (venda_id, db_id)).fetchone()
+            if not venda:
+                return jsonify({"success": False, "error": "Venda não encontrada"}), 404
+            try:
+                itens = json.loads(venda[5]) if venda[5] else []
+            except Exception:
+                itens = []
+            if not itens:
+                return jsonify({"success": False, "error": "Venda sem itens"})
+
+            loja = conn.execute("SELECT nome_loja, cnpj, cnpj_dados FROM users WHERE db_id=? LIMIT 1", (db_id,)).fetchone()
+            if not loja or not loja[1]:
+                return jsonify({"success": False, "error": "CNPJ da loja não configurado (Config > Loja)"})
+            cnpj_dados = {}
+            if loja[2]:
+                try:
+                    cnpj_dados = json.loads(loja[2])
+                except Exception:
+                    pass
+            dados_loja = {"nome_loja": loja[0], "cnpj": loja[1], "cnpj_dados": cnpj_dados}
+
+            codigos = {str(i.get('codigo')) for i in itens if i.get('codigo')}
+            produtos_fiscais = {}
+            if codigos:
+                placeholders = ','.join('?' * len(codigos))
+                for row in conn.execute(f"SELECT codigo, ncm, cfop, csosn, unidade, origem FROM produtos WHERE db_id=? AND codigo IN ({placeholders})",
+                        (db_id, *codigos)):
+                    produtos_fiscais[row[0]] = {"ncm": row[1], "cfop": row[2], "csosn": row[3], "unidade": row[4], "origem": row[5]}
+
+        produtos_sem_ncm = [i.get('nome', i.get('codigo', '?')) for i in itens
+            if not produtos_fiscais.get(str(i.get('codigo')), {}).get('ncm')]
+        if produtos_sem_ncm:
+            return jsonify({"success": False, "error":
+                "Produto(s) sem NCM cadastrado (obrigatório pra NFC-e): " + ", ".join(produtos_sem_ncm[:5])})
+
+        totais = {"subtotal": venda[1], "desconto": venda[2] or 0, "total": venda[3],
+            "metodo": venda[4], "troco": venda[6] or 0, "venda_id": venda_id}
+
+        senha = _fiscal_decifrar(_config_obter('fiscal_senha_certificado_enc'))
+        with open(CAMINHO_CERTIFICADO_PFX, 'rb') as f:
+            pfx_bytes = f.read()
+
+        try:
+            chave, xml_str = montar_xml_nfce(dados_loja, itens, totais, cfg, produtos_fiscais)
+            xml_assinado = assinar_xml_nfce(xml_str, chave, pfx_bytes, senha)
+        except Exception as e:
+            logger.error(f"❌ Erro ao montar/assinar NFC-e: {e}")
+            return jsonify({"success": False, "error": f"Erro ao montar ou assinar o XML: {e}"})
+
+        resultado = transmitir_nfce_sefaz(xml_assinado, chave, cfg['uf'], cfg['ambiente'], pfx_bytes, senha)
+        qrcode_url = montar_qrcode_nfce(chave, cfg['uf'], cfg['ambiente'], cfg['csc_id'], cfg['csc_token'])
+
+        with get_db_context() as conn:
+            conn.execute("""INSERT INTO fiscal_nfce (venda_id, chave_acesso, protocolo, situacao, autorizada, ambiente, xml_assinado, qrcode_url, erro, db_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(venda_id) DO UPDATE SET
+                chave_acesso=excluded.chave_acesso, protocolo=excluded.protocolo, situacao=excluded.situacao,
+                autorizada=excluded.autorizada, ambiente=excluded.ambiente, xml_assinado=excluded.xml_assinado,
+                qrcode_url=excluded.qrcode_url, erro=excluded.erro, emitida_em=CURRENT_TIMESTAMP""",
+                (venda_id, chave, resultado.get('protocolo', ''), resultado.get('situacao', ''),
+                1 if resultado.get('success') else 0, cfg['ambiente'], xml_assinado, qrcode_url or '',
+                '' if resultado.get('success') else resultado.get('error', resultado.get('situacao', 'Erro desconhecido')), db_id))
+
+        if resultado.get('success'):
+            # avança o próximo número só quando autoriza - se rejeitar, o
+            # mesmo número pode ser tentado de novo (não "queima" numeração)
+            _config_definir('fiscal_proximo_numero', str(int(cfg['proximo_numero']) + 1))
+            logger.info(f"✅ NFC-e autorizada: venda #{venda_id}, chave {chave}, protocolo {resultado.get('protocolo')}")
+        else:
+            logger.error(f"❌ NFC-e rejeitada/erro: venda #{venda_id} - {resultado}")
+
+        return jsonify({
+            "success": resultado.get('success', False),
+            "chave": chave,
+            "protocolo": resultado.get('protocolo', ''),
+            "situacao": resultado.get('situacao', ''),
+            "error": resultado.get('error', ''),
+            "qrcode_url": qrcode_url,
+        })
+    except Exception as e:
+        logger.error(f"❌ Erro ao emitir NFC-e: {e}")
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/fiscal/danfce/<int:venda_id>')
+@verificar_plano
+def fiscal_danfce_route(venda_id: int):
+    try:
+        db_id = get_db_id()
+        if not db_id:
+            return jsonify({"success": False, "error": "Não autenticado"}), 401
+        with get_db_context() as conn:
+            nfce = conn.execute("SELECT chave_acesso, protocolo, autorizada, qrcode_url, ambiente FROM fiscal_nfce WHERE venda_id=? AND db_id=?", (venda_id, db_id)).fetchone()
+            if not nfce or not nfce[2]:
+                return jsonify({"success": False, "error": "Esta venda não tem NFC-e autorizada"})
+            venda = conn.execute("SELECT total, itens FROM vendas WHERE id=? AND db_id=?", (venda_id, db_id)).fetchone()
+            loja = conn.execute("SELECT nome_loja, cnpj, cnpj_dados FROM users WHERE db_id=? LIMIT 1", (db_id,)).fetchone()
+        itens = json.loads(venda[1]) if venda and venda[1] else []
+        cnpj_dados = json.loads(loja[2]) if loja and loja[2] else {}
+        dados_loja = {"nome_loja": loja[0] if loja else '', "cnpj": loja[1] if loja else '', "cnpj_dados": cnpj_dados}
+        texto = gerar_texto_danfce(dados_loja, itens, {"total": venda[0] if venda else 0}, nfce[0], nfce[1], nfce[3], nfce[4])
+        return jsonify({"success": True, "texto": texto, "chave": nfce[0], "qrcode_url": nfce[3]})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
