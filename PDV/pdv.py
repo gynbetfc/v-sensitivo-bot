@@ -325,27 +325,6 @@ pagamentos_pendentes: Dict[str, Dict] = {}
 rate_limits: Dict[str, List[float]] = {}
 
 # ============================================================
-# MODO DESENVOLVEDOR
-# Quando ativado (via senha secreta), libera TODAS as permissões e
-# ignora expiração de plano — só para você testar. Guardado por db_id.
-#
-# 🔧 A senha NÃO fica mais fixa no código: este pdv.py é baixado em texto
-# puro de um repositório PÚBLICO do GitHub (ver pdv_launcher.py), então
-# qualquer valor escrito aqui está exposto pra qualquer pessoa que abrir o
-# arquivo - inclusive todo mundo que já rodou o app. Agora a senha só existe
-# se você definir a variável de ambiente PDV_SENHA_MODO_DEV na SUA máquina
-# antes de rodar (nunca commitada). Sem essa variável, o modo dev fica
-# permanentemente desligado - é o comportamento de qualquer cópia baixada
-# pelos lojistas.
-# ============================================================
-SENHA_MODO_DEV: str = os.environ.get("PDV_SENHA_MODO_DEV", "")
-_modo_dev_ativo: Dict[str, bool] = {}  # {db_id: True}
-_PERM_TOTAL = {'clientes': True, 'dashboard': True, 'busca_estoque': True,
-               'margem': True, 'fiado': True, 'kit_combo': True}
-
-def modo_dev_ligado(db_id: str) -> bool:
-    return bool(db_id and _modo_dev_ativo.get(db_id))
-
 def rate_limit(max_requests: int = 10, window: int = 60) -> Callable:
     def decorator(f: Callable) -> Callable:
         @wraps(f)
@@ -372,9 +351,6 @@ def verificar_plano(f: Callable) -> Callable:
         db_id = get_db_id()
         if not db_id:
             return jsonify({"success": False, "error": "Não autenticado"}), 401
-        # Modo desenvolvedor: ignora expiração
-        if modo_dev_ligado(db_id):
-            return f(*args, **kwargs)
         if not is_plano_ativo(db_id):
             dias_restantes = get_dias_restantes(db_id)
             return jsonify({
@@ -1387,9 +1363,6 @@ def pode_adicionar_produto(db_id: str, quantidade: int = 1) -> Tuple[bool, str]:
 
 def get_permissoes(db_id: str) -> Dict:
     """Retorna as permissões do plano do usuário (offline-first via token local)"""
-    # Modo desenvolvedor: libera tudo
-    if modo_dev_ligado(db_id):
-        return dict(_PERM_TOTAL)
     _perm_padrao = {'clientes': False, 'dashboard': False, 'busca_estoque': False, 'margem': False, 'fiado': False, 'kit_combo': False}
     try:
         plano = get_plano_efetivo(db_id)
@@ -3113,6 +3086,18 @@ def login():
             # seria pior que o problema que resolvia.
             usuario_firebase = _login_via_backend(email, senha)
             if not usuario_firebase:
+                # 🔧 Não é necessariamente "conta não existe": um FUNCIONÁRIO
+                # criado em Config > Usuários só existe no SQLite local desta
+                # instalação (nunca teve registro próprio no Firebase pra ser
+                # achado por lá) - sem este fallback, ele nunca conseguia logar,
+                # mesmo tendo acabado de ser cadastrado com sucesso.
+                with get_db_context() as conn:
+                    cursor = conn.execute("""SELECT id, nome, cargo, db_id, servidor_id, nome_loja, cnpj, cnpj_dados, senha
+                        FROM users WHERE email=?""", (email,))
+                    user_local = cursor.fetchone()
+                if user_local and verificar_senha(senha, user_local[8]):
+                    return _fazer_login(user_local[3], user_local[0], user_local[1], user_local[2],
+                        user_local[4], user_local[5], user_local[6], user_local[7])
                 return jsonify({"success": False, "error": "Email ou senha inválidos"})
 
             firebase_db_id = usuario_firebase.get('db_id')
@@ -4531,33 +4516,6 @@ def get_estatisticas():
 # ============================================================
 # PLANOS
 # ============================================================
-@app.route('/api/dev/status')
-def dev_status():
-    db_id = get_db_id()
-    if not db_id:
-        return jsonify({"success": False, "error": "Não autenticado"}), 401
-    return jsonify({"success": True, "ativo": modo_dev_ligado(db_id)})
-
-@app.route('/api/dev/toggle', methods=['POST'])
-@rate_limit(max_requests=5, window=60)  # dificulta tentativa de força bruta na senha
-def dev_toggle():
-    db_id = get_db_id()
-    if not db_id:
-        return jsonify({"success": False, "error": "Não autenticado"}), 401
-    if not SENHA_MODO_DEV:
-        # variável de ambiente PDV_SENHA_MODO_DEV não configurada neste servidor
-        # -> modo dev fica impossível de ativar (caso de toda cópia baixada do GitHub)
-        return jsonify({"success": False, "error": "Modo desenvolvedor não disponível"}), 403
-    data = request.json or {}
-    senha = data.get('senha', '')
-    if senha != SENHA_MODO_DEV:
-        return jsonify({"success": False, "error": "Senha incorreta"}), 403
-    # alterna o estado
-    novo = not modo_dev_ligado(db_id)
-    _modo_dev_ativo[db_id] = novo
-    logger.info(f"🛠️ Modo desenvolvedor {'ATIVADO' if novo else 'desativado'} para {db_id}")
-    return jsonify({"success": True, "ativo": novo})
-
 @app.route('/api/planos')
 def get_planos():
     planos_out = []
@@ -4609,18 +4567,15 @@ def get_plano_status():
         percentual = 0
         if limite_produtos != -1 and limite_produtos > 0:
             percentual = min(100, (total_produtos / limite_produtos) * 100)
-        # Usa get_permissoes (respeita o modo desenvolvedor)
         permissoes = get_permissoes(db_id)
         is_teste = plano_obj.is_teste if plano_obj else False
-        # No modo dev, o plano nunca está expirado
-        dev = modo_dev_ligado(db_id)
-        ativo_final = True if dev else info.get('ativo', False)
+        ativo_final = info.get('ativo', False)
         return jsonify({
             "success": True,
             "plano": asdict(plano_obj) if plano_obj else None,
             "expira_em": expira,
             "dias_restantes": dias_restantes,
-            "expirado": (False if dev else not info.get('ativo', False)),
+            "expirado": not info.get('ativo', False),
             "limite_produtos": limite_produtos,
             "produtos_atuais": total_produtos,
             "produtos_restantes": produtos_restantes,
@@ -5524,6 +5479,52 @@ def fiscal_danfce_route(venda_id: int):
         texto = gerar_texto_danfce(dados_loja, itens, {"total": venda[0] if venda else 0}, nfce[0], nfce[1], nfce[3], nfce[4])
         return jsonify({"success": True, "texto": texto, "chave": nfce[0], "qrcode_url": nfce[3]})
     except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/fiscal/preview_demo/<int:venda_id>')
+@verificar_plano
+def fiscal_preview_demo_route(venda_id: int):
+    """Gera uma PRÉVIA visual do cupom fiscal (chave de acesso + QR Code +
+    DANFCE) sem falar com a SEFAZ e sem precisar de certificado configurado -
+    serve só pra ver como vai ficar na tela. NUNCA fica marcada como
+    autorizada, nunca consome numeração real, e o texto deixa isso bem claro
+    em toda parte pra não ser confundida com uma nota fiscal de verdade."""
+    try:
+        db_id = get_db_id()
+        if not db_id:
+            return jsonify({"success": False, "error": "Não autenticado"}), 401
+        if not FISCAL_NFCE_DISPONIVEL:
+            return jsonify({"success": False, "error": "Dependências de NFC-e não instaladas neste build"})
+
+        with get_db_context() as conn:
+            venda = conn.execute("SELECT total, itens FROM vendas WHERE id=? AND db_id=?", (venda_id, db_id)).fetchone()
+            if not venda:
+                return jsonify({"success": False, "error": "Venda não encontrada"}), 404
+            loja = conn.execute("SELECT nome_loja, cnpj, cnpj_dados FROM users WHERE db_id=? LIMIT 1", (db_id,)).fetchone()
+        itens = json.loads(venda[1]) if venda[1] else []
+        cnpj_dados = json.loads(loja[2]) if loja and loja[2] else {}
+        cnpj = (loja[1] if loja and loja[1] else '') or '00000000000000'
+        nome_loja = (cnpj_dados.get('razao_social') if cnpj_dados else '') or (loja[0] if loja else 'MINHA LOJA')
+        dados_loja = {"nome_loja": nome_loja, "cnpj": cnpj, "cnpj_dados": cnpj_dados}
+
+        # UF real se já configurada; senão GO como padrão só pra prévia funcionar
+        cfg = _carregar_config_fiscal_completa(db_id)
+        uf = cfg.get('uf') or 'GO'
+        agora = datetime.now()
+        codigo_numerico = secrets.randbelow(99999999)
+        chave = gerar_chave_acesso_nfce(uf, agora, cnpj, cfg.get('serie') or '1', cfg.get('proximo_numero') or '1', codigo_numerico)
+
+        # QR Code de demonstração: usa CSC real se já tiver, senão um valor
+        # fictício só pra montar a URL de exemplo (nunca é validado pela SEFAZ)
+        csc_id = cfg.get('csc_id') or '000'
+        csc_token = cfg.get('csc_token') or 'CSC-DE-DEMONSTRACAO-NAO-REAL'
+        qrcode_url = montar_qrcode_nfce(chave, uf, cfg.get('ambiente') or 'homologacao', csc_id, csc_token)
+
+        texto = gerar_texto_danfce(dados_loja, itens, {"total": venda[0]}, chave, 'PRÉVIA - SEM PROTOCOLO', qrcode_url, 'demo')
+        texto = "⚠️ PRÉVIA DE DEMONSTRAÇÃO - NÃO É UMA NOTA FISCAL VÁLIDA ⚠️\n\n" + texto
+        return jsonify({"success": True, "texto": texto, "chave": chave, "qrcode_url": qrcode_url, "demo": True})
+    except Exception as e:
+        logger.error(f"❌ Erro na prévia de demonstração: {e}")
         return jsonify({"success": False, "error": str(e)})
 
 @app.route('/api/imprimir/cupom', methods=['POST'])
