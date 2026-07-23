@@ -715,10 +715,16 @@ def verificar_saude_api(s):
         # da lista e travava toda checagem de saude, inclusive no caminho do gale.
         # Agora get_balance vem primeiro: se responde, retorna na hora e nunca
         # chega no get_profile. (get_profile fica por ultimo, so' como desempate.)
+        # ⚠️ get_all_open_time() FOI REMOVIDO desta lista. Por dentro ele chama
+        # get_instruments() (cfd/forex/crypto - que o bot nem usa), e esse metodo
+        # tem um `while self.api.instruments == None:` SEM timeout que, no erro,
+        # ainda chama self.connect() - refazendo o login no meio da operacao.
+        # Era uma mina terrestre: bastava os 2 primeiros testes falharem pra
+        # sessao travar pra sempre. get_balance + timestamp + profile ja' provam
+        # que a conexao esta viva.
         testes = [
             lambda: s.API.get_balance(),
             lambda: s.API.get_server_timestamp(),
-            lambda: s.API.get_all_open_time(),
             lambda: s.API.get_profile()
         ]
         for teste in testes:
@@ -1233,32 +1239,73 @@ def status():
         'analise': s.ultima_analise, 'bot_version': BOT_VERSION
     })
 
+# cache dos pares: evita bater na corretora toda hora (e o dado muda pouco)
+_pares_cache = {'dados': None, 'quando': 0}
+PARES_TTL = 120
+
 @app.route('/pares', methods=['GET'])
 def listar_pares():
-    """Lista os pares de opcao BINARIA (turbo) que estao ABERTOS agora,
-    separados em normais e OTC. Nao inclui digitais nem outros mercados."""
+    """Lista os pares de opcao BINARIA (turbo/binary) abertos, separados em
+    normais e OTC.
+
+    ⚠️ NAO usamos get_all_open_time(): por dentro ele consulta cfd/forex/crypto
+    via get_instruments(), que tem um `while ... == None:` SEM timeout e, no
+    erro, chama self.connect() - refazendo o login. Era isso que travava o app
+    em "Conectando..." quando a tela de pares carregava junto do login.
+
+    Usamos get_all_init_v2(), que so' traz binary/turbo (o que o bot opera) e
+    tem timeout proprio de 30s. Ainda assim rodamos com um teto de tempo.
+    """
     s = get_sessao()
     if not s.conectado or not s.API:
         return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+
+    agora = time.time()
+    if _pares_cache['dados'] and (agora - _pares_cache['quando']) < PARES_TTL:
+        cache = dict(_pares_cache['dados'])
+        cache['atual'] = s.par
+        return jsonify(cache)
+
+    resultado = {}
+    def _buscar():
+        try:
+            resultado['dados'] = s.API.get_all_init_v2()
+        except Exception as e:
+            resultado['erro'] = str(e)
+
+    t = threading.Thread(target=_buscar, daemon=True)
+    t.start()
+    t.join(20)          # teto duro: nunca prende a interface
+    if t.is_alive() or 'erro' in resultado or not resultado.get('dados'):
+        return jsonify({'ok': False, 'erro': 'A corretora demorou a responder. Tente o botao de recarregar.'})
+
+    dados = resultado['dados']
+    normais, otc = [], []
     try:
-        abertos = s.API.get_all_open_time()
-        normais, otc = [], []
-        # 'turbo' = opcoes binarias de curto prazo (o que o bot opera)
         for categoria in ('turbo', 'binary'):
-            dados = abertos.get(categoria, {})
-            for nome, info in dados.items():
-                if not info.get('open'):
+            bloco = (dados.get(categoria) or {}).get('actives') or {}
+            for _id, ativo in bloco.items():
+                nome = str(ativo.get('name', ''))
+                if '.' in nome:
+                    nome = nome.split('.')[1]
+                if not nome:
                     continue
-                if nome in normais or nome in otc:
+                # aberto = habilitado e nao suspenso (mesma regra da lib)
+                aberto = bool(ativo.get('enabled')) and not bool(ativo.get('is_suspended'))
+                if not aberto:
                     continue
                 if nome.endswith('-OTC'):
-                    otc.append(nome)
+                    if nome not in otc: otc.append(nome)
                 else:
-                    normais.append(nome)
-        normais.sort(); otc.sort()
-        return jsonify({'ok': True, 'normais': normais, 'otc': otc, 'atual': s.par})
+                    if nome not in normais: normais.append(nome)
     except Exception as e:
-        return jsonify({'ok': False, 'erro': str(e)[:100]})
+        return jsonify({'ok': False, 'erro': f'Formato inesperado: {str(e)[:60]}'})
+
+    normais.sort(); otc.sort()
+    resposta = {'ok': True, 'normais': normais, 'otc': otc, 'atual': s.par}
+    _pares_cache['dados'] = {'ok': True, 'normais': normais, 'otc': otc}
+    _pares_cache['quando'] = agora
+    return jsonify(resposta)
 
 @app.route('/set_par', methods=['POST'])
 def set_par():
