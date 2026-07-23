@@ -1233,6 +1233,44 @@ def status():
         'analise': s.ultima_analise, 'bot_version': BOT_VERSION
     })
 
+@app.route('/pares', methods=['GET'])
+def listar_pares():
+    """Lista os pares de opcao BINARIA (turbo) que estao ABERTOS agora,
+    separados em normais e OTC. Nao inclui digitais nem outros mercados."""
+    s = get_sessao()
+    if not s.conectado or not s.API:
+        return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+    try:
+        abertos = s.API.get_all_open_time()
+        normais, otc = [], []
+        # 'turbo' = opcoes binarias de curto prazo (o que o bot opera)
+        for categoria in ('turbo', 'binary'):
+            dados = abertos.get(categoria, {})
+            for nome, info in dados.items():
+                if not info.get('open'):
+                    continue
+                if nome in normais or nome in otc:
+                    continue
+                if nome.endswith('-OTC'):
+                    otc.append(nome)
+                else:
+                    normais.append(nome)
+        normais.sort(); otc.sort()
+        return jsonify({'ok': True, 'normais': normais, 'otc': otc, 'atual': s.par})
+    except Exception as e:
+        return jsonify({'ok': False, 'erro': str(e)[:100]})
+
+@app.route('/set_par', methods=['POST'])
+def set_par():
+    """Define o par que o bot vai operar."""
+    s = get_sessao()
+    par = (request.json.get('par') or '').strip().upper()
+    if not par:
+        return jsonify({'ok': False, 'erro': 'Par vazio'})
+    s.par = par
+    s.add_log(f"📌 Par alterado para: {par}", 'info')
+    return jsonify({'ok': True, 'par': par})
+
 @app.route('/set_percentual', methods=['POST'])
 def set_percentual():
     s = get_sessao()
@@ -1673,6 +1711,76 @@ def ranking():
     tc = sum(x['total_ciclos'] for x in ranking_list)
     tw = sum(x['total_wins'] for x in ranking_list)
     return jsonify({'ranking': ranking_list, 'stats': {'total_usuarios': len(ranking_list), 'total_ops': tc, 'total_wins': tw, 'taxa_global': round((tw/max(tc,1))*100,1)}})
+
+# cache: agregar o historico de TODOS os usuarios e' caro. Recalcula a cada 3 min.
+_stats_est_cache = {'dados': None, 'quando': 0}
+STATS_EST_TTL = 180
+
+@app.route('/stats_estrategias')
+def stats_estrategias():
+    """Placar das estrategias somando TODOS os bots da comunidade.
+
+    Devolve, por estrategia: wins/losses de HOJE e de TODO O PERIODO.
+    A fonte e' o historico_operacoes de cada usuario, que ja' grava
+    {'resultado': 'WIN'|'LOSS', 'estrategia': 'NOME', 'data': 'YYYY-MM-DD HH:MM:SS'}.
+    """
+    agora = time.time()
+    if _stats_est_cache['dados'] and (agora - _stats_est_cache['quando']) < STATS_EST_TTL:
+        return jsonify(_stats_est_cache['dados'])
+
+    hoje = str(datetime.now())[:10]
+    acc = {}   # nome -> contadores
+
+    def _slot(nome):
+        if nome not in acc:
+            acc[nome] = {'wins': 0, 'losses': 0, 'wins_hoje': 0, 'losses_hoje': 0,
+                         'lucro': 0.0, 'lucro_hoje': 0.0}
+        return acc[nome]
+
+    try:
+        usuarios = requests.get(f'{FB_URL}/tesla_369/usuarios.json', timeout=10).json() or {}
+        for _k, ud in usuarios.items():
+            if not ud:
+                continue
+            for op in (ud.get('historico_operacoes') or []):
+                nome = str(op.get('estrategia') or '').strip().upper()
+                if not nome:
+                    continue
+                d = _slot(nome)
+                venceu = str(op.get('resultado', '')).upper() == 'WIN'
+                lucro = float(op.get('lucro') or 0)
+                if venceu:
+                    d['wins'] += 1
+                else:
+                    d['losses'] += 1
+                d['lucro'] += lucro
+                if str(op.get('data', ''))[:10] == hoje:
+                    if venceu:
+                        d['wins_hoje'] += 1
+                    else:
+                        d['losses_hoje'] += 1
+                    d['lucro_hoje'] += lucro
+    except Exception as e:
+        return jsonify({'ok': False, 'erro': str(e)[:80], 'estrategias': {}})
+
+    saida = {}
+    for nome, d in acc.items():
+        total = d['wins'] + d['losses']
+        total_hoje = d['wins_hoje'] + d['losses_hoje']
+        saida[nome] = {
+            'wins': d['wins'], 'losses': d['losses'], 'total': total,
+            'taxa': round((d['wins'] / total) * 100, 1) if total else 0.0,
+            'wins_hoje': d['wins_hoje'], 'losses_hoje': d['losses_hoje'],
+            'total_hoje': total_hoje,
+            'taxa_hoje': round((d['wins_hoje'] / total_hoje) * 100, 1) if total_hoje else 0.0,
+            'lucro': round(d['lucro'], 2), 'lucro_hoje': round(d['lucro_hoje'], 2),
+        }
+
+    resposta = {'ok': True, 'estrategias': saida, 'data': hoje,
+                'amostra_total': sum(v['total'] for v in saida.values())}
+    _stats_est_cache['dados'] = resposta
+    _stats_est_cache['quando'] = agora
+    return jsonify(resposta)
 
 @app.route('/relatorio')
 def relatorio():
