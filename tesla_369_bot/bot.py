@@ -1310,6 +1310,19 @@ def listar_pares():
         return jsonify({'ok': False, 'erro': 'A corretora demorou a responder. Tente o botao de recarregar.'})
 
     dados = resultado['dados']
+
+    # 🔑 A lib so' consegue buscar velas de ativos que estao no dicionario
+    # HARDCODED OP_code.ACTIVES (constants.py). get_candles() faz:
+    #     if ACTIVES not in OP_code.ACTIVES: break   -> devolve vazio
+    # A corretora, porem, oferece MUITO mais ativos do que essa lista antiga
+    # conhece (ex: FACEBOOK-OTC existe na corretora mas NAO na lib; so' FACEBOOK).
+    # Por isso alguns pares "abertos" davam "dados insuficientes": nem chegavam a
+    # ser consultados. Aqui listamos SO' o que a lib sabe buscar.
+    try:
+        from iqoptionapi.constants import ACTIVES as _ATIVOS_SUPORTADOS
+    except Exception:
+        _ATIVOS_SUPORTADOS = None   # sem a lista, nao filtra (melhor que quebrar)
+
     normais, otc = [], []
     try:
         for categoria in ('turbo', 'binary'):
@@ -1323,6 +1336,9 @@ def listar_pares():
                 # aberto = habilitado e nao suspenso (mesma regra da lib)
                 aberto = bool(ativo.get('enabled')) and not bool(ativo.get('is_suspended'))
                 if not aberto:
+                    continue
+                # descarta o que a lib nao sabe buscar velas (daria "dados insuficientes")
+                if _ATIVOS_SUPORTADOS is not None and nome not in _ATIVOS_SUPORTADOS:
                     continue
                 if nome.endswith('-OTC'):
                     if nome not in otc: otc.append(nome)
@@ -1373,8 +1389,8 @@ def set_par():
     velas = teste.get('velas') or []
     if len(velas) < 20:
         return jsonify({'ok': False,
-                        'erro': f'{par} nao fornece historico suficiente ({len(velas)} velas). '
-                                f'Escolha outro - pares de moeda e OTC costumam funcionar melhor.'})
+                        'erro': f'{par} nao devolve historico de velas ({len(velas)}). '
+                                f'Este ativo nao e' + chr(39) + ' suportado pela API - escolha um par de moedas.'})
 
     s.par = par
     s.add_log(f"📌 Par alterado para: {par} ({len(velas)} velas OK)", 'info')
