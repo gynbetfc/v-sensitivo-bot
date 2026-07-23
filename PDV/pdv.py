@@ -4388,6 +4388,15 @@ def get_estatisticas():
                 vendas.append({"id": row[0], "data_hora": row[1], "subtotal": row[2], "desconto": row[3],
                     "total": row[4], "lucro_total": row[5] or 0, "metodo": metodo, "itens": itens, "cliente": row[8] or ''})
 
+            if vendas:
+                ids_vendas = [v['id'] for v in vendas]
+                placeholders = ','.join('?' * len(ids_vendas))
+                ids_com_nfce = {r[0] for r in conn.execute(
+                    f"SELECT venda_id FROM fiscal_nfce WHERE db_id=? AND autorizada=1 AND venda_id IN ({placeholders})",
+                    (db_id, *ids_vendas))}
+                for v in vendas:
+                    v['tem_nfce'] = v['id'] in ids_com_nfce
+
             # ---- Dados EXTRA do dashboard (só leitura, não altera nada) ----
             # 1) Ranking de produtos mais vendidos (a partir dos itens já lidos)
             ranking = {}
