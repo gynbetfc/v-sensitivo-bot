@@ -36,7 +36,8 @@ from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives.asymmetric import padding as rsa_padding
-from cryptography.hazmat.primitives.serialization import load_pem_public_key
+from cryptography.hazmat.primitives.serialization import load_pem_public_key, pkcs12
+from cryptography.x509.oid import NameOID
 import hmac
 import base64
 
@@ -71,10 +72,15 @@ DB_PATH: str = os.path.join(APP_DATA_DIR, 'pdv.db')
 TEMPLATES_DIR: str = os.path.join(APP_DATA_DIR, 'templates')
 CUPONS_DIR: str = os.path.join(APP_DATA_DIR, 'cupons')
 LOG_PATH: str = os.path.join(APP_DATA_DIR, 'pdv.log')
+# Certificado digital (NFC-e): pasta PRIVADA, nunca dentro de templates/static
+# (não pode ser servida por rota nenhuma) e nunca sincronizada pro Firebase -
+# é uma credencial que só faz sentido existir nesta instalação.
+FISCAL_DIR: str = os.path.join(APP_DATA_DIR, 'fiscal')
 
 os.makedirs(APP_DATA_DIR, exist_ok=True)
 os.makedirs(TEMPLATES_DIR, exist_ok=True)
 os.makedirs(CUPONS_DIR, exist_ok=True)
+os.makedirs(FISCAL_DIR, exist_ok=True)
 
 # ============================================================
 # IMPRESSÃO - APENAS WINDOWS
@@ -504,6 +510,20 @@ def init_db() -> None:
                 data_fechamento TEXT,
                 total REAL DEFAULT 0,
                 status TEXT DEFAULT 'fechado',
+                db_id TEXT,
+                sincronizado_em TIMESTAMP
+            )
+        ''')
+
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS caixa_movimentos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                caixa_id INTEGER,
+                tipo TEXT,
+                valor REAL,
+                motivo TEXT,
+                usuario_id TEXT,
+                data_hora TEXT,
                 db_id TEXT,
                 sincronizado_em TIMESTAMP
             )
@@ -2187,6 +2207,50 @@ def _config_definir(chave: str, valor: str) -> None:
         conn.execute("INSERT OR REPLACE INTO config (chave, valor) VALUES (?, ?)", (chave, valor))
         conn.commit()
 
+# ============================================================
+# NOTA FISCAL (NFC-e) - RECEBIMENTO DO CERTIFICADO DIGITAL
+# ============================================================
+# Esta seção só prepara o PDV pra RECEBER e guardar o certificado A1 (.pfx) e
+# os dados necessários (CSC, série, UF, ambiente). A emissão de verdade (gerar
+# o XML, assinar, transmitir pra SEFAZ) é a próxima etapa - só dá pra testar
+# isso com um certificado e CSC reais, então fica pra quando você tiver os
+# dois em mãos. Tudo aqui é local (nunca sincroniza pro Firebase): certificado
+# e senhas são credenciais fiscais da empresa, não fazem sentido saltar de
+# aparelho em aparelho como uma preferência normal.
+CAMINHO_CERTIFICADO_PFX: str = os.path.join(FISCAL_DIR, 'certificado.pfx')
+
+def _obter_chave_fiscal() -> bytes:
+    """Chave simétrica local (só desta instalação), gerada uma vez, pra
+    criptografar em repouso a senha do certificado e o token do CSC. Nunca é a
+    mesma chave usada pra outra coisa (ex: assinatura de plano) - senha de
+    certificado fiscal é sensível demais pra reaproveitar chave de outro uso."""
+    caminho = os.path.join(APP_DATA_DIR, 'fiscal.key')
+    try:
+        if os.path.exists(caminho):
+            with open(caminho, 'rb') as f:
+                chave = f.read().strip()
+                if chave:
+                    return chave
+        chave = Fernet.generate_key()
+        with open(caminho, 'wb') as f:
+            f.write(chave)
+        return chave
+    except Exception:
+        return Fernet.generate_key()
+
+def _fiscal_cifrar(texto: str) -> str:
+    if not texto:
+        return ''
+    return Fernet(_obter_chave_fiscal()).encrypt(texto.encode()).decode()
+
+def _fiscal_decifrar(texto_cifrado: str) -> str:
+    if not texto_cifrado:
+        return ''
+    try:
+        return Fernet(_obter_chave_fiscal()).decrypt(texto_cifrado.encode()).decode()
+    except Exception:
+        return ''
+
 
 def imprimir_cupom_rede(dados: Dict, ip: str, porta: int = 9100) -> Dict:
     """Envia o cupom direto por TCP pra uma impressora térmica de rede (Wi-Fi),
@@ -3803,8 +3867,58 @@ def caixa_resumo():
             cursor = conn.execute("SELECT SUM(total), COUNT(*) FROM vendas WHERE db_id=? AND data_hora LIKE ?",
                 (db_id, f'{data_param}%'))
             totals = cursor.fetchone()
+
+            caixa_aberto = conn.execute("SELECT id, valor_abertura FROM caixa WHERE db_id=? AND status='aberto' ORDER BY id DESC LIMIT 1", (db_id,)).fetchone()
+            valor_abertura = caixa_aberto[1] if caixa_aberto else 0
+            movimentos = []
+            total_sangrias = 0
+            total_suprimentos = 0
+            if caixa_aberto:
+                cursor = conn.execute("""SELECT id, tipo, valor, motivo, data_hora FROM caixa_movimentos
+                    WHERE caixa_id=? AND db_id=? ORDER BY id DESC""", (caixa_aberto[0], db_id))
+                for row in cursor.fetchall():
+                    movimentos.append({"id": row[0], "tipo": row[1], "valor": row[2], "motivo": row[3] or '', "data_hora": row[4]})
+                    if row[1] == 'sangria':
+                        total_sangrias += row[2]
+                    else:
+                        total_suprimentos += row[2]
+
+            total_dinheiro = sum(m['total'] for m in metodos if (m['metodo'] or '').lower() == 'dinheiro')
+            esperado_em_caixa = valor_abertura + total_dinheiro - total_sangrias + total_suprimentos
+
         return jsonify({"success": True, "data": data_param, "total_geral": totals[0] or 0,
-            "total_vendas": totals[1] or 0, "metodos": metodos})
+            "total_vendas": totals[1] or 0, "metodos": metodos, "movimentos": movimentos,
+            "valor_abertura": valor_abertura, "total_sangrias": total_sangrias,
+            "total_suprimentos": total_suprimentos, "esperado_em_caixa": esperado_em_caixa})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/caixa/movimento', methods=['POST'])
+@verificar_plano
+def caixa_movimento():
+    try:
+        db_id = get_db_id()
+        usuario_id = get_usuario_id()
+        data = request.json or {}
+        tipo = data.get('tipo')
+        if tipo not in ('sangria', 'suprimento'):
+            return jsonify({"success": False, "error": "Tipo inválido (use 'sangria' ou 'suprimento')"})
+        try:
+            valor = float(data.get('valor', 0))
+        except (TypeError, ValueError):
+            valor = 0
+        if valor <= 0:
+            return jsonify({"success": False, "error": "Informe um valor maior que zero"})
+        motivo = (data.get('motivo') or '').strip()[:200]
+
+        with get_db_context() as conn:
+            caixa_aberto = conn.execute("SELECT id FROM caixa WHERE db_id=? AND status='aberto' ORDER BY id DESC LIMIT 1", (db_id,)).fetchone()
+            if not caixa_aberto:
+                return jsonify({"success": False, "error": "Abra o caixa antes de registrar sangria/suprimento"})
+            conn.execute("""INSERT INTO caixa_movimentos (caixa_id, tipo, valor, motivo, usuario_id, data_hora, db_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?)""", (caixa_aberto[0], tipo, valor, motivo, usuario_id, get_timestamp(), db_id))
+        sincronizar_automatico(db_id)
+        return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
@@ -4691,6 +4805,113 @@ def definir_config_impressora_route():
             return jsonify({"success": False, "error": "Não autenticado"}), 401
         ip_rede = (request.json or {}).get('ip_rede', '').strip()
         _config_definir('impressora_ip_rede', ip_rede)
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+# ============================================================
+# NOTA FISCAL (NFC-e) - ROTAS
+# ============================================================
+UFS_VALIDAS = {"AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG",
+    "PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"}
+
+@app.route('/api/config/fiscal', methods=['GET'])
+def obter_config_fiscal_route():
+    try:
+        if not get_db_id():
+            return jsonify({"success": False, "error": "Não autenticado"}), 401
+        tem_certificado = os.path.exists(CAMINHO_CERTIFICADO_PFX)
+        return jsonify({
+            "success": True,
+            "tem_certificado": tem_certificado,
+            "validade_certificado": _config_obter('fiscal_validade_certificado'),
+            "titular_certificado": _config_obter('fiscal_titular_certificado'),
+            "uf": _config_obter('fiscal_uf'),
+            "ambiente": _config_obter('fiscal_ambiente', 'homologacao'),
+            "csc_id": _config_obter('fiscal_csc_id'),
+            "tem_csc_token": bool(_config_obter('fiscal_csc_token_enc')),
+            "serie": _config_obter('fiscal_serie', '1'),
+            "proximo_numero": _config_obter('fiscal_proximo_numero', '1'),
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/config/fiscal', methods=['POST'])
+def definir_config_fiscal_route():
+    try:
+        if not get_db_id():
+            return jsonify({"success": False, "error": "Não autenticado"}), 401
+        data = request.json or {}
+        uf = (data.get('uf') or '').strip().upper()
+        if uf and uf not in UFS_VALIDAS:
+            return jsonify({"success": False, "error": f"UF inválida: {uf}"})
+        ambiente = (data.get('ambiente') or 'homologacao').strip().lower()
+        if ambiente not in ('homologacao', 'producao'):
+            return jsonify({"success": False, "error": "Ambiente deve ser 'homologacao' ou 'producao'"})
+        if uf:
+            _config_definir('fiscal_uf', uf)
+        _config_definir('fiscal_ambiente', ambiente)
+        if 'csc_id' in data:
+            _config_definir('fiscal_csc_id', (data.get('csc_id') or '').strip())
+        if data.get('csc_token'):
+            _config_definir('fiscal_csc_token_enc', _fiscal_cifrar(data['csc_token'].strip()))
+        if 'serie' in data:
+            _config_definir('fiscal_serie', str(data.get('serie') or '1').strip())
+        if 'proximo_numero' in data:
+            _config_definir('fiscal_proximo_numero', str(data.get('proximo_numero') or '1').strip())
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/config/fiscal/certificado', methods=['POST'])
+def enviar_certificado_fiscal_route():
+    try:
+        if not get_db_id():
+            return jsonify({"success": False, "error": "Não autenticado"}), 401
+        arquivo = request.files.get('certificado')
+        senha = request.form.get('senha', '')
+        if not arquivo or not arquivo.filename:
+            return jsonify({"success": False, "error": "Selecione o arquivo do certificado (.pfx ou .p12)"})
+        conteudo = arquivo.read()
+        if len(conteudo) > 10 * 1024 * 1024:
+            return jsonify({"success": False, "error": "Arquivo grande demais pra ser um certificado válido"})
+
+        # Valida o arquivo E a senha juntos, tentando abrir o PKCS12 de verdade -
+        # assim o erro aparece na hora do envio, não só quando for tentar emitir.
+        try:
+            chave_privada, certificado, _outros = pkcs12.load_key_and_certificates(conteudo, senha.encode())
+            if chave_privada is None or certificado is None:
+                return jsonify({"success": False, "error": "O arquivo não contém uma chave privada e certificado válidos"})
+        except Exception as e:
+            return jsonify({"success": False, "error": f"Não consegui abrir o certificado — senha incorreta ou arquivo inválido ({e})"})
+
+        validade = certificado.not_valid_after_utc.strftime('%d/%m/%Y') if hasattr(certificado, 'not_valid_after_utc') else certificado.not_valid_after.strftime('%d/%m/%Y')
+        try:
+            titular = certificado.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value
+        except Exception:
+            titular = ''
+
+        with open(CAMINHO_CERTIFICADO_PFX, 'wb') as f:
+            f.write(conteudo)
+        _config_definir('fiscal_senha_certificado_enc', _fiscal_cifrar(senha))
+        _config_definir('fiscal_validade_certificado', validade)
+        _config_definir('fiscal_titular_certificado', titular)
+
+        logger.info(f"✅ Certificado fiscal recebido (válido até {validade})")
+        return jsonify({"success": True, "validade": validade, "titular": titular})
+    except Exception as e:
+        logger.error(f"❌ Erro ao processar certificado fiscal: {e}")
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/config/fiscal/certificado', methods=['DELETE'])
+def remover_certificado_fiscal_route():
+    try:
+        if not get_db_id():
+            return jsonify({"success": False, "error": "Não autenticado"}), 401
+        if os.path.exists(CAMINHO_CERTIFICADO_PFX):
+            os.remove(CAMINHO_CERTIFICADO_PFX)
+        for chave in ('fiscal_senha_certificado_enc', 'fiscal_validade_certificado', 'fiscal_titular_certificado'):
+            _config_definir(chave, '')
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
