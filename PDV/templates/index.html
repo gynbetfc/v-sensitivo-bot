@@ -712,6 +712,19 @@
             <div class="card resumo-caixa" id="resumoCaixa" style="display:none">
                 <h3><i class="fas fa-receipt" style="color:var(--green);"></i> Resumo do Dia</h3>
                 <table><thead><tr><th>Método</th><th style="text-align:right;">Qtd</th><th style="text-align:right;">Total</th></tr></thead><tbody id="tabelaResumoCaixa"></tbody></table>
+                <div id="esperadoCaixaLinha" style="display:flex;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:13px;">
+                    <strong>Esperado em caixa (dinheiro)</strong><strong id="valorEsperadoCaixa" style="color:var(--green);">R$ 0,00</strong>
+                </div>
+            </div>
+            <div class="card" id="movimentoCaixaCard" style="display:none">
+                <h3><i class="fas fa-hand-holding-usd" style="color:var(--orange);"></i> Sangria / Suprimento</h3>
+                <div class="input-group"><label>Valor (R$)</label><input type="number" id="movimentoValor" placeholder="0,00" min="0" step="0.01"></div>
+                <div class="input-group"><label>Motivo <span style="font-size:11px;color:var(--text-muted);">(opcional)</span></label><input type="text" id="movimentoMotivo" placeholder="Ex: pagamento fornecedor, troco..."></div>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn-caixa fechar" style="flex:1;" onclick="registrarMovimentoCaixa('sangria')">➖ Sangria</button>
+                    <button class="btn-caixa" style="flex:1;" onclick="registrarMovimentoCaixa('suprimento')">➕ Suprimento</button>
+                </div>
+                <div style="margin-top:12px;" id="listaMovimentosCaixa"></div>
             </div>
         </div>
 
@@ -971,6 +984,45 @@
                         <summary>Wi-Fi ou Bluetooth? Como configurar</summary>
                         <p>📶 <b>Wi-Fi:</b> preencha o IP da impressora (visor ou app do fabricante) e salve — o cupom vai direto pra ela.<br>
                         🔵 <b>Bluetooth:</b> pareie em Configurações do Windows → Bluetooth e deixe o IP em branco — usa a impressora padrão do Windows.</p>
+                    </details>
+                </div>
+                <div class="card">
+                    <h3><i class="fas fa-file-invoice" style="color:var(--blue);"></i> Nota Fiscal (NFC-e)</h3>
+                    <div id="fiscalStatus" style="font-size:12px;padding:8px 10px;border-radius:8px;background:var(--bg-primary);margin-bottom:12px;color:var(--text-muted);">Carregando...</div>
+                    <div class="input-group">
+                        <label>Certificado digital (.pfx ou .p12)</label>
+                        <input type="file" id="fiscalCertArquivo" accept=".pfx,.p12">
+                    </div>
+                    <div class="input-group">
+                        <label>Senha do certificado</label>
+                        <input type="password" id="fiscalCertSenha" placeholder="••••••••">
+                    </div>
+                    <button class="btn btn-primary" onclick="enviarCertificadoFiscal()"><i class="fas fa-upload"></i> Enviar certificado</button>
+                    <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border-color);">
+                        <div class="input-group">
+                            <label>UF (estado da loja)</label>
+                            <select id="fiscalUf" style="width:100%;padding:8px 12px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-primary);color:#fff;">
+                                <option value="">Selecione...</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Ambiente</label>
+                            <select id="fiscalAmbiente" style="width:100%;padding:8px 12px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-primary);color:#fff;">
+                                <option value="homologacao">Homologação (testes)</option>
+                                <option value="producao">Produção (emite de verdade)</option>
+                            </select>
+                        </div>
+                        <div class="input-group"><label>CSC ID</label><input type="text" id="fiscalCscId" placeholder="Ex: 1"></div>
+                        <div class="input-group"><label>Token CSC</label><input type="password" id="fiscalCscToken" placeholder="Deixe em branco pra manter o atual"></div>
+                        <div style="display:flex;gap:10px;">
+                            <div class="input-group" style="flex:1;"><label>Série</label><input type="text" id="fiscalSerie" placeholder="1"></div>
+                            <div class="input-group" style="flex:1;"><label>Próximo número</label><input type="text" id="fiscalProximoNumero" placeholder="1"></div>
+                        </div>
+                        <button class="btn btn-primary" onclick="salvarConfigFiscal()"><i class="fas fa-save"></i> Salvar dados fiscais</button>
+                    </div>
+                    <details class="config-hint">
+                        <summary>O que é CSC e onde consigo?</summary>
+                        <p>O CSC (Código de Segurança do Contribuinte) é gerado no portal da SEFAZ do seu estado, na área da NFC-e. Ele é obrigatório pra emitir — sem ele o QR Code do cupom fiscal não pode ser gerado.</p>
                     </details>
                 </div>
                 <div class="card">
@@ -1597,7 +1649,7 @@ async function fazerLogin(){
             document.getElementById('app').classList.add('active');
             atualizarHeader();
             carregarPlanos();carregarProdutos().then(()=>carregarKitsParaVenda());carregarClientes();carregarUsuarios();
-            carregarStatusCaixa();carregarDash('hoje');carregarLojaInfo();carregarConfigImpressora();
+            carregarStatusCaixa();carregarDash('hoje');carregarLojaInfo();carregarConfigImpressora();carregarConfigFiscal();
             atualizarPermissoesUI();
             setTimeout(verificarStatusPlano, 500);
             carregarBgVendasSalvo();
@@ -2931,11 +2983,11 @@ async function carregarStatusCaixa(){
         if(state.caixa_aberto){
             icon.textContent='💰';status.textContent='Caixa Aberto';msg.textContent=`Aberto por ${data.usuario_nome||data.usuario_id||'usuário'} | Total: R$ ${(data.total||0).toFixed(2)}`;
             btn.textContent='🔒 Fechar Caixa';btn.className='btn-caixa fechar';header.textContent='💰 Aberto';header.className='status-caixa aberto';
-            input.style.display='none';document.getElementById('resumoCaixa').style.display='block';carregarResumoCaixa();
+            input.style.display='none';document.getElementById('resumoCaixa').style.display='block';document.getElementById('movimentoCaixaCard').style.display='block';carregarResumoCaixa();
         }else{
             icon.textContent='🔒';status.textContent='Caixa Fechado';msg.textContent='Abra o caixa para iniciar as vendas';
             btn.textContent='🔓 Abrir Caixa';btn.className='btn-caixa';header.textContent='🔒 Fechado';header.className='status-caixa fechado';
-            input.style.display='block';document.getElementById('resumoCaixa').style.display='none';
+            input.style.display='block';document.getElementById('resumoCaixa').style.display='none';document.getElementById('movimentoCaixaCard').style.display='none';
         }
     }catch(e){console.error(e);}
 }
@@ -2969,7 +3021,38 @@ async function carregarResumoCaixa(){
             html+=`<tr class="total-row"><td><strong>TOTAL</strong></td><td style="text-align:right;">${data.total_vendas||0}</td><td style="text-align:right;">R$ ${(data.total_geral||0).toFixed(2)}</td></tr>`;
             document.getElementById('tabelaResumoCaixa').innerHTML=html;
         }else{document.getElementById('tabelaResumoCaixa').innerHTML='<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:12px;">Nenhuma venda hoje</td></tr>';}
+        if(data.success){
+            document.getElementById('valorEsperadoCaixa').textContent='R$ '+(data.esperado_em_caixa||0).toFixed(2);
+            const lista=document.getElementById('listaMovimentosCaixa');
+            if(data.movimentos&&data.movimentos.length>0){
+                let hm='<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Movimentações do caixa aberto</div>';
+                data.movimentos.forEach(m=>{
+                    const sinal=m.tipo==='sangria'?'−':'+';
+                    const cor=m.tipo==='sangria'?'var(--red)':'var(--green)';
+                    const hora=(m.data_hora||'').split(' ')[1]||'';
+                    hm+=`<div style="display:flex;justify-content:space-between;font-size:12.5px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.03);">
+                        <span>${hora} · ${m.tipo==='sangria'?'Sangria':'Suprimento'}${m.motivo?' — '+m.motivo:''}</span>
+                        <strong style="color:${cor};">${sinal} R$ ${m.valor.toFixed(2)}</strong></div>`;
+                });
+                lista.innerHTML=hm;
+            }else{lista.innerHTML='';}
+        }
     }catch(e){console.error(e);}
+}
+
+async function registrarMovimentoCaixa(tipo){
+    const valor=parseFloat(document.getElementById('movimentoValor').value);
+    if(!valor||valor<=0){showToast('❌ Informe um valor válido','error');return;}
+    const motivo=document.getElementById('movimentoMotivo').value.trim();
+    try{
+        const res=await fetch('/api/caixa/movimento',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({tipo,valor,motivo})});
+        const data=await res.json();
+        if(data.success){
+            showToast((tipo==='sangria'?'➖ Sangria':'➕ Suprimento')+' registrada!','success');
+            document.getElementById('movimentoValor').value='';document.getElementById('movimentoMotivo').value='';
+            await carregarResumoCaixa();
+        }else showToast('❌ '+(data.error||'Erro'),'error');
+    }catch(e){showToast('❌ Erro ao registrar','error');}
 }
 
 // ============================================================
@@ -3516,6 +3599,78 @@ async function salvarConfigImpressora(){
     }catch(e){showToast('❌ Erro ao salvar','error');}
 }
 
+// ============================================================
+// NOTA FISCAL (NFC-e)
+// ============================================================
+const UFS_BRASIL=['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
+function montarSelectUfFiscal(){
+    const sel=document.getElementById('fiscalUf');
+    if(!sel||sel.dataset.montado)return;
+    UFS_BRASIL.forEach(uf=>{const o=document.createElement('option');o.value=uf;o.textContent=uf;sel.appendChild(o);});
+    sel.dataset.montado='1';
+}
+
+async function carregarConfigFiscal(){
+    montarSelectUfFiscal();
+    try{
+        const res=await fetch('/api/config/fiscal',{credentials:'include'});
+        const data=await res.json();
+        if(!data.success)return;
+        const status=document.getElementById('fiscalStatus');
+        if(data.tem_certificado){
+            status.innerHTML=`✅ Certificado enviado${data.titular_certificado?' — <b>'+data.titular_certificado+'</b>':''}${data.validade_certificado?'<br>Válido até '+data.validade_certificado:''}`;
+            status.style.color='var(--green)';
+        }else{
+            status.textContent='⚠️ Nenhum certificado enviado ainda';
+            status.style.color='var(--text-muted)';
+        }
+        document.getElementById('fiscalUf').value=data.uf||'';
+        document.getElementById('fiscalAmbiente').value=data.ambiente||'homologacao';
+        document.getElementById('fiscalCscId').value=data.csc_id||'';
+        document.getElementById('fiscalCscToken').placeholder=data.tem_csc_token?'•••••••• (já salvo — deixe em branco pra manter)':'Token CSC';
+        document.getElementById('fiscalSerie').value=data.serie||'1';
+        document.getElementById('fiscalProximoNumero').value=data.proximo_numero||'1';
+    }catch(e){console.error(e);}
+}
+
+async function enviarCertificadoFiscal(){
+    const arquivo=document.getElementById('fiscalCertArquivo').files[0];
+    const senha=document.getElementById('fiscalCertSenha').value;
+    if(!arquivo){showToast('❌ Selecione o arquivo do certificado','error');return;}
+    const fd=new FormData();
+    fd.append('certificado',arquivo);
+    fd.append('senha',senha);
+    showToast('🔄 Validando certificado...','info');
+    try{
+        const res=await fetch('/api/config/fiscal/certificado',{method:'POST',credentials:'include',body:fd});
+        const data=await res.json();
+        if(data.success){
+            showToast('✅ Certificado válido até '+data.validade+'!','success');
+            document.getElementById('fiscalCertSenha').value='';
+            document.getElementById('fiscalCertArquivo').value='';
+            carregarConfigFiscal();
+        }else showToast('❌ '+(data.error||'Erro ao enviar certificado'),'error');
+    }catch(e){showToast('❌ Erro ao enviar certificado','error');}
+}
+
+async function salvarConfigFiscal(){
+    const body={
+        uf:document.getElementById('fiscalUf').value,
+        ambiente:document.getElementById('fiscalAmbiente').value,
+        csc_id:document.getElementById('fiscalCscId').value,
+        serie:document.getElementById('fiscalSerie').value,
+        proximo_numero:document.getElementById('fiscalProximoNumero').value,
+    };
+    const cscToken=document.getElementById('fiscalCscToken').value;
+    if(cscToken) body.csc_token=cscToken;
+    try{
+        const res=await fetch('/api/config/fiscal',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify(body)});
+        const data=await res.json();
+        if(data.success){showToast('✅ Dados fiscais salvos!','success');document.getElementById('fiscalCscToken').value='';carregarConfigFiscal();}
+        else showToast('❌ '+(data.error||'Erro ao salvar'),'error');
+    }catch(e){showToast('❌ Erro ao salvar','error');}
+}
+
 // Busca o CNPJ e, se necessário, preenche o nome da loja e salva
 async function buscarECompletarCnpj(cnpjLimpo, atualizarNome){
     try{
@@ -3694,7 +3849,7 @@ document.addEventListener('DOMContentLoaded',function(){
                 document.getElementById('app').classList.add('active');
                 atualizarHeader();
                 carregarPlanos();carregarProdutos();carregarClientes();carregarUsuarios();
-                carregarStatusCaixa();carregarDash('hoje');carregarLojaInfo();carregarConfigImpressora();
+                carregarStatusCaixa();carregarDash('hoje');carregarLojaInfo();carregarConfigImpressora();carregarConfigFiscal();
                 atualizarPermissoesUI();
                 setTimeout(verificarStatusPlano, 500);
                 carregarBgVendasSalvo();
