@@ -104,6 +104,15 @@
         .estrategia-card.ativa{border-color:#00ff88;background:#0a1a0a}
 
         /* anel de progresso do long-press na estrategia */
+                .est-placar{margin-top:8px;padding-top:8px;border-top:1px solid #2a2a3e;font-size:9px;font-family:monospace;line-height:1.7}
+        .est-placar .linha{display:flex;justify-content:space-between;align-items:center;gap:6px}
+        .est-placar .rot{color:#666}
+        .est-placar .wl{color:#ccc}
+        .est-placar .w{color:#00ff88;font-weight:bold}
+        .est-placar .l{color:#ff4444;font-weight:bold}
+        .est-placar .taxa-boa{color:#00ff88;font-weight:bold}
+        .est-placar .taxa-ruim{color:#ff9944;font-weight:bold}
+        .est-placar .amostra{color:#555;font-size:8px}
         .lp-overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);border-radius:14px;z-index:5}
         .lp-overlay.on{display:flex}
         .lp-ring{width:54px;height:54px;transform:rotate(-90deg)}
@@ -196,6 +205,13 @@
                     </select>
                     <span style="color:#ffd700;font-size:9px" id="valorEstimado">($0.00)</span>
                     <span style="color:#ff4444;font-size:8px" id="avisoMinimo"></span>
+                </div>
+                <div style="margin-top:5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                    <label style="color:#888;font-size:9px">📊 Par:</label>
+                    <select id="parSelect" onchange="setParEscolhido()" style="padding:5px;background:#111;border:1px solid #333;border-radius:5px;color:#fff;font-size:10px;max-width:180px">
+                        <option value="">Conecte para listar...</option>
+                    </select>
+                    <button onclick="carregarPares()" style="padding:4px 8px;background:#222;border:1px solid #444;border-radius:5px;color:#ffd700;font-size:9px;cursor:pointer">🔄</button>
                 </div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:5px">
                     <button class="btn btn-info" id="btnConectar" onclick="conectarIQ()">🔌 CONECTAR</button>
@@ -431,17 +447,20 @@ function showToast(message, type, title) {
     var finalTitle = title || titles[type] || 'Info';
     var icon = icons[type] || 'ℹ️';
     
-    // 🔧 Remove TODOS os toasts anteriores antes de mostrar o novo.
-    // Antes so' removia os do MESMO tipo, entao "bot iniciado" (success) +
-    // "win" (win) se acumulavam na tela. Agora so' aparece um por vez.
+    // 🔧 Remove TODOS os toasts anteriores IMEDIATAMENTE (sem animacao de saida).
+    // O bug era: a saida usava .toast-hide + setTimeout, mas o toast "escondido"
+    // continuava no DOM e reaparecia quando um novo empurrava o container. Agora
+    // limpamos os timeouts e apagamos na hora - so' existe UM toast por vez.
     var existingToasts = container.querySelectorAll('.toast');
     for (var i = 0; i < existingToasts.length; i++) {
         var existing = existingToasts[i];
         var eid = existing.dataset.toastId;
         if (eid && toastTimeouts[eid]) { clearTimeout(toastTimeouts[eid]); delete toastTimeouts[eid]; }
-        existing.classList.add('toast-hide');
-        setTimeout(function(el) { if(el && el.parentElement) el.remove(); }, 300, existing);
+        existing.remove();  // apaga JA do DOM (nao deixa fantasma)
     }
+    // por seguranca, zera qualquer timeout orfao
+    for (var k in toastTimeouts) { clearTimeout(toastTimeouts[k]); }
+    toastTimeouts = {};
     
     var toast = document.createElement('div');
     toast.className = 'toast toast-' + type;
@@ -675,7 +694,7 @@ function renderEstrategias() {
                 html += '<div class="estrategia-card'+ativa+'" onclick="selecionarEstrategia(\''+key+'\')" id="est_'+key+'" data-key="'+key+'">' +
                     '<div class="lp-overlay"><svg class="lp-ring" viewBox="0 0 54 54"><circle class="bg" cx="27" cy="27" r="24"></circle><circle class="fg" cx="27" cy="27" r="24" stroke-dasharray="150.8" stroke-dashoffset="150.8"></circle><circle class="bg2" cx="27" cy="27" r="16"></circle><circle class="fg2" cx="27" cy="27" r="16" stroke-dasharray="100.5" stroke-dashoffset="100.5"></circle></svg></div>' +
                     '<div class="estrategia-header"><div class="estrategia-nome">'+e.nome+'</div></div>' +
-                    '<div class="estrategia-body"><div class="estrategia-desc">'+e.desc+'</div><div class="estrategia-preco">'+(e.gratis ? '<span class="badge-gratis">GRÁTIS</span>' : '<span class="badge-pago">⚡ '+e.preco_moedas+' VOLTS</span>')+'</div></div></div>';
+                    '<div class="estrategia-body"><div class="estrategia-desc">'+e.desc+'</div><div class="estrategia-preco">'+(e.gratis ? '<span class="badge-gratis">GRÁTIS</span>' : '<span class="badge-pago">⚡ '+e.preco_moedas+' VOLTS</span>')+'</div>' + placarEstrategia(key, e.nome) + '</div></div>';
             }
         }
         grid.innerHTML = html || '<p style="color:#ff4444;text-align:center;padding:20px">⚠️ NENHUMA ESTRATÉGIA ADQUIRIDA! Vá na LOJA e compre uma estratégia.</p>';
@@ -808,6 +827,7 @@ function openTab(tab) {
     if(painel) painel.classList.add('active');
     if(tab == 'relatorio' && emailLogado) { document.getElementById('emailRelatorio').value = emailLogado; verRelatorio(); }
     if(tab == 'loja') mostrarLojaTab('volts');
+    if(tab == 'estrategias') { carregarStatsEstrategias(); }
     if(tab == 'estrategias') { if(botAtivo){ showToast('⚠️ Pare o bot primeiro!', 'warning'); openTab('bot'); return; } renderEstrategias(); }
     if(tab == 'skins') { renderSkinsAba(); }
 }
@@ -837,6 +857,8 @@ function conectarIQ() {
             iniciarChat();
             carregarSkinEffectsDoFirebase();
             carregarRecursos();
+            carregarPares();
+            carregarStatsEstrategias();
             salvarCredenciais();
             showToast('✅ Conectado!', 'success');
             if(d.refresh) { setTimeout(function() { location.reload(); }, 1500); }
@@ -1126,7 +1148,7 @@ window.onload = function() {
             document.getElementById('statusDot').className = 'status-dot active';
             document.getElementById('moedasSaldo').textContent = d.moedas || 0;
             if(d.bot_version) document.getElementById('botVersionDisplay').innerHTML = '⚡ TESLA 369 v' + d.bot_version;
-            intervalo = setInterval(atualizar,2000); atualizar(); iniciarChat(); carregarSkinEffectsDoFirebase(); carregarRecursos();
+            intervalo = setInterval(atualizar,2000); atualizar(); iniciarChat(); carregarSkinEffectsDoFirebase(); carregarRecursos(); carregarPares();
         }
     });
     setInterval(atualizarChat,5000);
@@ -1357,6 +1379,85 @@ function ligarLongPressSkins(gridId){
         c.addEventListener('mouseup', function(){ _lpCancelarSkin(); });
         c.addEventListener('mouseleave', function(){ _lpCancelarSkin(); });
     }
+}
+
+
+// ==== SELECAO DE PARES (abertos + OTC, so' binarios) ====
+function carregarPares(){
+    var sel = document.getElementById('parSelect');
+    if(!sel) return;
+    sel.innerHTML = '<option value="">Carregando...</option>';
+    fetch('/pares').then(function(r){ return r.json(); }).then(function(d){
+        if(!d.ok){ sel.innerHTML = '<option value="">'+(d.erro||'Erro')+'</option>'; return; }
+        var html = '';
+        if(d.otc && d.otc.length){
+            html += '<optgroup label="\ud83d\udd36 OTC (fim de semana)">';
+            for(var i=0;i<d.otc.length;i++){
+                var sel1 = d.otc[i]===d.atual ? ' selected' : '';
+                html += '<option value="'+d.otc[i]+'"'+sel1+'>'+d.otc[i]+'</option>';
+            }
+            html += '</optgroup>';
+        }
+        if(d.normais && d.normais.length){
+            html += '<optgroup label="\ud83d\udfe2 Abertos (mercado normal)">';
+            for(var j=0;j<d.normais.length;j++){
+                var sel2 = d.normais[j]===d.atual ? ' selected' : '';
+                html += '<option value="'+d.normais[j]+'"'+sel2+'>'+d.normais[j]+'</option>';
+            }
+            html += '</optgroup>';
+        }
+        sel.innerHTML = html || '<option value="">Nenhum par aberto</option>';
+    }).catch(function(){ sel.innerHTML = '<option value="">Erro ao listar</option>'; });
+}
+function setParEscolhido(){
+    var par = document.getElementById('parSelect').value;
+    if(!par) return;
+    fetch('/set_par',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({par:par})})
+        .then(function(r){ return r.json(); }).then(function(d){
+            if(d.ok) showToast('Par: '+par, 'success');
+        });
+}
+
+
+// ==== PLACAR DAS ESTRATEGIAS (comunidade: soma de TODOS os bots) ====
+// Em vez de "ouvir dizer no chat que tal estrategia ta pagando", o proprio bot
+// mostra o numero. IMPORTANTE: mostramos o TAMANHO DA AMOSTRA junto, porque
+// 100% em 2 operacoes e' sorte, nao desempenho.
+var STATS_EST = {};
+var BREAK_EVEN = 54.1;   // com payout 85%, abaixo disso a estrategia perde dinheiro
+
+function carregarStatsEstrategias(){
+    fetch('/stats_estrategias').then(function(r){ return r.json(); }).then(function(d){
+        if(d && d.ok){
+            STATS_EST = d.estrategias || {};
+            if(document.getElementById('estrategiaGrid')) renderEstrategias();
+        }
+    }).catch(function(){});
+}
+
+function placarEstrategia(key, nome){
+    var s = STATS_EST[String(key).toUpperCase()] || STATS_EST[String(nome).toUpperCase()];
+    if(!s || !s.total){
+        return '<div class="est-placar"><span class="amostra">sem opera\u00e7\u00f5es registradas ainda</span></div>';
+    }
+    function taxaCls(t, n){
+        if(n < 20) return 'wl';               // amostra pequena: nao pinta (evita euforia)
+        return t >= BREAK_EVEN ? 'taxa-boa' : 'taxa-ruim';
+    }
+    var h = '<div class="est-placar">';
+    h += '<div class="linha"><span class="rot">HOJE</span><span class="wl">' +
+         '<span class="w">'+s.wins_hoje+'W</span> x <span class="l">'+s.losses_hoje+'L</span>' +
+         (s.total_hoje ? ' &nbsp;<span class="'+taxaCls(s.taxa_hoje, s.total_hoje)+'">'+s.taxa_hoje+'%</span>' : '') +
+         '</span></div>';
+    h += '<div class="linha"><span class="rot">TOTAL</span><span class="wl">' +
+         '<span class="w">'+s.wins+'W</span> x <span class="l">'+s.losses+'L</span>' +
+         ' &nbsp;<span class="'+taxaCls(s.taxa, s.total)+'">'+s.taxa+'%</span>' +
+         '</span></div>';
+    h += '<div class="amostra">' + s.total + ' opera\u00e7\u00f5es da comunidade' +
+         (s.total < 20 ? ' \u2014 amostra pequena' : '') +
+         ' \u00b7 equil\u00edbrio ' + BREAK_EVEN + '%</div>';
+    h += '</div>';
+    return h;
 }
 
 </script>
