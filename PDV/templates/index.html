@@ -872,6 +872,14 @@
                     </div>
                     <div class="input-group"><label>Estoque</label><input type="number" id="prodEstoque" value="99999"></div>
                     <div class="input-group"><label>Categoria</label><input type="text" id="prodCategoria" placeholder="Geral"></div>
+                    <details class="config-hint">
+                        <summary>Dados fiscais (NFC-e)</summary>
+                        <div class="input-group" style="margin-top:8px;"><label>NCM <span style="font-size:11px;color:var(--text-muted);">(obrigatório pra emitir NFC-e)</span></label><input type="text" id="prodNcm" placeholder="Ex: 22030000" maxlength="8"></div>
+                        <div class="input-group"><label>CFOP</label><input type="text" id="prodCfop" placeholder="5102" maxlength="4"></div>
+                        <div class="input-group"><label>CSOSN</label><input type="text" id="prodCsosn" placeholder="102" maxlength="3"></div>
+                        <div class="input-group"><label>Unidade</label><input type="text" id="prodUnidade" placeholder="UN" maxlength="6"></div>
+                        <p>Não sabe o NCM do seu produto? Consulte em <a href="https://www.gov.br/receitafederal" target="_blank" rel="noopener" style="color:var(--green);">gov.br/receitafederal</a> ou pergunte pro seu contador.</p>
+                    </details>
                     <button class="btn-salvar" onclick="salvarProduto()"><i class="fas fa-save"></i> Salvar Produto</button>
                     <button class="btn-limpar" onclick="limparCamposProduto()">Limpar Campos</button>
                 </div>
@@ -1012,6 +1020,15 @@
                                 <option value="producao">Produção (emite de verdade)</option>
                             </select>
                         </div>
+                        <div class="input-group"><label>Inscrição Estadual</label><input type="text" id="fiscalIe" placeholder="Só números"></div>
+                        <div class="input-group">
+                            <label>Regime tributário</label>
+                            <select id="fiscalRegime" style="width:100%;padding:8px 12px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-primary);color:#fff;">
+                                <option value="1">Simples Nacional</option>
+                                <option value="2">Simples Nacional - excesso sublimite</option>
+                                <option value="3">Regime Normal (Lucro Presumido/Real)</option>
+                            </select>
+                        </div>
                         <div class="input-group"><label>CSC ID</label><input type="text" id="fiscalCscId" placeholder="Ex: 1"></div>
                         <div class="input-group"><label>Token CSC</label><input type="password" id="fiscalCscToken" placeholder="Deixe em branco pra manter o atual"></div>
                         <div style="display:flex;gap:10px;">
@@ -1019,6 +1036,7 @@
                             <div class="input-group" style="flex:1;"><label>Próximo número</label><input type="text" id="fiscalProximoNumero" placeholder="1"></div>
                         </div>
                         <button class="btn btn-primary" onclick="salvarConfigFiscal()"><i class="fas fa-save"></i> Salvar dados fiscais</button>
+                        <button class="btn btn-primary" style="background:rgba(59,130,246,.15);color:var(--blue);margin-top:8px;" onclick="testarConexaoSefaz()"><i class="fas fa-plug"></i> Testar conexão com a SEFAZ</button>
                     </div>
                     <details class="config-hint">
                         <summary>O que é CSC e onde consigo?</summary>
@@ -1132,6 +1150,10 @@
         <div class="cupom-acoes">
             <button class="cupom-opt active" id="cupomOptImprimir" onclick="cupomEscolher('imprimir');imprimirCupom()"><i class="fas fa-print"></i> Imprimir</button>
             <button class="cupom-opt" id="cupomOptNaoImprimir" onclick="cupomEscolher('nao');fecharCupomSemImprimir()"><i class="fas fa-times"></i> Sem Impressão</button>
+        </div>
+        <div id="nfceAreaCupom" style="padding:0 16px 16px;">
+            <button class="cupom-opt" style="width:100%;background:rgba(59,130,246,.12);color:var(--blue);border-color:var(--blue);" onclick="emitirNfceDaVenda()"><i class="fas fa-file-invoice"></i> Emitir NFC-e desta venda</button>
+            <div id="nfceStatusCupom" style="font-size:11.5px;color:var(--text-muted);margin-top:6px;text-align:center;"></div>
         </div>
     </div>
 </div>
@@ -1865,6 +1887,10 @@ function selecionarProdutoParaEdicao(codigo){
     document.getElementById('prodCusto').value=(p.custo||0).toFixed(2);
     document.getElementById('prodEstoque').value=p.estoque;
     document.getElementById('prodCategoria').value=p.categoria||'Geral';
+    document.getElementById('prodNcm').value=p.ncm||'';
+    document.getElementById('prodCfop').value=p.cfop||'5102';
+    document.getElementById('prodCsosn').value=p.csosn||'102';
+    document.getElementById('prodUnidade').value=p.unidade||'UN';
     calcularMargem();
     document.getElementById('prodCodigo').focus();
     state.produtoSelecionado=p.codigo;
@@ -1879,6 +1905,10 @@ function limparCamposProduto(){
     document.getElementById('prodLucro').value='R$ 0,00';
     document.getElementById('prodEstoque').value='99999';
     document.getElementById('prodCategoria').value='Geral';
+    document.getElementById('prodNcm').value='';
+    document.getElementById('prodCfop').value='5102';
+    document.getElementById('prodCsosn').value='102';
+    document.getElementById('prodUnidade').value='UN';
     state.produtoSelecionado=null;
     document.getElementById('prodCodigo').focus();
 }
@@ -2137,8 +2167,12 @@ async function salvarProduto(){
         const custo=temPermissao('margem') ? (parseFloat((document.getElementById('prodCusto').value||'').replace(',','.'))||0) : 0;
         const estoque=parseInt(document.getElementById('prodEstoque').value)||0;
         const categoria=(document.getElementById('prodCategoria').value||'').trim()||'Geral';
+        const ncm=(document.getElementById('prodNcm').value||'').trim();
+        const cfop=(document.getElementById('prodCfop').value||'').trim()||'5102';
+        const csosn=(document.getElementById('prodCsosn').value||'').trim()||'102';
+        const unidade=(document.getElementById('prodUnidade').value||'').trim()||'UN';
         if(!codigo||!nome){showToast('❌ Código e nome são obrigatórios.','error');return;}
-        const res=await fetch('/api/produtos',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({codigo,nome,preco,custo,estoque,categoria})});
+        const res=await fetch('/api/produtos',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({codigo,nome,preco,custo,estoque,categoria,ncm,cfop,csosn,unidade})});
         const data=await res.json();
         if(data.success){showToast('✅ Produto salvo!','success');limparCamposProduto();carregarProdutos();}
         else{showToast('❌ '+(data.error||'Erro ao salvar'),'error');}
@@ -3626,6 +3660,8 @@ async function carregarConfigFiscal(){
         }
         document.getElementById('fiscalUf').value=data.uf||'';
         document.getElementById('fiscalAmbiente').value=data.ambiente||'homologacao';
+        document.getElementById('fiscalIe').value=data.inscricao_estadual||'';
+        document.getElementById('fiscalRegime').value=data.regime_tributario||'1';
         document.getElementById('fiscalCscId').value=data.csc_id||'';
         document.getElementById('fiscalCscToken').placeholder=data.tem_csc_token?'•••••••• (já salvo — deixe em branco pra manter)':'Token CSC';
         document.getElementById('fiscalSerie').value=data.serie||'1';
@@ -3653,10 +3689,46 @@ async function enviarCertificadoFiscal(){
     }catch(e){showToast('❌ Erro ao enviar certificado','error');}
 }
 
+async function testarConexaoSefaz(){
+    const btn=event?event.target.closest('button'):null;
+    if(btn){btn.disabled=true;btn.textContent='🔄 Testando...';}
+    try{
+        const res=await fetch('/api/fiscal/status_servico',{credentials:'include'});
+        const data=await res.json();
+        if(data.success) showToast('✅ SEFAZ respondeu! Conexão e certificado OK.','success');
+        else showToast('❌ '+(data.error||('HTTP '+data.status_code)),'error');
+    }catch(e){showToast('❌ Erro ao testar conexão','error');}
+    finally{if(btn){btn.disabled=false;btn.innerHTML='<i class="fas fa-plug"></i> Testar conexão com a SEFAZ';}}
+}
+
+async function emitirNfceDaVenda(){
+    if(!ultimaVendaId){showToast('❌ Nenhuma venda selecionada','error');return;}
+    const statusEl=document.getElementById('nfceStatusCupom');
+    statusEl.textContent='🔄 Montando, assinando e enviando pra SEFAZ...';
+    try{
+        const res=await fetch(`/api/fiscal/emitir/${ultimaVendaId}`,{method:'POST',credentials:'include'});
+        const data=await res.json();
+        if(data.success){
+            statusEl.innerHTML=`✅ NFC-e autorizada!<br>Protocolo: ${data.protocolo}<br>Chave: ${data.chave}`;
+            statusEl.style.color='var(--green)';
+            showToast('✅ NFC-e autorizada pela SEFAZ!','success');
+        }else{
+            statusEl.textContent='❌ '+(data.error||data.situacao||'Não foi possível emitir');
+            statusEl.style.color='var(--red)';
+            showToast('❌ '+(data.error||'Falha ao emitir NFC-e'),'error');
+        }
+    }catch(e){
+        statusEl.textContent='❌ Erro de conexão ao emitir';
+        showToast('❌ Erro ao emitir NFC-e','error');
+    }
+}
+
 async function salvarConfigFiscal(){
     const body={
         uf:document.getElementById('fiscalUf').value,
         ambiente:document.getElementById('fiscalAmbiente').value,
+        inscricao_estadual:document.getElementById('fiscalIe').value,
+        regime_tributario:document.getElementById('fiscalRegime').value,
         csc_id:document.getElementById('fiscalCscId').value,
         serie:document.getElementById('fiscalSerie').value,
         proximo_numero:document.getElementById('fiscalProximoNumero').value,
