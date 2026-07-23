@@ -1246,8 +1246,14 @@ def status():
     banca_atual = s.ultima_banca_conhecida
     if s.API:
         try:
-            banca_atual = s.API.get_balance()
-            s.ultima_banca_conhecida = banca_atual
+            # ⚠️ /status e' consultado a cada 2s. get_balance() pode TRAVAR
+            # (get_balances tem `while ... == None: pass` sem timeout) e, se
+            # travar, congela a interface inteira. Timeout curto: se nao
+            # responder, mantemos o ultimo saldo conhecido e seguimos.
+            _b = chamar_api(lambda: s.API.get_balance(), timeout=6, padrao=None)
+            if _b is not None:
+                banca_atual = _b
+                s.ultima_banca_conhecida = _b
         except Exception:
             s.conectado = False
 
@@ -1433,6 +1439,32 @@ def comprar_estrategia():
     return jsonify({'ok': True, 'moedas': u['moedas'], 'msg': 'Sucesso!'})
 
 
+def chamar_api(fn, timeout=15, padrao=None, nome=""):
+    """Executa uma chamada da lib da IQ Option COM TIMEOUT.
+
+    A biblioteca esta cheia de loops do tipo `while self.api.X == None: pass`
+    SEM timeout (connect, get_profile_ansyc, get_balances, get_instruments...).
+    Se o dado nao chega pela websocket, a chamada trava PARA SEMPRE e leva a
+    requisicao inteira junto - foi isso que travava o app em "Conectando...".
+
+    Aqui rodamos a chamada numa thread e desistimos no timeout, devolvendo
+    'padrao'. A thread orfa morre com o processo (daemon) e nao segura ninguem.
+    """
+    caixa = {}
+    def _run():
+        try:
+            caixa['ok'] = fn()
+        except Exception as e:
+            caixa['erro'] = e
+    t = threading.Thread(target=_run, daemon=True)
+    t.start()
+    t.join(timeout)
+    if t.is_alive():
+        return padrao          # travou: segue a vida com o valor padrao
+    if 'erro' in caixa:
+        raise caixa['erro']
+    return caixa.get('ok', padrao)
+
 def _conectar_com_timeout(api, timeout=25):
     """Roda api.connect() numa thread com TIMEOUT.
 
@@ -1508,7 +1540,18 @@ def conectar():
             except Exception:
                 pass
         if not status_conn: return jsonify({'ok': False, 'erro': str(reason)[:100]})
-        s.API.change_balance(tipo)
+
+        # ⚠️ change_balance() chama get_profile_ansyc(), que tem
+        # `while self.api.profile.msg == None: pass` SEM timeout. Se o perfil nao
+        # chegar pela websocket, o login trava aqui pra sempre (era o "fica so'
+        # Conectando..."). Com timeout: se falhar, avisamos e o aluno tenta de novo.
+        marcador = object()
+        r_cb = chamar_api(lambda: s.API.change_balance(tipo), timeout=15, padrao=marcador)
+        if r_cb is marcador:
+            try: s.API.close()
+            except Exception: pass
+            return jsonify({'ok': False,
+                            'erro': 'A corretora nao confirmou a conta (PRACTICE/REAL) a tempo. Toque em CONECTAR de novo.'})
         s.conectado = True
 
         usuario = carregar_usuario(email) or criar_usuario(email)
@@ -1521,7 +1564,13 @@ def conectar():
         s.estrategia_atual = usuario.get('estrategia_atual', 'v_sensitivo')
         s.volts_cache = usuario.get('moedas', 0)
         s.add_log('🔌 Conectado!', 'info')
-        s.add_log(f'✅ ${s.API.get_balance():.2f} | ⚡ {usuario.get("moedas", 0)} VOLTS | Conta: {tipo}', 'win')
+        # get_balance() -> get_balances() tem outro `while ... == None: pass` sem
+        # timeout. Se travar aqui, o login ja' estava OK - nao vale perder a sessao.
+        _saldo = chamar_api(lambda: s.API.get_balance(), timeout=10, padrao=None)
+        if _saldo is not None:
+            s.ultima_banca_conhecida = _saldo
+        _txt_saldo = f'${_saldo:.2f}' if _saldo is not None else '(saldo indisponivel)'
+        s.add_log(f'✅ {_txt_saldo} | ⚡ {usuario.get("moedas", 0)} VOLTS | Conta: {tipo}', 'win')
         return jsonify({'ok': True, 'moedas': usuario.get('moedas', 0), 'refresh': True})
     except Exception as e:
         return jsonify({'ok': False, 'erro': str(e)[:100]})
