@@ -346,6 +346,18 @@
         .config-hint summary::before{content:"▸";transition:transform .15s}
         .config-hint[open] summary::before{transform:rotate(90deg)}
         .config-hint p{margin-top:6px;padding-left:15px}
+
+        .chips-motivo{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+        .chip-motivo{background:var(--bg-primary);border:1px solid var(--border-color);color:var(--text-secondary);
+            padding:5px 10px;border-radius:100px;font-size:11.5px;cursor:pointer;transition:var(--transition);white-space:nowrap}
+        .chip-motivo:hover{border-color:var(--orange);color:#fff;background:rgba(249,115,22,.1)}
+        .movimento-botoes{display:flex;gap:10px;margin-top:14px}
+        .btn-movimento{flex:1;padding:12px;border:0;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;
+            transition:var(--transition);display:flex;align-items:center;justify-content:center;gap:8px}
+        .btn-movimento.sangria{background:rgba(239,68,68,.12);color:var(--red);border:1.5px solid rgba(239,68,68,.4)}
+        .btn-movimento.sangria:hover{background:var(--red);color:#fff}
+        .btn-movimento.suprimento{background:rgba(34,197,94,.12);color:var(--green);border:1.5px solid rgba(34,197,94,.4)}
+        .btn-movimento.suprimento:hover{background:var(--green);color:#fff}
         .btn{padding:8px 16px;border:0;border-radius:8px;cursor:pointer;font-weight:500;font-size:13px;transition:var(--transition)}.btn.btn-primary{background:var(--green);color:#fff}.btn.btn-primary:hover{background:var(--green-dark)}
         .usuarios-lista{display:flex;flex-direction:column;gap:6px}
         .usuario-item{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg-primary);border-radius:8px;font-size:13px}
@@ -562,6 +574,16 @@
             body{padding:4px}
             .auth-box{padding:24px 16px}
             .payment-modal .modal{max-width:100%;margin:8px;padding:16px}
+            /* Dashboard: 3 mini-cards espremidas numa tela estreita ficavam
+               ilegíveis - empilha em 1 coluna. Os filtros de venda (busca +
+               2 selects + intervalo de data) também ficam largura cheia em
+               vez de tentar caber lado a lado. */
+            .dash-mini-cards{grid-template-columns:1fr;gap:10px}
+            .vendas-filtros input[type=text],.vendas-filtros select{flex:1 1 100%;min-width:0}
+            .vendas-filtros-data{width:100%}
+            .vendas-filtros-data input[type=date]{flex:1;min-width:0}
+            .stat-card{padding:12px}
+            .stat-card .value{font-size:18px}
         }
         @media(max-width:480px){.stat-cards{grid-template-columns:repeat(2,1fr)}}
 
@@ -690,7 +712,7 @@
             <div class="card" id="clientesConteudo">
                 <h3><i class="fas fa-users" style="color:var(--blue);"></i> Clientes</h3>
                 <div class="clientes-actions">
-                    <input type="text" id="buscaCliente" placeholder="Buscar cliente..." oninput="carregarClientes()">
+                    <input type="text" id="buscaCliente" placeholder="Buscar cliente..." oninput="agendarCarregarClientes()">
                     <button onclick="abrirModalCliente()"><i class="fas fa-plus"></i> Novo</button>
                 </div>
                 <table class="clientes-table">
@@ -716,15 +738,26 @@
                     <strong>Esperado em caixa (dinheiro)</strong><strong id="valorEsperadoCaixa" style="color:var(--green);">R$ 0,00</strong>
                 </div>
             </div>
-            <div class="card" id="movimentoCaixaCard" style="display:none">
+            <div class="card movimento-caixa-card" id="movimentoCaixaCard" style="display:none">
                 <h3><i class="fas fa-hand-holding-usd" style="color:var(--orange);"></i> Sangria / Suprimento</h3>
                 <div class="input-group"><label>Valor (R$)</label><input type="number" id="movimentoValor" placeholder="0,00" min="0" step="0.01"></div>
-                <div class="input-group"><label>Motivo <span style="font-size:11px;color:var(--text-muted);">(opcional)</span></label><input type="text" id="movimentoMotivo" placeholder="Ex: pagamento fornecedor, troco..."></div>
-                <div style="display:flex;gap:8px;">
-                    <button class="btn-caixa fechar" style="flex:1;" onclick="registrarMovimentoCaixa('sangria')">➖ Sangria</button>
-                    <button class="btn-caixa" style="flex:1;" onclick="registrarMovimentoCaixa('suprimento')">➕ Suprimento</button>
+                <div class="input-group">
+                    <label>Motivo <span style="font-size:11px;color:var(--text-muted);">(opcional)</span></label>
+                    <input type="text" id="movimentoMotivo" placeholder="Escreva ou escolha um motivo rápido abaixo">
+                    <div class="chips-motivo">
+                        <button type="button" class="chip-motivo" onclick="preencherMotivo('Pagar fornecedor')">📦 Pagar fornecedor</button>
+                        <button type="button" class="chip-motivo" onclick="preencherMotivo('Retirada do dono')">👤 Retirada do dono</button>
+                        <button type="button" class="chip-motivo" onclick="preencherMotivo('Troco')">💵 Troco</button>
+                        <button type="button" class="chip-motivo" onclick="preencherMotivo('Depósito no banco')">🏦 Depósito no banco</button>
+                        <button type="button" class="chip-motivo" onclick="preencherMotivo('Reforço de caixa')">➕ Reforço de caixa</button>
+                        <button type="button" class="chip-motivo" onclick="preencherMotivo('Pagamento de despesa')">🧾 Pagamento de despesa</button>
+                    </div>
                 </div>
-                <div style="margin-top:12px;" id="listaMovimentosCaixa"></div>
+                <div class="movimento-botoes">
+                    <button class="btn-movimento sangria" onclick="registrarMovimentoCaixa('sangria')"><i class="fas fa-arrow-down"></i> Sangria</button>
+                    <button class="btn-movimento suprimento" onclick="registrarMovimentoCaixa('suprimento')"><i class="fas fa-arrow-up"></i> Suprimento</button>
+                </div>
+                <div style="margin-top:14px;" id="listaMovimentosCaixa"></div>
             </div>
         </div>
 
@@ -885,7 +918,7 @@
                 </div>
                 <div class="card">
                     <h3><i class="fas fa-list"></i> Lista de Produtos</h3>
-                    <div class="input-group"><label>Buscar</label><input type="text" id="buscaEstoque" placeholder="Nome ou código..." oninput="carregarProdutos()" onkeydown="navegarEstoque(event)"></div>
+                    <div class="input-group"><label>Buscar</label><input type="text" id="buscaEstoque" placeholder="Nome ou código..." oninput="agendarCarregarProdutos()" onkeydown="navegarEstoque(event)"></div>
                     <div class="estoque-wrapper">
                         <table class="estoque-table">
                             <thead><tr><th>Código</th><th>Nome</th><th style="text-align:right;">Preço</th><th style="text-align:right;">Custo</th><th style="text-align:center;">Margem</th><th style="text-align:center;">Est.</th></tr></thead>
@@ -973,13 +1006,6 @@
                         <p style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;"><strong>Servidor:</strong> <span id="servidorIdConfig" style="font-family:monospace;">---</span></p>
                     </div>
                     <div style="margin-top:12px;"><button onclick="sincronizarAgora(true)" style="width:100%;padding:8px;background:rgba(59,130,246,.15);color:var(--blue);border:1px solid var(--blue);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">🔄 Sincronizar Agora</button></div>
-                    <div style="margin-top:14px;border-top:1px solid var(--border-color);padding-top:10px;">
-                        <div id="devStatus" style="font-size:11px;color:var(--text-muted);cursor:pointer;" onclick="toggleAreaDev()">🛠️ modo desenvolvedor</div>
-                        <div id="devArea" style="display:none;margin-top:8px;">
-                            <input type="password" id="devSenha" placeholder="senha do modo dev" style="width:100%;font-size:12px;padding:6px;margin-bottom:6px;" onkeydown="if(event.key==='Enter')ativarModoDev()">
-                            <button onclick="ativarModoDev()" style="width:100%;padding:6px;background:rgba(168,85,247,.15);color:var(--purple);border:1px solid var(--purple);border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">Ativar / Desativar</button>
-                        </div>
-                    </div>
                 </div>
                 <div class="card">
                     <h3><i class="fas fa-print" style="color:var(--green);"></i> Impressora</h3>
@@ -997,17 +1023,24 @@
                 <div class="card">
                     <h3><i class="fas fa-file-invoice" style="color:var(--blue);"></i> Nota Fiscal (NFC-e)</h3>
                     <div id="fiscalStatus" style="font-size:12px;padding:8px 10px;border-radius:8px;background:var(--bg-primary);margin-bottom:12px;color:var(--text-muted);">Carregando...</div>
-                    <div class="input-group">
-                        <label>Certificado digital (.pfx ou .p12)</label>
-                        <input type="file" id="fiscalCertArquivo" accept=".pfx,.p12">
-                    </div>
-                    <div class="input-group">
-                        <label>Senha do certificado</label>
-                        <input type="password" id="fiscalCertSenha" placeholder="••••••••">
-                    </div>
-                    <button class="btn btn-primary" onclick="enviarCertificadoFiscal()"><i class="fas fa-upload"></i> Enviar certificado</button>
-                    <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border-color);">
+                    <button class="btn btn-primary" style="background:rgba(59,130,246,.15);color:var(--blue);width:100%;" onclick="testarConexaoSefaz()"><i class="fas fa-plug"></i> Testar conexão com a SEFAZ</button>
+
+                    <details class="config-hint" style="margin-top:12px;">
+                        <summary>📄 Enviar / trocar certificado digital</summary>
+                        <div class="input-group" style="margin-top:8px;">
+                            <label>Certificado digital (.pfx ou .p12)</label>
+                            <input type="file" id="fiscalCertArquivo" accept=".pfx,.p12">
+                        </div>
                         <div class="input-group">
+                            <label>Senha do certificado</label>
+                            <input type="password" id="fiscalCertSenha" placeholder="••••••••">
+                        </div>
+                        <button class="btn btn-primary" onclick="enviarCertificadoFiscal()"><i class="fas fa-upload"></i> Enviar certificado</button>
+                    </details>
+
+                    <details class="config-hint">
+                        <summary>⚙️ UF, ambiente, CSC e numeração</summary>
+                        <div class="input-group" style="margin-top:8px;">
                             <label>UF (estado da loja)</label>
                             <select id="fiscalUf" style="width:100%;padding:8px 12px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-primary);color:#fff;">
                                 <option value="">Selecione...</option>
@@ -1036,8 +1069,8 @@
                             <div class="input-group" style="flex:1;"><label>Próximo número</label><input type="text" id="fiscalProximoNumero" placeholder="1"></div>
                         </div>
                         <button class="btn btn-primary" onclick="salvarConfigFiscal()"><i class="fas fa-save"></i> Salvar dados fiscais</button>
-                        <button class="btn btn-primary" style="background:rgba(59,130,246,.15);color:var(--blue);margin-top:8px;" onclick="testarConexaoSefaz()"><i class="fas fa-plug"></i> Testar conexão com a SEFAZ</button>
-                    </div>
+                    </details>
+
                     <details class="config-hint">
                         <summary>O que é CSC e onde consigo?</summary>
                         <p>O CSC (Código de Segurança do Contribuinte) é gerado no portal da SEFAZ do seu estado, na área da NFC-e. Ele é obrigatório pra emitir — sem ele o QR Code do cupom fiscal não pode ser gerado.</p>
@@ -1153,7 +1186,13 @@
         </div>
         <div id="nfceAreaCupom" style="padding:0 16px 16px;">
             <button class="cupom-opt" style="width:100%;background:rgba(59,130,246,.12);color:var(--blue);border-color:var(--blue);" onclick="emitirNfceDaVenda()"><i class="fas fa-file-invoice"></i> Emitir NFC-e desta venda</button>
+            <button class="cupom-opt" style="width:100%;background:rgba(168,85,247,.12);color:var(--purple);border-color:var(--purple);margin-top:8px;" onclick="verPreviaNfceDemo()"><i class="fas fa-eye"></i> Ver prévia do QR Code (demonstração)</button>
             <div id="nfceStatusCupom" style="font-size:11.5px;color:var(--text-muted);margin-top:6px;text-align:center;"></div>
+            <div id="nfceQrPreview" style="display:none;margin-top:10px;text-align:center;background:#fff;border-radius:10px;padding:14px;">
+                <div style="font-size:11px;font-weight:700;color:#dc2626;margin-bottom:8px;">⚠️ DEMONSTRAÇÃO — NÃO É NOTA FISCAL VÁLIDA</div>
+                <img id="nfceQrImg" style="width:160px;height:160px;" alt="QR Code de demonstração">
+                <div id="nfceChaveDemo" style="font-family:monospace;font-size:10px;color:#333;margin-top:8px;word-break:break-all;"></div>
+            </div>
         </div>
     </div>
 </div>
@@ -1676,7 +1715,6 @@ async function fazerLogin(){
             setTimeout(verificarStatusPlano, 500);
             carregarBgVendasSalvo();
             carregarEscalaSalva();
-            checarModoDev();
             showToast('👋 Bem-vindo, '+data.nome+'!','success');
         }else{
             msg.className='msg error';msg.textContent=data.error||'Erro ao fazer login.';msg.style.display='block';
@@ -1786,6 +1824,37 @@ function trocarTab(nome){
 }
 
 // ============================================================
+// SWIPE ENTRE ABAS (celular) — circular: da última volta pra primeira
+// ============================================================
+(function(){
+    const ORDEM_ABAS=['vendas','clientes','caixa','dashboard','estoque','config','planos'];
+    let touchStartX=0, touchStartY=0, touchStartTime=0;
+    const app=document.getElementById('app');
+    if(!app) return;
+    app.addEventListener('touchstart', e=>{
+        if(window.innerWidth>768 || !e.touches[0]) return;
+        touchStartX=e.touches[0].clientX;
+        touchStartY=e.touches[0].clientY;
+        touchStartTime=Date.now();
+    }, {passive:true});
+    app.addEventListener('touchend', e=>{
+        if(window.innerWidth>768 || !e.changedTouches[0]) return;
+        const dx=e.changedTouches[0].clientX-touchStartX;
+        const dy=e.changedTouches[0].clientY-touchStartY;
+        const dt=Date.now()-touchStartTime;
+        // só conta como troca de aba se for um gesto rápido, majoritariamente
+        // horizontal e com distância mínima - senão atrapalha rolagem normal
+        if(dt>600 || Math.abs(dx)<60 || Math.abs(dx)<Math.abs(dy)*1.5) return;
+        const abaAtualEl=document.querySelector('.nav button.active');
+        if(!abaAtualEl) return;
+        let idx=ORDEM_ABAS.indexOf(abaAtualEl.dataset.tab);
+        if(idx===-1) return;
+        idx = dx<0 ? (idx+1)%ORDEM_ABAS.length : (idx-1+ORDEM_ABAS.length)%ORDEM_ABAS.length;
+        trocarTab(ORDEM_ABAS[idx]);
+    }, {passive:true});
+})();
+
+// ============================================================
 // PRODUTOS
 // ============================================================
 async function carregarKitsParaVenda(){
@@ -1836,6 +1905,12 @@ function navegarEstoque(e){
     }
     linhas.forEach((l,i)=>l.classList.toggle('linha-ativa', i===estoqueNavIndex));
     if(linhas[estoqueNavIndex]) linhas[estoqueNavIndex].scrollIntoView({block:'nearest'});
+}
+
+let timeoutBuscaEstoque = null;
+function agendarCarregarProdutos(){
+    clearTimeout(timeoutBuscaEstoque);
+    timeoutBuscaEstoque = setTimeout(() => carregarProdutos(), 300);
 }
 
 async function carregarProdutos(){
@@ -2241,6 +2316,12 @@ async function buscarProdutoPorCodigo(){
 // ============================================================
 // CLIENTES
 // ============================================================
+let timeoutBuscaCliente = null;
+function agendarCarregarClientes(){
+    clearTimeout(timeoutBuscaCliente);
+    timeoutBuscaCliente = setTimeout(() => carregarClientes(), 300);
+}
+
 async function carregarClientes(){
     if (!temPermissao('clientes')) return;
     try{
@@ -3074,6 +3155,10 @@ async function carregarResumoCaixa(){
     }catch(e){console.error(e);}
 }
 
+function preencherMotivo(texto){
+    document.getElementById('movimentoMotivo').value=texto;
+}
+
 async function registrarMovimentoCaixa(tipo){
     const valor=parseFloat(document.getElementById('movimentoValor').value);
     if(!valor||valor<=0){showToast('❌ Informe um valor válido','error');return;}
@@ -3723,6 +3808,28 @@ async function emitirNfceDaVenda(){
     }
 }
 
+async function verPreviaNfceDemo(){
+    if(!ultimaVendaId){showToast('❌ Nenhuma venda selecionada','error');return;}
+    const statusEl=document.getElementById('nfceStatusCupom');
+    const preview=document.getElementById('nfceQrPreview');
+    statusEl.textContent='🔄 Gerando prévia...';
+    preview.style.display='none';
+    try{
+        const res=await fetch(`/api/fiscal/preview_demo/${ultimaVendaId}`,{credentials:'include'});
+        const data=await res.json();
+        if(data.success){
+            statusEl.textContent='';
+            document.getElementById('nfceChaveDemo').textContent=data.chave.match(/.{1,4}/g).join(' ');
+            if(data.qrcode_url){
+                document.getElementById('nfceQrImg').src='https://api.qrserver.com/v1/create-qr-code/?size=160x160&data='+encodeURIComponent(data.qrcode_url);
+            }
+            preview.style.display='block';
+        }else{
+            statusEl.textContent='❌ '+(data.error||'Erro ao gerar prévia');
+        }
+    }catch(e){statusEl.textContent='❌ Erro ao gerar prévia';}
+}
+
 async function salvarConfigFiscal(){
     const body={
         uf:document.getElementById('fiscalUf').value,
@@ -3869,42 +3976,6 @@ async function sincronizarAgora(show){
 // ============================================================
 // MODO DESENVOLVEDOR
 // ============================================================
-function toggleAreaDev(){
-    const a=document.getElementById('devArea');
-    if(a) a.style.display = a.style.display==='none' ? 'block' : 'none';
-}
-async function ativarModoDev(){
-    const senha=document.getElementById('devSenha').value;
-    if(!senha){showToast('Digite a senha','warning');return;}
-    try{
-        const res=await fetch('/api/dev/toggle',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({senha})});
-        const data=await res.json();
-        if(data.success){
-            document.getElementById('devSenha').value='';
-            if(data.ativo){
-                showToast('🛠️ Modo desenvolvedor ATIVADO! Recarregue (Ctrl+F5) e tudo estará liberado.','success');
-                document.getElementById('devStatus').innerHTML='🛠️ modo desenvolvedor: <span style="color:var(--green);font-weight:700;">ATIVO</span>';
-            }else{
-                showToast('Modo desenvolvedor desativado.','info');
-                document.getElementById('devStatus').innerHTML='🛠️ modo desenvolvedor';
-            }
-            verificarStatusPlano();carregarProdutos();
-        }else{
-            showToast('❌ '+(data.error||'Erro'),'error');
-        }
-    }catch(e){showToast('❌ Erro ao ativar modo dev','error');}
-}
-async function checarModoDev(){
-    try{
-        const res=await fetch('/api/dev/status',{credentials:'include'});
-        const data=await res.json();
-        if(data.success && data.ativo){
-            const s=document.getElementById('devStatus');
-            if(s) s.innerHTML='🛠️ modo desenvolvedor: <span style="color:var(--green);font-weight:700;">ATIVO</span>';
-        }
-    }catch(e){}
-}
-
 // ============================================================
 // INICIALIZAÇÃO
 // ============================================================
@@ -3926,7 +3997,6 @@ document.addEventListener('DOMContentLoaded',function(){
                 setTimeout(verificarStatusPlano, 500);
                 carregarBgVendasSalvo();
                 carregarEscalaSalva();
-                checarModoDev();
             }else{
                 document.getElementById('authPage').classList.remove('hidden');
                 document.getElementById('app').classList.remove('active');
