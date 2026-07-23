@@ -495,14 +495,31 @@ def criar_usuario(email):
     salvar_usuario(email, dados)
     return dados
 
-def atualizar_estatisticas_async(s, resultado, valor, lucro_liquido, saldo_depois, estrategia):
+def atualizar_estatisticas_async(s, resultado, valor, lucro_liquido, saldo_depois, estrategia, tipo='entrada'):
     """Atualiza estatisticas (Firebase) em thread separada. E' so historico -
-    NUNCA deve bloquear a decisao de ir pro proximo GALE."""
+    NUNCA deve bloquear a decisao de ir pro proximo GALE.
+
+    tipo='entrada' -> uma entrada isolada (inclui cada gale). E' o detalhe fino
+                      que aparece no historico/relatorio do aluno.
+    tipo='ciclo'   -> o RESULTADO CONSOLIDADO da operacao inteira. Um ciclo
+                      LOSS->LOSS->WIN e' UM ciclo vencedor, nao "2 loss + 1 win".
+                      E' isto que o placar das estrategias conta.
+    """
     email = s.email
     def worker():
         try:
             u = carregar_usuario(email)
             if not u:
+                return
+            # os contadores globais do usuario continuam contando ENTRADAS
+            # (nao mexemos neles pra nao baguncar o relatorio existente)
+            if tipo == 'ciclo':
+                u.setdefault('historico_operacoes', []).append({
+                    'data': str(datetime.now())[:19], 'resultado': resultado,
+                    'valor': valor, 'lucro': lucro_liquido,
+                    'estrategia': str(estrategia).upper(), 'tipo': 'ciclo'
+                })
+                salvar_usuario(email, u)
                 return
             if resultado == 'WIN':
                 u['total_wins'] = u.get('total_wins', 0) + 1
@@ -515,7 +532,7 @@ def atualizar_estatisticas_async(s, resultado, valor, lucro_liquido, saldo_depoi
             u.setdefault('historico_operacoes', []).append({
                 'data': str(datetime.now())[:19], 'resultado': resultado,
                 'valor': valor, 'lucro': lucro_liquido,
-                'estrategia': str(estrategia).upper()
+                'estrategia': str(estrategia).upper(), 'tipo': 'entrada'
             })
             salvar_usuario(email, u)
         except Exception as e:
@@ -982,6 +999,12 @@ def executar_ciclo(s, direcao, timeframe_seg):
             s.add_log("=" * 50, 'info')
             s.add_log(f"{'🌟 LUCRO' if bf > bi else '💀 PERDA'}: ${abs(bf - bi):.2f} | Banca: ${bf:.2f}", 'info')
             s.add_log("=" * 50, 'info')
+            # 📊 registra o CICLO consolidado (e' isso que o placar das estrategias
+            # conta). Um ciclo LOSS->LOSS->WIN conta como UM ciclo vencedor.
+            resultado_ciclo = 'WIN' if (bf - bi) > 0.005 else 'LOSS'
+            atualizar_estatisticas_async(
+                s, resultado_ciclo, round(sum(entradas[:i + 1]), 2),
+                round(bf - bi, 2), bf, s.estrategia_atual, tipo='ciclo')
 
     except Exception as e:
         s.add_log(f"Erro: {e}", 'error')
@@ -1236,7 +1259,8 @@ def status():
         'estrategia': estrategia_atual, 'estrategia_nome': estrategia_nome,
         'estrategias_compradas': estrategias_compradas,
         'estrategias_disponiveis': {k: {'nome': v['nome'], 'desc': v['desc'], 'preco_moedas': v['preco_moedas'], 'gratis': v['gratis']} for k, v in estrategias_info.items()},
-        'analise': s.ultima_analise, 'bot_version': BOT_VERSION
+        'analise': s.ultima_analise, 'bot_version': BOT_VERSION,
+        'par': s.par
     })
 
 # cache dos pares: evita bater na corretora toda hora (e o dado muda pouco)
@@ -1309,14 +1333,46 @@ def listar_pares():
 
 @app.route('/set_par', methods=['POST'])
 def set_par():
-    """Define o par que o bot vai operar."""
+    """Define o par que o bot vai operar - VALIDANDO antes.
+
+    Nem todo ativo que aparece como "aberto" devolve historico de velas por esta
+    API (acoes/indices costumam falhar, pares de forex e OTC costumam funcionar).
+    Antes o aluno so' descobria isso quando o bot ja' estava rodando e a
+    estrategia reclamava "dados insuficientes". Agora testamos na hora da escolha
+    e recusamos o par com uma mensagem clara, mantendo o anterior.
+    """
     s = get_sessao()
     par = (request.json.get('par') or '').strip().upper()
     if not par:
         return jsonify({'ok': False, 'erro': 'Par vazio'})
+    if not s.API or not s.conectado:
+        return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+
+    # testa se o ativo devolve velas (com teto de tempo pra nao travar a tela)
+    teste = {}
+    def _testar():
+        try:
+            teste['velas'] = s.API.get_candles(par, 60, 30, time.time())
+        except Exception as e:
+            teste['erro'] = str(e)
+
+    t = threading.Thread(target=_testar, daemon=True)
+    t.start()
+    t.join(12)
+    if t.is_alive():
+        return jsonify({'ok': False, 'erro': f'{par}: a corretora nao respondeu a tempo.'})
+    if 'erro' in teste:
+        return jsonify({'ok': False, 'erro': f'{par}: {teste["erro"][:60]}'})
+
+    velas = teste.get('velas') or []
+    if len(velas) < 20:
+        return jsonify({'ok': False,
+                        'erro': f'{par} nao fornece historico suficiente ({len(velas)} velas). '
+                                f'Escolha outro - pares de moeda e OTC costumam funcionar melhor.'})
+
     s.par = par
-    s.add_log(f"📌 Par alterado para: {par}", 'info')
-    return jsonify({'ok': True, 'par': par})
+    s.add_log(f"📌 Par alterado para: {par} ({len(velas)} velas OK)", 'info')
+    return jsonify({'ok': True, 'par': par, 'velas': len(velas)})
 
 @app.route('/set_percentual', methods=['POST'])
 def set_percentual():
@@ -1790,6 +1846,11 @@ def stats_estrategias():
             if not ud:
                 continue
             for op in (ud.get('historico_operacoes') or []):
+                # 🔧 conta SO' ciclos completos. Registros antigos (sem 'tipo') e
+                # entradas isoladas ficam de fora: um ciclo LOSS->LOSS->WIN e' UMA
+                # vitoria, e nao "2 derrotas + 1 vitoria" como seria por entrada.
+                if op.get('tipo') != 'ciclo':
+                    continue
                 nome = str(op.get('estrategia') or '').strip().upper()
                 if not nome:
                     continue
