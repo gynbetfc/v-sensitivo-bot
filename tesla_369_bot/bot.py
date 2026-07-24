@@ -1481,6 +1481,76 @@ def chamar_api(fn, timeout=15, padrao=None, nome=""):
         raise caixa['erro']
     return caixa.get('ok', padrao)
 
+def blindar_get_candles(api, timeout=15):
+    """Envolve api.get_candles com timeout, protegendo TODOS os chamadores.
+
+    Por que e' necessario: depois de sincronizar_ativos(), a lib passa a aceitar
+    pares novos - e ai o get_candles realmente TENTA buscar. Se o ativo nao tiver
+    historico, a lib entra em:
+        while self.check_connect and self.api.candles.candles_data == None:
+            pass
+    ...que trava para sempre e congela o bot no meio da operacao.
+
+    Como as ESTRATEGIAS tambem chamam api.get_candles diretamente, nao adianta
+    proteger so' as nossas chamadas: blindamos o metodo do proprio objeto. No
+    timeout devolvemos [] - as estrategias ja' tratam isso como
+    "dados insuficientes" e simplesmente nao operam naquela vela.
+    """
+    if getattr(api, '_candles_blindado', False):
+        return  # ja' blindado (nao empilhar wrappers)
+    original = api.get_candles
+
+    def get_candles_seguro(*args, **kwargs):
+        return chamar_api(lambda: original(*args, **kwargs), timeout=timeout, padrao=[])
+
+    api.get_candles = get_candles_seguro
+    api._candles_blindado = True
+
+def sincronizar_ativos(api, timeout=20):
+    """Ensina a lib os ativos ATUAIS da corretora.
+
+    A lib traz um dicionario HARDCODED (OP_code.ACTIVES: nome -> id) que esta
+    desatualizado. get_candles() faz `if ACTIVES not in OP_code.ACTIVES: break`,
+    entao qualquer par novo devolvia vazio ("dados insuficientes") sem nem ser
+    consultado - ex: FACEBOOK-OTC existe na corretora mas nao na lib.
+
+    get_all_init_v2() devolve os ativos indexados pelo ID, com o nome dentro -
+    exatamente o que o dicionario precisa. Aqui montamos o mapa na hora e
+    injetamos na lib. Assim os pares novos passam a funcionar sem precisar
+    editar/empacotar uma versao modificada da biblioteca.
+
+    (A lib tem uma funcao parecida, get_ALL_Binary_ACTIVES_OPCODE, mas ela usa
+    get_all_init() - que tem `while True` sem timeout e trava o app.)
+
+    Retorna quantos ativos foram adicionados.
+    """
+    try:
+        from iqoptionapi.constants import ACTIVES as MAPA
+    except Exception:
+        return 0
+
+    dados = chamar_api(lambda: api.get_all_init_v2(), timeout=timeout, padrao=None)
+    if not dados:
+        return 0
+
+    novos = 0
+    for categoria in ('turbo', 'binary'):
+        bloco = (dados.get(categoria) or {}).get('actives') or {}
+        for id_ativo, ativo in bloco.items():
+            nome = str(ativo.get('name', ''))
+            if '.' in nome:
+                nome = nome.split('.')[1]
+            if not nome:
+                continue
+            try:
+                id_int = int(id_ativo)
+            except (TypeError, ValueError):
+                continue
+            if MAPA.get(nome) != id_int:
+                MAPA[nome] = id_int
+                novos += 1
+    return novos
+
 def _conectar_com_timeout(api, timeout=25):
     """Roda api.connect() numa thread com TIMEOUT.
 
@@ -1569,6 +1639,19 @@ def conectar():
             return jsonify({'ok': False,
                             'erro': 'A corretora nao confirmou a conta (PRACTICE/REAL) a tempo. Toque em CONECTAR de novo.'})
         s.conectado = True
+
+        # 🔄 ensina a lib os ativos atuais da corretora (pares novos passam a
+        # funcionar). Nao e' critico: se falhar, seguimos com a lista antiga.
+        try:
+            # 1) blinda o get_candles ANTES de liberar pares novos (ordem importa:
+            #    sem isso, um par sem historico travaria o bot no meio da operacao)
+            blindar_get_candles(s.API, timeout=15)
+            # 2) ensina a lib os ativos atuais da corretora
+            n_ativos = sincronizar_ativos(s.API, timeout=15)
+            if n_ativos:
+                s.add_log(f"🔄 {n_ativos} ativos sincronizados da corretora", 'info')
+        except Exception:
+            pass
 
         usuario = carregar_usuario(email) or criar_usuario(email)
         hoje = str(datetime.now())[:10]
