@@ -144,6 +144,8 @@
         .cart-table .total-input:hover{border-color:var(--border-color)}
         .cart-table .total-input:focus{outline:0;border-color:var(--green);background:var(--bg-primary)}
         .cart-table .btn-remove{background:0;border:0;color:var(--red);cursor:pointer;font-size:16px;padding:8px 12px;border-radius:6px;min-width:36px;min-height:36px;line-height:1}.cart-table .btn-remove:hover{background:rgba(239,68,68,.15)}.cart-table .btn-remove:active{background:rgba(239,68,68,.3)}
+        .btn-toggle-kit{background:0;border:0;color:var(--text-muted);cursor:pointer;font-size:10px;padding:2px 4px;vertical-align:middle}.btn-toggle-kit:hover{color:var(--green)}
+        .kit-conteudo-row td{background:var(--bg-primary);font-size:11px;color:var(--text-muted);padding:6px 4px 6px 24px;border-bottom:1px solid rgba(255,255,255,.03)}
         .empty-cart{text-align:center;color:var(--text-muted);padding:24px 0;font-size:13px}
         .cart-summary{margin-top:12px;padding-top:12px;border-top:1px solid var(--border-color)}
         .cart-summary .row{display:flex;justify-content:space-between;padding:3px 0;font-size:13px;align-items:center}
@@ -908,8 +910,8 @@
                     </div>
                     <div class="input-group"><label>Estoque</label><input type="number" id="prodEstoque" value="99999"></div>
                     <div class="input-group"><label>Categoria</label><input type="text" id="prodCategoria" placeholder="Geral"></div>
-                    <details class="config-hint">
-                        <summary>Dados fiscais (NFC-e)</summary>
+                    <details class="config-hint" id="detalhesFiscaisProduto">
+                        <summary>🏷️ NCM e dados fiscais (NFC-e) <span id="avisoNcmFaltando" style="display:none;color:var(--red);font-weight:700;">— falta preencher!</span></summary>
                         <div class="input-group" style="margin-top:8px;"><label>NCM <span style="font-size:11px;color:var(--text-muted);">(obrigatório pra emitir NFC-e)</span></label><input type="text" id="prodNcm" placeholder="Ex: 22030000" maxlength="8"></div>
                         <div class="input-group"><label>CFOP</label><input type="text" id="prodCfop" placeholder="5102" maxlength="4"></div>
                         <div class="input-group"><label>CSOSN</label><input type="text" id="prodCsosn" placeholder="102" maxlength="3"></div>
@@ -1204,6 +1206,14 @@
                 <img id="nfceQrImg" style="width:160px;height:160px;" alt="QR Code">
                 <div id="nfceChaveDemo" style="font-family:monospace;font-size:10px;color:#333;margin-top:8px;word-break:break-all;"></div>
                 <div id="nfceProtocoloInfo" style="font-family:monospace;font-size:9px;color:#666;margin-top:4px;"></div>
+            </div>
+            <div id="nfceAcoesAntiga" style="display:none;margin-top:10px;">
+                <button class="cupom-opt" style="background:rgba(239,68,68,.12);color:var(--red);border-color:var(--red);" onclick="abrirCancelamentoNfce()"><i class="fas fa-ban"></i> Cancelar esta NFC-e</button>
+                <div id="nfceCancelForm" style="display:none;margin-top:8px;">
+                    <div class="input-group"><label>Motivo do cancelamento <span style="font-size:11px;color:var(--text-muted);">(mín. 15 caracteres)</span></label><input type="text" id="nfceJustificativa" placeholder="Ex: venda cancelada a pedido do cliente"></div>
+                    <button class="cupom-opt" style="background:var(--red);color:#fff;" onclick="confirmarCancelamentoNfce()"><i class="fas fa-check"></i> Confirmar cancelamento</button>
+                </div>
+                <button class="cupom-opt" id="btnReenviarNfce" style="display:none;background:rgba(59,130,246,.12);color:var(--blue);border-color:var(--blue);margin-top:8px;" onclick="reenviarNfcePendente()"><i class="fas fa-redo"></i> Tentar transmitir agora</button>
             </div>
         </div>
     </div>
@@ -1950,9 +1960,10 @@ async function carregarProdutos(){
             state.produtosEstoque.forEach((p,idx)=>{
                 const cls=p.estoque<=0?'estoque-baixo':p.estoque<=5?'estoque-medio':'estoque-alto';
                 const margem = p.preco > 0 ? ((p.preco - p.custo) / p.preco * 100) : 0;
+                const semNcm=!p.ncm?' <span title="Sem NCM - não dá pra emitir NFC-e desse produto" style="color:var(--red);font-size:11px;cursor:help;">⚠️</span>':'';
                 html+=`<tr class="linha-estoque" data-idx="${idx}" data-codigo="${p.codigo}" onclick="selecionarProdutoParaEdicao('${p.codigo}')">
                     <td style="font-size:11px;color:var(--text-muted);">${p.codigo}</td>
-                    <td>${p.nome}</td>
+                    <td>${p.nome}${semNcm}</td>
                     <td style="text-align:right;">R$ ${p.preco.toFixed(2)}</td>
                     <td style="text-align:right;font-size:11px;color:var(--text-muted);">R$ ${(p.custo||0).toFixed(2)}</td>
                     <td style="text-align:center;font-weight:600;color:${margem>30?'var(--green)':margem>15?'var(--orange)':'var(--red)'};">${margem.toFixed(0)}%</td>
@@ -1978,6 +1989,11 @@ function selecionarProdutoParaEdicao(codigo){
     document.getElementById('prodCfop').value=p.cfop||'5102';
     document.getElementById('prodCsosn').value=p.csosn||'102';
     document.getElementById('prodUnidade').value=p.unidade||'UN';
+    // Sem NCM não dá pra emitir NFC-e desse produto - abre a seção fiscal
+    // sozinha e avisa, em vez de deixar escondida e o lojista nem saber
+    const semNcm=!p.ncm;
+    document.getElementById('detalhesFiscaisProduto').open=semNcm;
+    document.getElementById('avisoNcmFaltando').style.display=semNcm?'inline':'none';
     calcularMargem();
     document.getElementById('prodCodigo').focus();
     state.produtoSelecionado=p.codigo;
@@ -1996,6 +2012,8 @@ function limparCamposProduto(){
     document.getElementById('prodCfop').value='5102';
     document.getElementById('prodCsosn').value='102';
     document.getElementById('prodUnidade').value='UN';
+    document.getElementById('detalhesFiscaisProduto').open=false;
+    document.getElementById('avisoNcmFaltando').style.display='none';
     state.produtoSelecionado=null;
     document.getElementById('prodCodigo').focus();
 }
@@ -2367,13 +2385,19 @@ async function carregarClientes(){
 }
 
 async function enviarRelatorioWhats(clienteId){
+    // 🔧 Abre a aba ANTES do fetch/await: se abrir DEPOIS de esperar uma
+    // resposta assíncrona, o navegador (principalmente no celular) não
+    // reconhece mais como clique direto do usuário e bloqueia a aba como
+    // pop-up - silenciosamente, sem nenhum erro visível. É por isso que
+    // "não abria" no PC e no celular.
+    const novaAba=window.open('','_blank');
     try{
         const res=await fetch(`/api/clientes/${clienteId}/relatorio`,{credentials:'include'});
         const data=await res.json();
-        if(!data.success){ alert(data.error||'Não foi possível gerar o relatório.'); return; }
+        if(!data.success){ if(novaAba)novaAba.close(); alert(data.error||'Não foi possível gerar o relatório.'); return; }
         const cli=data.cliente;
         const tel=(cli.telefone||'').replace(/\D/g,'');
-        if(tel.length<10){ alert('Este cliente não tem um número de WhatsApp válido.'); return; }
+        if(tel.length<10){ if(novaAba)novaAba.close(); alert('Este cliente não tem um número de WhatsApp válido.'); return; }
         // monta o EXTRATO: compras no fiado + pagamentos + saldo devedor
         let msg=`*${data.nome_loja}*\n`;
         msg+=`Extrato do fiado\n`;
@@ -2412,8 +2436,8 @@ async function enviarRelatorioWhats(clienteId){
         const numero = tel.length<=11 ? ('55'+tel) : tel; // adiciona DDI Brasil se faltar
         const url=`https://wa.me/${numero}?text=${encodeURIComponent(msg)}`;
         if(typeof showToast==='function') showToast('💬 Abrindo o WhatsApp de '+cli.nome+'...','success');
-        window.open(url,'_blank');
-    }catch(e){ console.error(e); alert('Erro ao gerar o relatório.'); }
+        if(novaAba) novaAba.location.href=url; else window.open(url,'_blank');
+    }catch(e){ if(novaAba)novaAba.close(); console.error(e); alert('Erro ao gerar o relatório.'); }
 }
 
 function formatarDataBR(iso){
@@ -2651,7 +2675,13 @@ function adicionarAoCarrinho(produto){
     atualizarCarrinho();showToast(`➕ ${produto.nome} adicionado!`,'success');
 }
 
-function removerItem(index){state.itens.splice(index,1);atualizarCarrinho();}
+function removerItem(index){
+    state.itens.splice(index,1);
+    // índices mudam depois de remover - limpa o "expandido" pra não sobrar
+    // aberto no item errado
+    if(state.itensExpandidos) state.itensExpandidos.clear();
+    atualizarCarrinho();
+}
 
 function mudarQuantidade(index,delta){
     const item=state.itens[index];if(!item)return;
@@ -2687,19 +2717,36 @@ function atualizarCarrinho(){
         document.getElementById('totalLabel').textContent='R$ 0,00';
         state.subtotal=0;state.total=0;return;
     }
+    if(!state.itensExpandidos) state.itensExpandidos=new Set();
     let html='';
     state.itens.forEach((item,i)=>{
+        const expandido=state.itensExpandidos.has(i);
+        const toggleKit=item.is_kit?`<button class="btn-toggle-kit" onclick="toggleKitCarrinho(${i})" title="Ver o que tem no kit"><i class="fas fa-chevron-${expandido?'down':'right'}"></i></button> `:'';
         html+=`<tr>
-            <td>${item.nome}</td>
+            <td>${toggleKit}${item.nome}</td>
             <td class="qty"><button onclick="mudarQuantidade(${i},-1)">−</button><input type="text" class="qty-input" value="${item.quantidade}" onchange="definirQuantidade(${i},this.value)" onkeydown="if(event.key==='Enter'){this.blur();}" onfocus="this.select()"><button onclick="mudarQuantidade(${i},1)">+</button></td>
             <td class="price">R$ ${item.preco_unitario.toFixed(2)}</td>
             <td class="total-item"><input type="text" class="total-input" value="${item.total.toFixed(2).replace('.',',')}" onchange="definirValorTotal(${i},this.value)" onkeydown="if(event.key==='Enter'){this.blur();}" onfocus="this.select()"></td>
             <td><button class="btn-remove" onclick="removerItem(${i})">✕</button></td>
         </tr>`;
+        if(item.is_kit&&expandido){
+            const kit=(state.kits||[]).find(k=>'KIT:'+k.id===item.codigo);
+            const conteudo=kit&&kit.itens&&kit.itens.length
+                ? kit.itens.map(it=>`${it.nome}${it.quantidade>1?' x'+it.quantidade:''}`).join(' · ')
+                : 'Conteúdo do kit não encontrado';
+            html+=`<tr class="kit-conteudo-row"><td colspan="5">📦 Contém: ${conteudo}</td></tr>`;
+        }
     });
     tbody.innerHTML=html;
     calcularTotal();
     document.getElementById('btnFinalizar').disabled=false;
+}
+
+function toggleKitCarrinho(i){
+    if(!state.itensExpandidos) state.itensExpandidos=new Set();
+    if(state.itensExpandidos.has(i)) state.itensExpandidos.delete(i);
+    else state.itensExpandidos.add(i);
+    atualizarCarrinho();
 }
 
 function calcularTotal(){
@@ -2776,7 +2823,7 @@ async function confirmarPagamento(){
         const data=await res.json();
         if(data.success){
             ultimaVendaId=data.id;ultimoCupomData=data.dados_impressao;
-            state.itens=[];atualizarCarrinho();fecharPagamento();
+            state.itens=[];state.itensExpandidos=new Set();atualizarCarrinho();fecharPagamento();
             mostrarCupom(data.dados_impressao);
             carregarDash(state.periodo);carregarStatusCaixa();
             showToast('✅ Venda finalizada!','success');
@@ -2796,6 +2843,8 @@ function mostrarCupom(dados){
     document.querySelector('.cupom-acoes').style.display='';
     document.getElementById('nfceDecisaoArea').style.display='';
     document.getElementById('nfceQrPreview').style.display='none';
+    document.getElementById('nfceAcoesAntiga').style.display='none';
+    document.getElementById('nfceCancelForm').style.display='none';
     document.getElementById('nfceStatusCupom').textContent='';
     document.getElementById('cupomModalTitulo').textContent='🧾 Cupom Não Fiscal';
     document.getElementById('cupomLojaNome').textContent=dados.nome_loja||'MINHA LOJA';
@@ -2861,6 +2910,8 @@ function fecharCupom(){
     document.querySelector('.cupom-acoes').style.display='';
     document.getElementById('nfceDecisaoArea').style.display='';
     document.getElementById('nfceQrPreview').style.display='none';
+    document.getElementById('nfceAcoesAntiga').style.display='none';
+    document.getElementById('nfceCancelForm').style.display='none';
     document.getElementById('nfceStatusCupom').textContent='';
     document.getElementById('cupomModalTitulo').textContent='🧾 Cupom Não Fiscal';
 }
@@ -3833,7 +3884,11 @@ async function emitirNfceDaVenda(){
     try{
         const res=await fetch(`/api/fiscal/emitir/${ultimaVendaId}`,{method:'POST',credentials:'include'});
         const data=await res.json();
-        if(data.success){
+        if(data.success && data.contingencia){
+            statusEl.innerHTML=`⚠️ SEFAZ indisponível - emitida em CONTINGÊNCIA.<br>Chave: ${data.chave}<br>Será transmitida automaticamente quando a conexão voltar.`;
+            statusEl.style.color='#f59e0b';
+            showToast('⚠️ NFC-e emitida em contingência (SEFAZ fora do ar)','warning');
+        }else if(data.success){
             statusEl.innerHTML=`✅ NFC-e autorizada!<br>Protocolo: ${data.protocolo}<br>Chave: ${data.chave}`;
             statusEl.style.color='var(--green)';
             showToast('✅ NFC-e autorizada pela SEFAZ!','success');
@@ -3880,15 +3935,33 @@ async function verNfceAntiga(vendaId){
     mostrarCupomVazioParaNfce();
     const statusEl=document.getElementById('nfceStatusCupom');
     const preview=document.getElementById('nfceQrPreview');
+    const acoes=document.getElementById('nfceAcoesAntiga');
     statusEl.textContent='🔄 Carregando NFC-e...';
     preview.style.display='none';
+    acoes.style.display='none';
+    document.getElementById('nfceCancelForm').style.display='none';
+    document.getElementById('btnReenviarNfce').style.display='none';
     try{
         const res=await fetch(`/api/fiscal/danfce/${vendaId}`,{credentials:'include'});
         const data=await res.json();
         if(data.success){
-            statusEl.innerHTML='✅ NFC-e autorizada';
-            document.getElementById('nfceQrAviso').innerHTML='✅ NFC-e AUTORIZADA PELA SEFAZ';
-            document.getElementById('nfceQrAviso').style.color='#16a34a';
+            const aviso=document.getElementById('nfceQrAviso');
+            if(data.cancelada){
+                statusEl.innerHTML='🚫 NFC-e cancelada';
+                aviso.innerHTML='🚫 NFC-e CANCELADA';
+                aviso.style.color='#dc2626';
+            }else if(data.pendente_reenvio){
+                statusEl.innerHTML='⚠️ Emitida em contingência - ainda não transmitida';
+                aviso.innerHTML='⚠️ PENDENTE DE TRANSMISSÃO À SEFAZ';
+                aviso.style.color='#f59e0b';
+                document.getElementById('btnReenviarNfce').style.display='block';
+                acoes.style.display='block';
+            }else{
+                statusEl.innerHTML='✅ NFC-e autorizada';
+                aviso.innerHTML='✅ NFC-e AUTORIZADA PELA SEFAZ';
+                aviso.style.color='#16a34a';
+                acoes.style.display='block';
+            }
             document.getElementById('nfceProtocoloInfo').textContent='';
             document.getElementById('nfceChaveDemo').textContent=data.chave.match(/.{1,4}/g).join(' ');
             if(data.qrcode_url){
@@ -3899,6 +3972,46 @@ async function verNfceAntiga(vendaId){
             statusEl.textContent='❌ '+(data.error||'Esta venda não tem NFC-e');
         }
     }catch(e){statusEl.textContent='❌ Erro ao carregar NFC-e';}
+}
+
+function abrirCancelamentoNfce(){
+    document.getElementById('nfceCancelForm').style.display='block';
+}
+
+async function confirmarCancelamentoNfce(){
+    if(!ultimaVendaId)return;
+    const justificativa=document.getElementById('nfceJustificativa').value.trim();
+    if(justificativa.length<15){showToast('❌ Motivo precisa ter pelo menos 15 caracteres','error');return;}
+    if(!confirm('Cancelar esta NFC-e? Essa ação não pode ser desfeita.'))return;
+    const statusEl=document.getElementById('nfceStatusCupom');
+    statusEl.textContent='🔄 Enviando cancelamento pra SEFAZ...';
+    try{
+        const res=await fetch(`/api/fiscal/cancelar/${ultimaVendaId}`,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({justificativa})});
+        const data=await res.json();
+        if(data.success){
+            showToast('✅ NFC-e cancelada!','success');
+            verNfceAntiga(ultimaVendaId);
+        }else{
+            statusEl.textContent='❌ '+(data.error||'Falha ao cancelar');
+            showToast('❌ '+(data.error||'Falha ao cancelar'),'error');
+        }
+    }catch(e){statusEl.textContent='❌ Erro ao cancelar';}
+}
+
+async function reenviarNfcePendente(){
+    if(!ultimaVendaId)return;
+    const statusEl=document.getElementById('nfceStatusCupom');
+    statusEl.textContent='🔄 Tentando transmitir pra SEFAZ...';
+    try{
+        const res=await fetch(`/api/fiscal/reenviar/${ultimaVendaId}`,{method:'POST',credentials:'include'});
+        const data=await res.json();
+        if(data.success){
+            showToast('✅ NFC-e autorizada!','success');
+            verNfceAntiga(ultimaVendaId);
+        }else{
+            statusEl.textContent='⚠️ '+(data.error||'SEFAZ ainda não respondeu - tente de novo daqui a pouco');
+        }
+    }catch(e){statusEl.textContent='❌ Erro ao tentar reenviar';}
 }
 
 // Abre o modal do cupom só com a área de NFC-e visível (reimpressão de
