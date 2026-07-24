@@ -211,7 +211,8 @@
                     <select id="parSelect" onchange="setParEscolhido()" style="padding:5px;background:#111;border:1px solid #333;border-radius:5px;color:#fff;font-size:10px;max-width:180px">
                         <option value="">EURUSD-OTC (toque 🔄 p/ listar)</option>
                     </select>
-                    <button onclick="carregarPares()" title="Buscar pares abertos" style="padding:4px 8px;background:#222;border:1px solid #444;border-radius:5px;color:#ffd700;font-size:9px;cursor:pointer">🔄</button>
+                    <button onclick="revalidarPares()" title="Testar os pares de novo" style="padding:4px 8px;background:#222;border:1px solid #444;border-radius:5px;color:#ffd700;font-size:9px;cursor:pointer">🔄</button>
+                    <span id="paresProgresso" style="font-size:8px;color:#888"></span>
                 </div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:5px">
                     <button class="btn btn-info" id="btnConectar" onclick="conectarIQ()">🔌 CONECTAR</button>
@@ -1388,29 +1389,57 @@ function ligarLongPressSkins(gridId){
 function carregarPares(){
     var sel = document.getElementById('parSelect');
     if(!sel) return;
-    sel.innerHTML = '<option value="">Carregando...</option>';
     fetch('/pares').then(function(r){ return r.json(); }).then(function(d){
         if(!d.ok){ sel.innerHTML = '<option value="">'+(d.erro||'Erro')+'</option>'; return; }
+        var atual = d.atual || '';
         var html = '';
         if(d.otc && d.otc.length){
-            html += '<optgroup label="\ud83d\udd36 OTC (fim de semana)">';
-            for(var i=0;i<d.otc.length;i++){
-                var sel1 = d.otc[i]===d.atual ? ' selected' : '';
-                html += '<option value="'+d.otc[i]+'"'+sel1+'>'+d.otc[i]+'</option>';
-            }
+            html += '<optgroup label="\ud83d\udd36 OTC (testados)">';
+            for(var i=0;i<d.otc.length;i++)
+                html += '<option value="'+d.otc[i]+'"'+(d.otc[i]===atual?' selected':'')+'>'+d.otc[i]+'</option>';
             html += '</optgroup>';
         }
         if(d.normais && d.normais.length){
-            html += '<optgroup label="\ud83d\udfe2 Abertos (mercado normal)">';
-            for(var j=0;j<d.normais.length;j++){
-                var sel2 = d.normais[j]===d.atual ? ' selected' : '';
-                html += '<option value="'+d.normais[j]+'"'+sel2+'>'+d.normais[j]+'</option>';
-            }
+            html += '<optgroup label="\ud83d\udfe2 Abertos (testados)">';
+            for(var j=0;j<d.normais.length;j++)
+                html += '<option value="'+d.normais[j]+'"'+(d.normais[j]===atual?' selected':'')+'>'+d.normais[j]+'</option>';
             html += '</optgroup>';
         }
-        sel.innerHTML = html || '<option value="">Nenhum par aberto</option>';
-    }).catch(function(){ sel.innerHTML = '<option value="">Erro ao listar</option>'; });
+        if(!html){
+            html = '<option value="'+atual+'">'+(atual||'nenhum par ainda')+'</option>';
+        }
+        sel.innerHTML = html;
+        sel.setAttribute('data-atual', atual);
+
+        // mostra o progresso da varredura em segundo plano
+        var lbl = document.getElementById('paresProgresso');
+        if(lbl){
+            if(d.status === 'testando'){
+                lbl.textContent = 'testando ' + d.testados + '/' + d.total + '...';
+                lbl.style.color = '#ffd700';
+                // enquanto testa, atualiza sozinho
+                clearTimeout(window._paresTimer);
+                window._paresTimer = setTimeout(carregarPares, 2500);
+            } else if(d.status === 'pronto'){
+                var n = (d.otc||[]).length + (d.normais||[]).length;
+                lbl.textContent = n + ' pares OK';
+                lbl.style.color = '#00ff88';
+            } else if(d.status === 'erro'){
+                lbl.textContent = 'falhou';
+                lbl.style.color = '#ff4444';
+            } else {
+                lbl.textContent = '';
+            }
+        }
+    }).catch(function(){});
 }
+
+function revalidarPares(){
+    var lbl = document.getElementById('paresProgresso');
+    if(lbl){ lbl.textContent = 'iniciando...'; lbl.style.color = '#ffd700'; }
+    fetch('/revalidar_pares',{method:'POST'}).then(function(){ setTimeout(carregarPares, 600); });
+}
+
 function setParEscolhido(){
     var sel = document.getElementById('parSelect');
     var par = sel.value;
