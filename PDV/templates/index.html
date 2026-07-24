@@ -386,13 +386,6 @@
         .nfce-secao{margin:0 16px 16px;padding-top:14px;border-top:1px dashed var(--border-color)}
         .nfce-secao-titulo{font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.4px;
             display:flex;align-items:center;gap:7px;margin-bottom:10px}
-        .nfce-secao-botoes{display:flex;gap:8px}
-        .nfce-btn{flex:1;padding:10px 8px;border-radius:8px;font-weight:600;font-size:12px;cursor:pointer;
-            display:flex;align-items:center;justify-content:center;gap:6px;transition:var(--transition);border:2px solid transparent}
-        .nfce-btn-emitir{background:rgba(59,130,246,.12);color:var(--blue);border-color:var(--blue)}
-        .nfce-btn-emitir:hover{background:var(--blue);color:#fff}
-        .nfce-btn-previa{background:rgba(168,85,247,.12);color:var(--purple);border-color:var(--purple)}
-        .nfce-btn-previa:hover{background:var(--purple);color:#fff}
 
         .modal-cliente{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);z-index:9999;justify-content:center;align-items:center;padding:12px}
         .modal-cliente.active{display:flex}
@@ -1196,9 +1189,14 @@
         </div>
         <div class="nfce-secao" id="nfceAreaCupom">
             <div class="nfce-secao-titulo"><i class="fas fa-file-invoice"></i> Nota Fiscal (NFC-e)</div>
-            <div class="nfce-secao-botoes">
-                <button class="nfce-btn nfce-btn-emitir" onclick="emitirNfceDaVenda()"><i class="fas fa-paper-plane"></i> Emitir NFC-e</button>
-                <button class="nfce-btn nfce-btn-previa" onclick="verPreviaNfceDemo()"><i class="fas fa-eye"></i> Prévia (demo)</button>
+            <div id="nfceDecisaoArea">
+                <div class="cupom-acoes" style="padding:0;background:transparent;border:0;">
+                    <button class="cupom-opt" id="cupomOptEmitirNfce" onclick="cupomEscolher('emitir_nfce');emitirNfceDaVenda()"><i class="fas fa-paper-plane"></i> Emitir NFC-e</button>
+                    <button class="cupom-opt" id="cupomOptNaoEmitirNfce" onclick="cupomEscolher('nao_nfce');naoEmitirNfce()"><i class="fas fa-times"></i> Não Emitir</button>
+                </div>
+                <div style="text-align:center;margin-top:8px;">
+                    <button type="button" onclick="verPreviaNfceDemo()" style="background:0;border:0;color:var(--text-muted);font-size:11px;text-decoration:underline;cursor:pointer;padding:2px;">Ver prévia do QR Code (demonstração)</button>
+                </div>
             </div>
             <div id="nfceStatusCupom" style="font-size:11.5px;color:var(--text-muted);margin-top:8px;text-align:center;"></div>
             <div id="nfceQrPreview" style="display:none;margin-top:10px;text-align:center;background:#fff;border-radius:10px;padding:14px;">
@@ -2791,6 +2789,15 @@ async function confirmarPagamento(){
 // ============================================================
 function mostrarCupom(dados){
     if(!dados)return;
+    // Garante que o modal sempre abre no estado padrão (cupom + decisão de
+    // NFC-e visíveis), mesmo que a última vez que ele foi usado tenha sido
+    // pra reimprimir uma NFC-e antiga (que esconde essas partes).
+    document.querySelector('.cupom-preview').style.display='';
+    document.querySelector('.cupom-acoes').style.display='';
+    document.getElementById('nfceDecisaoArea').style.display='';
+    document.getElementById('nfceQrPreview').style.display='none';
+    document.getElementById('nfceStatusCupom').textContent='';
+    document.getElementById('cupomModalTitulo').textContent='🧾 Cupom Não Fiscal';
     document.getElementById('cupomLojaNome').textContent=dados.nome_loja||'MINHA LOJA';
     document.getElementById('cupomCnpjLine').textContent=dados.cnpj?'CNPJ: '+formatarCnpj(dados.cnpj):'';
     const cnpjDados=dados.cnpj_dados||{};
@@ -2844,17 +2851,15 @@ function mostrarCupom(dados){
 
 function cupomEscolher(opcao){state.cupomEscolha=opcao;}
 function fecharCupomSemImprimir(){
-    document.getElementById('cupomModal').classList.remove('active');
-    document.querySelector('.cupom-preview').style.display='';
-    document.querySelector('.cupom-acoes').style.display='';
-    document.getElementById('nfceQrPreview').style.display='none';
-    document.getElementById('nfceStatusCupom').textContent='';
-    document.getElementById('cupomModalTitulo').textContent='🧾 Cupom Não Fiscal';
+    // 🔧 Não fecha mais o modal: "Sem Impressão" só decide o cupom não fiscal
+    // — o caixa ainda pode (e deve poder) decidir sobre a NFC-e logo abaixo.
+    showToast('ℹ️ Cupom não impresso','info');
 }
 function fecharCupom(){
     document.getElementById('cupomModal').classList.remove('active');
     document.querySelector('.cupom-preview').style.display='';
     document.querySelector('.cupom-acoes').style.display='';
+    document.getElementById('nfceDecisaoArea').style.display='';
     document.getElementById('nfceQrPreview').style.display='none';
     document.getElementById('nfceStatusCupom').textContent='';
     document.getElementById('cupomModalTitulo').textContent='🧾 Cupom Não Fiscal';
@@ -2870,7 +2875,13 @@ async function imprimirCupom(){
         if (data.success) showToast('🖨️ Cupom impresso com sucesso!', 'success');
         else showToast('❌ Falha na impressão: ' + (data.error || 'Erro desconhecido'), 'error');
     } catch (e) { showToast('❌ Erro ao enviar para impressão', 'error'); }
-    document.getElementById('cupomModal').classList.remove('active');
+    // 🔧 Não fecha mais o modal aqui: a decisão de emitir (ou não) a NFC-e é
+    // independente da impressão do cupom não fiscal - o caixa decide as duas
+    // coisas separadamente, sem uma fechar a tela da outra.
+}
+
+function naoEmitirNfce(){
+    showToast('ℹ️ NFC-e não emitida para esta venda', 'info');
 }
 
 async function imprimirCupomAntigo(vendaId){
@@ -3896,6 +3907,7 @@ function mostrarCupomVazioParaNfce(){
     document.getElementById('cupomModal').classList.add('active');
     document.querySelector('.cupom-preview').style.display='none';
     document.querySelector('.cupom-acoes').style.display='none';
+    document.getElementById('nfceDecisaoArea').style.display='none';
     document.getElementById('cupomModalTitulo').textContent='📄 Nota Fiscal (NFC-e)';
 }
 
