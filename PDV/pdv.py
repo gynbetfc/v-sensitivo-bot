@@ -5608,20 +5608,20 @@ def fiscal_status_servico_route():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
-@app.route('/api/fiscal/emitir/<int:venda_id>', methods=['POST'])
-@verificar_plano
-def fiscal_emitir_nfce_route(venda_id: int):
+def _emitir_nfce_interno(db_id: str, venda_id: int) -> Dict:
+    """Faz a emissão de verdade (monta XML, assina, transmite, cai pra
+    contingência se a SEFAZ estiver fora do ar) e devolve um dict simples -
+    não um jsonify - pra poder ser chamado tanto pela rota manual
+    (/api/fiscal/emitir/<id>) quanto AUTOMATICAMENTE logo após a venda ser
+    registrada (ver registrar_venda), sem duplicar toda essa lógica."""
     try:
-        db_id = get_db_id()
-        if not db_id:
-            return jsonify({"success": False, "error": "Não autenticado"}), 401
         if not FISCAL_NFCE_DISPONIVEL:
-            return jsonify({"success": False, "error": "Dependências de NFC-e não instaladas neste build (lxml/signxml/nfelib/requests-pkcs12)"})
+            return {"success": False, "error": "Dependências de NFC-e não instaladas neste build (lxml/signxml/nfelib/requests-pkcs12)"}
 
         cfg = _carregar_config_fiscal_completa(db_id)
         erro_config = _erro_config_fiscal_incompleta(cfg)
         if erro_config:
-            return jsonify({"success": False, "error": erro_config})
+            return {"success": False, "error": erro_config}
 
         with get_db_context() as conn:
             ja_emitida = conn.execute("SELECT chave_acesso, autorizada FROM fiscal_nfce WHERE venda_id=? AND db_id=?", (venda_id, db_id)).fetchone()
