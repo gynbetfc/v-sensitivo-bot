@@ -127,9 +127,12 @@
         .search-results{position:absolute;top:100%;left:0;right:0;background:var(--bg-card);border:1px solid var(--border-color);border-radius:8px;max-height:200px;overflow-y:auto;z-index:200;display:none;margin-top:4px;box-shadow:var(--shadow)}
         .search-results.active{display:block}
         .search-results .result-item{padding:8px 12px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.03);transition:var(--transition)}
-        .search-results .result-item:hover,.search-results .result-item.active{background:rgba(34,197,94,.1)}
+        .search-results .result-item:hover,.search-results .result-item.active{background:var(--gold)}
+        .search-results .result-item:hover .name,.search-results .result-item.active .name{color:#1a1305;font-weight:600}
+        .search-results .result-item:hover .stock,.search-results .result-item.active .stock{color:#3a2e05}
         .search-results .result-item .name{font-size:13px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
         .search-results .result-item .price{font-size:13px;font-weight:600;color:var(--green);width:80px;text-align:right;flex-shrink:0}
+        .search-results .result-item:hover .price,.search-results .result-item.active .price{color:#14532d}
         .search-results .result-item .stock{font-size:11px;color:var(--text-muted);width:90px;text-align:right;flex-shrink:0}
 
         .cart-table{width:100%;border-collapse:collapse;font-size:12px}
@@ -144,8 +147,6 @@
         .cart-table .total-input:hover{border-color:var(--border-color)}
         .cart-table .total-input:focus{outline:0;border-color:var(--green);background:var(--bg-primary)}
         .cart-table .btn-remove{background:0;border:0;color:var(--red);cursor:pointer;font-size:16px;padding:8px 12px;border-radius:6px;min-width:36px;min-height:36px;line-height:1}.cart-table .btn-remove:hover{background:rgba(239,68,68,.15)}.cart-table .btn-remove:active{background:rgba(239,68,68,.3)}
-        .btn-toggle-kit{background:0;border:0;color:var(--text-muted);cursor:pointer;font-size:10px;padding:2px 4px;vertical-align:middle}.btn-toggle-kit:hover{color:var(--green)}
-        .kit-conteudo-row td{background:var(--bg-primary);font-size:11px;color:var(--text-muted);padding:6px 4px 6px 24px;border-bottom:1px solid rgba(255,255,255,.03)}
         .empty-cart{text-align:center;color:var(--text-muted);padding:24px 0;font-size:13px}
         .cart-summary{margin-top:12px;padding-top:12px;border-top:1px solid var(--border-color)}
         .cart-summary .row{display:flex;justify-content:space-between;padding:3px 0;font-size:13px;align-items:center}
@@ -316,9 +317,12 @@
         .estoque-table{width:100%;border-collapse:collapse;font-size:13px}
         .estoque-table th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--border-color);font-weight:600;color:var(--text-secondary);font-size:11px;text-transform:uppercase;position:sticky;top:0;background:var(--bg-card)}
         .estoque-table td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.03);cursor:pointer}
-        .estoque-table tr:hover td{background:rgba(34,197,94,.05)}
+        .estoque-table tr:hover td{background:var(--gold);color:#1a1305}
         .estoque-baixo{color:var(--red)!important;font-weight:600}.estoque-medio{color:var(--orange)!important}.estoque-alto{color:var(--green)!important}
-        .linha-estoque.linha-ativa{background:rgba(34,197,94,.15)!important;outline:1px solid var(--green)}
+        .linha-estoque.linha-ativa td{background:var(--gold)!important;color:#1a1305}
+        .linha-estoque.linha-ativa{outline:1px solid #92700a}
+        .linha-estoque.linha-ativa td.estoque-baixo,.linha-estoque.linha-ativa td.estoque-medio,.linha-estoque.linha-ativa td.estoque-alto,
+        .estoque-table tr:hover td.estoque-baixo,.estoque-table tr:hover td.estoque-medio,.estoque-table tr:hover td.estoque-alto{color:#1a1305!important}
 
         .planos-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:80px;margin-bottom:16px}
         .planos-grid .plano-card{width:230px;flex:0 0 auto}
@@ -1239,6 +1243,15 @@
         <div class="input-group"><label>Método de Pagamento</label><select id="pagClienteMetodo" style="width:100%;padding:8px 12px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-primary);color:#fff;"><option value="Dinheiro">💰 Dinheiro</option><option value="PIX">📱 PIX</option><option value="Cartão">💳 Cartão</option><option value="Débito">💳 Débito</option></select></div>
         <div class="modal-actions"><button class="btn-save" onclick="confirmarPagamentoCliente()"><i class="fas fa-check"></i> Confirmar Pagamento</button><button class="btn-close" onclick="fecharModalPagamentoCliente()">Cancelar</button></div>
         <div style="text-align:center;font-size:11px;color:var(--text-muted);margin-top:8px;"><kbd>Enter</kbd> Confirmar • <kbd>Esc</kbd> Cancelar</div>
+    </div>
+</div>
+
+<!-- MODAL CONTEÚDO DO KIT (2 cliques num kit no carrinho) -->
+<div class="modal-cliente" id="modalKitConteudo">
+    <div class="modal" style="max-width:380px;">
+        <div class="modal-header"><h3><i class="fas fa-box-open" style="color:var(--green);"></i> <span id="modalKitConteudoTitulo">Conteúdo do kit</span></h3><button class="close" onclick="fecharModalKitConteudo()">✕</button></div>
+        <div id="modalKitConteudoLista" style="max-height:320px;overflow-y:auto;"></div>
+        <div class="modal-actions"><button class="btn-close" onclick="fecharModalKitConteudo()" style="width:100%;">Fechar</button></div>
     </div>
 </div>
 
@@ -2677,9 +2690,6 @@ function adicionarAoCarrinho(produto){
 
 function removerItem(index){
     state.itens.splice(index,1);
-    // índices mudam depois de remover - limpa o "expandido" pra não sobrar
-    // aberto no item errado
-    if(state.itensExpandidos) state.itensExpandidos.clear();
     atualizarCarrinho();
 }
 
@@ -2717,36 +2727,40 @@ function atualizarCarrinho(){
         document.getElementById('totalLabel').textContent='R$ 0,00';
         state.subtotal=0;state.total=0;return;
     }
-    if(!state.itensExpandidos) state.itensExpandidos=new Set();
     let html='';
     state.itens.forEach((item,i)=>{
-        const expandido=state.itensExpandidos.has(i);
-        const toggleKit=item.is_kit?`<button class="btn-toggle-kit" onclick="toggleKitCarrinho(${i})" title="Ver o que tem no kit"><i class="fas fa-chevron-${expandido?'down':'right'}"></i></button> `:'';
+        const nomeCell=item.is_kit
+            ? `<span ondblclick="abrirModalKitConteudo(${i})" title="Clique 2x para ver o que tem no kit" style="cursor:pointer;border-bottom:1px dashed var(--text-muted);">${item.nome}</span>`
+            : item.nome;
         html+=`<tr>
-            <td>${toggleKit}${item.nome}</td>
+            <td>${nomeCell}</td>
             <td class="qty"><button onclick="mudarQuantidade(${i},-1)">−</button><input type="text" class="qty-input" value="${item.quantidade}" onchange="definirQuantidade(${i},this.value)" onkeydown="if(event.key==='Enter'){this.blur();}" onfocus="this.select()"><button onclick="mudarQuantidade(${i},1)">+</button></td>
             <td class="price">R$ ${item.preco_unitario.toFixed(2)}</td>
             <td class="total-item"><input type="text" class="total-input" value="${item.total.toFixed(2).replace('.',',')}" onchange="definirValorTotal(${i},this.value)" onkeydown="if(event.key==='Enter'){this.blur();}" onfocus="this.select()"></td>
             <td><button class="btn-remove" onclick="removerItem(${i})">✕</button></td>
         </tr>`;
-        if(item.is_kit&&expandido){
-            const kit=(state.kits||[]).find(k=>'KIT:'+k.id===item.codigo);
-            const conteudo=kit&&kit.itens&&kit.itens.length
-                ? kit.itens.map(it=>`${it.nome}${it.quantidade>1?' x'+it.quantidade:''}`).join(' · ')
-                : 'Conteúdo do kit não encontrado';
-            html+=`<tr class="kit-conteudo-row"><td colspan="5">📦 Contém: ${conteudo}</td></tr>`;
-        }
     });
     tbody.innerHTML=html;
     calcularTotal();
     document.getElementById('btnFinalizar').disabled=false;
 }
 
-function toggleKitCarrinho(i){
-    if(!state.itensExpandidos) state.itensExpandidos=new Set();
-    if(state.itensExpandidos.has(i)) state.itensExpandidos.delete(i);
-    else state.itensExpandidos.add(i);
-    atualizarCarrinho();
+function abrirModalKitConteudo(i){
+    const item=state.itens[i];
+    if(!item||!item.is_kit)return;
+    const kit=(state.kits||[]).find(k=>'KIT:'+k.id===item.codigo);
+    document.getElementById('modalKitConteudoTitulo').textContent=item.nome.replace(/^📦\s*/,'');
+    const lista=document.getElementById('modalKitConteudoLista');
+    if(kit&&kit.itens&&kit.itens.length){
+        lista.innerHTML=kit.itens.map(it=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);"><span>${it.nome}</span><span style="color:var(--text-secondary);">${it.quantidade>1?'x'+it.quantidade:''}</span></div>`).join('');
+    }else{
+        lista.innerHTML='<p style="color:var(--text-secondary);text-align:center;padding:16px 0;">Conteúdo do kit não encontrado.</p>';
+    }
+    document.getElementById('modalKitConteudo').classList.add('active');
+}
+
+function fecharModalKitConteudo(){
+    document.getElementById('modalKitConteudo').classList.remove('active');
 }
 
 function calcularTotal(){
@@ -2823,7 +2837,7 @@ async function confirmarPagamento(){
         const data=await res.json();
         if(data.success){
             ultimaVendaId=data.id;ultimoCupomData=data.dados_impressao;
-            state.itens=[];state.itensExpandidos=new Set();atualizarCarrinho();fecharPagamento();
+            state.itens=[];atualizarCarrinho();fecharPagamento();
             mostrarCupom(data.dados_impressao);
             carregarDash(state.periodo);carregarStatusCaixa();
             showToast('✅ Venda finalizada!','success');
