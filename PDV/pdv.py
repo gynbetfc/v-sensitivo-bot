@@ -112,17 +112,27 @@ os.makedirs(FISCAL_DIR, exist_ok=True)
 # ============================================================
 # IMPRESSÃO - APENAS WINDOWS
 # ============================================================
+def _print_seguro(*args, **kwargs) -> None:
+    """print() que engole erro de I/O - roda ANTES da checagem de stdout lá
+    embaixo (logging), então precisa da própria proteção. Um .exe --noconsole
+    (clique duplo, sem terminal - o caso normal de qualquer usuário final) tem
+    sys.stdout fechado/None, e sem isto o programa nem chegava a abrir."""
+    try:
+        print(*args, **kwargs)
+    except Exception:
+        pass
+
 IMPRESSAO_DISPONIVEL: bool = False
 if IS_WINDOWS:
     try:
         import win32print
         import win32ui
         IMPRESSAO_DISPONIVEL = True
-        print("🖨️ Impressão Windows ESC/POS disponível")
+        _print_seguro("🖨️ Impressão Windows ESC/POS disponível")
     except ImportError as e:
-        print(f"⚠️ Módulos de impressão não encontrados: {e}")
+        _print_seguro(f"⚠️ Módulos de impressão não encontrados: {e}")
 else:
-    print("⚠️ Impressão ESC/POS disponível apenas no Windows")
+    _print_seguro("⚠️ Impressão ESC/POS disponível apenas no Windows")
 
 # ============================================================
 # FLASK APP
@@ -169,13 +179,32 @@ def _desabilitar_cache_api(response):
 
 VERSION: str = "11.0.0"
 
+def _stdout_utilizavel() -> bool:
+    """Um .exe empacotado com --noconsole (sem terminal - caso normal de quem
+    baixa e clica duas vezes) roda com sys.stdout/stderr FECHADOS ou None. Um
+    StreamHandler apontando pra eles derruba a thread inteira no primeiro log
+    (ValueError: I/O operation on closed file - o logging tenta reportar o
+    erro do handler ESCREVENDO no próprio stderr quebrado, e essa segunda
+    tentativa também falha, sem ninguém pra pegar). Testamos com uma escrita
+    real antes de confiar no stream."""
+    try:
+        s = sys.stdout
+        if s is None or getattr(s, 'closed', False):
+            return False
+        s.write('')
+        s.flush()
+        return True
+    except Exception:
+        return False
+
+_log_handlers: List[logging.Handler] = [logging.FileHandler(LOG_PATH, encoding='utf-8')]
+if _stdout_utilizavel():
+    _log_handlers.append(logging.StreamHandler(sys.stdout))
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(LOG_PATH, encoding='utf-8'),
-        logging.StreamHandler(sys.stdout)
-    ]
+    handlers=_log_handlers
 )
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -194,8 +223,6 @@ SESSOES_ATIVAS: Dict[str, str] = {}
 # elas já recebem db_id como parâmetro, então indexar por db_id aqui também
 # não exige mudar a assinatura de nenhuma delas.
 FB_TOKENS_POR_DB_ID: Dict[str, str] = {}
-# Porta usada só para um PDV avisar o outro que já existe um servidor rodando
-PORTA_DESCOBERTA: int = 50505
 # Controla quando cada conta sincronizou o token do plano pela última vez.
 # Evita que toda operação (venda, exclusão) dispare uma chamada ao Firebase.
 _ULTIMO_SYNC_TOKEN: Dict[str, float] = {}
@@ -980,6 +1007,81 @@ def _registrar_no_backend(db_id: str, dados: Dict) -> bool:
     except Exception as e:
         logger.error(f"⚠️ Falha ao registrar conta no backend: {e}")
         return False
+
+def _registrar_funcionario_no_backend(db_id: str, user_id: str, nome: str, email: str, senha_hash: str,
+                                       cargo: str, servidor_id: str, nome_loja: str, cnpj: str) -> bool:
+    """Sobe a conta do funcionário (criada em Config > Usuários) pro Firebase,
+    num nó SEPARADO da conta dona da loja (ver comentário no Worker), pra dar
+    pra logar com ela em QUALQUER dispositivo da loja - antes ficava só no
+    SQLite da máquina onde foi criada. Precisa de um token de sessão já
+    guardado pra este db_id (normalmente já existe: quem está em Config >
+    Usuários acabou de logar nesta mesma sessão)."""
+    token = FB_TOKENS_POR_DB_ID.get(db_id)
+    if not token:
+        logger.warning(f"⚠️ Sem token de sessão em cache pra {db_id} - funcionário {email} ficará só local por enquanto")
+        return False
+    try:
+        with _sessao_http() as s:
+            r = s.post(f"{BACKEND_PAGAMENTOS_URL}/fb/registrar_funcionario", json={
+                'session_token': token, 'user_id': user_id, 'nome': nome, 'email': email,
+                'senha': senha_hash, 'cargo': cargo, 'servidor_id': servidor_id,
+                'nome_loja': nome_loja, 'cnpj': cnpj,
+            }, timeout=15)
+        d = r.json()
+        return bool(r.status_code == 200 and d.get('success'))
+    except Exception as e:
+        logger.error(f"⚠️ Falha ao registrar funcionário no backend: {e}")
+        return False
+
+def _remover_funcionario_do_backend(db_id: str, user_id: str) -> bool:
+    token = FB_TOKENS_POR_DB_ID.get(db_id)
+    if not token:
+        return False
+    try:
+        with _sessao_http() as s:
+            r = s.post(f"{BACKEND_PAGAMENTOS_URL}/fb/remover_funcionario",
+                       json={'session_token': token, 'user_id': user_id}, timeout=15)
+        d = r.json()
+        return bool(r.status_code == 200 and d.get('success'))
+    except Exception as e:
+        logger.error(f"⚠️ Falha ao remover funcionário do backend: {e}")
+        return False
+
+def _login_funcionario_via_backend(email: str, senha: str) -> Optional[Dict]:
+    """Mesma lógica de _login_via_backend (2 idas ao Worker por causa do
+    limite de PBKDF2 do Cloudflare), mas buscando numa conta de FUNCIONÁRIO
+    (pdv/funcionarios), não na conta dona da loja (pdv/usuarios). Usado como
+    último recurso no login, quando o email não é de nenhuma conta dona."""
+    try:
+        with _sessao_http() as s:
+            r1 = s.post(f"{BACKEND_PAGAMENTOS_URL}/login_funcionario_salt", json={'email': email}, timeout=15)
+        d1 = r1.json()
+        if r1.status_code != 200 or not d1.get('success'):
+            return None
+
+        tipo = d1.get('tipo')
+        if tipo == 'pbkdf2':
+            salt = bytes.fromhex(d1['salt_hex'])
+            iteracoes = int(d1['iteracoes'])
+            valor = hashlib.pbkdf2_hmac('sha256', senha.encode(), salt, iteracoes).hex()
+        elif tipo == 'sha256':
+            valor = hash_senha(senha)
+        else:
+            valor = senha
+
+        with _sessao_http() as s:
+            r2 = s.post(f"{BACKEND_PAGAMENTOS_URL}/login_funcionario_verificar", json={'email': email, 'valor': valor}, timeout=15)
+        d2 = r2.json()
+        if r2.status_code == 200 and d2.get('success') and d2.get('session_token'):
+            dados = d2.get('dados') or {}
+            db_id_loja = dados.get('db_id')
+            if db_id_loja:
+                FB_TOKENS_POR_DB_ID[db_id_loja] = d2['session_token']
+            return dados
+        return None
+    except Exception as e:
+        logger.error(f"⚠️ Falha ao fazer login de funcionário no backend: {e}")
+        return None
 
 # ============================================================
 # ID DO SERVIDOR
@@ -3200,10 +3302,12 @@ def login():
             usuario_firebase = _login_via_backend(email, senha)
             if not usuario_firebase:
                 # 🔧 Não é necessariamente "conta não existe": um FUNCIONÁRIO
-                # criado em Config > Usuários só existe no SQLite local desta
-                # instalação (nunca teve registro próprio no Firebase pra ser
-                # achado por lá) - sem este fallback, ele nunca conseguia logar,
-                # mesmo tendo acabado de ser cadastrado com sucesso.
+                # criado em Config > Usuários não é uma conta dona de loja,
+                # então _login_via_backend (que só busca em pdv/usuarios) não
+                # acha. 1ª tentativa: já existe local NESTA máquina (mais
+                # rápido, funciona offline). 2ª tentativa: busca no Firebase
+                # em pdv/funcionarios (conta criada em OUTRO dispositivo desta
+                # mesma loja) e, se achar, provisiona a cópia local aqui.
                 with get_db_context() as conn:
                     cursor = conn.execute("""SELECT id, nome, cargo, db_id, servidor_id, nome_loja, cnpj, cnpj_dados, senha
                         FROM users WHERE email=?""", (email,))
@@ -3211,6 +3315,22 @@ def login():
                 if user_local and verificar_senha(senha, user_local[8]):
                     return _fazer_login(user_local[3], user_local[0], user_local[1], user_local[2],
                         user_local[4], user_local[5], user_local[6], user_local[7])
+
+                funcionario_fb = _login_funcionario_via_backend(email, senha)
+                if funcionario_fb and funcionario_fb.get('db_id') and funcionario_fb.get('user_id'):
+                    f_user_id = funcionario_fb['user_id']
+                    f_db_id = funcionario_fb['db_id']
+                    f_nome = funcionario_fb.get('nome', '')
+                    f_cargo = funcionario_fb.get('cargo', 'Funcionario')
+                    f_servidor_id = funcionario_fb.get('servidor_id', SERVIDOR_ID)
+                    f_nome_loja = funcionario_fb.get('nome_loja', 'Minha Loja')
+                    f_cnpj = funcionario_fb.get('cnpj', '')
+                    with get_db_context() as conn:
+                        conn.execute("""INSERT OR REPLACE INTO users (id, nome, email, senha, cargo, db_id, servidor_id, nome_loja, cnpj)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""", (f_user_id, f_nome, email,
+                            funcionario_fb.get('senha', ''), f_cargo, f_db_id, f_servidor_id, f_nome_loja, f_cnpj))
+                    return _fazer_login(f_db_id, f_user_id, f_nome, f_cargo, f_servidor_id, f_nome_loja, f_cnpj, {})
+
                 return jsonify({"success": False, "error": "Email ou senha inválidos"})
 
             firebase_db_id = usuario_firebase.get('db_id')
@@ -4948,11 +5068,19 @@ def criar_usuario():
             if cursor.fetchone():
                 return jsonify({"success": False, "error": "Email já cadastrado"})
             user_id = str(uuid.uuid4())[:8]
+            senha_hash = gerar_hash_senha(senha)
+            cargo_val = data.get('cargo', 'Funcionario')
+            nome_loja_val = session.get('nome_loja', '')
+            cnpj_val = session.get('cnpj', '')
             conn.execute("""INSERT INTO users (id, nome, email, senha, cargo, db_id, servidor_id, nome_loja, cnpj)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""", (user_id, nome, email, gerar_hash_senha(senha),
-                data.get('cargo', 'Funcionario'), db_id, SERVIDOR_ID, session.get('nome_loja', ''), session.get('cnpj', '')))
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""", (user_id, nome, email, senha_hash,
+                cargo_val, db_id, SERVIDOR_ID, nome_loja_val, cnpj_val))
+        # Sobe pro Firebase em segundo plano, pra dar pra logar com essa conta
+        # em QUALQUER dispositivo da loja (antes ficava só nesta máquina).
+        em_segundo_plano(_registrar_funcionario_no_backend, db_id, user_id, nome, email, senha_hash,
+            cargo_val, SERVIDOR_ID, nome_loja_val, cnpj_val)
         return jsonify({"success": True, "message": "Usuário criado!",
-            "usuario": {"id": user_id, "nome": nome, "email": email, "cargo": data.get('cargo', 'Funcionario')}})
+            "usuario": {"id": user_id, "nome": nome, "email": email, "cargo": cargo_val}})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
@@ -4968,6 +5096,7 @@ def delete_usuario(user_id: str):
             if not cursor.fetchone():
                 return jsonify({"success": False, "error": "Usuário não encontrado"})
             conn.execute("DELETE FROM users WHERE id=? AND db_id=?", (user_id, db_id))
+        em_segundo_plano(_remover_funcionario_do_backend, db_id, user_id)
         return jsonify({"success": True, "message": "Usuário excluído"})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
@@ -5939,30 +6068,6 @@ def _reenviar_nfce_pendentes_periodicamente() -> None:
         except Exception as e:
             logger.error(f"⚠️ Erro no reenvio periódico de NFC-e: {e}")
 
-def _responder_descoberta_rede() -> None:
-    """Fica ouvindo na rede local. Quando outro SMART PDV está sendo aberto, ele
-    pergunta 'tem algum servidor aí?' e nós respondemos. Assim o novo consegue
-    avisar o usuário de que já existe um PDV rodando (e evitar dois servidores).
-
-    Só responde a essa pergunta específica; não expõe nenhum dado."""
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.bind(('', PORTA_DESCOBERTA))
-        logger.info(f"📡 Anunciando na rede (porta {PORTA_DESCOBERTA})")
-        while True:
-            try:
-                dados, origem = s.recvfrom(512)
-                if dados.strip() == b'SMART_PDV_DISCOVER':
-                    nome_pc = socket.gethostname()
-                    s.sendto(f'SMART_PDV|{nome_pc}'.encode('utf-8'), origem)
-            except Exception:
-                _time.sleep(0.2)
-    except Exception as e:
-        # Se a porta já está ocupada, é porque outro PDV desta máquina já responde.
-        logger.info(f"📡 Descoberta de rede não iniciada: {e}")
-
-
 def limpar_sessoes_inativas() -> None:
     while True:
         _time.sleep(300)
@@ -6007,62 +6112,63 @@ def _sync_pendente_background() -> None:
 # ============================================================
 
 if __name__ == '__main__':
-    print("=" * 60)
-    print(f"🏪 SMART PDV v{VERSION} - VERSÃO COMPLETA")
-    print("=" * 60)
-    print(f"📁 Dados: {APP_DATA_DIR}")
-    print(f"📁 DB: {DB_PATH}")
-    print("=" * 60)
-    print("🔐 SISTEMA DE PLANO SEGURO:")
-    print("  ✅ Token assinado digitalmente")
-    print("  ✅ Funciona OFFLINE (sem brechas)")
-    print("  ✅ Sincroniza entre dispositivos")
-    print("  ✅ Detecta fraude de relógio")
-    print("  ✅ SEM período de carência")
-    print("  ✅ Renovação automática via Firebase")
-    print("  ✅ Aviso com 3 dias de antecedência")
-    print("  ✅ Mantém login mesmo com plano expirado")
-    print("  ✅ Apenas a aba Planos fica acessível")
-    print("=" * 60)
-    print("📊 NOVOS PLANOS:")
-    print("  🎁 TESTE: 15 dias grátis (Empresarial completo)")
-    print("  🔰 BÁSICO: R$ 29,99/mês (1 usuário, 300 produtos)")
-    print("  ⭐ STANDARD: R$ 59,99/mês (3 usuários, 1000 produtos)")
-    print("  💎 PREMIUM: R$ 89,99/mês (5 usuários, 5000 produtos)")
-    print("  👑 EMPRESARIAL: R$ 129,99/mês (10 usuários, Ilimitado)")
-    print("=" * 60)
-    print("📊 PERMISSÕES POR PLANO:")
-    print("  🔰 BÁSICO: Vendas, Caixa, Estoque")
-    print("  ⭐ STANDARD: + Clientes")
-    print("  💎 PREMIUM: + Dashboard, Busca Estoque, Margem")
-    print("  👑 EMPRESARIAL: Tudo liberado")
-    print("=" * 60)
-    print("📊 LUCRO LÍQUIDO:")
-    print("  ✅ Custo e margem por produto")
-    print("  ✅ Lucro por venda")
-    print("  ✅ Lucro total no Dashboard")
-    print("  ✅ CNPJ completo na nota fiscal")
-    print("=" * 60)
-    print("🔄 SINCRONIZAÇÃO INTELIGENTE:")
-    print("  - Quem tem MAIS DADOS vence")
-    print("  - Merge bidirecional automático")
-    print("  - Sobe dados quando internet voltar")
-    print("  - Firebase tem sempre prioridade final")
-    print("=" * 60)
+    _p = _print_seguro  # ver comentário na definição de _print_seguro, acima
+    _p("=" * 60)
+    _p(f"🏪 SMART PDV v{VERSION} - VERSÃO COMPLETA")
+    _p("=" * 60)
+    _p(f"📁 Dados: {APP_DATA_DIR}")
+    _p(f"📁 DB: {DB_PATH}")
+    _p("=" * 60)
+    _p("🔐 SISTEMA DE PLANO SEGURO:")
+    _p("  ✅ Token assinado digitalmente")
+    _p("  ✅ Funciona OFFLINE (sem brechas)")
+    _p("  ✅ Sincroniza entre dispositivos")
+    _p("  ✅ Detecta fraude de relógio")
+    _p("  ✅ SEM período de carência")
+    _p("  ✅ Renovação automática via Firebase")
+    _p("  ✅ Aviso com 3 dias de antecedência")
+    _p("  ✅ Mantém login mesmo com plano expirado")
+    _p("  ✅ Apenas a aba Planos fica acessível")
+    _p("=" * 60)
+    _p("📊 NOVOS PLANOS:")
+    _p("  🎁 TESTE: 15 dias grátis (Empresarial completo)")
+    _p("  🔰 BÁSICO: R$ 29,99/mês (1 usuário, 300 produtos)")
+    _p("  ⭐ STANDARD: R$ 59,99/mês (3 usuários, 1000 produtos)")
+    _p("  💎 PREMIUM: R$ 89,99/mês (5 usuários, 5000 produtos)")
+    _p("  👑 EMPRESARIAL: R$ 129,99/mês (10 usuários, Ilimitado)")
+    _p("=" * 60)
+    _p("📊 PERMISSÕES POR PLANO:")
+    _p("  🔰 BÁSICO: Vendas, Caixa, Estoque")
+    _p("  ⭐ STANDARD: + Clientes")
+    _p("  💎 PREMIUM: + Dashboard, Busca Estoque, Margem")
+    _p("  👑 EMPRESARIAL: Tudo liberado")
+    _p("=" * 60)
+    _p("📊 LUCRO LÍQUIDO:")
+    _p("  ✅ Custo e margem por produto")
+    _p("  ✅ Lucro por venda")
+    _p("  ✅ Lucro total no Dashboard")
+    _p("  ✅ CNPJ completo na nota fiscal")
+    _p("=" * 60)
+    _p("🔄 SINCRONIZAÇÃO INTELIGENTE:")
+    _p("  - Quem tem MAIS DADOS vence")
+    _p("  - Merge bidirecional automático")
+    _p("  - Sobe dados quando internet voltar")
+    _p("  - Firebase tem sempre prioridade final")
+    _p("=" * 60)
     if IS_WINDOWS and IMPRESSAO_DISPONIVEL:
-        print("🖨️ Impressão ESC/POS ativa (impressora térmica)")
+        _p("🖨️ Impressão ESC/POS ativa (impressora térmica)")
     else:
-        print("🖨️ Impressão disponível apenas no Windows")
-    print("=" * 60)
-    print("⌨️ TECLAS:")
-    print("  F1 → Mestre (foco/finalizar/confirmar)")
-    print("  Enter no código de barras → Busca automática")
-    print("  Clique nos botões do cupom → Funciona!")
-    print("=" * 60)
+        _p("🖨️ Impressão disponível apenas no Windows")
+    _p("=" * 60)
+    _p("⌨️ TECLAS:")
+    _p("  F1 → Mestre (foco/finalizar/confirmar)")
+    _p("  Enter no código de barras → Busca automática")
+    _p("  Clique nos botões do cupom → Funciona!")
+    _p("=" * 60)
 
     init_db()
 
-    print("📥 Verificando HTML em segundo plano...")
+    _p("📥 Verificando HTML em segundo plano...")
     # A interface (index.html) fica num repositório PÚBLICO do GitHub, então o
     # próprio pdv.py consegue baixá-la — não depende mais do launcher.
     # Estratégia:
@@ -6082,14 +6188,13 @@ if __name__ == '__main__':
     threading.Thread(target=limpar_sessoes_inativas, daemon=True).start()
     threading.Thread(target=_sync_pendente_background, daemon=True).start()
     threading.Thread(target=sincronizar_planos_periodicamente, daemon=True).start()
-    threading.Thread(target=_responder_descoberta_rede, daemon=True).start()
     threading.Thread(target=_reenviar_nfce_pendentes_periodicamente, daemon=True).start()
-    print("🔄 Thread de sincronização de planos iniciada")
+    _p("🔄 Thread de sincronização de planos iniciada")
 
-    print(f"\n🆔 Servidor: {SERVIDOR_ID}")
-    print(f"📌 Versão: {VERSION}")
-    print("🌐 http://localhost:5000")
-    print("=" * 60)
+    _p(f"\n🆔 Servidor: {SERVIDOR_ID}")
+    _p(f"📌 Versão: {VERSION}")
+    _p("🌐 http://127.0.0.1:5000")
+    _p("=" * 60)
 
     # 🔧 threaded=True: sem isto, o Werkzeug atende UM pedido por vez. Se
     # imprimir_cupom_escpos() travar numa impressora com problema, o servidor
@@ -6097,4 +6202,24 @@ if __name__ == '__main__':
     # resolver a impressora manualmente. Com threaded=True, outras rotas
     # continuam respondendo mesmo se uma impressao estiver presa (a funcao de
     # impressao tambem ganhou timeout proprio - ver imprimir_cupom_escpos).
-    app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)
+    # 🔧 Antes escutava em 0.0.0.0 (toda a rede) pra suportar um servidor
+    # compartilhado entre PCs da loja. Hoje cada maquina roda o proprio
+    # servidor + banco local (sincronizado via Firebase), entao nao precisa
+    # mais expor a porta pra rede: so localhost, sem conflito com outra
+    # instalacao na mesma rede e sem pop-up de firewall do Windows.
+    #
+    # 🔧 CRÍTICO: Flask.run() chama flask.cli.show_server_banner(), que usa
+    # click.echo() escrevendo DIRETO em sys.stdout - passa batido por cima de
+    # toda a proteção de logging acima (não é logger, é print puro dentro do
+    # próprio Flask). Num .exe --noconsole (clique duplo, sem terminal - o
+    # caso normal de qualquer usuário final) isso derrubava o servidor
+    # inteiro bem no `app.run()`, sem nenhum log explicando por quê (achado
+    # reproduzindo o cenário real: stdout/stderr fechados). O banner não tem
+    # nenhuma utilidade aqui (não existe console pra mostrar), então é só
+    # neutralizar a função antes de chamar run().
+    try:
+        import flask.cli as _flask_cli
+        _flask_cli.show_server_banner = lambda *a, **k: None
+    except Exception:
+        pass
+    app.run(host='127.0.0.1', port=5000, debug=False, threaded=True)
