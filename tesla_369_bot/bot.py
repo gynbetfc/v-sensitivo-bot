@@ -146,6 +146,11 @@ class Sessao:
         self.tipo_conta = "PRACTICE"
         self.conectado = False
         self.par = "EURUSD-OTC"
+        # validacao de pares em segundo plano
+        self.pares_status = 'idle'      # idle | testando | pronto | erro
+        self.pares_validados = {'normais': [], 'otc': []}
+        self.pares_testados = 0
+        self.pares_total = 0
 
         # --- estado do bot (era: bot_rodando, lucro, NumDeOperacoes...) ---
         self.bot_rodando = False
@@ -1275,83 +1280,41 @@ PARES_TTL = 120
 
 @app.route('/pares', methods=['GET'])
 def listar_pares():
-    """Lista os pares de opcao BINARIA (turbo/binary) abertos, separados em
-    normais e OTC.
+    """Devolve os pares JA TESTADOS pela validacao em segundo plano.
 
-    ⚠️ NAO usamos get_all_open_time(): por dentro ele consulta cfd/forex/crypto
-    via get_instruments(), que tem um `while ... == None:` SEM timeout e, no
-    erro, chama self.connect() - refazendo o login. Era isso que travava o app
-    em "Conectando..." quando a tela de pares carregava junto do login.
-
-    Usamos get_all_init_v2(), que so' traz binary/turbo (o que o bot opera) e
-    tem timeout proprio de 30s. Ainda assim rodamos com um teto de tempo.
+    Nao consulta a corretora aqui: quem faz isso e' a thread de validacao que
+    comeca no login. Assim esta rota responde na hora e a lista vai crescendo
+    conforme os pares sao aprovados (o app pode chamar de novo pra atualizar).
     """
     s = get_sessao()
     if not s.conectado or not s.API:
         return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
 
-    agora = time.time()
-    if _pares_cache['dados'] and (agora - _pares_cache['quando']) < PARES_TTL:
-        cache = dict(_pares_cache['dados'])
-        cache['atual'] = s.par
-        return jsonify(cache)
+    # se por algum motivo nao comecou (ex: reconexao), comeca agora
+    if s.pares_status == 'idle':
+        validar_pares_em_segundo_plano(s)
 
-    resultado = {}
-    def _buscar():
-        try:
-            resultado['dados'] = s.API.get_all_init_v2()
-        except Exception as e:
-            resultado['erro'] = str(e)
+    return jsonify({
+        'ok': True,
+        'status': s.pares_status,               # testando | pronto | erro
+        'normais': list(s.pares_validados.get('normais', [])),
+        'otc': list(s.pares_validados.get('otc', [])),
+        'testados': s.pares_testados,
+        'total': s.pares_total,
+        'atual': s.par,
+    })
 
-    t = threading.Thread(target=_buscar, daemon=True)
-    t.start()
-    t.join(20)          # teto duro: nunca prende a interface
-    if t.is_alive() or 'erro' in resultado or not resultado.get('dados'):
-        return jsonify({'ok': False, 'erro': 'A corretora demorou a responder. Tente o botao de recarregar.'})
-
-    dados = resultado['dados']
-
-    # 🔑 A lib so' consegue buscar velas de ativos que estao no dicionario
-    # HARDCODED OP_code.ACTIVES (constants.py). get_candles() faz:
-    #     if ACTIVES not in OP_code.ACTIVES: break   -> devolve vazio
-    # A corretora, porem, oferece MUITO mais ativos do que essa lista antiga
-    # conhece (ex: FACEBOOK-OTC existe na corretora mas NAO na lib; so' FACEBOOK).
-    # Por isso alguns pares "abertos" davam "dados insuficientes": nem chegavam a
-    # ser consultados. Aqui listamos SO' o que a lib sabe buscar.
-    try:
-        from iqoptionapi.constants import ACTIVES as _ATIVOS_SUPORTADOS
-    except Exception:
-        _ATIVOS_SUPORTADOS = None   # sem a lista, nao filtra (melhor que quebrar)
-
-    normais, otc = [], []
-    try:
-        for categoria in ('turbo', 'binary'):
-            bloco = (dados.get(categoria) or {}).get('actives') or {}
-            for _id, ativo in bloco.items():
-                nome = str(ativo.get('name', ''))
-                if '.' in nome:
-                    nome = nome.split('.')[1]
-                if not nome:
-                    continue
-                # aberto = habilitado e nao suspenso (mesma regra da lib)
-                aberto = bool(ativo.get('enabled')) and not bool(ativo.get('is_suspended'))
-                if not aberto:
-                    continue
-                # descarta o que a lib nao sabe buscar velas (daria "dados insuficientes")
-                if _ATIVOS_SUPORTADOS is not None and nome not in _ATIVOS_SUPORTADOS:
-                    continue
-                if nome.endswith('-OTC'):
-                    if nome not in otc: otc.append(nome)
-                else:
-                    if nome not in normais: normais.append(nome)
-    except Exception as e:
-        return jsonify({'ok': False, 'erro': f'Formato inesperado: {str(e)[:60]}'})
-
-    normais.sort(); otc.sort()
-    resposta = {'ok': True, 'normais': normais, 'otc': otc, 'atual': s.par}
-    _pares_cache['dados'] = {'ok': True, 'normais': normais, 'otc': otc}
-    _pares_cache['quando'] = agora
-    return jsonify(resposta)
+@app.route('/revalidar_pares', methods=['POST'])
+def revalidar_pares():
+    """Refaz a varredura dos pares (botao de recarregar)."""
+    s = get_sessao()
+    if not s.conectado or not s.API:
+        return jsonify({'ok': False, 'erro': 'Conecte primeiro!'})
+    if s.pares_status == 'testando':
+        return jsonify({'ok': True, 'msg': 'Ja esta testando...'})
+    s.pares_status = 'idle'
+    validar_pares_em_segundo_plano(s)
+    return jsonify({'ok': True})
 
 @app.route('/set_par', methods=['POST'])
 def set_par():
@@ -1506,6 +1469,72 @@ def blindar_get_candles(api, timeout=15):
     api.get_candles = get_candles_seguro
     api._candles_blindado = True
 
+# ============================================================
+# VALIDACAO DE PARES EM SEGUNDO PLANO
+# ============================================================
+# Ao conectar, testamos os pares um a um (get_candles) e vamos preenchendo a
+# lista. Assim o aluno so' ve pares que REALMENTE devolvem velas, e a busca nao
+# trava a interface.
+#
+# ⚠️ Tem que ser SEQUENCIAL: get_candles usa um campo compartilhado
+# (self.api.candles.candles_data). Duas chamadas ao mesmo tempo se atrapalham.
+# Por isso tambem PAUSAMOS enquanto o bot estiver operando - a estrategia tem
+# prioridade sobre a validacao.
+
+def validar_pares_em_segundo_plano(s):
+    """Testa os pares abertos e guarda em s.pares_validados. Nao bloqueia nada."""
+    def worker():
+        try:
+            s.pares_status = 'testando'
+            s.pares_validados = {'normais': [], 'otc': []}
+            s.pares_testados = 0
+
+            dados = chamar_api(lambda: s.API.get_all_init_v2(), timeout=20, padrao=None)
+            if not dados:
+                s.pares_status = 'erro'
+                return
+
+            candidatos = []
+            for categoria in ('turbo', 'binary'):
+                bloco = (dados.get(categoria) or {}).get('actives') or {}
+                for _id, ativo in bloco.items():
+                    nome = str(ativo.get('name', ''))
+                    if '.' in nome:
+                        nome = nome.split('.')[1]
+                    if not nome or nome in candidatos:
+                        continue
+                    aberto = bool(ativo.get('enabled')) and not bool(ativo.get('is_suspended'))
+                    if aberto:
+                        candidatos.append(nome)
+
+            candidatos.sort()
+            s.pares_total = len(candidatos)
+
+            for nome in candidatos:
+                if not s.conectado or not s.API:
+                    break
+                # a estrategia tem prioridade: espera o bot parar de operar
+                esperou = 0
+                while s.bot_rodando and esperou < 300 and s.conectado:
+                    time.sleep(1); esperou += 1
+
+                velas = chamar_api(lambda: s.API.get_candles(nome, 60, 30, time.time()),
+                                   timeout=8, padrao=[])
+                s.pares_testados += 1
+                if velas and len(velas) >= 20:
+                    if nome.endswith('-OTC'):
+                        s.pares_validados['otc'].append(nome)
+                    else:
+                        s.pares_validados['normais'].append(nome)
+                time.sleep(0.2)   # respira entre as chamadas
+
+            s.pares_status = 'pronto'
+        except Exception:
+            s.pares_status = 'erro'
+
+    t = threading.Thread(target=worker, daemon=True, name=f"pares-{s.sid[:6]}")
+    t.start()
+
 def sincronizar_ativos(api, timeout=20):
     """Ensina a lib os ativos ATUAIS da corretora.
 
@@ -1534,21 +1563,25 @@ def sincronizar_ativos(api, timeout=20):
         return 0
 
     novos = 0
+    # ⚠️ ORDEM E SOBRESCRITA IMPORTAM:
+    # O mesmo nome aparece em 'turbo' E em 'binary', as vezes com IDs DIFERENTES.
+    # Se sobrescrevermos um mapeamento que ja' funcionava (ex: EURUSD=1, fixo na
+    # lib e testado ha anos), podemos QUEBRAR um par que funcionava. Por isso:
+    # so' ADICIONAMOS nomes ausentes - nunca trocamos os que ja' existem.
+    # (turbo primeiro, que e' o que o bot opera, seguindo a lib.)
     for categoria in ('turbo', 'binary'):
         bloco = (dados.get(categoria) or {}).get('actives') or {}
         for id_ativo, ativo in bloco.items():
             nome = str(ativo.get('name', ''))
             if '.' in nome:
                 nome = nome.split('.')[1]
-            if not nome:
-                continue
+            if not nome or nome in MAPA:
+                continue          # ja' conhecido: preserva o ID original
             try:
-                id_int = int(id_ativo)
+                MAPA[nome] = int(id_ativo)
+                novos += 1
             except (TypeError, ValueError):
                 continue
-            if MAPA.get(nome) != id_int:
-                MAPA[nome] = id_int
-                novos += 1
     return novos
 
 def _conectar_com_timeout(api, timeout=25):
@@ -1650,6 +1683,8 @@ def conectar():
             n_ativos = sincronizar_ativos(s.API, timeout=15)
             if n_ativos:
                 s.add_log(f"🔄 {n_ativos} ativos sincronizados da corretora", 'info')
+            # 3) testa os pares em SEGUNDO PLANO (nao trava o login nem o bot)
+            validar_pares_em_segundo_plano(s)
         except Exception:
             pass
 
