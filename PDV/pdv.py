@@ -556,9 +556,29 @@ def init_db() -> None:
                 qrcode_url TEXT,
                 erro TEXT,
                 emitida_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                db_id TEXT
+                db_id TEXT,
+                contingencia INTEGER DEFAULT 0,
+                pendente_reenvio INTEGER DEFAULT 0,
+                cancelada INTEGER DEFAULT 0,
+                protocolo_cancelamento TEXT,
+                justificativa_cancelamento TEXT,
+                cancelada_em TIMESTAMP
             )
         ''')
+        # Migração pra quem já tinha a tabela fiscal_nfce de antes desses campos existirem
+        for coluna, definicao in (
+            ('contingencia', "INTEGER DEFAULT 0"),
+            ('pendente_reenvio', "INTEGER DEFAULT 0"),
+            ('cancelada', "INTEGER DEFAULT 0"),
+            ('protocolo_cancelamento', "TEXT"),
+            ('justificativa_cancelamento', "TEXT"),
+            ('cancelada_em', "TIMESTAMP"),
+        ):
+            try:
+                conn.execute(f"ALTER TABLE fiscal_nfce ADD COLUMN {coluna} {definicao}")
+                conn.commit()
+            except Exception:
+                pass
 
         conn.execute('''
             CREATE TABLE IF NOT EXISTS caixa_movimentos (
@@ -2367,36 +2387,41 @@ def _dv_mod11_chave(chave_43: str) -> str:
     resto = soma % 11
     return '0' if resto in (0, 1) else str(11 - resto)
 
-def gerar_chave_acesso_nfce(uf: str, data_emissao: datetime, cnpj: str, serie, numero, codigo_numerico: int) -> str:
+def gerar_chave_acesso_nfce(uf: str, data_emissao: datetime, cnpj: str, serie, numero, codigo_numerico: int, tp_emis: str = '1') -> str:
     """Monta a chave de 44 dígitos: cUF(2) AAMM(4) CNPJ(14) mod(2)=65
-    série(3) número(9) tpEmis(1) cNF(8) + DV(1) = 44."""
+    série(3) número(9) tpEmis(1) cNF(8) + DV(1) = 44.
+    tpEmis=1 é emissão normal (online); tpEmis=9 é contingência offline
+    (usado quando a SEFAZ está inacessível - ver EMISSAO_CONTINGENCIA)."""
     cuf = UF_CODIGO_IBGE.get(uf.upper())
     if not cuf:
         raise ValueError(f"UF desconhecida pra chave de acesso: {uf}")
     aamm = data_emissao.strftime('%y%m')
     cnpj_num = re.sub(r'\D', '', cnpj or '').zfill(14)
-    chave_43 = f"{cuf:02d}{aamm}{cnpj_num}65{int(serie):03d}{int(numero):09d}1{int(codigo_numerico):08d}"
+    chave_43 = f"{cuf:02d}{aamm}{cnpj_num}65{int(serie):03d}{int(numero):09d}{tp_emis}{int(codigo_numerico):08d}"
     return chave_43 + _dv_mod11_chave(chave_43)
 
 def _fmt_dec(valor, casas=2) -> str:
     return f"{float(valor or 0):.{casas}f}"
 
-def montar_xml_nfce(dados_loja: Dict, itens_venda: List[Dict], totais: Dict, config_fiscal: Dict, produtos_fiscais: Dict[str, Dict]) -> Tuple[str, str]:
+def montar_xml_nfce(dados_loja: Dict, itens_venda: List[Dict], totais: Dict, config_fiscal: Dict, produtos_fiscais: Dict[str, Dict], contingencia: bool = False) -> Tuple[str, str]:
     """Constrói o XML da NFC-e (sem assinatura ainda). Retorna (chave_acesso, xml_string).
     Estrutura validada contra um XML real de NFe emitida (mesmo XSD da NFC-e,
-    só muda o <mod> e alguns campos de <ide>) - não foi inventada do zero."""
+    só muda o <mod> e alguns campos de <ide>) - não foi inventada do zero.
+    contingencia=True gera com tpEmis=9 (contingência offline) - usado quando
+    a SEFAZ está inacessível (ver EMISSAO_CONTINGENCIA)."""
     if not FISCAL_NFCE_DISPONIVEL:
         raise RuntimeError("Dependências de NFC-e (lxml/signxml/nfelib) não instaladas neste build")
 
     uf = config_fiscal['uf']
     ambiente = config_fiscal['ambiente']
     tp_amb = '1' if ambiente == 'producao' else '2'
+    tp_emis = '9' if contingencia else '1'
     serie = config_fiscal.get('serie') or '1'
     numero = config_fiscal['proximo_numero']
     cnpj = re.sub(r'\D', '', dados_loja.get('cnpj', ''))
     agora = datetime.now()
     codigo_numerico = secrets.randbelow(99999999)
-    chave = gerar_chave_acesso_nfce(uf, agora, cnpj, serie, numero, codigo_numerico)
+    chave = gerar_chave_acesso_nfce(uf, agora, cnpj, serie, numero, codigo_numerico, tp_emis)
     cnpj_dados = dados_loja.get('cnpj_dados') or {}
     cmun = _obter_codigo_ibge_municipio(uf, cnpj_dados.get('municipio', '')) or '0000000'
 
@@ -2417,7 +2442,7 @@ def montar_xml_nfce(dados_loja: Dict, itens_venda: List[Dict], totais: Dict, con
     fiscal_etree.SubElement(ide, NFE + 'idDest').text = '1'
     fiscal_etree.SubElement(ide, NFE + 'cMunFG').text = cmun
     fiscal_etree.SubElement(ide, NFE + 'tpImp').text = '4'
-    fiscal_etree.SubElement(ide, NFE + 'tpEmis').text = '1'
+    fiscal_etree.SubElement(ide, NFE + 'tpEmis').text = tp_emis
     fiscal_etree.SubElement(ide, NFE + 'cDV').text = chave[-1]
     fiscal_etree.SubElement(ide, NFE + 'tpAmb').text = tp_amb
     fiscal_etree.SubElement(ide, NFE + 'finNFe').text = '1'
@@ -2425,6 +2450,11 @@ def montar_xml_nfce(dados_loja: Dict, itens_venda: List[Dict], totais: Dict, con
     fiscal_etree.SubElement(ide, NFE + 'indPres').text = '1'
     fiscal_etree.SubElement(ide, NFE + 'procEmi').text = '0'
     fiscal_etree.SubElement(ide, NFE + 'verProc').text = f'SmartPDV {VERSION}'
+    if contingencia:
+        # dhCont: quando entrou em contingência. xJust: motivo (mín. 15 chars
+        # pelo schema - "SEFAZ indisponível" tem 19, então sempre passa).
+        fiscal_etree.SubElement(ide, NFE + 'dhCont').text = agora.astimezone().isoformat(timespec='seconds')
+        fiscal_etree.SubElement(ide, NFE + 'xJust').text = 'SEFAZ indisponível no momento da venda'
 
     emit = fiscal_etree.SubElement(infNFe, NFE + 'emit')
     fiscal_etree.SubElement(emit, NFE + 'CNPJ').text = cnpj
@@ -2536,7 +2566,8 @@ def montar_qrcode_nfce(chave: str, uf: str, ambiente: str, csc_id: str, csc_toke
     c_hash = hashlib.sha1(hash_input.encode()).hexdigest().upper()
     return f"{base}?p={chave}|2|{tp_amb}|{csc_id}|{c_hash}"
 
-def gerar_texto_danfce(dados_loja: Dict, itens_venda: List[Dict], totais: Dict, chave: str, protocolo: str, qrcode_url: Optional[str], ambiente: str) -> str:
+def gerar_texto_danfce(dados_loja: Dict, itens_venda: List[Dict], totais: Dict, chave: str, protocolo: str, qrcode_url: Optional[str], ambiente: str,
+        pendente_contingencia: bool = False, cancelada: bool = False) -> str:
     """Texto pra impressão térmica do DANFCE (documento auxiliar da NFC-e).
     Reaproveita o layout do cupom normal e acrescenta os campos fiscais
     obrigatórios (chave de acesso, protocolo, aviso de homologação)."""
@@ -2549,6 +2580,15 @@ def gerar_texto_danfce(dados_loja: Dict, itens_venda: List[Dict], totais: Dict, 
     linhas.append('-' * L)
     linhas.append('DOCUMENTO AUXILIAR DA NOTA FISCAL'.center(L))
     linhas.append('DE CONSUMIDOR ELETRONICA'.center(L))
+    if cancelada:
+        linhas.append('=' * L)
+        linhas.append('*** NFC-e CANCELADA ***'.center(L))
+        linhas.append('=' * L)
+    elif pendente_contingencia:
+        linhas.append('=' * L)
+        linhas.append('EMITIDA EM CONTINGENCIA'.center(L))
+        linhas.append('PENDENTE DE TRANSMISSAO A SEFAZ'.center(L))
+        linhas.append('=' * L)
     if ambiente != 'producao':
         linhas.append('=' * L)
         linhas.append('EMITIDO EM AMBIENTE DE HOMOLOGACAO'.center(L))
@@ -2639,7 +2679,80 @@ def transmitir_nfce_sefaz(xml_assinado: str, chave: str, uf: str, ambiente: str,
             pass
         autorizada = '<cStat>100</cStat>' in texto  # 100 = Autorizado o uso da NF-e
         return {"success": autorizada, "status_code": resp.status_code, "protocolo": protocolo,
-            "situacao": situacao, "resposta_bruta": texto[:4000], "chave": chave}
+            "situacao": situacao, "resposta_bruta": texto[:4000], "chave": chave,
+            "tipo_erro": None if autorizada else "rejeicao"}
+    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout, requests.exceptions.SSLError) as e:
+        # SEFAZ inacessível (rede caiu, timeout, certificado recusado na
+        # camada TLS) - isto é diferente de uma REJEIÇÃO (onde a SEFAZ
+        # respondeu e não gostou dos dados). Só neste caso entra
+        # contingência - uma rejeição de verdade precisa ser corrigida, não
+        # reemitida em contingência escondendo o erro real.
+        return {"success": False, "error": str(e), "tipo_erro": "conectividade"}
+    except Exception as e:
+        return {"success": False, "error": str(e), "tipo_erro": "outro"}
+
+
+def cancelar_nfce_sefaz(chave: str, protocolo: str, cnpj: str, uf: str, ambiente: str, justificativa: str, pkcs12_bytes: bytes, pkcs12_senha: str) -> Dict:
+    """Envia o evento de Cancelamento (110111) pra SEFAZ. A NFC-e não é
+    apagada nem alterada - fica marcada como cancelada por um evento
+    separado, que é como o cancelamento funciona no padrão nacional."""
+    if not FISCAL_NFCE_DISPONIVEL:
+        return {"success": False, "error": "Dependências de NFC-e não instaladas neste build"}
+    try:
+        cfg = SEFAZ_SERVERS.get(uf.upper())
+        if not cfg:
+            return {"success": False, "error": f"UF {uf} não tem endpoint configurado na biblioteca"}
+        endpoints = cfg['dev_endpoints'] if ambiente != 'producao' else cfg['prod_endpoints']
+        url = endpoints[SefazEndpoint.RECEPCAOEVENTO].replace('?wsdl', '')
+        cuf = UF_CODIGO_IBGE[uf.upper()]
+        tp_amb = '1' if ambiente == 'producao' else '2'
+        agora = datetime.now().astimezone().isoformat(timespec='seconds')
+        cnpj_num = re.sub(r'\D', '', cnpj or '')
+        id_evento = f"ID110111{chave}01"
+        justificativa = (justificativa or '')[:255]
+        if len(justificativa) < 15:
+            justificativa = justificativa.ljust(15)
+
+        NFE = f"{{{NFCE_URL_NS}}}"
+        evento = fiscal_etree.Element(NFE + 'evento', nsmap={None: NFCE_URL_NS}, versao='1.00')
+        infEvento = fiscal_etree.SubElement(evento, NFE + 'infEvento', Id=id_evento)
+        fiscal_etree.SubElement(infEvento, NFE + 'cOrgao').text = str(cuf)
+        fiscal_etree.SubElement(infEvento, NFE + 'tpAmb').text = tp_amb
+        fiscal_etree.SubElement(infEvento, NFE + 'CNPJ').text = cnpj_num
+        fiscal_etree.SubElement(infEvento, NFE + 'chNFe').text = chave
+        fiscal_etree.SubElement(infEvento, NFE + 'dhEvento').text = agora
+        fiscal_etree.SubElement(infEvento, NFE + 'tpEvento').text = '110111'
+        fiscal_etree.SubElement(infEvento, NFE + 'nSeqEvento').text = '1'
+        fiscal_etree.SubElement(infEvento, NFE + 'verEvento').text = '1.00'
+        detEvento = fiscal_etree.SubElement(infEvento, NFE + 'detEvento', versao='1.00')
+        fiscal_etree.SubElement(detEvento, NFE + 'descEvento').text = 'Cancelamento'
+        fiscal_etree.SubElement(detEvento, NFE + 'nProt').text = protocolo
+        fiscal_etree.SubElement(detEvento, NFE + 'xJust').text = justificativa
+
+        xml_evento = fiscal_etree.tostring(evento, encoding='unicode')
+        priv_key, cert, _outros = pkcs12.load_key_and_certificates(pkcs12_bytes, pkcs12_senha.encode())
+        root = fiscal_etree.fromstring(xml_evento.encode())
+        signer = _NFCeXMLSigner(method=fiscal_signxml_methods.enveloped, signature_algorithm=FiscalSigMethod.RSA_SHA1,
+            digest_algorithm=FiscalDigestAlg.SHA1, c14n_algorithm=FiscalC14nMethod.CANONICAL_XML_1_0)
+        signed_root = signer.sign(root, key=priv_key, cert=[cert], reference_uri=f"#{id_evento}")
+        xml_assinado = fiscal_etree.tostring(signed_root, encoding='unicode')
+
+        corpo = (f'<envEvento xmlns="{NFCE_URL_NS}" versao="1.00">'
+                 f'<idLote>1</idLote>{xml_assinado}</envEvento>')
+        envelope = (
+            '<soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">'
+            '<soap12:Body><nfeDadosMsg xmlns="http://www.portalfiscal.inf.br/nfe/wsdl/RecepcaoEvento4">'
+            f'{corpo}</nfeDadosMsg></soap12:Body></soap12:Envelope>')
+        sessao = requests.Session()
+        sessao.mount(url, Pkcs12Adapter(pkcs12_data=pkcs12_bytes, pkcs12_password=pkcs12_senha))
+        resp = sessao.post(url, data=envelope.encode('utf-8'),
+            headers={'Content-Type': 'application/soap+xml; charset=utf-8'}, timeout=30)
+        texto = resp.text
+        m_prot = re.search(r'<nProt>(.*?)</nProt>', texto)
+        m_sit = re.search(r'<xMotivo>(.*?)</xMotivo>', texto)
+        cancelado = '<cStat>135</cStat>' in texto  # 135 = Evento registrado e vinculado a NF-e
+        return {"success": cancelado, "protocolo_cancelamento": m_prot.group(1) if m_prot else '',
+            "situacao": m_sit.group(1) if m_sit else '', "resposta_bruta": texto[:4000]}
     except Exception as e:
         return {"success": False, "error": str(e)}
 
@@ -4392,7 +4505,7 @@ def get_estatisticas():
                 ids_vendas = [v['id'] for v in vendas]
                 placeholders = ','.join('?' * len(ids_vendas))
                 ids_com_nfce = {r[0] for r in conn.execute(
-                    f"SELECT venda_id FROM fiscal_nfce WHERE db_id=? AND autorizada=1 AND venda_id IN ({placeholders})",
+                    f"SELECT venda_id FROM fiscal_nfce WHERE db_id=? AND (autorizada=1 OR pendente_reenvio=1) AND venda_id IN ({placeholders})",
                     (db_id, *ids_vendas))}
                 for v in vendas:
                     v['tem_nfce'] = v['id'] in ids_com_nfce
@@ -5437,23 +5550,46 @@ def fiscal_emitir_nfce_route(venda_id: int):
             return jsonify({"success": False, "error": f"Erro ao montar ou assinar o XML: {e}"})
 
         resultado = transmitir_nfce_sefaz(xml_assinado, chave, cfg['uf'], cfg['ambiente'], pfx_bytes, senha)
+        contingencia_usada = False
+
+        if not resultado.get('success') and resultado.get('tipo_erro') == 'conectividade':
+            # SEFAZ inacessível (não foi rejeição) - reemite em CONTINGÊNCIA
+            # OFFLINE (tpEmis=9): a venda não pode parar esperando a SEFAZ
+            # voltar. A chave muda (tpEmis faz parte dela), então monta e
+            # assina de novo - fica pendente pra reenvio automático depois.
+            logger.warning(f"⚠️ SEFAZ inacessível pra venda #{venda_id} - emitindo em contingência offline: {resultado.get('error')}")
+            try:
+                chave, xml_str = montar_xml_nfce(dados_loja, itens, totais, cfg, produtos_fiscais, contingencia=True)
+                xml_assinado = assinar_xml_nfce(xml_str, chave, pfx_bytes, senha)
+                contingencia_usada = True
+                resultado = {"success": True, "protocolo": "", "situacao": "Emitida em contingência - pendente de transmissão"}
+            except Exception as e:
+                logger.error(f"❌ Erro ao montar NFC-e em contingência: {e}")
+                return jsonify({"success": False, "error": f"SEFAZ inacessível e falha ao montar contingência: {e}"})
+
         qrcode_url = montar_qrcode_nfce(chave, cfg['uf'], cfg['ambiente'], cfg['csc_id'], cfg['csc_token'])
 
         with get_db_context() as conn:
-            conn.execute("""INSERT INTO fiscal_nfce (venda_id, chave_acesso, protocolo, situacao, autorizada, ambiente, xml_assinado, qrcode_url, erro, db_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(venda_id) DO UPDATE SET
+            conn.execute("""INSERT INTO fiscal_nfce (venda_id, chave_acesso, protocolo, situacao, autorizada, ambiente, xml_assinado, qrcode_url, erro, db_id, contingencia, pendente_reenvio)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(venda_id) DO UPDATE SET
                 chave_acesso=excluded.chave_acesso, protocolo=excluded.protocolo, situacao=excluded.situacao,
                 autorizada=excluded.autorizada, ambiente=excluded.ambiente, xml_assinado=excluded.xml_assinado,
-                qrcode_url=excluded.qrcode_url, erro=excluded.erro, emitida_em=CURRENT_TIMESTAMP""",
+                qrcode_url=excluded.qrcode_url, erro=excluded.erro, contingencia=excluded.contingencia,
+                pendente_reenvio=excluded.pendente_reenvio, emitida_em=CURRENT_TIMESTAMP""",
                 (venda_id, chave, resultado.get('protocolo', ''), resultado.get('situacao', ''),
-                1 if resultado.get('success') else 0, cfg['ambiente'], xml_assinado, qrcode_url or '',
-                '' if resultado.get('success') else resultado.get('error', resultado.get('situacao', 'Erro desconhecido')), db_id))
+                1 if (resultado.get('success') and not contingencia_usada) else 0, cfg['ambiente'], xml_assinado, qrcode_url or '',
+                '' if resultado.get('success') else resultado.get('error', resultado.get('situacao', 'Erro desconhecido')), db_id,
+                1 if contingencia_usada else 0, 1 if contingencia_usada else 0))
 
         if resultado.get('success'):
-            # avança o próximo número só quando autoriza - se rejeitar, o
-            # mesmo número pode ser tentado de novo (não "queima" numeração)
+            # avança o próximo número quando autoriza OU quando entra em
+            # contingência (a numeração já foi "gasta" nos dois casos - se
+            # rejeitar de verdade, aí sim pode reusar o mesmo número)
             _config_definir('fiscal_proximo_numero', str(int(cfg['proximo_numero']) + 1))
-            logger.info(f"✅ NFC-e autorizada: venda #{venda_id}, chave {chave}, protocolo {resultado.get('protocolo')}")
+            if contingencia_usada:
+                logger.info(f"⚠️ NFC-e emitida em CONTINGÊNCIA: venda #{venda_id}, chave {chave} (pendente de reenvio)")
+            else:
+                logger.info(f"✅ NFC-e autorizada: venda #{venda_id}, chave {chave}, protocolo {resultado.get('protocolo')}")
         else:
             logger.error(f"❌ NFC-e rejeitada/erro: venda #{venda_id} - {resultado}")
 
@@ -5464,9 +5600,100 @@ def fiscal_emitir_nfce_route(venda_id: int):
             "situacao": resultado.get('situacao', ''),
             "error": resultado.get('error', ''),
             "qrcode_url": qrcode_url,
+            "contingencia": contingencia_usada,
         })
     except Exception as e:
         logger.error(f"❌ Erro ao emitir NFC-e: {e}")
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/fiscal/reenviar/<int:venda_id>', methods=['POST'])
+@verificar_plano
+def fiscal_reenviar_nfce_route(venda_id: int):
+    """Reenvio MANUAL de uma NFC-e pendente de contingência (sem esperar o
+    reenvio automático de 5 em 5 minutos) - reenvia o mesmo XML já assinado."""
+    try:
+        db_id = get_db_id()
+        if not db_id:
+            return jsonify({"success": False, "error": "Não autenticado"}), 401
+        if not FISCAL_NFCE_DISPONIVEL:
+            return jsonify({"success": False, "error": "Dependências de NFC-e não instaladas neste build"})
+        with get_db_context() as conn:
+            row = conn.execute("SELECT chave_acesso, xml_assinado, ambiente, pendente_reenvio FROM fiscal_nfce WHERE venda_id=? AND db_id=?", (venda_id, db_id)).fetchone()
+        if not row:
+            return jsonify({"success": False, "error": "Esta venda não tem NFC-e emitida"})
+        if not row[3]:
+            return jsonify({"success": False, "error": "Esta NFC-e não está pendente de reenvio"})
+        cfg = _carregar_config_fiscal_completa(db_id)
+        senha = _fiscal_decifrar(_config_obter('fiscal_senha_certificado_enc'))
+        with open(CAMINHO_CERTIFICADO_PFX, 'rb') as f:
+            pfx_bytes = f.read()
+        resultado = transmitir_nfce_sefaz(row[1], row[0], cfg['uf'], row[2], pfx_bytes, senha)
+        if resultado.get('success'):
+            with get_db_context() as conn:
+                conn.execute("""UPDATE fiscal_nfce SET autorizada=1, pendente_reenvio=0,
+                    protocolo=?, situacao=?, erro='' WHERE venda_id=?""",
+                    (resultado.get('protocolo', ''), resultado.get('situacao', ''), venda_id))
+            return jsonify({"success": True, "protocolo": resultado.get('protocolo', '')})
+        return jsonify({"success": False, "error": resultado.get('error', resultado.get('situacao', 'Ainda não foi possível transmitir'))})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/api/fiscal/cancelar/<int:venda_id>', methods=['POST'])
+@verificar_plano
+def fiscal_cancelar_nfce_route(venda_id: int):
+    try:
+        db_id = get_db_id()
+        if not db_id:
+            return jsonify({"success": False, "error": "Não autenticado"}), 401
+        if not FISCAL_NFCE_DISPONIVEL:
+            return jsonify({"success": False, "error": "Dependências de NFC-e não instaladas neste build"})
+        justificativa = ((request.json or {}).get('justificativa') or '').strip()
+        if len(justificativa) < 15:
+            return jsonify({"success": False, "error": "A justificativa precisa ter pelo menos 15 caracteres"})
+
+        with get_db_context() as conn:
+            nfce = conn.execute("SELECT chave_acesso, protocolo, autorizada, cancelada, emitida_em FROM fiscal_nfce WHERE venda_id=? AND db_id=?", (venda_id, db_id)).fetchone()
+            loja = conn.execute("SELECT cnpj FROM users WHERE db_id=? LIMIT 1", (db_id,)).fetchone()
+        if not nfce or not nfce[2]:
+            return jsonify({"success": False, "error": "Esta venda não tem NFC-e autorizada pra cancelar"})
+        if nfce[3]:
+            return jsonify({"success": False, "error": "Esta NFC-e já está cancelada"})
+
+        # Prazo nacional pra cancelamento simples (evento 110111) é de 24h
+        # após a autorização - depois disso a SEFAZ rejeita o evento e o
+        # processo de correção muda. Bloqueamos aqui pra dar um aviso claro
+        # em vez de deixar a SEFAZ recusar sem explicação.
+        try:
+            emitida_em = datetime.fromisoformat(nfce[4])
+            if (datetime.now() - emitida_em).total_seconds() > 24 * 3600:
+                return jsonify({"success": False, "error": "Prazo de 24h pra cancelamento simples expirou. Fale com seu contador sobre os próximos passos."})
+        except Exception:
+            pass
+
+        cfg = _carregar_config_fiscal_completa(db_id)
+        senha = _fiscal_decifrar(_config_obter('fiscal_senha_certificado_enc'))
+        with open(CAMINHO_CERTIFICADO_PFX, 'rb') as f:
+            pfx_bytes = f.read()
+
+        resultado = cancelar_nfce_sefaz(nfce[0], nfce[1], loja[0] if loja else '', cfg['uf'], cfg['ambiente'],
+            justificativa, pfx_bytes, senha)
+
+        if resultado.get('success'):
+            with get_db_context() as conn:
+                conn.execute("""UPDATE fiscal_nfce SET cancelada=1, protocolo_cancelamento=?,
+                    justificativa_cancelamento=?, cancelada_em=CURRENT_TIMESTAMP WHERE venda_id=?""",
+                    (resultado.get('protocolo_cancelamento', ''), justificativa, venda_id))
+            logger.info(f"✅ NFC-e cancelada: venda #{venda_id}, chave {nfce[0]}")
+        else:
+            logger.error(f"❌ Falha ao cancelar NFC-e: venda #{venda_id} - {resultado}")
+
+        return jsonify({
+            "success": resultado.get('success', False),
+            "protocolo_cancelamento": resultado.get('protocolo_cancelamento', ''),
+            "error": resultado.get('error', resultado.get('situacao', '')),
+        })
+    except Exception as e:
+        logger.error(f"❌ Erro ao cancelar NFC-e: {e}")
         return jsonify({"success": False, "error": str(e)})
 
 @app.route('/api/fiscal/danfce/<int:venda_id>')
@@ -5477,16 +5704,21 @@ def fiscal_danfce_route(venda_id: int):
         if not db_id:
             return jsonify({"success": False, "error": "Não autenticado"}), 401
         with get_db_context() as conn:
-            nfce = conn.execute("SELECT chave_acesso, protocolo, autorizada, qrcode_url, ambiente FROM fiscal_nfce WHERE venda_id=? AND db_id=?", (venda_id, db_id)).fetchone()
-            if not nfce or not nfce[2]:
-                return jsonify({"success": False, "error": "Esta venda não tem NFC-e autorizada"})
+            nfce = conn.execute("""SELECT chave_acesso, protocolo, autorizada, qrcode_url, ambiente,
+                contingencia, pendente_reenvio, cancelada, protocolo_cancelamento
+                FROM fiscal_nfce WHERE venda_id=? AND db_id=?""", (venda_id, db_id)).fetchone()
+            if not nfce or (not nfce[2] and not nfce[6]):
+                return jsonify({"success": False, "error": "Esta venda não tem NFC-e emitida"})
             venda = conn.execute("SELECT total, itens FROM vendas WHERE id=? AND db_id=?", (venda_id, db_id)).fetchone()
             loja = conn.execute("SELECT nome_loja, cnpj, cnpj_dados FROM users WHERE db_id=? LIMIT 1", (db_id,)).fetchone()
         itens = json.loads(venda[1]) if venda and venda[1] else []
         cnpj_dados = json.loads(loja[2]) if loja and loja[2] else {}
         dados_loja = {"nome_loja": loja[0] if loja else '', "cnpj": loja[1] if loja else '', "cnpj_dados": cnpj_dados}
-        texto = gerar_texto_danfce(dados_loja, itens, {"total": venda[0] if venda else 0}, nfce[0], nfce[1], nfce[3], nfce[4])
-        return jsonify({"success": True, "texto": texto, "chave": nfce[0], "qrcode_url": nfce[3]})
+        texto = gerar_texto_danfce(dados_loja, itens, {"total": venda[0] if venda else 0}, nfce[0], nfce[1], nfce[3], nfce[4],
+            pendente_contingencia=bool(nfce[6]), cancelada=bool(nfce[7]))
+        return jsonify({"success": True, "texto": texto, "chave": nfce[0], "qrcode_url": nfce[3],
+            "autorizada": bool(nfce[2]), "contingencia": bool(nfce[5]), "pendente_reenvio": bool(nfce[6]),
+            "cancelada": bool(nfce[7]), "protocolo_cancelamento": nfce[8] or ''})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
@@ -5662,6 +5894,51 @@ def _verificador_automatico_pix() -> None:
         except:
             pass
 
+def _reenviar_nfce_pendentes_periodicamente() -> None:
+    """A cada alguns minutos, tenta reenviar NFC-e emitidas em contingência
+    (SEFAZ estava fora do ar na hora da venda). Reenvia o MESMO XML já
+    assinado - nunca remonta, porque a chave impressa pro cliente não pode
+    mudar depois de já ter saído no papel."""
+    while True:
+        _time.sleep(300)
+        try:
+            if not FISCAL_NFCE_DISPONIVEL:
+                continue
+            with get_db_context() as conn:
+                pendentes = conn.execute(
+                    "SELECT venda_id, chave_acesso, xml_assinado, ambiente, db_id FROM fiscal_nfce WHERE pendente_reenvio=1").fetchall()
+            if not pendentes:
+                continue
+            logger.info(f"🔄 Tentando reenviar {len(pendentes)} NFC-e(s) pendente(s) de contingência...")
+            for venda_id, chave, xml_assinado, ambiente, db_id in pendentes:
+                try:
+                    cfg = _carregar_config_fiscal_completa(db_id)
+                    if not cfg.get('uf') or not os.path.exists(CAMINHO_CERTIFICADO_PFX):
+                        continue
+                    senha = _fiscal_decifrar(_config_obter('fiscal_senha_certificado_enc'))
+                    with open(CAMINHO_CERTIFICADO_PFX, 'rb') as f:
+                        pfx_bytes = f.read()
+                    resultado = transmitir_nfce_sefaz(xml_assinado, chave, cfg['uf'], ambiente, pfx_bytes, senha)
+                    if resultado.get('success'):
+                        with get_db_context() as conn:
+                            conn.execute("""UPDATE fiscal_nfce SET autorizada=1, pendente_reenvio=0,
+                                protocolo=?, situacao=?, erro='' WHERE venda_id=?""",
+                                (resultado.get('protocolo', ''), resultado.get('situacao', ''), venda_id))
+                        logger.info(f"✅ NFC-e de contingência autorizada no reenvio: venda #{venda_id}, chave {chave}")
+                    elif resultado.get('tipo_erro') == 'rejeicao':
+                        # SEFAZ respondeu e rejeitou - reenviar nao vai resolver
+                        # sozinho, isso precisa de intervenção humana (numeração
+                        # duplicada, dados inválidos etc). Para de tentar.
+                        with get_db_context() as conn:
+                            conn.execute("UPDATE fiscal_nfce SET pendente_reenvio=0, erro=? WHERE venda_id=?",
+                                (f"Rejeitada no reenvio: {resultado.get('situacao', resultado.get('error', ''))}", venda_id))
+                        logger.error(f"❌ NFC-e de contingência REJEITADA no reenvio: venda #{venda_id} - {resultado}")
+                    # se ainda for erro de conectividade, deixa pendente pra próxima rodada
+                except Exception as e:
+                    logger.warning(f"⚠️ Falha ao reenviar NFC-e da venda #{venda_id}: {e}")
+        except Exception as e:
+            logger.error(f"⚠️ Erro no reenvio periódico de NFC-e: {e}")
+
 def _responder_descoberta_rede() -> None:
     """Fica ouvindo na rede local. Quando outro SMART PDV está sendo aberto, ele
     pergunta 'tem algum servidor aí?' e nós respondemos. Assim o novo consegue
@@ -5806,6 +6083,7 @@ if __name__ == '__main__':
     threading.Thread(target=_sync_pendente_background, daemon=True).start()
     threading.Thread(target=sincronizar_planos_periodicamente, daemon=True).start()
     threading.Thread(target=_responder_descoberta_rede, daemon=True).start()
+    threading.Thread(target=_reenviar_nfce_pendentes_periodicamente, daemon=True).start()
     print("🔄 Thread de sincronização de planos iniciada")
 
     print(f"\n🆔 Servidor: {SERVIDOR_ID}")
